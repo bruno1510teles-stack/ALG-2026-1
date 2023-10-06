@@ -27,7 +27,7 @@ from airflow.models.baseoperator import chain
 from airflow.operators.bash import BashOperator
 
 with models.DAG(
-    dag_id="example_complex",
+    dag_id="example_complex_folder_1",
     schedule=None,
     start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
