@@ -5,7 +5,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake
-from include.query_trino import query_trino
+from scripts.query_trino import query_trino
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 print(now)
