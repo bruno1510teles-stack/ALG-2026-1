@@ -12,8 +12,8 @@ def transform_data_to_trusted(files_list, access_params):
 
     # DEFINE VARIABLES
     BUCKET_SOURCE_RAW = "opdb-alpe"
-    BUCKET_SOURCE_TRUSTED = "teste-mayer"
-    BOLETOS_TRUSTED_FOLDER  = "payments/trusted/"
+    BUCKET_SOURCE_TRUSTED = "payments"
+    BOLETOS_TRUSTED_FOLDER  = "boletos/"
 
     df_boletos_raw = pd.DataFrame()
     df_sacados_raw = pd.DataFrame()
