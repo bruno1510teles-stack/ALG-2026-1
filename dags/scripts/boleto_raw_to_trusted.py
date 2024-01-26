@@ -47,9 +47,11 @@ def transform_data_to_trusted(files_list, access_params):
         
     df_boletos_padrao.set_index('id', inplace=True)
 
-    unique_sacado_id = df_boletos_padrao['sacado_id'].unique().tolist()
+    ids_query = str(df_boletos_padrao['sacado_id'].tolist()).replace('[', '(').replace(']', ')')
 
-    query = "select id, nome_sacado, numero_cnpj_sacado from postgres.ccred_schema_prd_default.sacado where id IN {}".format(tuple(unique_sacado_id))
+    query = f"""
+            select id, nome_sacado, numero_cnpj_sacado from postgres.ccred_schema_{access_params['stage']}_default.sacado where id IN {ids_query}
+    """
     print(f"query: {query}")
 
     df_sacados_raw = query_trino(query, 
