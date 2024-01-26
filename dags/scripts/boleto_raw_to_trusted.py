@@ -1,16 +1,14 @@
 import pandas as pd
 from datetime import datetime, timezone, timedelta
-import numpy as np
 from minio import Minio
 from io import BytesIO
-import os
 from deltalake import write_deltalake
 from scripts.query_trino import query_trino
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 print(now)
 
-def transform_data_to_trusted(files_list):
+def transform_data_to_trusted(files_list, access_params):
 
     # DEFINE VARIABLES
     BUCKET_SOURCE_RAW = "opdb-alpe"
@@ -20,11 +18,13 @@ def transform_data_to_trusted(files_list):
     df_boletos_raw = pd.DataFrame()
     df_sacados_raw = pd.DataFrame()
 
+    print(f"minio_params INSIDE: {access_params}")
+
     # CONECTAR NO MINIO RAW
     client = Minio(
-        os.environ.get('MINIO_PROD_RAW_URL'),
-        access_key = os.environ.get('MINIO_PROD_RAW_ACCESS_KEY'),
-        secret_key = os.environ.get('MINIO_PROD_RAW_SECRET_KEY'),
+        access_params['endpoint_url_raw'],
+        access_key = access_params['aws_access_key_id_raw'],
+        secret_key = access_params['aws_secret_access_key_raw'],
     )
 
     # READ FILES AND TRANSFORM THEM TO DATAFRAME
@@ -53,10 +53,10 @@ def transform_data_to_trusted(files_list):
     print(f"query: {query}")
 
     df_sacados_raw = query_trino(query, 
-                                os.environ.get('TRINO_PROD_HOST'),
-                                os.environ.get('TRINO_PROD_PORT'),
-                                os.environ.get('TRINO_PROD_USER'),
-                                os.environ.get('TRINO_PROD_PASSWORD'))
+                                access_params['trino_endpoint'],
+                                access_params['trino_port'],
+                                access_params['trino_user'],
+                                access_params['trino_password'])
 
     ''''
         A partir daqui, o código é o mesmo do script de transformação do raw para o trusted.
@@ -149,9 +149,9 @@ def transform_data_to_trusted(files_list):
         ENVIAR OS DADOS PARA O MINIO TRUSTED NO FORMATO DE DELTA TABLE
     '''
     storage_options = {
-        "AWS_ACCESS_KEY_ID": os.environ.get('MINIO_DEV_TRUSTED_ACCESS_KEY'),
-        "AWS_SECRET_ACCESS_KEY": os.environ.get('MINIO_DEV_TRUSTED_SECRET_KEY'),
-        "AWS_ENDPOINT_URL":f"https://{os.environ.get('MINIO_DEV_TRUSTED_URL')}",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
