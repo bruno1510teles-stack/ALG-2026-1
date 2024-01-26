@@ -13,8 +13,8 @@ from scripts.boleto_raw_to_trusted import transform_data_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
-MINIO_RAW_BUCKET = "opdb-alpe"
-BOLETOS_ALPE_RAW_FOLDER = "topics/opdb.ccred_schema_prd_default.boleto_titulo/"
+MINIO_RAW_BUCKET = Variable.get("OPDB_BUCKET")
+BOLETOS_ALPE_RAW_FOLDER = f"topics/opdb.ccred_schema_{ Variable.get('STAGE') }_default.boleto_titulo/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
@@ -37,7 +37,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 24), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval=None, #'0 12 * * *',
+    schedule_interval='0 12 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
@@ -76,6 +76,7 @@ def boleto_alpe_to_trusted():
             "trino_port": Variable.get("TRINO_PORT"),
             "trino_user": Variable.get("TRINO_USER"),
             "trino_password": Variable.get("TRINO_PASSWORD"),
+            "opdb_bucket": Variable.get("OPDB_BUCKET"),
         }
 
         print(f"minio_params: { access_params }")

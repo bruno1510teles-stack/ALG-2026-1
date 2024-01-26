@@ -11,7 +11,7 @@ print(now)
 def transform_data_to_trusted(files_list, access_params):
 
     # DEFINE VARIABLES
-    BUCKET_SOURCE_RAW = "opdb-alpe"
+    BUCKET_SOURCE_RAW = access_params['opdb_bucket']
     BUCKET_SOURCE_TRUSTED = "payments"
     BOLETOS_TRUSTED_FOLDER  = "boletos/"
 
