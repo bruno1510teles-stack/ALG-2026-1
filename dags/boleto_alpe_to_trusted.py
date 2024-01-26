@@ -19,7 +19,8 @@ BOLETOS_ALPE_RAW_FOLDER = f"topics/opdb.ccred_schema_{ Variable.get('STAGE') }_d
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+#day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=11/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -37,7 +38,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 24), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 12 * * *',
+    schedule_interval=None, #'0 12 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
