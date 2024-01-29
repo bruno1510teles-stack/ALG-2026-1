@@ -20,7 +20,7 @@ now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
 #day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
-day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=11/"
+day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=11/day=21/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -84,6 +84,9 @@ def boleto_alpe_to_trusted():
         print(f"minio_params: { access_params }")
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+
+        # REMOVER SOMENTE PARA TESTE
+        current_files = current_files[:10]
 
         transform_data_to_trusted(current_files, access_params)
 

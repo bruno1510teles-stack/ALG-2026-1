@@ -72,6 +72,10 @@ def transform_data_to_trusted(files_list, access_params):
     df_boletos_filtrado = df_boletos_padrao[(df_boletos_padrao['codigo_cedente'] == 11) 
                         & (df_boletos_padrao['excluido'] == 0) 
                         & (df_boletos_padrao['codigo_estagio_titulo'] == 6)]
+    
+    if df_boletos_filtrado.empty:
+        print("Não há boletos para serem contabilizados")
+        return
 
     # Filtrar campos relevantes
     df_boletos_filtrado = df_boletos_filtrado[['sacado_id', 'numero_nfe', 'numero_titulo',  
