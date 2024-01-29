@@ -141,11 +141,31 @@ def transform_data_to_trusted(files_list, access_params):
     df_boletos_final['month'] = now.month
     df_boletos_final['day'] = now.day
 
-    ''''
-        FIM DO TRATAMENTO
     '''
+        CONVERTER TIPOS DE COLUNAS
+    '''
+    convert_dict = {'documento': str,
+            'razao_social': str,
+            'numero_titulo': str,
+            'data_emissao': 'datetime64[us]',
+            'data_vencimento': 'datetime64[us]',
+            'data_pagamento': 'datetime64[us]',
+            'valor_titulo': float,
+            'data_hp': 'datetime64[us]',
+            'numero_parcela': int,
+            'valor_pago': str,
+            'fornecedor': str,
+            'fonte': str,
+            'atualizado_em': 'datetime64[us, UTC-03:00]',
+            'tipo_documento': str,
+            'year': int,
+            'month': int,
+            'day': int}
+    
+    for k, v in convert_dict.items():
+        df_boletos_final[k] = df_boletos_final[k].astype(v)
 
-    print(f'nuloes:  {df_boletos_final.isnull().sum()}')
+    df_boletos_final.replace({'nan': None}, inplace=True)
 
     '''
         ENVIAR OS DADOS PARA O MINIO TRUSTED NO FORMATO DE DELTA TABLE
