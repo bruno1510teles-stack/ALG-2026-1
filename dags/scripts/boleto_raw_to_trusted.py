@@ -167,6 +167,8 @@ def transform_data_to_trusted(files_list, access_params):
 
     df_boletos_final.replace({'nan': None}, inplace=True)
 
+    print(df_boletos_final.info())
+
     '''
         ENVIAR OS DADOS PARA O MINIO TRUSTED NO FORMATO DE DELTA TABLE
     '''
