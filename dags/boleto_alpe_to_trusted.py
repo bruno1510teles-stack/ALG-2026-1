@@ -20,7 +20,7 @@ now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
 #day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
-day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=11/day=21/"
+day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=06/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -31,14 +31,14 @@ default_args = {
     "owner": "Mayer",
     "retries": 2,
     "retry_delay": 0,
-    "execution_timeout": timedelta(seconds=60 * 5),
+    "execution_timeout": timedelta(seconds=60 * 500),
 }
 
 # DEFINE DAG
 @dag(
     start_date=datetime(2024, 1, 24), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 12 * * *',
+    schedule_interval=None, #'0 12 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
@@ -81,12 +81,7 @@ def boleto_alpe_to_trusted():
             "stage": Variable.get('STAGE')
         }
 
-        print(f"minio_params: { access_params }")
-
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
-
-        # REMOVER SOMENTE PARA TESTE
-        current_files = current_files[:10]
 
         transform_data_to_trusted(current_files, access_params)
 

@@ -6,7 +6,6 @@ from deltalake import write_deltalake
 from scripts.query_trino import query_trino
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-print(now)
 
 def transform_data_to_trusted(files_list, access_params):
 
@@ -30,14 +29,12 @@ def transform_data_to_trusted(files_list, access_params):
     # READ FILES AND TRANSFORM THEM TO DATAFRAME
     for file_name in files_list:
 
-        print(f"file_name: {file_name}")
-
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, 
                                  object_name=file_name)
         
-        df_boletos_raw = pd.read_parquet(BytesIO(file.data))
+        df_boletos_raw_temp = pd.read_parquet(BytesIO(file.data))
 
-        df_boletos_raw = pd.concat([df_boletos_raw, df_boletos_raw], ignore_index=True)
+        df_boletos_raw = pd.concat([df_boletos_raw, df_boletos_raw_temp], ignore_index=True)
 
     df_boletos_padrao = pd.DataFrame()
 
@@ -46,20 +43,7 @@ def transform_data_to_trusted(files_list, access_params):
         df_boletos_padrao = pd.concat([df_boletos_padrao, df_boletos_temp], ignore_index=True)
         
     df_boletos_padrao.set_index('id', inplace=True)
-
-    ids_query = str(df_boletos_padrao['sacado_id'].tolist()).replace('[', '(').replace(']', ')')
-
-    query = f"""
-            select id, nome_sacado, numero_cnpj_sacado from postgres.ccred_schema_{access_params['stage']}_default.sacado where id IN {ids_query}
-    """
-    print(f"query: {query}")
-
-    df_sacados_raw = query_trino(query, 
-                                access_params['trino_endpoint'],
-                                access_params['trino_port'],
-                                access_params['trino_user'],
-                                access_params['trino_password'])
-
+    
     ''''
         A partir daqui, o código é o mesmo do script de transformação do raw para o trusted.
     '''
@@ -76,12 +60,26 @@ def transform_data_to_trusted(files_list, access_params):
     if df_boletos_filtrado.empty:
         print("Não há boletos para serem contabilizados")
         return
+    
+    print(f"df_boletos_padrao: {df_boletos_filtrado['sacado_id'].value_counts()}")
+
+    ids_query = str(df_boletos_filtrado['sacado_id'].tolist()).replace('[', '(').replace(']', ')')
+
+    query = f"""
+            select id, nome_sacado, numero_cnpj_sacado from postgres.ccred_schema_{access_params['stage']}_default.sacado where id IN {ids_query}
+    """
+    print(f"query: {query}")
+    
+    df_sacados_raw = query_trino(query, 
+                                access_params['trino_endpoint'],
+                                access_params['trino_port'],
+                                access_params['trino_user'],
+                                access_params['trino_password'])
 
     # Filtrar campos relevantes
     df_boletos_filtrado = df_boletos_filtrado[['sacado_id', 'numero_nfe', 'numero_titulo',  
                                        'data_emissao', 'data_vencimento', 'valor_baixado', 
                                        'data_baixa', 'valor_face', 'last_modified_date', 'codigo_cedente_endossante']]
-
     
     # Filtrar tabela sacados para usar os dados de cnpj e razao social
     df_sacados_filtrado = df_sacados_raw[['id', 'numero_cnpj_sacado', 'nome_sacado']]
@@ -151,27 +149,29 @@ def transform_data_to_trusted(files_list, access_params):
     convert_dict = {'documento': str,
             'razao_social': str,
             'numero_titulo': str,
-            'data_emissao': 'datetime64[us]',
-            'data_vencimento': 'datetime64[us]',
-            'data_pagamento': 'datetime64[us]',
+            'data_emissao': str,
+            'data_vencimento': str,
+            'data_pagamento': str,
             'valor_titulo': float,
-            'data_hp': 'datetime64[us]',
+            'data_hp': str,
             'numero_parcela': int,
             'valor_pago': str,
             'fornecedor': str,
             'fonte': str,
-            'atualizado_em': 'datetime64[us, UTC-03:00]',
+            'atualizado_em': str,
             'tipo_documento': str,
             'year': int,
             'month': int,
             'day': int}
     
     for k, v in convert_dict.items():
+        if k not in df_boletos_final.columns:
+            df_boletos_final[k] = None
         df_boletos_final[k] = df_boletos_final[k].astype(v)
 
     df_boletos_final.replace({'nan': None}, inplace=True)
 
-    print(df_boletos_final.info())
+    print(f"info: {df_boletos_final.info()}")
 
     '''
         ENVIAR OS DADOS PARA O MINIO TRUSTED NO FORMATO DE DELTA TABLE
