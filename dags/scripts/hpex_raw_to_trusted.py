@@ -17,9 +17,9 @@ def transform_data_to_trusted(files_list, access_params):
 
     # CONECTAR NO MINIO RAW
     client = Minio(
-        access_params['endpoint_url_trusted'],
-        access_key = access_params['aws_access_key_id_trusted'],
-        secret_key = access_params['aws_secret_access_key_trusted'],
+        access_params['endpoint_url_raw'],
+        access_key = access_params['aws_access_key_id_raw'],
+        secret_key = access_params['aws_secret_access_key_raw'],
     )
 
     # READ FILES AND TRANSFORM THEM TO DATAFRAME

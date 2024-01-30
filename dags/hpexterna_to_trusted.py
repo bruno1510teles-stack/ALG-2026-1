@@ -12,7 +12,7 @@ from airflow.models import Variable
 from scripts.hpex_raw_to_trusted import transform_data_to_trusted
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_raw_dev"
+MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "hp-externa"
 HPEX_RAW_FOLDER = "hp_externa/"
 
