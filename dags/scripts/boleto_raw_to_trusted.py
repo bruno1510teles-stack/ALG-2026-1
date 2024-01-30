@@ -17,8 +17,6 @@ def transform_data_to_trusted(files_list, access_params):
     df_boletos_raw = pd.DataFrame()
     df_sacados_raw = pd.DataFrame()
 
-    print(f"minio_params INSIDE: {access_params}")
-
     # CONECTAR NO MINIO RAW
     client = Minio(
         access_params['endpoint_url_raw'],
@@ -30,24 +28,21 @@ def transform_data_to_trusted(files_list, access_params):
     print(f"last file: {files_list[-1]}")
 
     # READ FILES AND TRANSFORM THEM TO DATAFRAME
+    dfs = []
+
     for file_name in files_list:
-
         print(f"file_name: {file_name}")
-
-        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, 
-                                 object_name=file_name)
-        
+        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_boletos_raw_temp = pd.read_parquet(BytesIO(file.data))
+        dfs.append(df_boletos_raw_temp)
 
-        df_boletos_raw = pd.concat([df_boletos_raw, df_boletos_raw_temp], ignore_index=True)
+    df_boletos_raw = pd.concat(dfs, ignore_index=True)
 
-    df_boletos_padrao = pd.DataFrame()
+    # Convertendo para o DataFrame final
+    data = [v for v in df_boletos_raw['after'].values]
+    df_boletos_padrao = pd.DataFrame(data).set_index('id')
 
-    for k, v in df_boletos_raw['after'].items():
-        df_boletos_temp = pd.DataFrame.from_dict(v, orient='index').T
-        df_boletos_padrao = pd.concat([df_boletos_padrao, df_boletos_temp], ignore_index=True)
-        
-    df_boletos_padrao.set_index('id', inplace=True)
+    print("df_boletos_padrao OK")
     
     ''''
         A partir daqui, o código é o mesmo do script de transformação do raw para o trusted.
