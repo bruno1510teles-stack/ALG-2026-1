@@ -91,6 +91,12 @@ def boleto_alpe_to_trusted_dez():
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
+        middle = len(current_files) // 2
+
+        print(f"middle as { middle }")
+
+        current_files = current_files[:middle]
+
         transform_data_to_trusted(current_files, access_params)
 
     unique_clients = transform_raw_to_trusted(list_today_files.output)
