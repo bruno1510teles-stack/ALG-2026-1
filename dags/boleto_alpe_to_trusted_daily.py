@@ -42,7 +42,7 @@ default_args = {
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
 )
-def boleto_alpe_to_trusted_0712():
+def boleto_alpe_to_trusted_daily():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -89,4 +89,4 @@ def boleto_alpe_to_trusted_0712():
     # run order
     init_data_load >> list_today_files >> check_files >> unique_clients >> finish_data_load
 
-boleto_alpe_to_trusted_0712()
+boleto_alpe_to_trusted_daily()

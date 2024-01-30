@@ -19,11 +19,7 @@ BOLETOS_ALPE_RAW_FOLDER = f"topics/opdb.ccred_schema_{ Variable.get('STAGE') }_d
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-# day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=07/"
-day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/"
-# day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2024/month=01/" -> tudo menos hoje
-# day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=06/"
-# day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2024/month=01/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -46,7 +42,7 @@ default_args = {
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
 )
-def boleto_alpe_to_trusted_dez():
+def boleto_alpe_to_trusted_jan():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -84,26 +80,13 @@ def boleto_alpe_to_trusted_dez():
             "stage": Variable.get('STAGE')
         }
 
-        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+        current_files = current_files[:1000]
 
-        for file in current_files:
-            if "month=12/day=06/" in file or "month=12/day=07/" in file or "month=12/day=08/" in file:
-                print(f"Removing { file }")
-                current_files.remove(file)
-
-        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
-
-        middle = len(current_files) // 2
-
-        print(f"middle as { middle }")
-
-        current_files = current_files[:middle]
-
-        # transform_data_to_trusted(current_files, access_params)
+        transform_data_to_trusted(current_files, access_params)
 
     unique_clients = transform_raw_to_trusted(list_today_files.output)
 
     # run order
     init_data_load >> list_today_files >> check_files >> unique_clients >> finish_data_load
 
-boleto_alpe_to_trusted_dez()
+boleto_alpe_to_trusted_jan()
