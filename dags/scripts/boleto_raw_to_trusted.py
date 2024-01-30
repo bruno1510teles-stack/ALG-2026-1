@@ -26,8 +26,13 @@ def transform_data_to_trusted(files_list, access_params):
         secret_key = access_params['aws_secret_access_key_raw'],
     )
 
+    print(f"first file: {files_list[0]}")
+    print(f"last file: {files_list[-1]}")
+
     # READ FILES AND TRANSFORM THEM TO DATAFRAME
     for file_name in files_list:
+
+        print(f"file_name: {file_name}")
 
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, 
                                  object_name=file_name)
