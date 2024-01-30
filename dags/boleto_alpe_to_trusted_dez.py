@@ -84,8 +84,10 @@ def boleto_alpe_to_trusted_dez():
             "stage": Variable.get('STAGE')
         }
 
+        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+
         for file in current_files:
-            if "month=12/day=06/" in file or "month=12/day=07/" in file:
+            if "month=12/day=06/" in file or "month=12/day=07/" in file or "month=12/day=08/" in file:
                 print(f"Removing { file }")
                 current_files.remove(file)
 
@@ -97,7 +99,7 @@ def boleto_alpe_to_trusted_dez():
 
         current_files = current_files[:middle]
 
-        transform_data_to_trusted(current_files, access_params)
+        # transform_data_to_trusted(current_files, access_params)
 
     unique_clients = transform_raw_to_trusted(list_today_files.output)
 
