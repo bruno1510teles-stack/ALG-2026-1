@@ -132,7 +132,7 @@ def transform_data_to_refined(files_list, access_params):
             df_refined_motor[k] = None
         df_refined_motor[k] = df_refined_motor[k].astype(v, errors='ignore')
 
-    df_refined_motor.replace({'nan': None}, inplace=True)
+    # df_refined_motor.replace({'nan': None}, inplace=True)
 
     print(f"info: {df_refined_motor.info()}")
 
