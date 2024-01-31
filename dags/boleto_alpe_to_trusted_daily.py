@@ -84,7 +84,9 @@ def boleto_alpe_to_trusted_daily():
 
         mid = len(current_files) // 2
 
-        current_files = current_files[:mid]
+        current_files = current_files[mid:]
+
+        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
         transform_data_to_trusted(current_files, access_params)
 
