@@ -73,8 +73,6 @@ def transform_data_to_refined(files_list, access_params):
     df_refined_motor['month'] = now.month
     df_refined_motor['day'] = now.day
 
-    df_refined_motor.to_csv('include/df_refined_motor.csv')
-
     storage_options_refined = {
         "AWS_ACCESS_KEY_ID":access_params['aws_access_key_id_refined'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
