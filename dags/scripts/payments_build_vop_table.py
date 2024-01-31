@@ -130,7 +130,7 @@ def transform_data_to_refined(files_list, access_params):
     for k, v in convert_dict.items():
         if k not in df_refined_motor.columns:
             df_refined_motor[k] = None
-        df_refined_motor[k] = df_refined_motor[k].astype(v)
+        df_refined_motor[k] = df_refined_motor[k].astype(v, errors='ignore')
 
     df_refined_motor.replace({'nan': None}, inplace=True)
 
