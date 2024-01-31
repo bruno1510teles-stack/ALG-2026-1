@@ -19,10 +19,11 @@ BOLETOS_ALPE_RAW_FOLDER = f"topics/opdb.ccred_schema_{ Variable.get('STAGE') }_d
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2024/month=01/day=1"
+day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2024/month=01/day=2"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
+    print(len(files_to_process))
     return len(files_to_process) > 0
 
 # DEFINE DEFAULT ARGS
@@ -82,9 +83,9 @@ def boleto_alpe_to_trusted_daily():
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
-        mid = len(current_files) // 2
-
-        current_files = current_files[mid:]
+        if len(current_files) > 2_000:
+            mid = len(current_files) // 2
+            current_files = current_files[mid:]
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
