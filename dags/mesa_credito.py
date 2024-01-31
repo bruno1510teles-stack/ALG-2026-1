@@ -19,8 +19,7 @@ RESPONSE_MESA_RAW_FOLDER = f"topics/opdb.inrp_{ Variable.get('STAGE') }_default.
 now_tz = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now_tz - timedelta(days=1)
 
-# day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
-day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year=2024/month=01/day=30/"
+day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -39,9 +38,9 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 31), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval=None, #'0 9 * * *',
+    schedule_interval='30 12 * * *',
     default_args=default_args,
-    catchup=True,
+    catchup=False,
     tags=['development', 'elt', 'minio', 'mesa', 'motor v1']
 )
 def mesa_credito():
