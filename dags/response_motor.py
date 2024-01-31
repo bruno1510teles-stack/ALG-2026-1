@@ -42,7 +42,7 @@ default_args = {
     catchup=False,
     tags=['prod', 'elt', 'minio', 'motor v1']
 )
-def response_engine_v1():
+def response_engine_v1_to_trusted():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -96,4 +96,4 @@ def response_engine_v1():
     # run order
     init_data_load >> motor_files >> check_files >> files_at_trusted >> finish_data_load
 
-response_engine_v1()
+response_engine_v1_to_trusted()
