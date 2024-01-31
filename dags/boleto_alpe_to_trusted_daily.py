@@ -19,7 +19,7 @@ BOLETOS_ALPE_RAW_FOLDER = f"topics/opdb.ccred_schema_{ Variable.get('STAGE') }_d
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2023/month=12/day=2"
+day_to_process= f"{BOLETOS_ALPE_RAW_FOLDER}year=2024/month=01/day=1"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
