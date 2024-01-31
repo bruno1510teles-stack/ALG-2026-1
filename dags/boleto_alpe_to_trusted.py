@@ -23,6 +23,7 @@ day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yes
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
+    print(len(files_to_process))
     return len(files_to_process) > 0
 
 # DEFINE DEFAULT ARGS
@@ -37,7 +38,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 30), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 12 * * *',
+    schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
