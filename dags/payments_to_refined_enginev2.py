@@ -21,8 +21,7 @@ BOLETOS_ALPE_RAW_FOLDER = "boletos/"
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-# day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={yesterday.month}/day=30/"
-day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={yesterday.month}/"
+day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
