@@ -73,6 +73,69 @@ def transform_data_to_refined(files_list, access_params):
     df_refined_motor['month'] = now.month
     df_refined_motor['day'] = now.day
 
+    convert_dict = {'documento_raiz':str,
+        'VOP3M':float,
+        'VOPAVista3M':float,
+        'VOPAPrazo3M':float,
+        'VOPAPrazoParcelado3M':float,
+        'MediaVOP3M':float,
+        'MaxVOP3M':float,
+        'TicketMedio3M':float,
+        'MediaDifDiasFaturamento3M':float,
+        'PrazoMedio3M':float,
+        'VOP6M':float,
+        'VOPAVista6M':float,
+        'VOPAPrazo6M':float,
+        'VOPAPrazoParcelado6M':float,
+        'MediaVOP6M':float,
+        'MaxVOP6M':float,
+        'TicketMedio6M':float,
+        'MediaDifDiasFaturamento6M':float,
+        'PrazoMedio6M':float,
+        'VOP12M':float,
+        'VOPAVista12M':float,
+        'VOPAPrazo12M':float,
+        'VOPAPrazoParcelado12M':float,
+        'MediaVOP12M':float,
+        'MaxVOP12M':float,
+        'TicketMedio12M':float,
+        'MediaDifDiasFaturamento12M':float,
+        'PrazoMedio12M':float,
+        'PercentualPagoEmDia3M':float,
+        'PercentualPagoEmDia12M':float,
+        'PercentualMedioDeAlavancagemPeriodo3M':float,
+        'PercentualMedioDeAlavancagemPeriodo6M':float,
+        'PercentualMedioDeAlavancagemPeriodo12M':float,
+        'PercentualMedioDeAlavancagemFinal3M':float,
+        'PercentualMedioDeAlavancagemFinal6M':float,
+        'PercentualMedioDeAlavancagemFinal12M':float,
+        'FaixaPrazo':str,
+        'FaixaAlavancagemPeriodo12M':str,
+        'FaixaAlavancagemFinal12M':str,
+        'FaixaMediaDifDiasFaturamento12M':str,
+        'IsPreSafra':bool,
+        'QtdTitulos3M':int,
+        'QtdTitulos6M':int ,
+        'MesMaxVop12M':int,
+        'QtdTitulos12M':int,
+        'Ever10':int,
+        'Ever30':int,
+        'Ever60':int,
+        'Ever90':int,
+        'Over10':int,
+        'Over30':int,
+        'Over60':int,
+        'Over90':int}
+    
+    for k, v in convert_dict.items():
+        if k not in df_refined_motor.columns:
+            df_refined_motor[k] = None
+        df_refined_motor[k] = df_refined_motor[k].astype(v)
+
+    df_refined_motor.replace({'nan': None}, inplace=True)
+
+    print(f"info: {df_refined_motor.info()}")
+
     storage_options_refined = {
         "AWS_ACCESS_KEY_ID":access_params['aws_access_key_id_refined'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
