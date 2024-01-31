@@ -12,13 +12,14 @@ from airflow.models import Variable
 from scripts.hpex_raw_to_trusted import transform_data_to_trusted
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_raw"
+MINIO_CONN_RAW = "minio_raw_dev"
 MINIO_RAW_BUCKET = "hp-externa"
 HPEX_RAW_FOLDER = "hp_externa/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
 day_to_process = f"{HPEX_RAW_FOLDER}year={now.year}/month={now.month}/day={str(now.day).zfill(2)}/"
+# day_to_process = f"{HPEX_RAW_FOLDER}year={now.year}/month={now.month}/day=30/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -34,9 +35,9 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 1, 24), # definir quando for rodar automatico
+    start_date=datetime(2024, 1, 31),
     max_active_runs=1,
-    schedule_interval=None, #'0 12 * * *',
+    schedule_interval=None, 
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'HPEX']

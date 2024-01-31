@@ -13,6 +13,8 @@ def transform_data_to_trusted(files_list, access_params):
     BUCKET_SOURCE_TRUSTED = "payments"
     HPEX_TRUSTED_FOLDER  = "boletos/"
 
+    print("access_params: ", access_params)
+
     df_all = pd.DataFrame()
 
     # CONECTAR NO MINIO RAW
@@ -22,15 +24,15 @@ def transform_data_to_trusted(files_list, access_params):
         secret_key = access_params['aws_secret_access_key_raw'],
     )
 
-    # READ FILES AND TRANSFORM THEM TO DATAFRAME
+    dfs = []
+
     for file_name in files_list:
-
-        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, 
-                                 object_name=file_name)
-        
+        print(f"file_name: {file_name}")
+        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_hpex_raw_temp = pd.read_parquet(BytesIO(file.data))
+        dfs.append(df_hpex_raw_temp)
 
-        df_all = pd.concat([df_all, df_hpex_raw_temp], ignore_index=True)
+    df_all = pd.concat(dfs, ignore_index=True)
     '''
         A partir daqui, o código é o mesmo do script de transformação do raw para o trusted.
     '''
