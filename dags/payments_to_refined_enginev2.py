@@ -40,9 +40,9 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 1, 24), # definir quando for rodar automatico
+    start_date=datetime(2024, 2,1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval=None, #'0 12 * * *',
+    schedule_interval='0 12 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
