@@ -20,7 +20,7 @@ now_tz = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now_tz - timedelta(days=1)
 
 # day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
-day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year=2024/month=01/day=1"
+day_to_process = f"{RESPONSE_MESA_RAW_FOLDER}year=2024/month=01/day=2"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
