@@ -75,7 +75,7 @@ def hpex_summary_overview():
             "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
             "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
             "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
-            "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY "),
+            "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
             "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
             "trino_port": Variable.get("TRINO_PORT"),
             "trino_user": Variable.get("TRINO_USER"),
