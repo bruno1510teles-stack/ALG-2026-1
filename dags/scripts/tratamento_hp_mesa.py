@@ -50,8 +50,8 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     qtde_titulos_abertos_vencidos = copy.copy(base)
     #Pegando somente casos válidos para análise
-    qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[qtde_titulos_abertos_vencidos['DT_VENCIMENTO'] < qtde_titulos_abertos_vencidos['DT_HP']]
-    qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[pd.isna(qtde_titulos_abertos_vencidos['DT_PAGAMENTO'])]
+    qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[qtde_titulos_abertos_vencidos['DATA_VENCIMENTO'] < qtde_titulos_abertos_vencidos['DATA_HP']]
+    qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[pd.isna(qtde_titulos_abertos_vencidos['DATA_PAGAMENTO'])]
     qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
@@ -65,8 +65,8 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     valor_titulos_abertos_vencidos = copy.copy(base)
     #Pegando somente casos válidos para análise
-    valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos[valor_titulos_abertos_vencidos['DT_VENCIMENTO'] < valor_titulos_abertos_vencidos['DT_HP']]
-    valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos[pd.isna(valor_titulos_abertos_vencidos['DT_PAGAMENTO'])]
+    valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos[valor_titulos_abertos_vencidos['DATA_VENCIMENTO'] < valor_titulos_abertos_vencidos['DATA_HP']]
+    valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos[pd.isna(valor_titulos_abertos_vencidos['DATA_PAGAMENTO'])]
     valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
@@ -80,8 +80,8 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     qtde_titulos_abertos_vincendo = copy.copy(base)
     #Pegando somente casos válidos para análise
-    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[qtde_titulos_abertos_vincendo['DT_VENCIMENTO'] > qtde_titulos_abertos_vincendo['DT_HP']]
-    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[pd.isna(qtde_titulos_abertos_vincendo['DT_PAGAMENTO'])]
+    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[qtde_titulos_abertos_vincendo['DATA_VENCIMENTO'] > qtde_titulos_abertos_vincendo['DATA_HP']]
+    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[pd.isna(qtde_titulos_abertos_vincendo['DATA_PAGAMENTO'])]
     qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
@@ -95,8 +95,8 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     valor_titulos_abertos_vincendo = copy.copy(base)
     #Pegando somente casos válidos para análise
-    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[valor_titulos_abertos_vincendo['DT_VENCIMENTO'] > valor_titulos_abertos_vincendo['DT_HP']]
-    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[pd.isna(valor_titulos_abertos_vincendo['DT_PAGAMENTO'])]
+    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[valor_titulos_abertos_vincendo['DATA_VENCIMENTO'] > valor_titulos_abertos_vincendo['DATA_HP']]
+    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[pd.isna(valor_titulos_abertos_vincendo['DATA_PAGAMENTO'])]
     valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
@@ -110,13 +110,13 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     prazo_medio_abertos_vencidos = copy.copy(base)
     #Pegando somente casos válidos para análise
-    prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos[prazo_medio_abertos_vencidos['DT_VENCIMENTO'] < prazo_medio_abertos_vencidos['DT_HP']]
-    prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos[pd.isna(prazo_medio_abertos_vencidos['DT_PAGAMENTO'])]
+    prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos[prazo_medio_abertos_vencidos['DATA_VENCIMENTO'] < prazo_medio_abertos_vencidos['DATA_HP']]
+    prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos[pd.isna(prazo_medio_abertos_vencidos['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    prazo_medio_abertos_vencidos['DT_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_vencidos['DT_VENCIMENTO'])
-    prazo_medio_abertos_vencidos['DT_FATURAMENTO'] = pd.to_datetime(prazo_medio_abertos_vencidos['DT_FATURAMENTO'])
+    prazo_medio_abertos_vencidos['DATA_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_vencidos['DATA_VENCIMENTO'])
+    prazo_medio_abertos_vencidos['DATA_EMISSAO'] = pd.to_datetime(prazo_medio_abertos_vencidos['DATA_EMISSAO'])
 
-    prazo_medio_abertos_vencidos['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_vencidos['DT_VENCIMENTO'] - prazo_medio_abertos_vencidos['DT_FATURAMENTO']).dt.days
+    prazo_medio_abertos_vencidos['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_vencidos['DATA_VENCIMENTO'] - prazo_medio_abertos_vencidos['DATA_EMISSAO']).dt.days
     prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
@@ -130,13 +130,13 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     prazo_medio_abertos_vincendos = copy.copy(base)
     #Pegando somente casos válidos para análise
-    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[prazo_medio_abertos_vincendos['DT_VENCIMENTO'] > prazo_medio_abertos_vincendos['DT_HP']]
-    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[pd.isna(prazo_medio_abertos_vincendos['DT_PAGAMENTO'])]
+    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] > prazo_medio_abertos_vincendos['DATA_HP']]
+    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[pd.isna(prazo_medio_abertos_vincendos['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    prazo_medio_abertos_vincendos['DT_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DT_VENCIMENTO'])
-    prazo_medio_abertos_vincendos['DT_FATURAMENTO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DT_FATURAMENTO'])
+    prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DATA_VENCIMENTO'])
+    prazo_medio_abertos_vincendos['DATA_EMISSAO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DATA_EMISSAO'])
 
-    prazo_medio_abertos_vincendos['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_vincendos['DT_VENCIMENTO'] - prazo_medio_abertos_vincendos['DT_FATURAMENTO']).dt.days
+    prazo_medio_abertos_vincendos['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] - prazo_medio_abertos_vincendos['DATA_EMISSAO']).dt.days
     prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
@@ -150,7 +150,7 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     qtde_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    qtde_titulos_liquidados = qtde_titulos_liquidados[pd.notna(qtde_titulos_liquidados['DT_PAGAMENTO'])]
+    qtde_titulos_liquidados = qtde_titulos_liquidados[pd.notna(qtde_titulos_liquidados['DATA_PAGAMENTO'])]
     qtde_titulos_liquidados = qtde_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
@@ -164,7 +164,7 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     valor_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    valor_titulos_liquidados = valor_titulos_liquidados[pd.notna(valor_titulos_liquidados['DT_PAGAMENTO'])]
+    valor_titulos_liquidados = valor_titulos_liquidados[pd.notna(valor_titulos_liquidados['DATA_PAGAMENTO'])]
     valor_titulos_liquidados = valor_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
@@ -178,12 +178,12 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     prazo_medio_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    prazo_medio_titulos_liquidados = prazo_medio_titulos_liquidados[pd.notna(prazo_medio_titulos_liquidados['DT_PAGAMENTO'])]
+    prazo_medio_titulos_liquidados = prazo_medio_titulos_liquidados[pd.notna(prazo_medio_titulos_liquidados['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    prazo_medio_titulos_liquidados['DT_VENCIMENTO'] = pd.to_datetime(prazo_medio_titulos_liquidados['DT_VENCIMENTO'])
-    prazo_medio_titulos_liquidados['DT_FATURAMENTO'] = pd.to_datetime(prazo_medio_titulos_liquidados['DT_FATURAMENTO'])
+    prazo_medio_titulos_liquidados['DATA_VENCIMENTO'] = pd.to_datetime(prazo_medio_titulos_liquidados['DATA_VENCIMENTO'])
+    prazo_medio_titulos_liquidados['DATA_EMISSAO'] = pd.to_datetime(prazo_medio_titulos_liquidados['DATA_EMISSAO'])
 
-    prazo_medio_titulos_liquidados['AUX_PRAZO_MEDIO'] = (prazo_medio_titulos_liquidados['DT_VENCIMENTO'] - prazo_medio_titulos_liquidados['DT_FATURAMENTO']).dt.days
+    prazo_medio_titulos_liquidados['AUX_PRAZO_MEDIO'] = (prazo_medio_titulos_liquidados['DATA_VENCIMENTO'] - prazo_medio_titulos_liquidados['DATA_EMISSAO']).dt.days
     prazo_medio_titulos_liquidados = prazo_medio_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
@@ -197,13 +197,13 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     atraso_medio_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    atraso_medio_titulos_liquidados = atraso_medio_titulos_liquidados[pd.notna(atraso_medio_titulos_liquidados['DT_PAGAMENTO'])]
+    atraso_medio_titulos_liquidados = atraso_medio_titulos_liquidados[pd.notna(atraso_medio_titulos_liquidados['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    atraso_medio_titulos_liquidados['DT_VENCIMENTO'] = pd.to_datetime(atraso_medio_titulos_liquidados['DT_VENCIMENTO'])
-    atraso_medio_titulos_liquidados['DT_PAGAMENTO'] = pd.to_datetime(atraso_medio_titulos_liquidados['DT_PAGAMENTO'])
+    atraso_medio_titulos_liquidados['DATA_VENCIMENTO'] = pd.to_datetime(atraso_medio_titulos_liquidados['DATA_VENCIMENTO'])
+    atraso_medio_titulos_liquidados['DATA_PAGAMENTO'] = pd.to_datetime(atraso_medio_titulos_liquidados['DATA_PAGAMENTO'])
 
     # Calculo Diferenças Dias (Pagamento - Vencimento)
-    atraso_medio_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_medio_titulos_liquidados['DT_PAGAMENTO'] - atraso_medio_titulos_liquidados['DT_VENCIMENTO']).dt.days
+    atraso_medio_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_medio_titulos_liquidados['DATA_PAGAMENTO'] - atraso_medio_titulos_liquidados['DATA_VENCIMENTO']).dt.days
 
     atraso_medio_titulos_liquidados = atraso_medio_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'mean'
@@ -218,13 +218,13 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     atraso_max_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    atraso_max_titulos_liquidados = atraso_max_titulos_liquidados[pd.notna(atraso_max_titulos_liquidados['DT_PAGAMENTO'])]
+    atraso_max_titulos_liquidados = atraso_max_titulos_liquidados[pd.notna(atraso_max_titulos_liquidados['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    atraso_max_titulos_liquidados['DT_VENCIMENTO'] = pd.to_datetime(atraso_max_titulos_liquidados['DT_VENCIMENTO'])
-    atraso_max_titulos_liquidados['DT_PAGAMENTO'] = pd.to_datetime(atraso_max_titulos_liquidados['DT_PAGAMENTO'])
+    atraso_max_titulos_liquidados['DATA_VENCIMENTO'] = pd.to_datetime(atraso_max_titulos_liquidados['DATA_VENCIMENTO'])
+    atraso_max_titulos_liquidados['DATA_PAGAMENTO'] = pd.to_datetime(atraso_max_titulos_liquidados['DATA_PAGAMENTO'])
 
     # Calculo Diferenças Dias (Pagamento - Vencimento)
-    atraso_max_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_max_titulos_liquidados['DT_PAGAMENTO'] - atraso_max_titulos_liquidados['DT_VENCIMENTO']).dt.days
+    atraso_max_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_max_titulos_liquidados['DATA_PAGAMENTO'] - atraso_max_titulos_liquidados['DATA_VENCIMENTO']).dt.days
 
     atraso_max_titulos_liquidados = atraso_max_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'max'
@@ -239,13 +239,13 @@ def transform_data_to_refined(files_list, access_params):
     # %%
     atraso_min_titulos_liquidados = copy.copy(base)
     #Pegando somente casos válidos para análise
-    atraso_min_titulos_liquidados = atraso_min_titulos_liquidados[pd.notna(atraso_min_titulos_liquidados['DT_PAGAMENTO'])]
+    atraso_min_titulos_liquidados = atraso_min_titulos_liquidados[pd.notna(atraso_min_titulos_liquidados['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    atraso_min_titulos_liquidados['DT_VENCIMENTO'] = pd.to_datetime(atraso_min_titulos_liquidados['DT_VENCIMENTO'])
-    atraso_min_titulos_liquidados['DT_PAGAMENTO'] = pd.to_datetime(atraso_min_titulos_liquidados['DT_PAGAMENTO'])
+    atraso_min_titulos_liquidados['DATA_VENCIMENTO'] = pd.to_datetime(atraso_min_titulos_liquidados['DATA_VENCIMENTO'])
+    atraso_min_titulos_liquidados['DATA_PAGAMENTO'] = pd.to_datetime(atraso_min_titulos_liquidados['DATA_PAGAMENTO'])
 
     # Calculo Diferenças Dias (Pagamento - Vencimento)
-    atraso_min_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_min_titulos_liquidados['DT_PAGAMENTO'] - atraso_min_titulos_liquidados['DT_VENCIMENTO']).dt.days
+    atraso_min_titulos_liquidados['DIF_DIAS_PAGAMENTO'] = (atraso_min_titulos_liquidados['DATA_PAGAMENTO'] - atraso_min_titulos_liquidados['DATA_VENCIMENTO']).dt.days
 
     atraso_min_titulos_liquidados = atraso_min_titulos_liquidados.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'min'
