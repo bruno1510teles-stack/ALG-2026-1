@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.payments_refined_engine_v2 import transform_payments_engine_v2
+from scripts.tratamento_hp_mesa import transform_data_to_refined
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
@@ -19,7 +19,7 @@ BOLETOS_ALPE_RAW_FOLDER = "boletos/"
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(days=1)
 
-data = '31/01/2024'
+data = '01/02/2024'
 yesterday = datetime.strptime(data, '%d/%m/%Y')
 day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
@@ -86,7 +86,7 @@ def hpex_summary_overview():
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
-        transform_data_to_trusted(current_files, access_params)
+        transform_data_to_refined(current_files, access_params)
 
     unique_clients = hpex_summary_overview(list_today_files.output)
 
