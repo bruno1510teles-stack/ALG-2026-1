@@ -38,7 +38,7 @@ def transform_data_to_refined(files_list, access_params):
         file = client.get_object(bucket_name=BUCKET_SOURCE_TRUSTED, object_name=file_name)
         df_hpex_raw_temp = pd.read_parquet(BytesIO(file.data))
         dfs.append(df_hpex_raw_temp)
-        print(df_hpex_raw_temp.to_string)
+        print(df_hpex_raw_temp.columns)
         
     base = pd.concat(dfs, ignore_index=True)
     print(base.head(10))
