@@ -255,7 +255,29 @@ def transform_data_to_refined(files_list, access_params):
     atraso_min_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MIN_TITULOS_LIQUIDADOS']
 
     atraso_min_titulos_liquidados
-
+    
+    dfs_inter = [
+        valor_titulos_abertos_vencidos,
+        qtde_titulos_abertos_vincendo,
+        valor_titulos_abertos_vincendo,
+        prazo_medio_abertos_vencidos,
+        prazo_medio_abertos_vincendos,
+        qtde_titulos_liquidados,
+        valor_titulos_liquidados,
+        prazo_medio_titulos_liquidados,
+        atraso_medio_titulos_liquidados,
+        atraso_max_titulos_liquidados,
+        atraso_min_titulos_liquidados]
+    
+    for df_inter in dfs_inter:
+        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO', 'FORNECEDOR'])
+        
+        df_final = qtde_titulos_abertos_vencidos
+        
+        df_final['year'] = '2024'
+        df_final['month'] = '2'
+        df_final['day'] = '15'
+        
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
@@ -263,10 +285,9 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
-    print(BUCKET_SOURCE_REFINED)
-    print(REFINED_FOLDER)
+
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
-                    base, 
+                    df_final, 
                     partition_by=["year", "month", "day"],
                     storage_options=storage_options,
                     mode="append",
