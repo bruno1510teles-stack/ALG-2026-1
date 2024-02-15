@@ -41,7 +41,7 @@ def transform_data_to_refined(files_list, access_params):
         print(df_hpex_raw_temp.columns)
         
     base = pd.concat(dfs, ignore_index=True)
-    print(base.head(10))
+    print(df_hpex_raw_temp.columns)
     
     # %% [markdown]
     # ## Começando Tratamento dos dados
