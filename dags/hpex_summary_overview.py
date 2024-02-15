@@ -39,7 +39,7 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 3, 30), # definir quando for rodar automatico
+    start_date=datetime(2024, 1, 31), # definir quando for rodar automatico
     max_active_runs=1,
     schedule_interval='0 10 * * *',
     default_args=default_args,
