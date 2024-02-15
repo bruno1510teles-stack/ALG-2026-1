@@ -279,9 +279,9 @@ def transform_data_to_refined(files_list, access_params):
         df_final['day'] = '15'
         
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_refined']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
