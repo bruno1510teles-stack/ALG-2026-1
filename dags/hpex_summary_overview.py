@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.boleto_raw_to_trusted import transform_data_to_trusted
+from scripts.tratamento_hp_mesa import transform_data_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
@@ -39,7 +39,7 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 3, 30), # definir quando for rodar automatico
+    start_date=datetime(2024, 1, 30), # definir quando for rodar automatico
     max_active_runs=1,
     schedule_interval='0 10 * * *',
     default_args=default_args,
