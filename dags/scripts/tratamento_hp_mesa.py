@@ -38,10 +38,9 @@ def transform_data_to_refined(files_list, access_params):
         file = client.get_object(bucket_name=BUCKET_SOURCE_TRUSTED, object_name=file_name)
         df_hpex_raw_temp = pd.read_parquet(BytesIO(file.data))
         dfs.append(df_hpex_raw_temp)
-        print(df_hpex_raw_temp.columns)
         
     base = pd.concat(dfs, ignore_index=True)
-    print(df_hpex_raw_temp.columns)
+
     
     # %% [markdown]
     # ## Começando Tratamento dos dados
@@ -51,7 +50,7 @@ def transform_data_to_refined(files_list, access_params):
 
     # %%
     qtde_titulos_abertos_vencidos = copy.copy(base)
-    print(qtde_titulos_abertos_vencidos.head(10))
+
     #Pegando somente casos válidos para análise
     qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[qtde_titulos_abertos_vencidos['DATA_VENCIMENTO'] < qtde_titulos_abertos_vencidos['DATA_HP']]
     qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[pd.isna(qtde_titulos_abertos_vencidos['DATA_PAGAMENTO'])]
@@ -264,8 +263,9 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
-
-    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED }/{REFINED_FOLDER}", 
+    print(BUCKET_SOURCE_REFINED)
+    print(REFINED_FOLDER)
+    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     base, 
                     partition_by=["year", "month", "day"],
                     storage_options=storage_options,
