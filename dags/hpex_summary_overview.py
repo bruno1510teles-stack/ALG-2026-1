@@ -14,14 +14,14 @@ from scripts.tratamento_hp_mesa import transform_data_to_refined
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
 MINIO_RAW_BUCKET = "payments"
-BOLETOS_ALPE_RAW_FOLDER = "boletos/"
+BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(days=1)
 
-data = '01/02/2024'
+data = '31/01/2024'
 yesterday = datetime.strptime(data, '%d/%m/%Y')
-day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
 
 # DEFINE FUNCTIONS
