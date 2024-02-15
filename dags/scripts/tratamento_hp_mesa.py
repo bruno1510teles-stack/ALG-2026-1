@@ -41,6 +41,7 @@ def transform_data_to_refined(files_list, access_params):
 
     base = pd.concat(dfs, ignore_index=True)
 
+    print(base.head(10))
     # %% [markdown]
     # ## Começando Tratamento dos dados
 
@@ -49,6 +50,7 @@ def transform_data_to_refined(files_list, access_params):
 
     # %%
     qtde_titulos_abertos_vencidos = copy.copy(base)
+    print(qtde_titulos_abertos_vencidos.head(10))
     #Pegando somente casos válidos para análise
     qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[qtde_titulos_abertos_vencidos['DATA_VENCIMENTO'] < qtde_titulos_abertos_vencidos['DATA_HP']]
     qtde_titulos_abertos_vencidos = qtde_titulos_abertos_vencidos[pd.isna(qtde_titulos_abertos_vencidos['DATA_PAGAMENTO'])]
