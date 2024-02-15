@@ -5,7 +5,7 @@ from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
 
-from scripts.payments_refined_engine_v2 import transform_payments_engine_v2
+from scripts.payments_build_vop_table import transform_data_to_refined
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
