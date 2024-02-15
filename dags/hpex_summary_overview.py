@@ -17,9 +17,12 @@ MINIO_RAW_BUCKET = "payments"
 BOLETOS_ALPE_RAW_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = now - timedelta(days=1)
+#yesterday = now - timedelta(days=1)
 
+data = '31/01/2024'
+yesterday = datetime.strptime(data, '%d/%m/%Y')
 day_to_process = f"{BOLETOS_ALPE_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -28,7 +31,7 @@ def check_files_to_processed(files_to_process):
 
 # DEFINE DEFAULT ARGS
 default_args = {
-    "owner": "João",
+    "owner": "Mayer",
     "retries": 2,
     "retry_delay": 0,
     "execution_timeout": timedelta(seconds=60 * 50),
