@@ -10,6 +10,7 @@ from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
 
+
 # %% [markdown]
 # Carregando conexões
 
@@ -59,8 +60,6 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     qtde_titulos_abertos_vencidos.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_VENCIDOS']
 
-    qtde_titulos_abertos_vencidos
-
     # %% [markdown]
     # # Valor total títulos em aberto(vencido);
 
@@ -80,31 +79,31 @@ def transform_data_to_refined(files_list, access_params):
     # # Quantidade de títulos em aberto (vincendo);
 
     # %%
-    qtde_titulos_abertos_vincendo = copy.copy(base)
+    qtde_titulos_abertos_a_vencer = copy.copy(base)
     #Pegando somente casos válidos para análise
-    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[qtde_titulos_abertos_vincendo['DATA_VENCIMENTO'] > qtde_titulos_abertos_vincendo['DATA_HP']]
-    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo[pd.isna(qtde_titulos_abertos_vincendo['DATA_PAGAMENTO'])]
-    qtde_titulos_abertos_vincendo = qtde_titulos_abertos_vincendo.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    qtde_titulos_abertos_a_vencer = qtde_titulos_abertos_a_vencer[qtde_titulos_abertos_a_vencer['DATA_VENCIMENTO'] > qtde_titulos_abertos_a_vencer['DATA_HP']]
+    qtde_titulos_abertos_a_vencer = qtde_titulos_abertos_a_vencer[pd.isna(qtde_titulos_abertos_a_vencer['DATA_PAGAMENTO'])]
+    qtde_titulos_abertos_a_vencer = qtde_titulos_abertos_a_vencer.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
-    qtde_titulos_abertos_vincendo.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_VINCENDO']
+    qtde_titulos_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_A_VENCER']
 
-    qtde_titulos_abertos_vincendo
+    qtde_titulos_abertos_a_vencer
 
     # %% [markdown]
     # # Valor total de títulos em aberto (vincendo);
 
     # %%
-    valor_titulos_abertos_vincendo = copy.copy(base)
+    valor_titulos_abertos_a_vencer = copy.copy(base)
     #Pegando somente casos válidos para análise
-    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[valor_titulos_abertos_vincendo['DATA_VENCIMENTO'] > valor_titulos_abertos_vincendo['DATA_HP']]
-    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo[pd.isna(valor_titulos_abertos_vincendo['DATA_PAGAMENTO'])]
-    valor_titulos_abertos_vincendo = valor_titulos_abertos_vincendo.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    valor_titulos_abertos_a_vencer = valor_titulos_abertos_a_vencer[valor_titulos_abertos_a_vencer['DATA_VENCIMENTO'] > valor_titulos_abertos_a_vencer['DATA_HP']]
+    valor_titulos_abertos_a_vencer = valor_titulos_abertos_a_vencer[pd.isna(valor_titulos_abertos_a_vencer['DATA_PAGAMENTO'])]
+    valor_titulos_abertos_a_vencer = valor_titulos_abertos_a_vencer.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
-    valor_titulos_abertos_vincendo.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_VINCENDO']
+    valor_titulos_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_A_VENCER']
 
-    valor_titulos_abertos_vincendo
+    valor_titulos_abertos_a_vencer
 
     # %% [markdown]
     # # Prazo Médio das operações em aberto(vencido);
@@ -130,21 +129,21 @@ def transform_data_to_refined(files_list, access_params):
     # # Prazo Médio das operações em aberto(vincendo);
 
     # %%
-    prazo_medio_abertos_vincendos = copy.copy(base)
+    prazo_medio_abertos_a_vencer = copy.copy(base)
     #Pegando somente casos válidos para análise
-    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] > prazo_medio_abertos_vincendos['DATA_HP']]
-    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos[pd.isna(prazo_medio_abertos_vincendos['DATA_PAGAMENTO'])]
+    prazo_medio_abertos_a_vencer = prazo_medio_abertos_a_vencer[prazo_medio_abertos_a_vencer['DATA_VENCIMENTO'] > prazo_medio_abertos_a_vencer['DATA_HP']]
+    prazo_medio_abertos_a_vencer = prazo_medio_abertos_a_vencer[pd.isna(prazo_medio_abertos_a_vencer['DATA_PAGAMENTO'])]
     # Criando aux para cálculo prazo médio
-    prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DATA_VENCIMENTO'])
-    prazo_medio_abertos_vincendos['DATA_EMISSAO'] = pd.to_datetime(prazo_medio_abertos_vincendos['DATA_EMISSAO'])
+    prazo_medio_abertos_a_vencer['DATA_VENCIMENTO'] = pd.to_datetime(prazo_medio_abertos_a_vencer['DATA_VENCIMENTO'])
+    prazo_medio_abertos_a_vencer['DATA_EMISSAO'] = pd.to_datetime(prazo_medio_abertos_a_vencer['DATA_EMISSAO'])
 
-    prazo_medio_abertos_vincendos['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_vincendos['DATA_VENCIMENTO'] - prazo_medio_abertos_vincendos['DATA_EMISSAO']).dt.days
-    prazo_medio_abertos_vincendos = prazo_medio_abertos_vincendos.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    prazo_medio_abertos_a_vencer['AUX_PRAZO_MEDIO'] = (prazo_medio_abertos_a_vencer['DATA_VENCIMENTO'] - prazo_medio_abertos_a_vencer['DATA_EMISSAO']).dt.days
+    prazo_medio_abertos_a_vencer = prazo_medio_abertos_a_vencer.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
-    prazo_medio_abertos_vincendos.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_VINCENDOS']
+    prazo_medio_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_A_VENCER']
 
-    prazo_medio_abertos_vincendos
+    prazo_medio_abertos_a_vencer
 
     # %% [markdown]
     # # Quantidade de títulos liquidados;
@@ -258,10 +257,10 @@ def transform_data_to_refined(files_list, access_params):
     
     dfs_inter = [
         valor_titulos_abertos_vencidos,
-        qtde_titulos_abertos_vincendo,
-        valor_titulos_abertos_vincendo,
+        qtde_titulos_abertos_a_vencer,
+        valor_titulos_abertos_a_vencer,
         prazo_medio_abertos_vencidos,
-        prazo_medio_abertos_vincendos,
+        prazo_medio_abertos_a_vencer,
         qtde_titulos_liquidados,
         valor_titulos_liquidados,
         prazo_medio_titulos_liquidados,
@@ -274,9 +273,12 @@ def transform_data_to_refined(files_list, access_params):
         
         df_final = qtde_titulos_abertos_vencidos
         
-        df_final['year'] = '2024'
-        df_final['month'] = '2'
-        df_final['day'] = '15'
+    #Definindo data de tratamento do arquivo
+        now = datetime.now(tz=timezone(timedelta(hours=-3)))
+        
+        df_final['year'] = now.year
+        df_final['month'] = now.month
+        df_final['day'] = now.day
         
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
