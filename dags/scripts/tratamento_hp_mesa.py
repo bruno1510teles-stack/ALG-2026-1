@@ -42,7 +42,7 @@ def transform_data_to_refined(files_list, access_params):
         
     base = pd.concat(dfs, ignore_index=True)
 
-    
+    #base = base[base['FONTE'] == 'hpex']
     # %% [markdown]
     # ## Começando Tratamento dos dados
 
@@ -269,7 +269,7 @@ def transform_data_to_refined(files_list, access_params):
         atraso_min_titulos_liquidados]
     
     for df_inter in dfs_inter:
-        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO', 'FORNECEDOR'])
+        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO', 'FORNECEDOR'], how='outer')
         
         df_final = qtde_titulos_abertos_vencidos
         
