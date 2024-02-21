@@ -152,7 +152,6 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     qtde_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_LIQUIDADOS']
 
-    qtde_titulos_liquidados = qtde_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Valor de títulos liquidados;
@@ -279,7 +278,7 @@ def transform_data_to_refined(files_list, access_params):
             'ATRASO_MIN_TITULOS_LIQUIDADOS'
         ]
 
-        df_final[colunas_float] = df_final[colunas_float].astype(float)
+        df_final[colunas_float] = df_final[colunas_float].astype('float')
 
 
         
