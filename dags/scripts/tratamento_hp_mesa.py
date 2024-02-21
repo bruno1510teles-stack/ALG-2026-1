@@ -73,7 +73,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     valor_titulos_abertos_vencidos.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_VENCIDOS']
 
-    valor_titulos_abertos_vencidos
+    valor_titulos_abertos_vencidos = valor_titulos_abertos_vencidos.astype('float')
 
     # %% [markdown]
     # # Quantidade de títulos em aberto (vincendo);
@@ -88,7 +88,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     qtde_titulos_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_A_VENCER']
 
-    qtde_titulos_abertos_a_vencer
+    qtde_titulos_abertos_a_vencer = qtde_titulos_abertos_a_vencer.astype('float')
 
     # %% [markdown]
     # # Valor total de títulos em aberto (vincendo);
@@ -103,7 +103,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     valor_titulos_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_A_VENCER']
 
-    valor_titulos_abertos_a_vencer
+    valor_titulos_abertos_a_vencer = valor_titulos_abertos_a_vencer.astype('float')
 
     # %% [markdown]
     # # Prazo Médio das operações em aberto(vencido);
@@ -123,7 +123,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     prazo_medio_abertos_vencidos.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_VENCIDOS']
 
-    prazo_medio_abertos_vencidos
+    prazo_medio_abertos_vencidos = prazo_medio_abertos_vencidos.astype('float')
 
     # %% [markdown]
     # # Prazo Médio das operações em aberto(vincendo);
@@ -143,7 +143,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     prazo_medio_abertos_a_vencer.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_A_VENCER']
 
-    prazo_medio_abertos_a_vencer
+    prazo_medio_abertos_a_vencer = prazo_medio_abertos_a_vencer.astype('float')
 
     # %% [markdown]
     # # Quantidade de títulos liquidados;
@@ -157,7 +157,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     qtde_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_LIQUIDADOS']
 
-    qtde_titulos_liquidados
+    qtde_titulos_liquidados = qtde_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Valor de títulos liquidados;
@@ -171,7 +171,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     valor_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_LIQUIDADOS']
 
-    valor_titulos_liquidados
+    valor_titulos_liquidados = valor_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Prazo Médio dos títulos liquidados;
@@ -190,7 +190,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     prazo_medio_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_TITULOS_LIQUIDADOS']
 
-    prazo_medio_titulos_liquidados
+    prazo_medio_titulos_liquidados = prazo_medio_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Atraso Médio liquidados;
@@ -211,7 +211,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     atraso_medio_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MEDIO_TITULOS_LIQUIDADOS']
 
-    atraso_medio_titulos_liquidados
+    atraso_medio_titulos_liquidados = atraso_medio_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Atraso Max liquidados;
@@ -232,7 +232,7 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     atraso_max_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MAX_TITULOS_LIQUIDADOS']
 
-    atraso_max_titulos_liquidados
+    atraso_max_titulos_liquidados = atraso_max_titulos_liquidados.astype('float')
 
     # %% [markdown]
     # # Atraso min liquidados;
@@ -253,8 +253,9 @@ def transform_data_to_refined(files_list, access_params):
     }).reset_index()
     atraso_min_titulos_liquidados.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MIN_TITULOS_LIQUIDADOS']
 
-    atraso_min_titulos_liquidados
+    atraso_min_titulos_liquidados = atraso_min_titulos_liquidados.astype('float')
     
+    #compilando as variaveis
     dfs_inter = [
         valor_titulos_abertos_vencidos,
         qtde_titulos_abertos_a_vencer,
