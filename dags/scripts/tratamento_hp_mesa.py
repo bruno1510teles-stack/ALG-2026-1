@@ -284,11 +284,11 @@ def transform_data_to_refined(files_list, access_params):
 
         
     #Definindo data de tratamento do arquivo
-        now = datetime.now(tz=timezone(timedelta(hours=-3)))
-        
-        df_final['year'] = now.year
-        df_final['month'] = now.month
-        df_final['day'] = now.day
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    
+    df_final['year'] = now.year
+    df_final['month'] = now.month
+    df_final['day'] = now.day
         
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
