@@ -261,24 +261,25 @@ def transform_data_to_refined(files_list, access_params):
     for df_inter in dfs_inter:
         qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO', 'FORNECEDOR'], how='outer')
         
-        df_final = qtde_titulos_abertos_vencidos
+    df_final = qtde_titulos_abertos_vencidos
         
-        colunas_float = [
-            'QTDE_TITULOS_ABERTOS_VENCIDOS',
-            'VALOR_TITULOS_ABERTOS_VENCIDOS',
-            'QTDE_TITULOS_ABERTOS_A_VENCER',
-            'VALOR_TITULOS_ABERTOS_A_VENCER',
-            'PRAZO_MEDIO_ABERTOS_VENCIDOS',
-            'PRAZO_MEDIO_ABERTOS_A_VENCER',
-            'QTDE_TITULOS_LIQUIDADOS',
-            'VALOR_TITULOS_LIQUIDADOS',
-            'PRAZO_MEDIO_TITULOS_LIQUIDADOS',
-            'ATRASO_MEDIO_TITULOS_LIQUIDADOS',
-            'ATRASO_MAX_TITULOS_LIQUIDADOS',
-            'ATRASO_MIN_TITULOS_LIQUIDADOS'
-        ]
+        
+    colunas_float = [
+        'QTDE_TITULOS_ABERTOS_VENCIDOS',
+        'VALOR_TITULOS_ABERTOS_VENCIDOS',
+        'QTDE_TITULOS_ABERTOS_A_VENCER',
+        'VALOR_TITULOS_ABERTOS_A_VENCER',
+        'PRAZO_MEDIO_ABERTOS_VENCIDOS',
+        'PRAZO_MEDIO_ABERTOS_A_VENCER',
+        'QTDE_TITULOS_LIQUIDADOS',
+        'VALOR_TITULOS_LIQUIDADOS',
+        'PRAZO_MEDIO_TITULOS_LIQUIDADOS',
+        'ATRASO_MEDIO_TITULOS_LIQUIDADOS',
+        'ATRASO_MAX_TITULOS_LIQUIDADOS',
+        'ATRASO_MIN_TITULOS_LIQUIDADOS'
+    ]
 
-        df_final[colunas_float] = df_final[colunas_float].astype('float')
+    df_final[colunas_float] = df_final[colunas_float].astype('float')
 
 
         
