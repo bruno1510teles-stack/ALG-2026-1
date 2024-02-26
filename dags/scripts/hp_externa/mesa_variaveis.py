@@ -27,7 +27,7 @@ def calculo_valor_titulos_abertos_vencidos (data_referencia, repositorio_dado):
     return repositorio_dado
 
 def calculo_qtde_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] > data_referencia]
+    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] >= data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
     repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
@@ -36,7 +36,7 @@ def calculo_qtde_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
     return repositorio_dado
 
 def calculo_valor_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] > data_referencia]
+    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] >= data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
     repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
@@ -57,7 +57,7 @@ def calculo_prazo_medio_abertos_vencidos (data_referencia, repositorio_dado):
     return repositorio_dado
 
 def calculo_prazo_medio_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] > data_referencia]
+    repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] >= data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_EMISSAO'] = pd.to_datetime(repositorio_dado['DATA_EMISSAO'])
