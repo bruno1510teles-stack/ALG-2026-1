@@ -11,37 +11,37 @@ from deltalake import write_deltalake, DeltaTable
 def calculo_qtde_titulos_abertos_vencidos (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] < data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_VENCIDOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_VENCIDOS']
     return repositorio_dado
 
 def calculo_valor_titulos_abertos_vencidos (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] < data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_VENCIDOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_VENCIDOS']
     return repositorio_dado
 
 def calculo_qtde_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] > data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_A_VENCER']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_A_VENCER']
     return repositorio_dado
 
 def calculo_valor_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] > data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_A_VENCER']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'VALOR_TITULOS_ABERTOS_A_VENCER']
     return repositorio_dado
 
 def calculo_prazo_medio_abertos_vencidos (data_referencia, repositorio_dado):
@@ -50,10 +50,10 @@ def calculo_prazo_medio_abertos_vencidos (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_EMISSAO'] = pd.to_datetime(repositorio_dado['DATA_EMISSAO'])
     repositorio_dado['AUX_PRAZO_MEDIO'] = (repositorio_dado['DATA_VENCIMENTO'] - repositorio_dado['DATA_EMISSAO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_VENCIDOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_VENCIDOS']
     return repositorio_dado
 
 def calculo_prazo_medio_abertos_a_vencer (data_referencia, repositorio_dado):
@@ -62,26 +62,26 @@ def calculo_prazo_medio_abertos_a_vencer (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_EMISSAO'] = pd.to_datetime(repositorio_dado['DATA_EMISSAO'])
     repositorio_dado['AUX_PRAZO_MEDIO'] = (repositorio_dado['DATA_VENCIMENTO'] - repositorio_dado['DATA_EMISSAO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_A_VENCER']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'PRAZO_MEDIO_ABERTOS_A_VENCER']
     return repositorio_dado
 
 def calculo_qtde_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'NUMERO_TITULO': 'count'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'QTDE_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 def calculo_valor_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'VALOR_TITULO': 'sum'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'VALOR_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'VALOR_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 def calculo_prazo_medio_titulos_liquidados (data_referencia, repositorio_dado):
@@ -89,10 +89,10 @@ def calculo_prazo_medio_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_EMISSAO'] = pd.to_datetime(repositorio_dado['DATA_EMISSAO'])
     repositorio_dado['AUX_PRAZO_MEDIO'] = (repositorio_dado['DATA_VENCIMENTO'] - repositorio_dado['DATA_EMISSAO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'AUX_PRAZO_MEDIO': 'mean'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'PRAZO_MEDIO_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'PRAZO_MEDIO_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 def calculo_atraso_medio_titulos_liquidados (data_referencia, repositorio_dado):
@@ -100,10 +100,10 @@ def calculo_atraso_medio_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_PAGAMENTO'] = pd.to_datetime(repositorio_dado['DATA_PAGAMENTO'])
     repositorio_dado['DIF_DIAS_PAGAMENTO'] = (repositorio_dado['DATA_PAGAMENTO'] - repositorio_dado['DATA_VENCIMENTO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'mean'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MEDIO_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'ATRASO_MEDIO_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 def calculo_atraso_max_titulos_liquidados (data_referencia, repositorio_dado):
@@ -111,10 +111,10 @@ def calculo_atraso_max_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_PAGAMENTO'] = pd.to_datetime(repositorio_dado['DATA_PAGAMENTO'])
     repositorio_dado['DIF_DIAS_PAGAMENTO'] = (repositorio_dado['DATA_PAGAMENTO'] - repositorio_dado['DATA_VENCIMENTO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'max'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MAX_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'ATRASO_MAX_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 def calculo_atraso_min_titulos_liquidados (data_referencia, repositorio_dado):
@@ -122,10 +122,10 @@ def calculo_atraso_min_titulos_liquidados (data_referencia, repositorio_dado):
     repositorio_dado['DATA_VENCIMENTO'] = pd.to_datetime(repositorio_dado['DATA_VENCIMENTO'])
     repositorio_dado['DATA_PAGAMENTO'] = pd.to_datetime(repositorio_dado['DATA_PAGAMENTO'])
     repositorio_dado['DIF_DIAS_PAGAMENTO'] = (repositorio_dado['DATA_PAGAMENTO'] - repositorio_dado['DATA_VENCIMENTO']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO', 'FORNECEDOR']).agg({
+    repositorio_dado = repositorio_dado.groupby(['DOCUMENTO_RAIZ', 'FORNECEDOR']).agg({
     'DIF_DIAS_PAGAMENTO': 'min'
     }).reset_index()
-    repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'ATRASO_MIN_TITULOS_LIQUIDADOS']
+    repositorio_dado.columns = ['DOCUMENTO_RAIZ', 'FORNECEDOR', 'ATRASO_MIN_TITULOS_LIQUIDADOS']
     return repositorio_dado
 
 # Criando conexão
@@ -156,6 +156,7 @@ def transform_data_to_refined(files_list, access_params):
     # Consolidando    
     base = pd.concat(dfs, ignore_index=True)
 
+    base['DOCUMENTO_RAIZ'] = base['DOCUMENTO'].str[:8]
 
 # Chamando as variáveis
        
@@ -211,7 +212,7 @@ def transform_data_to_refined(files_list, access_params):
         atraso_min_titulos_liquidados]
     
     for df_inter in dfs_inter:
-        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO', 'FORNECEDOR'], how='outer')
+        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['DOCUMENTO_RAIZ', 'FORNECEDOR'], how='outer')
         
     df_final = qtde_titulos_abertos_vencidos
         
