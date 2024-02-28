@@ -29,7 +29,7 @@ def check_files_to_processed(files_to_process):
 # DEFINE DEFAULT ARGS
 default_args = {
     "owner": "João Leite",
-    "retries": 2,
+    "retries": 0,
     "retry_delay": 0,
     "execution_timeout": timedelta(seconds=60 * 50),
 }
