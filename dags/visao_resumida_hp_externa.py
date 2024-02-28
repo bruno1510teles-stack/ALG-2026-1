@@ -17,7 +17,7 @@ MINIO_RAW_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = now #- timedelta(days=1)
+yesterday = now - timedelta(days=1)
 day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
 
@@ -36,7 +36,7 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 1, 31), # definir quando for rodar automatico
+    start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
     schedule_interval='0 10 * * *',
     default_args=default_args,
