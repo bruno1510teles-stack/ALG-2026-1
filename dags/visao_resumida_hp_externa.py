@@ -17,7 +17,7 @@ MINIO_RAW_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = now - timedelta(days=1)
+yesterday = now #- timedelta(days=1)
 day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
 
