@@ -156,6 +156,8 @@ def transform_data_to_refined(files_list, access_params):
     # Consolidando    
     base = pd.concat(dfs, ignore_index=True)
 
+    base[base['fonte'] == 'HP_EXTERNA']
+    
     base['DOCUMENTO_RAIZ'] = base['DOCUMENTO'].str[:8]
 
 # Chamando as variáveis
