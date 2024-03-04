@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.tratamento_hp_mesa import transform_data_to_refined
+from scripts.hp_externa.mesa_variaveis import transform_data_to_refined
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
@@ -28,7 +28,7 @@ def check_files_to_processed(files_to_process):
 
 # DEFINE DEFAULT ARGS
 default_args = {
-    "owner": "Mayer",
+    "owner": "João Leite",
     "retries": 0,
     "retry_delay": 0,
     "execution_timeout": timedelta(seconds=60 * 50),
@@ -36,14 +36,14 @@ default_args = {
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 1, 31), # definir quando for rodar automatico
+    start_date=datetime(2024, 2, 1), # definir quando for rodar automatico
     max_active_runs=1,
     schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
 )
-def hpex_summary_overview():
+def visao_resumida_hp_externa():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -64,7 +64,7 @@ def hpex_summary_overview():
     )
     
     @task()
-    def hpex_summary_overview(current_files):
+    def visao_resumida_hp_externa(current_files):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -88,9 +88,9 @@ def hpex_summary_overview():
 
         transform_data_to_refined(current_files, access_params)
 
-    unique_clients = hpex_summary_overview(list_today_files.output)
+    unique_clients = visao_resumida_hp_externa(list_today_files.output)
 
     # run order
     init_data_load >> list_today_files >> check_files >> unique_clients >> finish_data_load
 
-hpex_summary_overview()
+visao_resumida_hp_externa()
