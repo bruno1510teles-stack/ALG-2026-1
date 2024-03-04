@@ -17,6 +17,7 @@ def calculo_qtde_titulos_abertos_vencidos (data_referencia, repositorio_dado):
     repositorio_dado.columns = ['DOCUMENTO', 'FORNECEDOR', 'QTDE_TITULOS_ABERTOS_VENCIDOS']
     return repositorio_dado
 
+
 def calculo_valor_titulos_abertos_vencidos (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['DATA_VENCIMENTO'] < data_referencia]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['DATA_PAGAMENTO'])]
