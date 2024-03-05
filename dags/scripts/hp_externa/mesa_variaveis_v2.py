@@ -227,7 +227,7 @@ def transform_data_to_refined(files_list, access_params):
     valor_vencido_mensal = valor_vencido_mensal.rename(columns=nomes)
     valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
     valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
-    valor_vencido_mensal.replace(0, pd.NA, inplace=True)
+    # valor_vencido_mensal.replace(0, pd.NA, inplace=True)
     print(f"Código para 'valor_vencido_mensal' executado com sucesso!")
 
 
@@ -257,23 +257,23 @@ def transform_data_to_refined(files_list, access_params):
         df_final = pd.merge(df_final, df_inter, on=['documento', 'fornecedor', 'safra'], how='outer')
         
         
-    # colunas_float = [
-    #     'vop',
-    #     'vop_a_vista',
-    #     'prazo_medio',
-    #     'vop_pago_em_dia',
-    #     '01_ate_5_dias',
-    #     '02_6_10_dias',
-    #     '03_11_15_dias',
-    #     '04_16_30_dias',
-    #     '05_31_60_dias',
-    #     '06_61_90_dias',
-    #     '07_acima_90_dias',
-    #     'vencido_total',
-    #     'vop_a_vencer'
-    # ]
+    colunas_float = [
+        'vop',
+        'vop_a_vista',
+        'prazo_medio',
+        'vop_pago_em_dia',
+        '01_ate_5_dias',
+        '02_6_10_dias',
+        '03_11_15_dias',
+        '04_16_30_dias',
+        '05_31_60_dias',
+        '06_61_90_dias',
+        '07_acima_90_dias',
+        'vencido_total',
+        'vop_a_vencer'
+    ]
 
-    # df_final[colunas_float] = df_final[colunas_float].astype('float')
+    df_final[colunas_float] = df_final[colunas_float].astype('float')
 
 
         
