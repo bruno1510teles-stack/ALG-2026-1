@@ -257,23 +257,23 @@ def transform_data_to_refined(files_list, access_params):
         df_final = pd.merge(df_final, df_inter, on=['documento', 'fornecedor', 'safra'], how='outer')
         
         
-    colunas_float = [
-        'vop',
-        'vop_a_vista',
-        'prazo_medio',
-        'vop_pago_em_dia',
-        '01_ate_5_dias',
-        '02_6_10_dias',
-        '03_11_15_dias',
-        '04_16_30_dias',
-        '05_31_60_dias',
-        '06_61_90_dias',
-        '07_acima_90_dias',
-        'vencido_total',
-        'vop_a_vencer'
-    ]
+    # colunas_float = [
+    #     'vop',
+    #     'vop_a_vista',
+    #     'prazo_medio',
+    #     'vop_pago_em_dia',
+    #     '01_ate_5_dias',
+    #     '02_6_10_dias',
+    #     '03_11_15_dias',
+    #     '04_16_30_dias',
+    #     '05_31_60_dias',
+    #     '06_61_90_dias',
+    #     '07_acima_90_dias',
+    #     'vencido_total',
+    #     'vop_a_vencer'
+    # ]
 
-    df_final[colunas_float] = df_final[colunas_float].astype('float')
+    # df_final[colunas_float] = df_final[colunas_float].astype('float')
 
 
         
