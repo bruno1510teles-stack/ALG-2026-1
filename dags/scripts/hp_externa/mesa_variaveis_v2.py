@@ -9,34 +9,34 @@ import os
 from deltalake import write_deltalake, DeltaTable
 
 # Calculando Variáveis
-def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
-    repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
-    repositorio_dado = repositorio_dado.groupby(['fornecedor',]).agg({
-        'safra': ['min', 'max']
-    }).reset_index()
-    repositorio_dado.columns = ['fornecedor', 'inicio', 'fim']
-    repositorio_dado['inicio'] = pd.to_datetime(repositorio_dado['inicio'])
-    repositorio_dado['fim'] = pd.to_datetime(repositorio_dado['fim'])
-    lista_safra = []
-    for index, row in repositorio_dado.iterrows():
-        datas_safra = pd.date_range(start=row['inicio'], end=row['fim'], freq='ms')
-        for data in datas_safra:
-            lista_safra.append({'fornecedor': row['fornecedor'], 'safra': data})
-    df_safra = pd.dataframe(lista_safra)
-    return df_safra
-    print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
+# def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
+#     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
+#     repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
+#     repositorio_dado = repositorio_dado.groupby(['fornecedor',]).agg({
+#         'safra': ['min', 'max']
+#     }).reset_index()
+#     repositorio_dado.columns = ['fornecedor', 'inicio', 'fim']
+#     repositorio_dado['inicio'] = pd.to_datetime(repositorio_dado['inicio'])
+#     repositorio_dado['fim'] = pd.to_datetime(repositorio_dado['fim'])
+#     lista_safra = []
+#     for index, row in repositorio_dado.iterrows():
+#         datas_safra = pd.date_range(start=row['inicio'], end=row['fim'], freq='ms')
+#         for data in datas_safra:
+#             lista_safra.append({'fornecedor': row['fornecedor'], 'safra': data})
+#     df_safra = pd.dataframe(lista_safra)
+#     return df_safra
+#     print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
 
 
-def calculo_vop_mensal (data_referencia, repositorio_dado):
-    repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
-    repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
-    'valor_titulo': 'sum'
-    }).reset_index()
-    repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop']
-    repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
-    return repositorio_dado
+# def calculo_vop_mensal (data_referencia, repositorio_dado):
+#     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
+#     repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
+#     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
+#     'valor_titulo': 'sum'
+#     }).reset_index()
+#     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop']
+#     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
+#     return repositorio_dado
 
 
 # def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
@@ -155,24 +155,24 @@ def transform_data_to_refined(files_list, access_params):
 
 # Chamando as variáveis
        
-    aux_periodo = copy.copy(base)
-    aux_periodo = aux_periodo[['documento','fornecedor']].drop_duplicates()
-    periodo_intervalo_hp_fornecedor = copy.copy(base)
-    periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
-    periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
-    periodo_intervalo_hp_fornecedor
-    print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
+    # aux_periodo = copy.copy(base)
+    # aux_periodo = aux_periodo[['documento','fornecedor']].drop_duplicates()
+    # periodo_intervalo_hp_fornecedor = copy.copy(base)
+    # periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
+    # periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
+    # periodo_intervalo_hp_fornecedor
+    # print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
 
-    vop_mensal = copy.copy(base)
-    vop_mensal = calculo_vop_mensal('data_emissao', vop_mensal)
-    vop_mensal_safra = periodo_intervalo_hp_fornecedor.merge(vop_mensal, on = ['fornecedor','safra', 'documento'], how = 'left')
-    vop_mensal_safra = vop_mensal_safra.groupby(['documento', 'fornecedor', 'safra']).agg({
-        'vop': 'sum'
-    }).reset_index()
-    vop_mensal_safra.columns = ['documento', 'fornecedor', 'safra', 'vop']
-    vop_mensal_safra['vop'] = np.where(vop_mensal_safra['vop'] == 0, np.nan, vop_mensal_safra['vop'])
-    vop_mensal_safra
-    print(f"Código para 'vop_mensal_safra' executado com sucesso!")
+    # vop_mensal = copy.copy(base)
+    # vop_mensal = calculo_vop_mensal('data_emissao', vop_mensal)
+    # vop_mensal_safra = periodo_intervalo_hp_fornecedor.merge(vop_mensal, on = ['fornecedor','safra', 'documento'], how = 'left')
+    # vop_mensal_safra = vop_mensal_safra.groupby(['documento', 'fornecedor', 'safra']).agg({
+    #     'vop': 'sum'
+    # }).reset_index()
+    # vop_mensal_safra.columns = ['documento', 'fornecedor', 'safra', 'vop']
+    # vop_mensal_safra['vop'] = np.where(vop_mensal_safra['vop'] == 0, np.nan, vop_mensal_safra['vop'])
+    # vop_mensal_safra
+    # print(f"Código para 'vop_mensal_safra' executado com sucesso!")
 
 
     # vop_mensal_a_vista = copy.copy(base)
@@ -253,7 +253,7 @@ def transform_data_to_refined(files_list, access_params):
     #     valor_a_vencer_mensal]
     
 
-    df_final = vop_mensal_safra
+    df_final = base
 
     # for df_inter in dfs_inter:
     #     df_final = pd.merge(df_final, df_inter, on=['documento', 'fornecedor', 'safra'], how='outer')
