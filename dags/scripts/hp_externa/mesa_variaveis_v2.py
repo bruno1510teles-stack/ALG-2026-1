@@ -214,9 +214,9 @@ def transform_data_to_refined(files_list, access_params):
     valor_vencido_mensal.columns = ['documento', 'fornecedor', 'safra', 'faixa_vencidos', 'vop_vencido']
     valor_vencido_mensal['categoria'] = valor_vencido_mensal['faixa_vencidos'].str.split(' - ').str[0]
     valor_vencido_mensal['safra'] = valor_vencido_mensal['safra'].astype(str) 
+    valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=None)
+    valor_vencido_mensal = valor_vencido_mensal.reset_index()
     print(valor_vencido_mensal.columns)
-    # valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=None)
-    # valor_vencido_mensal = valor_vencido_mensal.reset_index()
     # nomes = {'01': '01_ate_5_dias',
     #         '02': '02_6_10_dias',
     #         '03': '03_11_15_dias',
