@@ -28,7 +28,7 @@ def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
 
 def calculo_vop_mensal (data_referencia, repositorio_dado):
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
+    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%Y-%m-01')
     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
     'valor_titulo': 'sum'
     }).reset_index()
@@ -52,7 +52,7 @@ def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
 def calculo_prazo_medio_mensal (data_referencia, repositorio_dado):
     repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
     repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
+    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%Y-%m-01')
     repositorio_dado['dif_dias'] = (repositorio_dado['data_vencimento'] - repositorio_dado['data_emissao']).dt.days
     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
     'dif_dias': 'mean'
@@ -67,7 +67,7 @@ def calculo_pagos_em_dia_mensal (data_referencia, repositorio_dado):
     repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
     repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
-    repositorio_dado['safra'] = repositorio_dado['data_emissao'].dt.strftime('%y-%m-01')
+    repositorio_dado['safra'] = repositorio_dado['data_emissao'].dt.strftime('%Y-%m-01')
     repositorio_dado['vop_pago_em_dia'] = np.where(repositorio_dado[data_referencia] <= repositorio_dado['data_vencimento'], repositorio_dado['valor_titulo'], 0)
     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
     'vop_pago_em_dia': 'sum'
@@ -113,7 +113,7 @@ def calculo_valor_a_vencer_mensal (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] > repositorio_dado[data_referencia]]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
     repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
-    repositorio_dado['safra'] = repositorio_dado['data_emissao'].dt.strftime('%y-%m-01')
+    repositorio_dado['safra'] = repositorio_dado['data_emissao'].dt.strftime('%Y-%m-01')
     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
     'valor_titulo': 'sum'
     }).reset_index()
