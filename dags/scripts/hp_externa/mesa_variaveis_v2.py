@@ -9,34 +9,32 @@ import os
 from deltalake import write_deltalake, DeltaTable
 
 # Calculando Variáveis
-# def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
+def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
+    repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
+    repositorio_dado['SAFRA'] = repositorio_dado[data_referencia].dt.to_period('M')
+    df_safra = (repositorio_dado.groupby('FORNECEDOR')
+                                 .apply(lambda x: pd.date_range(start=x['SAFRA'].min().to_timestamp(),
+                                                                end=x['SAFRA'].max().to_timestamp(),
+                                                                freq='MS')
+                                        .to_series()
+                                        .reset_index(drop=True)
+                                        .rename('SAFRA')
+                                        .to_frame()
+                                        .assign(FORNECEDOR=x.name))
+                                 .reset_index(drop=True))
+    return df_safra
+    print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
+
+
+# def calculo_vop_mensal (data_referencia, repositorio_dado):
 #     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
 #     repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
-#     repositorio_dado = repositorio_dado.groupby(['fornecedor',]).agg({
-#         'safra': ['min', 'max']
+#     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
+#     'valor_titulo': 'sum'
 #     }).reset_index()
-#     repositorio_dado.columns = ['fornecedor', 'inicio', 'fim']
-#     repositorio_dado['inicio'] = pd.to_datetime(repositorio_dado['inicio'])
-#     repositorio_dado['fim'] = pd.to_datetime(repositorio_dado['fim'])
-#     lista_safra = []
-#     for index, row in repositorio_dado.iterrows():
-#         datas_safra = pd.date_range(start=row['inicio'], end=row['fim'], freq='ms')
-#         for data in datas_safra:
-#             lista_safra.append({'fornecedor': row['fornecedor'], 'safra': data})
-#     df_safra = pd.dataframe(lista_safra)
-#     return df_safra
-#     print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
-
-
-def calculo_vop_mensal (data_referencia, repositorio_dado):
-    repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
-    repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
-    'valor_titulo': 'sum'
-    }).reset_index()
-    repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop']
-    repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
-    return repositorio_dado
+#     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop']
+#     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
+#     return repositorio_dado
 
 
 # def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
@@ -155,23 +153,21 @@ def transform_data_to_refined(files_list, access_params):
 
 # Chamando as variáveis
        
-    # aux_periodo = copy.copy(base)
-    # aux_periodo = aux_periodo[['documento','fornecedor']].drop_duplicates()
-    # periodo_intervalo_hp_fornecedor = copy.copy(base)
-    # periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
-    # periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
-    # periodo_intervalo_hp_fornecedor
-    # print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
+    aux_periodo = copy.copy(base)
+    aux_periodo = aux_periodo[['documento','fornecedor']].drop_duplicates()
+    periodo_intervalo_hp_fornecedor = copy.copy(base)
+    periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
+    periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
+    print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
 
-    vop_mensal = copy.copy(base)
-    vop_mensal = calculo_vop_mensal('data_emissao', vop_mensal)
+    # vop_mensal = copy.copy(base)
+    # vop_mensal = calculo_vop_mensal('data_emissao', vop_mensal)
     # vop_mensal_safra = periodo_intervalo_hp_fornecedor.merge(vop_mensal, on = ['fornecedor','safra', 'documento'], how = 'left')
     # vop_mensal_safra = vop_mensal_safra.groupby(['documento', 'fornecedor', 'safra']).agg({
     #     'vop': 'sum'
     # }).reset_index()
     # vop_mensal_safra.columns = ['documento', 'fornecedor', 'safra', 'vop']
     # vop_mensal_safra['vop'] = np.where(vop_mensal_safra['vop'] == 0, np.nan, vop_mensal_safra['vop'])
-    # vop_mensal_safra
     # print(f"Código para 'vop_mensal_safra' executado com sucesso!")
 
 
@@ -183,7 +179,6 @@ def transform_data_to_refined(files_list, access_params):
     #     }).reset_index()
     # vop_mensal_a_vista.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vista']
     # vop_mensal_a_vista['vop_a_vista'] = np.where(vop_mensal_a_vista['vop_a_vista'] == 0, np.nan, vop_mensal_a_vista['vop_a_vista'])
-    # vop_mensal_a_vista
 
 
     # prazo_medio_mensal = copy.copy(base)
@@ -194,7 +189,6 @@ def transform_data_to_refined(files_list, access_params):
     #     }).reset_index()
     # prazo_medio_mensal.columns = ['documento', 'fornecedor', 'safra', 'prazo_medio']
     # prazo_medio_mensal['prazo_medio'] = np.where(prazo_medio_mensal['prazo_medio'] == 0, np.nan, prazo_medio_mensal['prazo_medio'])
-    # prazo_medio_mensal
 
 
     # vop_pago_em_dia_mensal = copy.copy(base)
@@ -205,7 +199,6 @@ def transform_data_to_refined(files_list, access_params):
     #     }).reset_index()
     # vop_pago_em_dia_mensal.columns = ['documento', 'fornecedor', 'safra', 'vop_pago_em_dia']
     # vop_pago_em_dia_mensal['vop_pago_em_dia'] = np.where(vop_pago_em_dia_mensal['vop_pago_em_dia'] == 0, np.nan, vop_pago_em_dia_mensal['vop_pago_em_dia'])
-    # vop_pago_em_dia_mensal
 
 
     # valor_vencido_mensal = copy.copy(base)
@@ -230,7 +223,6 @@ def transform_data_to_refined(files_list, access_params):
     # valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
     # valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
     # valor_vencido_mensal.replace(0, pd.na, inplace=true)
-    # valor_vencido_mensal
 
 
     # valor_a_vencer_mensal = copy.copy(base)
@@ -241,7 +233,6 @@ def transform_data_to_refined(files_list, access_params):
     #     }).reset_index()
     # valor_a_vencer_mensal.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vencer']
     # valor_a_vencer_mensal['vop_a_vencer'] = np.where(valor_a_vencer_mensal['vop_a_vencer'] == 0, np.nan, valor_a_vencer_mensal['vop_a_vencer'])
-    # valor_a_vencer_mensal
     
 
     # #compilando as variaveis
@@ -253,7 +244,7 @@ def transform_data_to_refined(files_list, access_params):
     #     valor_a_vencer_mensal]
     
 
-    df_final = vop_mensal
+    df_final = periodo_intervalo_hp_fornecedor
 
     # for df_inter in dfs_inter:
     #     df_final = pd.merge(df_final, df_inter, on=['documento', 'fornecedor', 'safra'], how='outer')
