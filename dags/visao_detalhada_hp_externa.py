@@ -67,39 +67,36 @@ def visao_detalhada_hp_externa():
         op_kwargs={'files_to_process': list_today_files.output}
     )
 
-    def my_dag():
-        @task()
-        def visao_detalhada_hp_externa(current_files):
 
-            access_params = {          
-                "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
-                "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
-                "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
-                "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
-                "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
-                "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
-                "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
-                "trino_port": Variable.get("TRINO_PORT"),
-                "trino_user": Variable.get("TRINO_USER"),
-                "trino_password": Variable.get("TRINO_PASSWORD"),
-                "opdb_bucket": Variable.get("OPDB_BUCKET"),
-                "stage": Variable.get('STAGE')
-                    
-        
+    @task(executor_config={
+        "KubernetesExecutor": {
+            "request_memory": "4096Mi"
+        }
+    })
+    def visao_detalhada_hp_externa(current_files):
 
-            }
+        access_params = {          
+            "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
+            "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
+            "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
+            "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
+            "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
+            "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
+            "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
+            "trino_port": Variable.get("TRINO_PORT"),
+            "trino_user": Variable.get("TRINO_USER"),
+            "trino_password": Variable.get("TRINO_PASSWORD"),
+            "opdb_bucket": Variable.get("OPDB_BUCKET"),
+            "stage": Variable.get('STAGE')
+                
+    
 
-            print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+        }
 
-            transform_data_to_refined(current_files, access_params)
-            decorated_task = DecoratorTask(
-            task_func=visao_detalhada_hp_externa,
-            executor_config={
-                "KubernetesExecutor": {
-                    "request_memory": "4096Mi"
-                }
-            }
-        )
+        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+
+        transform_data_to_refined(current_files, access_params)
+
 
     unique_clients = visao_detalhada_hp_externa(list_today_files.output)
 
