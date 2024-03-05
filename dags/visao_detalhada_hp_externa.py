@@ -7,6 +7,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
+from airflow.decorators.base import DecoratorTask
 
 # SCRIPTS
 from scripts.hp_externa.mesa_variaveis_v2 import transform_data_to_refined
@@ -41,13 +42,9 @@ default_args = {
     schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['development', 'elt', 'minio', 'first_batch', 'mesa'],
-    executor_config={
-        "KubernetesExecutor": {
-            "request_memory": "2048Mi"
-        }
-    },
+    tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
 )
+
 
 
 def visao_detalhada_hp_externa():
@@ -69,31 +66,40 @@ def visao_detalhada_hp_externa():
         provide_context=True,
         op_kwargs={'files_to_process': list_today_files.output}
     )
-    
-    @task()
-    def visao_detalhada_hp_externa(current_files):
 
-        access_params = {          
-            "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
-            "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
-            "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
-            "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
-            "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
-            "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
-            "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
-            "trino_port": Variable.get("TRINO_PORT"),
-            "trino_user": Variable.get("TRINO_USER"),
-            "trino_password": Variable.get("TRINO_PASSWORD"),
-            "opdb_bucket": Variable.get("OPDB_BUCKET"),
-            "stage": Variable.get('STAGE')
-            	
-	
+    def my_dag():
+        @task()
+        def visao_detalhada_hp_externa(current_files):
 
-        }
+            access_params = {          
+                "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
+                "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
+                "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
+                "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
+                "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
+                "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
+                "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
+                "trino_port": Variable.get("TRINO_PORT"),
+                "trino_user": Variable.get("TRINO_USER"),
+                "trino_password": Variable.get("TRINO_PASSWORD"),
+                "opdb_bucket": Variable.get("OPDB_BUCKET"),
+                "stage": Variable.get('STAGE')
+                    
+        
 
-        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+            }
 
-        transform_data_to_refined(current_files, access_params)
+            print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+
+            transform_data_to_refined(current_files, access_params)
+            decorated_task = DecoratorTask(
+            task_func=visao_detalhada_hp_externa,
+            executor_config={
+                "KubernetesExecutor": {
+                    "request_memory": "4096Mi"
+                }
+            }
+        )
 
     unique_clients = visao_detalhada_hp_externa(list_today_files.output)
 
