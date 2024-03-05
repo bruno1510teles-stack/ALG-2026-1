@@ -7,7 +7,7 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
-
+from kubernetes.client import models as k8s
 
 # SCRIPTS
 from scripts.hp_externa.mesa_variaveis_v2 import transform_data_to_refined
