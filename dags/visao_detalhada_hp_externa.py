@@ -18,8 +18,8 @@ MINIO_RAW_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = '2024-02-14'
-day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year=2024/month=2/day=14/"
+yesterday = '2024-02-28'
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year=2024/month=2/day=28/"
 
 
 # DEFINE FUNCTIONS
