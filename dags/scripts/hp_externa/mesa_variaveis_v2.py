@@ -224,11 +224,10 @@ def transform_data_to_refined(files_list, access_params):
             '06': '06_61_90_dias',
             '07': '07_acima_90_dias'}
     valor_vencido_mensal = valor_vencido_mensal.rename(columns=nomes)
-    print(valor_vencido_mensal.columns)
-    # valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
-    # valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
-    # valor_vencido_mensal.replace(0, pd.NA, inplace=True)
-    # print(f"Código para 'valor_vencido_mensal' executado com sucesso!")
+    valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
+    valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
+    valor_vencido_mensal.replace(0, pd.NA, inplace=True)
+    print(f"Código para 'valor_vencido_mensal' executado com sucesso!")
 
 
     valor_a_vencer_mensal = copy.copy(base)
