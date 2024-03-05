@@ -18,16 +18,15 @@ def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
     repositorio_dado.columns = ['fornecedor', 'inicio', 'fim']
     repositorio_dado['inicio'] = pd.to_datetime(repositorio_dado['inicio'])
     repositorio_dado['fim'] = pd.to_datetime(repositorio_dado['fim'])
-    
     lista_safra = []
-
     for index, row in repositorio_dado.iterrows():
         datas_safra = pd.date_range(start=row['inicio'], end=row['fim'], freq='ms')
         for data in datas_safra:
             lista_safra.append({'fornecedor': row['fornecedor'], 'safra': data})
-
     df_safra = pd.dataframe(lista_safra)
     return df_safra
+    print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
+
 
 def calculo_vop_mensal (data_referencia, repositorio_dado):
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
@@ -38,6 +37,7 @@ def calculo_vop_mensal (data_referencia, repositorio_dado):
     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop']
     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
+
 
 def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
@@ -50,6 +50,7 @@ def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
 
+
 def calculo_prazo_medio_mensal (data_referencia, repositorio_dado):
     repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
     repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
@@ -61,6 +62,7 @@ def calculo_prazo_medio_mensal (data_referencia, repositorio_dado):
     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'prazo_medio']
     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
+
 
 def calculo_pagos_em_dia_mensal (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[pd.notna(repositorio_dado[data_referencia])]
@@ -75,6 +77,7 @@ def calculo_pagos_em_dia_mensal (data_referencia, repositorio_dado):
     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop_pago_em_dia']
     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
+
 
 def calculo_valor_vencido_mensal (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] < repositorio_dado[data_referencia]]
@@ -107,6 +110,7 @@ def calculo_valor_vencido_mensal (data_referencia, repositorio_dado):
     repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
 
+
 def calculo_valor_a_vencer_mensal (data_referencia, repositorio_dado):
     repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] > repositorio_dado[data_referencia]]
     repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
@@ -117,6 +121,8 @@ def calculo_valor_a_vencer_mensal (data_referencia, repositorio_dado):
     }).reset_index()
     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vencer']
     return repositorio_dado
+print(f"Código para def 'calculo_valor_a_vencer_mensal' executado com sucesso!")
+
 
 # Criando conexão
 def transform_data_to_refined(files_list, access_params):
