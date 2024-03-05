@@ -11,14 +11,14 @@ from deltalake import write_deltalake, DeltaTable
 # Calculando Variáveis
 def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['SAFRA'] = repositorio_dado[data_referencia].dt.to_period('M')
-    df_safra = (repositorio_dado.groupby('FORNECEDOR')
-                                 .apply(lambda x: pd.date_range(start=x['SAFRA'].min().to_timestamp(),
-                                                                end=x['SAFRA'].max().to_timestamp(),
+    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.to_period('M')
+    df_safra = (repositorio_dado.groupby('fornecedor')
+                                 .apply(lambda x: pd.date_range(start=x['safra'].min().to_timestamp(),
+                                                                end=x['safra'].max().to_timestamp(),
                                                                 freq='MS')
                                         .to_series()
                                         .reset_index(drop=True)
-                                        .rename('SAFRA')
+                                        .rename('safra')
                                         .to_frame()
                                         .assign(FORNECEDOR=x.name))
                                  .reset_index(drop=True))
