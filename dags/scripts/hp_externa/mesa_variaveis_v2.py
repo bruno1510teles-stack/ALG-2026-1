@@ -158,6 +158,7 @@ def transform_data_to_refined(files_list, access_params):
     periodo_intervalo_hp_fornecedor = copy.copy(base)
     periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
     periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
+    print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
 
 
     vop_mensal = copy.copy(base)
@@ -179,6 +180,7 @@ def transform_data_to_refined(files_list, access_params):
         }).reset_index()
     vop_mensal_a_vista.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vista']
     vop_mensal_a_vista['vop_a_vista'] = np.where(vop_mensal_a_vista['vop_a_vista'] == 0, np.nan, vop_mensal_a_vista['vop_a_vista'])
+    print(f"Código para 'vop_mensal_a_vista' executado com sucesso!")
 
 
     prazo_medio_mensal = copy.copy(base)
@@ -189,6 +191,7 @@ def transform_data_to_refined(files_list, access_params):
         }).reset_index()
     prazo_medio_mensal.columns = ['documento', 'fornecedor', 'safra', 'prazo_medio']
     prazo_medio_mensal['prazo_medio'] = np.where(prazo_medio_mensal['prazo_medio'] == 0, np.nan, prazo_medio_mensal['prazo_medio'])
+    print(f"Código para 'prazo_medio_mensal' executado com sucesso!")
 
 
     vop_pago_em_dia_mensal = copy.copy(base)
@@ -199,6 +202,7 @@ def transform_data_to_refined(files_list, access_params):
         }).reset_index()
     vop_pago_em_dia_mensal.columns = ['documento', 'fornecedor', 'safra', 'vop_pago_em_dia']
     vop_pago_em_dia_mensal['vop_pago_em_dia'] = np.where(vop_pago_em_dia_mensal['vop_pago_em_dia'] == 0, np.nan, vop_pago_em_dia_mensal['vop_pago_em_dia'])
+    print(f"Código para 'vop_pago_em_dia_mensal' executado com sucesso!")
 
 
     valor_vencido_mensal = copy.copy(base)
@@ -210,7 +214,7 @@ def transform_data_to_refined(files_list, access_params):
     valor_vencido_mensal.columns = ['documento', 'fornecedor', 'safra', 'faixa_vencidos', 'vop_vencido']
     valor_vencido_mensal['categoria'] = valor_vencido_mensal['faixa_vencidos'].str.split(' - ').str[0]
     valor_vencido_mensal['safra'] = valor_vencido_mensal['safra'].astype(str) 
-    valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=none)
+    valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=None)
     valor_vencido_mensal = valor_vencido_mensal.reset_index()
     nomes = {'01': '01_ate_5_dias',
             '02': '02_6_10_dias',
@@ -222,7 +226,8 @@ def transform_data_to_refined(files_list, access_params):
     valor_vencido_mensal = valor_vencido_mensal.rename(columns=nomes)
     valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
     valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
-    valor_vencido_mensal.replace(0, pd.na, inplace=true)
+    valor_vencido_mensal.replace(0, pd.na, inplace=True)
+    print(f"Código para 'valor_vencido_mensal' executado com sucesso!")
 
 
     valor_a_vencer_mensal = copy.copy(base)
@@ -233,6 +238,7 @@ def transform_data_to_refined(files_list, access_params):
         }).reset_index()
     valor_a_vencer_mensal.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vencer']
     valor_a_vencer_mensal['vop_a_vencer'] = np.where(valor_a_vencer_mensal['vop_a_vencer'] == 0, np.nan, valor_a_vencer_mensal['vop_a_vencer'])
+    print(f"Código para 'valor_a_vencer_mensal' executado com sucesso!")
     
 
     #compilando as variaveis
