@@ -155,7 +155,7 @@ def transform_data_to_refined(files_list, access_params):
     periodo_intervalo_hp_fornecedor = intervalo_hp_fornecedor('data_emissao', periodo_intervalo_hp_fornecedor)
     periodo_intervalo_hp_fornecedor = periodo_intervalo_hp_fornecedor.merge(aux_periodo, on = ['fornecedor'], how = 'left')
     periodo_intervalo_hp_fornecedor
-
+    print(f"Código para 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
 
     vop_mensal = copy.copy(base)
     vop_mensal = calculo_vop_mensal('data_emissao', vop_mensal)
@@ -166,6 +166,7 @@ def transform_data_to_refined(files_list, access_params):
     vop_mensal_safra.columns = ['documento', 'fornecedor', 'safra', 'vop']
     vop_mensal_safra['vop'] = np.where(vop_mensal_safra['vop'] == 0, np.nan, vop_mensal_safra['vop'])
     vop_mensal_safra
+    print(f"Código para 'vop_mensal_safra' executado com sucesso!")
 
 
     vop_mensal_a_vista = copy.copy(base)
