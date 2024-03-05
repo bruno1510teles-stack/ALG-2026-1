@@ -214,19 +214,20 @@ def transform_data_to_refined(files_list, access_params):
     valor_vencido_mensal.columns = ['documento', 'fornecedor', 'safra', 'faixa_vencidos', 'vop_vencido']
     valor_vencido_mensal['categoria'] = valor_vencido_mensal['faixa_vencidos'].str.split(' - ').str[0]
     valor_vencido_mensal['safra'] = valor_vencido_mensal['safra'].astype(str) 
-    valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=None)
-    valor_vencido_mensal = valor_vencido_mensal.reset_index()
-    nomes = {'01': '01_ate_5_dias',
-            '02': '02_6_10_dias',
-            '03': '03_11_15_dias',
-            '04': '04_16_30_dias',
-            '05': '05_31_60_dias',
-            '06': '06_61_90_dias',
-            '07': '07_acima_90_dias'}
-    valor_vencido_mensal = valor_vencido_mensal.rename(columns=nomes)
-    valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
-    valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
-    valor_vencido_mensal.replace(0, pd.NA, inplace=True)
+    print(valor_vencido_mensal.columns)
+    # valor_vencido_mensal = valor_vencido_mensal.pivot_table(index=['documento', 'fornecedor', 'safra'], columns='categoria', values='vop_vencido', aggfunc='sum', fill_value=None)
+    # valor_vencido_mensal = valor_vencido_mensal.reset_index()
+    # nomes = {'01': '01_ate_5_dias',
+    #         '02': '02_6_10_dias',
+    #         '03': '03_11_15_dias',
+    #         '04': '04_16_30_dias',
+    #         '05': '05_31_60_dias',
+    #         '06': '06_61_90_dias',
+    #         '07': '07_acima_90_dias'}
+    # valor_vencido_mensal = valor_vencido_mensal.rename(columns=nomes)
+    # valor_vencido_mensal['vencido_total'] = valor_vencido_mensal[['01_ate_5_dias', '02_6_10_dias', '03_11_15_dias', '04_16_30_dias', '05_31_60_dias', '06_61_90_dias','07_acima_90_dias']].sum(axis=1)
+    # valor_vencido_mensal['safra'] = pd.to_datetime(valor_vencido_mensal['safra'])
+    # valor_vencido_mensal.replace(0, pd.NA, inplace=True)
     print(f"Código para 'valor_vencido_mensal' executado com sucesso!")
 
 
