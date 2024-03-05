@@ -118,8 +118,9 @@ def calculo_valor_a_vencer_mensal (data_referencia, repositorio_dado):
     'valor_titulo': 'sum'
     }).reset_index()
     repositorio_dado.columns = ['documento', 'fornecedor', 'safra', 'vop_a_vencer']
+    repositorio_dado['safra'] = pd.to_datetime(repositorio_dado['safra'])
     return repositorio_dado
-print(f"Código para def 'calculo_valor_a_vencer_mensal' executado com sucesso!")
+
 
 
 # Criando conexão
