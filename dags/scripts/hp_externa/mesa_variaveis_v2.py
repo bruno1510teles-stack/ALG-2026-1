@@ -20,7 +20,7 @@ def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
                                         .reset_index(drop=True)
                                         .rename('safra')
                                         .to_frame()
-                                        .assign(FORNECEDOR=x.name))
+                                        .assign(fornecedor=x.name))
                                  .reset_index(drop=True))
     return df_safra
     print(f"código para def 'periodo_intervalo_hp_fornecedor' executado com sucesso!")
