@@ -41,8 +41,15 @@ default_args = {
     schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
+    tags=['development', 'elt', 'minio', 'first_batch', 'mesa'],
+    executor_config={
+        "KubernetesExecutor": {
+            "request_memory": "2048Mi"
+        }
+    },
 )
+
+
 def visao_detalhada_hp_externa():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
