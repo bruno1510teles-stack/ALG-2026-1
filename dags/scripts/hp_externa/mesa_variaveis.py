@@ -187,22 +187,7 @@ def transform_data_to_refined(files_list, access_params):
     WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA'
 )
 SELECT 
-    documento_raiz,
-    razao_social,
-    numero_titulo,
-    data_emissao,
-    data_vencimento,
-    data_pagamento,
-    valor_titulo,
-    data_hp,
-    numero_parcela,
-    fornecedor,
-    fonte,
-    atualizado_em,
-    tipo_documento,
-    year,
-    month,
-    day
+    *
 FROM CTE
 WHERE rn = 1"""
 
@@ -213,7 +198,7 @@ WHERE rn = 1"""
                                 access_params['trino_port'],
                                 access_params['trino_user'],
                                 access_params['trino_password'])
-
+    base = base.drop('rn', axis = 1)
 # Chamando as variáveis
        
     qtde_titulos_abertos_vencidos = copy.copy(base)
