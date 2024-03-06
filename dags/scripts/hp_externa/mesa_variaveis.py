@@ -164,26 +164,47 @@ def transform_data_to_refined(files_list, access_params):
     
     ids_query = str(base['documento_raiz'].tolist()).replace('[', '(').replace(']', ')') 
     
-    query = f""" select 
-                    substring(documento, 1, 8) documento_raiz,
-                    razao_social,
-                    numero_titulo,
-                    data_emissao,
-                    data_vencimento,
-                    data_pagamento,
-                    valor_titulo,
-                    data_hp,
-                    numero_parcela,
-                    valor_pago,
-                    fornecedor,
-                    fonte,
-                    atualizado_em,
-                    tipo_documento,
-                    year,
-                    month,
-                    day	
-                from miniotrusted.payments.boletos where substring(documento, 1, 8) in {ids_query}
-                and fonte = 'HP_EXTERNA'"""
+    query = f""" WITH CTE AS (
+    SELECT 
+        substring(documento, 1, 8) documento_raiz,
+        razao_social,
+        numero_titulo,
+        data_emissao,
+        data_vencimento,
+        data_pagamento,
+        valor_titulo,
+        data_hp,
+        numero_parcela,
+        fornecedor,
+        fonte,
+        atualizado_em,
+        tipo_documento,
+        year,
+        month,
+        day,
+        ROW_NUMBER() OVER (PARTITION BY documento, numero_titulo, data_emissao, data_vencimento, fonte, fornecedor ORDER BY year DESC, month DESC, day DESC) AS rn
+    FROM miniotrusted.payments.boletos 
+    WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA'
+)
+SELECT 
+    documento_raiz,
+    razao_social,
+    numero_titulo,
+    data_emissao,
+    data_vencimento,
+    data_pagamento,
+    valor_titulo,
+    data_hp,
+    numero_parcela,
+    fornecedor,
+    fonte,
+    atualizado_em,
+    tipo_documento,
+    year,
+    month,
+    day
+FROM CTE
+WHERE rn = 1"""
 
     print(f"query: {query}")
     
