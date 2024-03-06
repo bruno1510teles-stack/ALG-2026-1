@@ -6,6 +6,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from scripts.query_trino import query_trino
 
 # Calculando Variáveis
 def calculo_qtde_titulos_abertos_vencidos (data_referencia, repositorio_dado):
@@ -160,6 +161,37 @@ def transform_data_to_refined(files_list, access_params):
     base = base[base['tipo_documento'] == 'CNPJ']
     
     base['documento_raiz'] = base['documento'].str[:8]
+    
+    ids_query = str(base['documento_raiz'].tolist()).replace('[', '(').replace(']', ')') 
+    
+    query = f""" select 
+                    substring(documento, 1, 8) documento_raiz,
+                    razao_social,
+                    numero_titulo,
+                    data_emissao,
+                    data_vencimento,
+                    data_pagamento,
+                    valor_titulo,
+                    data_hp,
+                    numero_parcela,
+                    valor_pago,
+                    fornecedor,
+                    fonte,
+                    atualizado_em,
+                    tipo_documento,
+                    year,
+                    month,
+                    day	
+                from miniotrusted.payments.boletos where substring(documento, 1, 8) in {ids_query}
+                and fonte = 'HP_EXTERNA'"""
+
+    print(f"query: {query}")
+    
+    base = query_trino(query, 
+                                access_params['trino_endpoint'],
+                                access_params['trino_port'],
+                                access_params['trino_user'],
+                                access_params['trino_password'])
 
 # Chamando as variáveis
        
