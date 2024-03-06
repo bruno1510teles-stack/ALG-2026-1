@@ -151,6 +151,10 @@ def transform_data_to_refined(files_list, access_params):
     # Consolidando    
     base = pd.concat(dfs, ignore_index=True)
 
+    base = base[base['fonte'] == 'HP_EXTERNA']
+    base = base[base['tipo_documento'] == 'CNPJ']
+    
+    base['documento'] = base['documento'].str[:8]
 
 # Chamando as variáveis
        
@@ -274,7 +278,7 @@ def transform_data_to_refined(files_list, access_params):
     ]
 
     df_final[colunas_float] = df_final[colunas_float].astype('float')
-
+    df_final['safra'] = pd.to_datetime(df_final['safra'])
 
         
     #Definindo data de tratamento do arquivo
