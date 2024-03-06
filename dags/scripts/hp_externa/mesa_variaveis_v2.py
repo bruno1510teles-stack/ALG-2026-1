@@ -39,7 +39,7 @@ def calculo_vop_mensal (data_referencia, repositorio_dado):
 
 def calculo_vop_mensal_a_vista (data_referencia, repositorio_dado):
     repositorio_dado[data_referencia] = pd.to_datetime(repositorio_dado[data_referencia])
-    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%y-%m-01')
+    repositorio_dado['safra'] = repositorio_dado[data_referencia].dt.strftime('%Y-%m-01')
     repositorio_dado['vop_a_vista'] = np.where(repositorio_dado['data_emissao'] == repositorio_dado['data_vencimento'], repositorio_dado['valor_titulo'], 0)
     repositorio_dado = repositorio_dado.groupby(['documento', 'fornecedor','safra']).agg({
     'vop_a_vista': 'sum'
