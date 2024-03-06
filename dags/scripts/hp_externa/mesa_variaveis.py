@@ -162,7 +162,7 @@ def transform_data_to_refined(files_list, access_params):
     
     base['documento_raiz'] = base['documento'].str[:8]
     
-    ids_query = str(base['documento_raiz'].tolist()).replace('[', '(').replace(']', ')') 
+    ids_query = str(base['documento_raiz'].unique().tolist()).replace('[', '(').replace(']', ')') 
     
     query = f""" WITH CTE AS (
     SELECT 
