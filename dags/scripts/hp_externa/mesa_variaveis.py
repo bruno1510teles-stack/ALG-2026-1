@@ -1,5 +1,6 @@
 # Carregando libs
 import pandas as pd
+import pyarrow as pa
 import copy
 from datetime import datetime, timezone, timedelta
 from minio import Minio
@@ -296,8 +297,7 @@ WHERE rn = 1"""
 
     
     # O pandas cria esse index, este codigo serve para remover caso ele crie
-    if "__index_level_0__" in df_final.columns:
-        df_final = df_final.drop(["__index_level_0__"])
+    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
     
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df_final, 
