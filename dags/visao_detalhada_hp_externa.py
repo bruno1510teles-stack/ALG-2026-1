@@ -7,13 +7,14 @@ from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
+from kubernetes.client import models as k8s
 
 # SCRIPTS
 from scripts.hp_externa.mesa_variaveis_v2 import transform_data_to_refined
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_trusted"
-MINIO_RAW_BUCKET = "payments"
+MINIO_CONN_TRUSTED = "minio_trusted"
+MINIO_TRUSTED_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -43,6 +44,9 @@ default_args = {
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
 )
+
+
+
 def visao_detalhada_hp_externa():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
@@ -50,8 +54,8 @@ def visao_detalhada_hp_externa():
 
     list_today_files = S3ListOperator(
         task_id="list_today_files",
-        aws_conn_id=MINIO_CONN_RAW,
-        bucket=MINIO_RAW_BUCKET,
+        aws_conn_id=MINIO_CONN_TRUSTED,
+        bucket=MINIO_TRUSTED_BUCKET,
         prefix=day_to_process,
         apply_wildcard=True,
     )
@@ -62,8 +66,13 @@ def visao_detalhada_hp_externa():
         provide_context=True,
         op_kwargs={'files_to_process': list_today_files.output}
     )
-    
-    @task()
+
+
+    @task(executor_config={
+        "KubernetesExecutor": {
+            "request_memory": "4096Mi"
+        }
+    })
     def visao_detalhada_hp_externa(current_files):
 
         access_params = {          
@@ -79,14 +88,15 @@ def visao_detalhada_hp_externa():
             "trino_password": Variable.get("TRINO_PASSWORD"),
             "opdb_bucket": Variable.get("OPDB_BUCKET"),
             "stage": Variable.get('STAGE')
-            	
-	
+                
+    
 
         }
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
         transform_data_to_refined(current_files, access_params)
+
 
     unique_clients = visao_detalhada_hp_externa(list_today_files.output)
 
