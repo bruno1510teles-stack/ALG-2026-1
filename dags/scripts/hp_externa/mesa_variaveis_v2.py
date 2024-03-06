@@ -278,8 +278,7 @@ def transform_data_to_refined(files_list, access_params):
     ]
 
     df_final[colunas_float] = df_final[colunas_float].astype('float')
-    df_final['safra'] = pd.to_datetime(df_final['safra'])
-    df_final['safra'] = df_final['safra'].dt.df_final('%Y-%m-01')
+    df_final['safra'] = pd.to_datetime(df_final['safra']).dt.date
 
         
     #Definindo data de tratamento do arquivo
