@@ -13,8 +13,8 @@ from kubernetes.client import models as k8s
 from scripts.hp_externa.mesa_variaveis_v2 import transform_data_to_refined
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_trusted"
-MINIO_RAW_BUCKET = "payments"
+MINIO_CONN_TRUSTED = "minio_trusted"
+MINIO_TRUSTED_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -54,8 +54,8 @@ def visao_detalhada_hp_externa():
 
     list_today_files = S3ListOperator(
         task_id="list_today_files",
-        aws_conn_id=MINIO_CONN_RAW,
-        bucket=MINIO_RAW_BUCKET,
+        aws_conn_id=MINIO_CONN_TRUSTED,
+        bucket=MINIO_TRUSTED_BUCKET,
         prefix=day_to_process,
         apply_wildcard=True,
     )
