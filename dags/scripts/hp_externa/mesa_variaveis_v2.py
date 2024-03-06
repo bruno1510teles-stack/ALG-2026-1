@@ -287,6 +287,7 @@ def transform_data_to_refined(files_list, access_params):
     df_final['year'] = now.year
     df_final['month'] = now.month
     df_final['day'] = now.day
+    print(df_final.head())
         
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
