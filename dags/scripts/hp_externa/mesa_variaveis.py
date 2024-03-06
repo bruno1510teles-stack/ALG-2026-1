@@ -297,7 +297,7 @@ WHERE rn = 1"""
 
     
     # O pandas cria esse index, este codigo serve para remover caso ele crie
-    df_final = pa.spark.createDataFrame(df_final, preserve_index=False)
+    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
     
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df_final, 
