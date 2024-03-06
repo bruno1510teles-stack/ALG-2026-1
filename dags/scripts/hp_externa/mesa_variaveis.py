@@ -160,6 +160,7 @@ def transform_data_to_refined(files_list, access_params):
     base = base[base['fonte'] == 'HP_EXTERNA']
     base = base[base['tipo_documento'] == 'CNPJ']
     
+    #Selecionando apenas os cnpjs que precisam ser atualizados
     base['documento_raiz'] = base['documento'].str[:8]
     
     ids_query = str(base['documento_raiz'].unique().tolist()).replace('[', '(').replace(']', ')') 
@@ -190,7 +191,8 @@ SELECT
     *
 FROM CTE
 WHERE rn = 1"""
-
+    
+    print(f'quantidade de CNPJs a serem atualziados: {len(ids_query)}')
     print(f"query: {query}")
     
     base = query_trino(query, 
@@ -292,6 +294,11 @@ WHERE rn = 1"""
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
 
+    
+    # O pandas cria esse index, este codigo serve para remover caso ele crie
+    if "__index_level_0__" in df_final.columns:
+        df_final = df_final.drop(["__index_level_0__"])
+    
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df_final, 
                     partition_by=["year", "month", "day"],
