@@ -6,7 +6,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
-from scripts.query_trino import query_trino
+from scripts.query_trino_payments import query_trino
 
 # Calculando Variáveis
 def calculo_qtde_titulos_abertos_vencidos (data_referencia, repositorio_dado):
