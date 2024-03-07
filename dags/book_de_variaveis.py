@@ -18,7 +18,7 @@ BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year=2024/month=2/day=28/" #f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
 
 # DEFINE FUNCTIONS
@@ -41,7 +41,7 @@ default_args = {
     schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['etl', 'minio', 'first_batch', 'variaveis', 'motor']
+    tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
 def book_de_variaveis():
     # init & finish task
