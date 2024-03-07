@@ -41,7 +41,7 @@ default_args = {
     schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['etl', 'minio', 'first_batch', 'variaveis', 'motor']
+    tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
 def book_de_variaveis():
     # init & finish task

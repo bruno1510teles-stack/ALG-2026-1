@@ -1,132 +1,309 @@
 # Carregando libs
 import pandas as pd
+import pyarrow as pa
 import copy
 from datetime import datetime, timezone, timedelta
 from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from scripts.query_trino_payments import query_trino
 
 # Calculando Variáveis
-def calculo_qtde_titulos_abertos_vencidos (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] < data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'numero_titulo': 'count'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'qtde_titulos_abertos_vencidos']
-    return repositorio_dado
+def PrazoMedio(df, meses=None):    
 
-def calculo_valor_titulos_abertos_vencidos (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] < data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'valor_titulo': 'sum'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'valor_titulos_abertos_vencidos']
-    return repositorio_dado
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
 
-def calculo_qtde_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] >= data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'numero_titulo': 'count'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'qtde_titulos_abertos_a_vencer']
-    return repositorio_dado
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
 
-def calculo_valor_titulos_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] >= data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'valor_titulo': 'sum'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'valor_titulos_abertos_a_vencer']
-    return repositorio_dado
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
 
-def calculo_prazo_medio_abertos_vencidos (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] < data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
-    repositorio_dado['aux_prazo_medio'] = (repositorio_dado['data_vencimento'] - repositorio_dado['data_emissao']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'aux_prazo_medio': 'mean'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'prazo_medio_abertos_vencidos']
-    return repositorio_dado
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
 
-def calculo_prazo_medio_abertos_a_vencer (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[repositorio_dado['data_vencimento'] >= data_referencia]
-    repositorio_dado = repositorio_dado[pd.isna(repositorio_dado['data_pagamento'])]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
-    repositorio_dado['aux_prazo_medio'] = (repositorio_dado['data_vencimento'] - repositorio_dado['data_emissao']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'aux_prazo_medio': 'mean'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'prazo_medio_abertos_a_vencer']
-    return repositorio_dado
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
 
-def calculo_qtde_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'numero_titulo': 'count'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'qtde_titulos_liquidados']
-    return repositorio_dado
+    # Soma vop
 
-def calculo_valor_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'valor_titulo': 'sum'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'valor_titulos_liquidados']
-    return repositorio_dado
+    hpex_vop_acumulado['dias'] = hpex_vop_acumulado['data_vencimento'] - hpex_vop_acumulado['data_emissao']
+    soma_vop = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['dias'].mean().dt.days
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'prazo_medio{meses}_meses']
 
-def calculo_prazo_medio_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_emissao'] = pd.to_datetime(repositorio_dado['data_emissao'])
-    repositorio_dado['aux_prazo_medio'] = (repositorio_dado['data_vencimento'] - repositorio_dado['data_emissao']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'aux_prazo_medio': 'mean'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'prazo_medio_titulos_liquidados']
-    return repositorio_dado
+    return df_saida
 
-def calculo_atraso_medio_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_pagamento'] = pd.to_datetime(repositorio_dado['data_pagamento'])
-    repositorio_dado['dif_dias_pagamentos'] = (repositorio_dado['data_pagamento'] - repositorio_dado['data_vencimento']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'dif_dias_pagamentos': 'mean'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'atraso_medio_titulos_liquidados']
-    return repositorio_dado
+def MediaDifDiasFaturamento(df, meses=None):    
 
-def calculo_atraso_max_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_pagamento'] = pd.to_datetime(repositorio_dado['data_pagamento'])
-    repositorio_dado['dif_dias_pagamentos'] = (repositorio_dado['data_pagamento'] - repositorio_dado['data_vencimento']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'dif_dias_pagamentos': 'max'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'atraso_max_titulos_liquidados']
-    return repositorio_dado
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
 
-def calculo_atraso_min_titulos_liquidados (data_referencia, repositorio_dado):
-    repositorio_dado = repositorio_dado[pd.notna(data_referencia)]
-    repositorio_dado['data_vencimento'] = pd.to_datetime(repositorio_dado['data_vencimento'])
-    repositorio_dado['data_pagamento'] = pd.to_datetime(repositorio_dado['data_pagamento'])
-    repositorio_dado['dif_dias_pagamentos'] = (repositorio_dado['data_pagamento'] - repositorio_dado['data_vencimento']).dt.days
-    repositorio_dado = repositorio_dado.groupby(['documento_raiz', 'fornecedor']).agg({
-    'dif_dias_pagamentos': 'min'
-    }).reset_index()
-    repositorio_dado.columns = ['documento_raiz', 'fornecedor', 'atraso_min_titulos_liquidados']
-    return repositorio_dado
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+
+    # Soma vop
+    
+    # Pega apenas as primeiras parcela (ou seja apenas as que são a vista, ou apenas 1 vez as parceladas)
+
+    hpex_notafiscal_ordenada = hpex_vop_acumulado[hpex_vop_acumulado['parcela_logica'] == 1].sort_values(['fornecedor', 'documento_raiz', 'data_emissao'], ascending = True)
+    hpex_notafiscal_ordenada['prox_data_emissao'] = hpex_notafiscal_ordenada.groupby(['documento_raiz', 'fornecedor'])['data_emissao'].shift(-1)
+    hpex_notafiscal_ordenada['diferenca_dias'] = (hpex_notafiscal_ordenada['prox_data_emissao'] - hpex_notafiscal_ordenada['data_emissao']).dt.days
+    soma_vop = hpex_notafiscal_ordenada.groupby(['documento_raiz', 'fornecedor'])['diferenca_dias'].mean()
+    
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'media_dif_dias_faturamento{meses}_meses']
+    
+def PercentMedAlavancagemPeriodo(df, meses=None):    
+
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+        
+    #Compila os valores por data de emissao e vencimento
+    emissao = hpex_vop_acumulado[['documento_raiz', 'data_emissao', 'valor_titulo']]
+    vencimento = hpex_vop_acumulado[['documento_raiz', 'data_vencimento', 'valor_titulo']]
+    
+    #Deixa as colnas com o nome certo para posterior concat
+    emissao.columns = ['documento_raiz', 'data', 'valor_titulo_fat']    
+    vencimento.columns = ['documento_raiz', 'data', 'valor_titulo_venc']
+    
+    df = pd.concat([emissao, vencimento])
+    
+    #Soma os valores que são do mesmo dia e do mesmo documento e posteriormente faz um acumulativo pelas datas
+    df_acumulado = df.groupby(['documento_raiz', 'fornecedor', 'data']).sum().groupby(['documento_raiz', 'fornecedor']).cumsum().reset_index()
+    
+    #Realiza o calculo de porcentagem
+    df_acumulado['Alavancagem'] = (df_acumulado['valor_titulo_venc']/df_acumulado['valor_titulo_fat'])
+    
+    #Traz a média de alavancagem diaria do EC
+    AlavancagemPeriodo = df_acumulado.groupby(['documento_raiz', 'fornecedor'])['Alavancagem'].mean()
+    
+    df_saida = pd.DataFrame(AlavancagemPeriodo)
+    df_saida.columns = [f'percentual_medio_de_alavancagem_periodo{meses}_meses']
+    
+    return df_saida
+
+def PercentMedAlavancagemFinal(df, meses=None):    
+
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    
+    
+    FiltroVencido = hpex_vop_acumulado['data_vencimento'] < hpex_vop_acumulado['data_hp']
+    AlavancagemFinal = (hpex_vop_acumulado.loc[FiltroVencido,:].groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum() / hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum()).fillna(0)
+        
+    df_saida = pd.DataFrame(AlavancagemFinal)
+    df_saida.columns = [f'percentual_medio_de_alavancagem_final{meses}_meses']
+    
+    
+    return df_saida   
+
+def QtdDiasMaxPagamentoAtrasado(df, meses=None):    
+
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    
+    #Calcula a quantidade máxima de dias que um pagamento ficou em atraso
+    
+    filtroPagamentoNulo = (~hpex_vop_acumulado['data_pagamento'].isna())
+    hpex_vop_acumulado.loc[filtroPagamentoNulo, 'dias_atraso'] = hpex_vop_acumulado.loc[filtroPagamentoNulo, 'data_pagamento'] - hpex_vop_acumulado.loc[filtroPagamentoNulo, 'data_vencimento']
+    
+    soma_vop = hpex_vop_acumulado[filtroPagamentoNulo].groupby(['documento_raiz', 'fornecedor'])['dias_atraso'].max()
+    
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'qtde_dias_max_pagamento_atrasado{meses}_meses']
+    
+    return df_saida
+
+def PercentPagoEmDia(df, meses=None):    
+
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        hpex_vop_acumulado = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    
+    # Calcula o percentual pago em dia
+    
+    filtroPagos = (~hpex_vop_acumulado['data_pagamento'].isna())
+    df_pagos = hpex_vop_acumulado[filtroPagos]
+    
+    # Pagos em até 5 dias após a data de vencimento são considerados pagos em dia
+    df_pagos['IsPagoEmDia'] = (df_pagos['data_pagamento'] <= (df_pagos['data_vencimento'] + pd.offsets.Day(5)))
+
+    PercentPagoEmDia = (df_pagos[df_pagos['IsPagoEmDia']].groupby(['documento_raiz', 'fornecedor']).size() / df_pagos.groupby(['documento_raiz', 'fornecedor']).size()).fillna(0)
+    
+    df_saida = pd.DataFrame(PercentPagoEmDia)
+    df_saida.columns = [f'percentual_pago_em_dia{meses}_meses']
+    
+    return df_saida 
+
+def Ever(df, dias):
+    
+    # Filtra pela quantidade de dias desejada
+    # Temos alguns títulos que foram enviados com a data de pagamento anterior a data de emissão, como são poucos (2330 no dia 30/10/2023) assumiremos eles como 0 de diferença de dias, ou seja, foram pagos no prazo.
+    
+    filter_pagamento_nao_nulo = ~df['data_pagamento'].isna()
+    hpex_pagos = df[filter_pagamento_nao_nulo]
+    filter_ever = (hpex_pagos['data_pagamento'] - hpex_pagos['data_vencimento']).dt.days >= dias
+    hpex_ever = hpex_pagos[filter_ever]    
+    
+    soma_vop = hpex_ever.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].count()
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'ever_{dias}']
+
+    return df_saida
+
+def Over(df, dias):
+    
+    # Filtra pela quantidade de dias desejada
+    # Temos alguns títulos que foram enviados com a data de pagamento anterior a data de emissão, como são poucos (2330 no dia 30/10/2023) assumiremos eles como 0 de diferença de dias, ou seja, foram pagos no prazo.
+    
+    filter_pagamento_nulo = df['data_pagamento'].isna()
+    hpex_pagos = df[filter_pagamento_nulo]
+    filter_over = (hpex_pagos['data_hp'] - hpex_pagos['data_vencimento']).dt.days >= dias
+    hpex_ever = hpex_pagos[filter_over]    
+
+    soma_vop = hpex_ever.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].count()
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'over_{dias}']
+
+    return df_saida
+
+def VopAcumulado(df, meses):    
+
+    # Filtra pela quantidade de meses desejada
+
+    #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+    DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+    DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+    df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+    df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+    #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+    df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+    df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+    df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+    df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+    hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+        
+    # Soma vop
+    
+    soma_vop = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum()
+    
+    df_saida = pd.DataFrame(soma_vop)
+    df_saida.columns = [f'vop_{meses}_meses']
+
+    return df_saida
 
 # Criando conexão
 def transform_data_to_refined(files_list, access_params):
@@ -135,7 +312,7 @@ def transform_data_to_refined(files_list, access_params):
     BUCKET_SOURCE_TRUSTED = "payments"
     TRUSTED_FOLDER =  "boletos/"
     BUCKET_SOURCE_REFINED = "payments"
-    REFINED_FOLDER = "mesa/visao_resumida_hp_externa/"
+    REFINED_FOLDER = "mesa/book_de_variaveis/"
 
     df_payments = pd.DataFrame()
 
@@ -160,85 +337,82 @@ def transform_data_to_refined(files_list, access_params):
     base = base[base['tipo_documento'] == 'CNPJ']
     
     base['documento_raiz'] = base['documento'].str[:8]
-
-# Chamando as variáveis
-       
-    qtde_titulos_abertos_vencidos = copy.copy(base)
-    qtde_titulos_abertos_vencidos = calculo_qtde_titulos_abertos_vencidos(qtde_titulos_abertos_vencidos['data_hp'], qtde_titulos_abertos_vencidos)
-
-    valor_titulos_abertos_vencidos = copy.copy(base)
-    valor_titulos_abertos_vencidos = calculo_valor_titulos_abertos_vencidos(valor_titulos_abertos_vencidos['data_hp'], valor_titulos_abertos_vencidos)   
-
-    qtde_titulos_abertos_a_vencer = copy.copy(base)
-    qtde_titulos_abertos_a_vencer = calculo_qtde_titulos_abertos_a_vencer(qtde_titulos_abertos_a_vencer['data_hp'], qtde_titulos_abertos_a_vencer)  
-
-    valor_titulos_abertos_a_vencer = copy.copy(base)
-    valor_titulos_abertos_a_vencer = calculo_valor_titulos_abertos_a_vencer(valor_titulos_abertos_a_vencer['data_hp'], valor_titulos_abertos_a_vencer) 
-
-    prazo_medio_abertos_vencidos = copy.copy(base)
-    prazo_medio_abertos_vencidos = calculo_prazo_medio_abertos_vencidos(prazo_medio_abertos_vencidos['data_hp'], prazo_medio_abertos_vencidos) 
-
-    prazo_medio_abertos_a_vencer = copy.copy(base)
-    prazo_medio_abertos_a_vencer = calculo_prazo_medio_abertos_a_vencer(prazo_medio_abertos_a_vencer['data_hp'], prazo_medio_abertos_a_vencer) 
-
-    qtde_titulos_liquidados = copy.copy(base)
-    qtde_titulos_liquidados = calculo_qtde_titulos_liquidados(qtde_titulos_liquidados['data_pagamento'], qtde_titulos_liquidados) 
-
-    valor_titulos_liquidados = copy.copy(base)
-    valor_titulos_liquidados = calculo_valor_titulos_liquidados(valor_titulos_liquidados['data_pagamento'], valor_titulos_liquidados) 
-
-    prazo_medio_titulos_liquidados = copy.copy(base)
-    prazo_medio_titulos_liquidados = calculo_prazo_medio_titulos_liquidados(prazo_medio_titulos_liquidados['data_pagamento'], prazo_medio_titulos_liquidados)  
-
-    atraso_medio_titulos_liquidados = copy.copy(base)
-    atraso_medio_titulos_liquidados = calculo_atraso_medio_titulos_liquidados(atraso_medio_titulos_liquidados['data_pagamento'], atraso_medio_titulos_liquidados)  
-
-    atraso_max_titulos_liquidados = copy.copy(base)
-    atraso_max_titulos_liquidados = calculo_atraso_max_titulos_liquidados(atraso_max_titulos_liquidados['data_pagamento'], atraso_max_titulos_liquidados)  
-
-    atraso_min_titulos_liquidados = copy.copy(base)
-    atraso_min_titulos_liquidados = calculo_atraso_min_titulos_liquidados(atraso_min_titulos_liquidados['data_pagamento'], atraso_min_titulos_liquidados) 
-
+    ids_query = str(base['documento_raiz'].unique().tolist()).replace('[', '(').replace(']', ')') 
     
-    #compilando as variaveis
-    dfs_inter = [
-        valor_titulos_abertos_vencidos,
-        qtde_titulos_abertos_a_vencer,
-        valor_titulos_abertos_a_vencer,
-        prazo_medio_abertos_vencidos,
-        prazo_medio_abertos_a_vencer,
-        qtde_titulos_liquidados,
-        valor_titulos_liquidados,
-        prazo_medio_titulos_liquidados,
-        atraso_medio_titulos_liquidados,
-        atraso_max_titulos_liquidados,
-        atraso_min_titulos_liquidados]
+    query = f""" WITH CTE AS (
+    SELECT 
+        substring(documento, 1, 8) documento_raiz,
+        razao_social,
+        numero_titulo,
+        data_emissao,
+        data_vencimento,
+        data_pagamento,
+        valor_titulo,
+        data_hp,
+        numero_parcela,
+        fornecedor,
+        fonte,
+        atualizado_em,
+        tipo_documento,
+        year,
+        month,
+        day,
+        ROW_NUMBER() OVER (PARTITION BY documento, numero_titulo, data_emissao, data_vencimento, fonte, fornecedor ORDER BY year DESC, month DESC, day DESC) AS rn
+    FROM miniotrusted.payments.boletos 
+    WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA'
+        )
+        SELECT 
+            *
+        FROM CTE
+        WHERE rn = 1"""
     
-    for df_inter in dfs_inter:
-        qtde_titulos_abertos_vencidos = pd.merge(qtde_titulos_abertos_vencidos, df_inter, on=['documento_raiz', 'fornecedor'], how='outer')
-        
-    df_final = qtde_titulos_abertos_vencidos
-        
-        
-    colunas_float = [
-        'qtde_titulos_abertos_vencidos',
-        'valor_titulos_abertos_vencidos',
-        'qtde_titulos_abertos_a_vencer',
-        'valor_titulos_abertos_a_vencer',
-        'prazo_medio_abertos_vencidos',
-        'prazo_medio_abertos_a_vencer',
-        'qtde_titulos_liquidados',
-        'valor_titulos_liquidados',
-        'prazo_medio_titulos_liquidados',
-        'atraso_medio_titulos_liquidados',
-        'atraso_max_titulos_liquidados',
-        'atraso_min_titulos_liquidados'
+    print(f'quantidade de CNPJs a serem atualziados: {len(ids_query)}')
+    print(f"query: {query}")
+    
+    base = query_trino(query, 
+                                access_params['trino_endpoint'],
+                                access_params['trino_port'],
+                                access_params['trino_user'],
+                                access_params['trino_password'])
+    base = base.drop('rn', axis = 1)
+
+    prazo_medio_geral = PrazoMedio(base)
+    prazo_medio_3_meses = PrazoMedio(base, 3)
+    alavancagem_data_analise = PercentMedAlavancagemFinal(base)
+    alavancagem_media_historica = PercentMedAlavancagemPeriodo(base)
+    media_diferenca_dias_pedidos = MediaDifDiasFaturamento(base)
+    media_diferenca_dias_pedidos_3_meses = MediaDifDiasFaturamento(base, 3)
+    maior_atraso_em_dias = QtdDiasMaxPagamentoAtrasado(base)
+    maior_atraso_em_dias_3_meses = QtdDiasMaxPagamentoAtrasado(base, 3)
+    percentual_pago_em_dia = PercentPagoEmDia(base)
+    percentual_pago_em_dia_3_meses = PercentPagoEmDia(base, 3)
+    over_5 = Over(base, 5)
+    ever_10 = Ever(base, 10)
+    vop_6_meses = VopAcumulado(base,6)
+
+    medidas = [
+        prazo_medio_geral,
+        prazo_medio_3_meses,
+        alavancagem_data_analise,
+        alavancagem_media_historica,
+        media_diferenca_dias_pedidos,
+        media_diferenca_dias_pedidos_3_meses,
+        maior_atraso_em_dias,
+        maior_atraso_em_dias_3_meses,
+        percentual_pago_em_dia,
+        percentual_pago_em_dia_3_meses,
+        over_5,
+        ever_10,
+        vop_6_meses
     ]
+    
+    boletos_refined = pd.DataFrame(base['documento_raiz'].unique(), columns = ['documento_raiz'])
+    
+    for medida in medidas:
+        boletos_refined = boletos_refined.join(medida, on='documento_raiz', how='left')
 
-    df_final[colunas_float] = df_final[colunas_float].astype('float')
-
-
-        
+    df_final = boletos_refined   
+    
     #Definindo data de tratamento do arquivo
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     
@@ -253,6 +427,9 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
+    
+    # O pandas cria esse index, este codigo serve para remover caso ele crie
+    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df_final, 
