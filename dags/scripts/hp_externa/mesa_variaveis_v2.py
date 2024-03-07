@@ -192,7 +192,7 @@ def transform_data_to_refined(files_list, access_params):
     prazo_medio_mensal = calculo_prazo_medio_mensal('data_emissao', prazo_medio_mensal)
     prazo_medio_mensal = periodo_intervalo_hp_fornecedor.merge(prazo_medio_mensal, on = ['fornecedor','safra', 'documento'], how = 'left')
     prazo_medio_mensal = prazo_medio_mensal.groupby(['documento', 'fornecedor','safra']).agg({
-        'prazo_medio': 'sum'
+        'prazo_medio': 'mean'
         }).reset_index()
     prazo_medio_mensal.columns = ['documento', 'fornecedor', 'safra', 'prazo_medio']
     prazo_medio_mensal['prazo_medio'] = np.where(prazo_medio_mensal['prazo_medio'] == 0, np.nan, prazo_medio_mensal['prazo_medio'])
