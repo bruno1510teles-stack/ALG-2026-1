@@ -7,6 +7,8 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from scripts.query_trino_payments import query_trino
+import pyarrow as pa
 
 # Calculando Variáveis
 def intervalo_hp_fornecedor(data_referencia, repositorio_dado):
@@ -155,6 +157,44 @@ def transform_data_to_refined(files_list, access_params):
     base = base[base['tipo_documento'] == 'CNPJ']
     
     base['documento'] = base['documento'].str[:8]
+    ids_query = str(base['documento_raiz'].unique().tolist()).replace('[', '(').replace(']', ')') 
+    
+    query = f""" WITH CTE AS (
+    SELECT 
+        substring(documento, 1, 8) documento_raiz,
+        razao_social,
+        numero_titulo,
+        data_emissao,
+        data_vencimento,
+        data_pagamento,
+        valor_titulo,
+        data_hp,
+        numero_parcela,
+        fornecedor,
+        fonte,
+        atualizado_em,
+        tipo_documento,
+        year,
+        month,
+        day,
+        ROW_NUMBER() OVER (PARTITION BY documento, numero_titulo, data_emissao, data_vencimento, fonte, fornecedor ORDER BY year DESC, month DESC, day DESC) AS rn
+    FROM miniotrusted.payments.boletos 
+    WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA'
+    )
+    SELECT 
+        *
+    FROM CTE
+    WHERE rn = 1"""
+    
+    print(f'quantidade de CNPJs a serem atualziados: {len(ids_query)}')
+    print(f"query: {query}")
+    
+    base = query_trino(query, 
+                                access_params['trino_endpoint'],
+                                access_params['trino_port'],
+                                access_params['trino_user'],
+                                access_params['trino_password'])
+    base = base.drop('rn', axis = 1)
 
 # Chamando as variáveis
        
@@ -297,6 +337,8 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
 
+    # O pandas cria esse index, este codigo serve para remover caso ele crie
+    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df_final, 
                     partition_by=["year", "month", "day"],
