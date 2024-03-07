@@ -157,11 +157,11 @@ def transform_data_to_refined(files_list, access_params):
     base = base[base['tipo_documento'] == 'CNPJ']
     
     base['documento'] = base['documento'].str[:8]
-    ids_query = str(base['documento_raiz'].unique().tolist()).replace('[', '(').replace(']', ')') 
+    ids_query = str(base['documento'].unique().tolist()).replace('[', '(').replace(']', ')') 
     
     query = f""" WITH CTE AS (
     SELECT 
-        substring(documento, 1, 8) documento_raiz,
+        substring(documento, 1, 8) documento,
         razao_social,
         numero_titulo,
         data_emissao,
