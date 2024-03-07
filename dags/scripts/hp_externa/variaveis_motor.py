@@ -312,7 +312,7 @@ def transform_data_to_refined(files_list, access_params):
     BUCKET_SOURCE_TRUSTED = "payments"
     TRUSTED_FOLDER =  "boletos/"
     BUCKET_SOURCE_REFINED = "payments"
-    REFINED_FOLDER = "mesa/book_de_variaveis/"
+    REFINED_FOLDER = "motor/book_de_variaveis/"
 
     df_payments = pd.DataFrame()
 
