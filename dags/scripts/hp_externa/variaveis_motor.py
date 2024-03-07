@@ -107,12 +107,12 @@ def PercentMedAlavancagemPeriodo(df, meses=None):
         hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
         
     #Compila os valores por data de emissao e vencimento
-    emissao = hpex_vop_acumulado[['documento_raiz', 'data_emissao', 'valor_titulo']]
-    vencimento = hpex_vop_acumulado[['documento_raiz', 'data_vencimento', 'valor_titulo']]
+    emissao = hpex_vop_acumulado[['documento_raiz', 'fornecedor', 'data_emissao', 'valor_titulo']]
+    vencimento = hpex_vop_acumulado[['documento_raiz', 'fornecedor', 'data_vencimento', 'valor_titulo']]
     
     #Deixa as colnas com o nome certo para posterior concat
-    emissao.columns = ['documento_raiz', 'data', 'valor_titulo_fat']    
-    vencimento.columns = ['documento_raiz', 'data', 'valor_titulo_venc']
+    emissao.columns = ['documento_raiz', 'fornecedor', 'data', 'valor_titulo_fat']    
+    vencimento.columns = ['documento_raiz', 'fornecedor', 'data', 'valor_titulo_venc']
     
     df = pd.concat([emissao, vencimento])
     
@@ -377,18 +377,43 @@ def transform_data_to_refined(files_list, access_params):
     base = base.drop('rn', axis = 1)
 
     prazo_medio_geral = PrazoMedio(base)
+    print('prazo_medio_geral: executado!')
+    
     prazo_medio_3_meses = PrazoMedio(base, 3)
+    print('prazo_medio_3_meses: executado!')
+    
     alavancagem_data_analise = PercentMedAlavancagemFinal(base)
+    print('alavancagem_data_analise: executado!')
+    
     alavancagem_media_historica = PercentMedAlavancagemPeriodo(base)
+    print('alavancagem_media_historica: executado!')
+    
     media_diferenca_dias_pedidos = MediaDifDiasFaturamento(base)
+    print('media_diferenca_dias_pedidos: executado!')
+    
     media_diferenca_dias_pedidos_3_meses = MediaDifDiasFaturamento(base, 3)
+    print('media_diferenca_dias_pedidos_3_meses: executado!')
+    
     maior_atraso_em_dias = QtdDiasMaxPagamentoAtrasado(base)
+    print('maior_atraso_em_dias: executado!')
+    
     maior_atraso_em_dias_3_meses = QtdDiasMaxPagamentoAtrasado(base, 3)
+    print('maior_atraso_em_dias_3_meses: executado!')
+    
     percentual_pago_em_dia = PercentPagoEmDia(base)
+    print('percentual_pago_em_dia: executado!')
+    
     percentual_pago_em_dia_3_meses = PercentPagoEmDia(base, 3)
+    print('percentual_pago_em_dia_3_meses: executado!')
+    
     over_5 = Over(base, 5)
+    print('over_5: executado!')
+    
     ever_10 = Ever(base, 10)
+    print('ever_10: executado!')
+    
     vop_6_meses = VopAcumulado(base,6)
+    print('vop_6_meses: executado!')
 
     medidas = [
         prazo_medio_geral,
@@ -410,6 +435,7 @@ def transform_data_to_refined(files_list, access_params):
     
     for medida in medidas:
         boletos_refined = boletos_refined.join(medida, on='documento_raiz', how='left')
+        print(f'{medida} concatenada')
 
     df_final = boletos_refined   
     
