@@ -179,7 +179,7 @@ def transform_data_to_refined(files_list, access_params):
         day,
         ROW_NUMBER() OVER (PARTITION BY documento, numero_titulo, data_emissao, data_vencimento, fonte, fornecedor ORDER BY year DESC, month DESC, day DESC) AS rn
     FROM miniotrusted.payments.boletos 
-    WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA'
+    WHERE substring(documento, 1, 8) IN {ids_query} AND fonte = 'HP_EXTERNA' AND tipo_documento = 'CNPJ'
     )
     SELECT 
         *
