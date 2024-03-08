@@ -458,7 +458,6 @@ def transform_data_to_refined(files_list, access_params):
     
     for df_inter in dfs_inter:
         df_final = pd.merge(df_final, df_inter, on=['documento_raiz', 'fornecedor'], how='outer')
-        print(f'{df_inter} concatenada')
 
     #AJUSTANDO NOME DAS COLUNAS
     colunas = ['documento_raiz', 
@@ -494,7 +493,9 @@ def transform_data_to_refined(files_list, access_params):
         'ever_10',
         'vop_6_meses'
     ]
+    print( 'AAAAAAAAAAAA')
     for coluna in colunas_float:
+        print(coluna)
         df_final[coluna] = df_final[coluna].astype('float')
         print(coluna)
     
