@@ -40,7 +40,7 @@ def PrazoMedio(df, meses=None):
     hpex_vop_acumulado['dias'] = hpex_vop_acumulado['data_vencimento'] - hpex_vop_acumulado['data_emissao']
     soma_vop = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['dias'].mean().dt.days
     df_saida = pd.DataFrame(soma_vop)
-    df_saida.columns = [f'prazo_medio{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'prazo_medio{meses}_meses']]
 
     return df_saida
 
@@ -72,14 +72,26 @@ def MediaDifDiasFaturamento(df, meses=None):
     # Soma vop
     
     # Pega apenas as primeiras parcela (ou seja apenas as que são a vista, ou apenas 1 vez as parceladas)
+        # Filtrando somente a primeira parcela
+        hpex_vop_acumulado = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor', 'numero_titulo']).agg({
+            'data_emissao': 'min'
+        }).reset_index()
+        hpex_vop_acumulado.columns = ['documento_raiz', 'fornecedor', 'numero_titulo', 'min_data_emissao']
+        hpex_vop_acumulado.sort_values(by=['documento_raiz', 'fornecedor', 'min_data_emissao', 'numero_titulo'], inplace=True)
+        hpex_vop_acumulado['diferenca'] = hpex_vop_acumulado.groupby(['fornecedor', 'documento_raiz'])['min_data_emissao'].diff()
+        hpex_vop_acumulado = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor']).agg({
+            'diferenca': 'mean'
+        }).reset_index()
+        hpex_vop_acumulado.columns = ['documento_raiz', 'fornecedor', 'media_dif_dias_geral']
+        hpex_vop_acumulado['media_dif_dias_geral'].fillna(pd.Timedelta(seconds=0), inplace=True)
+        hpex_vop_acumulado.sort_values(by=['media_dif_dias_geral'], inplace=True)
+        
+        # Converter a coluna 'MEDIA_DIFERENÇA_DIAS_GERAL' de Timedelta para inteiros (dias)
+        hpex_vop_acumulado['media_dif_dias_geral'] = hpex_vop_acumulado['media_dif_dias_geral'].dt.days
 
-    hpex_notafiscal_ordenada = hpex_vop_acumulado[hpex_vop_acumulado['parcela_logica'] == 1].sort_values(['fornecedor', 'documento_raiz', 'data_emissao'], ascending = True)
-    hpex_notafiscal_ordenada['prox_data_emissao'] = hpex_notafiscal_ordenada.groupby(['documento_raiz', 'fornecedor'])['data_emissao'].shift(-1)
-    hpex_notafiscal_ordenada['diferenca_dias'] = (hpex_notafiscal_ordenada['prox_data_emissao'] - hpex_notafiscal_ordenada['data_emissao']).dt.days
-    soma_vop = hpex_notafiscal_ordenada.groupby(['documento_raiz', 'fornecedor'])['diferenca_dias'].mean()
-    
-    df_saida = pd.DataFrame(soma_vop)
-    df_saida.columns = [f'media_dif_dias_faturamento{meses}_meses']
+
+        df_saida = hpex_vop_acumulado
+        df_saida.columns = [['documento_raiz', 'fornecedor', f'media_dif_dias_faturamento{meses}_meses']]
     
 def PercentMedAlavancagemPeriodo(df, meses=None):    
 
@@ -126,7 +138,7 @@ def PercentMedAlavancagemPeriodo(df, meses=None):
     AlavancagemPeriodo = df_acumulado.groupby(['documento_raiz', 'fornecedor'])['Alavancagem'].mean()
     
     df_saida = pd.DataFrame(AlavancagemPeriodo)
-    df_saida.columns = [f'percentual_medio_de_alavancagem_periodo{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor', f'percentual_medio_de_alavancagem_periodo{meses}_meses']]
     
     return df_saida
 
@@ -160,7 +172,7 @@ def PercentMedAlavancagemFinal(df, meses=None):
     AlavancagemFinal = (hpex_vop_acumulado.loc[FiltroVencido,:].groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum() / hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum()).fillna(0)
         
     df_saida = pd.DataFrame(AlavancagemFinal)
-    df_saida.columns = [f'percentual_medio_de_alavancagem_final{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'percentual_medio_de_alavancagem_final{meses}_meses']]
     
     
     return df_saida   
@@ -198,7 +210,7 @@ def QtdDiasMaxPagamentoAtrasado(df, meses=None):
     soma_vop = hpex_vop_acumulado[filtroPagamentoNulo].groupby(['documento_raiz', 'fornecedor'])['dias_atraso'].max()
     
     df_saida = pd.DataFrame(soma_vop)
-    df_saida.columns = [f'qtde_dias_max_pagamento_atrasado{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'qtde_dias_max_pagamento_atrasado{meses}_meses']]
     
     return df_saida
 
@@ -238,7 +250,7 @@ def PercentPagoEmDia(df, meses=None):
     PercentPagoEmDia = (df_pagos[df_pagos['IsPagoEmDia']].groupby(['documento_raiz', 'fornecedor']).size() / df_pagos.groupby(['documento_raiz', 'fornecedor']).size()).fillna(0)
     
     df_saida = pd.DataFrame(PercentPagoEmDia)
-    df_saida.columns = [f'percentual_pago_em_dia{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'percentual_pago_em_dia{meses}_meses']]
     
     return df_saida 
 
@@ -270,7 +282,7 @@ def Over(df, dias):
 
     soma_vop = hpex_ever.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].count()
     df_saida = pd.DataFrame(soma_vop)
-    df_saida.columns = [f'over_{dias}']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'over_{dias}']]
 
     return df_saida
 
@@ -301,7 +313,7 @@ def VopAcumulado(df, meses):
     soma_vop = hpex_vop_acumulado.groupby(['documento_raiz', 'fornecedor'])['valor_titulo'].sum()
     
     df_saida = pd.DataFrame(soma_vop)
-    df_saida.columns = [f'vop_{meses}_meses']
+    df_saida.columns = [['documento_raiz', 'fornecedor',f'vop_{meses}_meses']]
 
     return df_saida
 
