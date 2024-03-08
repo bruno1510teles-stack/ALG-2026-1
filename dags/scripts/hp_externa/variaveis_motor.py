@@ -494,8 +494,9 @@ def transform_data_to_refined(files_list, access_params):
         'ever_10',
         'vop_6_meses'
     ]
-
-    df_final[colunas_float] = df_final[colunas_float].astype('float')
+    for coluna in colunas:
+        df_final[coluna] = df_final[coluna].astype('float')
+        print(coluna)
     
     #Definindo data de tratamento do arquivo
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
