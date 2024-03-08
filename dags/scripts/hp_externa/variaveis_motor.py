@@ -252,7 +252,7 @@ def PercentPagoEmDia(df, meses=None):
     df_pagos = hpex_vop_acumulado[filtroPagos]
     
     # Pagos em até 5 dias após a data de vencimento são considerados pagos em dia
-    df_pagos['IsPagoEmDia'] = (df_pagos['data_pagamento'] <= (df_pagos['data_vencimento'] + pd.offsets.Day(5)))
+    df_pagos['IsPagoEmDia'] = df_pagos['IsPagoEmDia'] = (df_pagos['data_pagamento'] <= (df_pagos['data_vencimento'] + pd.Timedelta(days=5)))
 
     PercentPagoEmDia = (df_pagos[df_pagos['IsPagoEmDia']].groupby(['documento_raiz', 'fornecedor']).size() / df_pagos.groupby(['documento_raiz', 'fornecedor']).size()).fillna(0)
     
