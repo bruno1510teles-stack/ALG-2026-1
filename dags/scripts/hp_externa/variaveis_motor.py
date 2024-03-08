@@ -494,7 +494,7 @@ def transform_data_to_refined(files_list, access_params):
         'ever_10',
         'vop_6_meses'
     ]
-    for coluna in colunas:
+    for coluna in colunas_float:
         df_final[coluna] = df_final[coluna].astype('float')
         print(coluna)
     
