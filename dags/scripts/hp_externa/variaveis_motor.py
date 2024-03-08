@@ -213,7 +213,7 @@ def QtdDiasMaxPagamentoAtrasado(df, meses=None):
     filtroPagamentoNulo = (~hpex_vop_acumulado['data_pagamento'].isna())
     hpex_vop_acumulado.loc[filtroPagamentoNulo, 'dias_atraso'] = hpex_vop_acumulado.loc[filtroPagamentoNulo, 'data_pagamento'] - hpex_vop_acumulado.loc[filtroPagamentoNulo, 'data_vencimento']
     
-    soma_vop = hpex_vop_acumulado[filtroPagamentoNulo].groupby(['documento_raiz', 'fornecedor'])['dias_atraso'].max()
+    soma_vop = hpex_vop_acumulado[filtroPagamentoNulo].groupby(['documento_raiz', 'fornecedor'])['dias_atraso'].max().dt.days
     
     df_saida = pd.DataFrame(soma_vop)
     df_saida = df_saida.reset_index()
