@@ -10,11 +10,7 @@ from airflow.models import Variable
 from kubernetes.client import models as k8s
 
 # SCRIPTS
-<<<<<<< HEAD
-from scripts.hp_externa.mesa_variaveis_v2 import transform_data_to_refined
-=======
 from scripts.hp_externa.mesa.mesa_variaveis_v2 import transform_data_to_refined
->>>>>>> 54e533f0642e7379eeb858cf68afe9ea1c5c8235
 
 # DEFINE VARIABLES
 MINIO_CONN_TRUSTED = "minio_trusted"
@@ -22,13 +18,10 @@ MINIO_TRUSTED_BUCKET = "payments"
 BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-<<<<<<< HEAD
 yesterday = '2024-02-28'
 day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year=2024/month=2/day=28/"
-=======
 yesterday = now - timedelta(days=1)
 day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
->>>>>>> 54e533f0642e7379eeb858cf68afe9ea1c5c8235
 
 
 # DEFINE FUNCTIONS
