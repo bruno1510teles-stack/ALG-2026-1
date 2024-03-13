@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.hp_externa.mesa_variaveis import transform_data_to_refined
+from scripts.hp_externa.mesa.mesa_variaveis_resumida import transform_data_to_refined
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
@@ -18,7 +18,7 @@ BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year=2024/month=2/day=28/"#f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
 
 # DEFINE FUNCTIONS
