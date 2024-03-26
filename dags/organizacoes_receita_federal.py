@@ -18,7 +18,7 @@ RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 RECEITA_FEDERAL_EMPRESAS_FOLDER = "empresas/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = now - timedelta(days=1)
+yesterday = now - timedelta(month=1)
 day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 
