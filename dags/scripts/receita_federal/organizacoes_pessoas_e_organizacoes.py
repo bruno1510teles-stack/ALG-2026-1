@@ -27,7 +27,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     )
 
     # Importando dados de ESTABELECIMENTO
-    
+    print('IMPORTANDO ESTABELECIMENTO')
     # Definindo tipo da coluna
     dtype_estabelecimentos = {0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 
                               5:'string', 6:'string', 7:'string', 8:'string', 9:'string', 
@@ -42,7 +42,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_estabelecimentos_raw_temp = pd.read_parquet(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='pyarrow', dtype=dtype_estabelecimentos)
+        df_estabelecimentos_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
         dfs.append(df_estabelecimentos_raw_temp)
     # Consolidando    
     df_estabelecimentos = pd.concat(dfs, ignore_index=True)
@@ -85,9 +85,10 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
 
     df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
     
+    print('IMPORTANDO ESTABELECIMENTO')
     # Importando dados de EMPRESA
     
-    dtype_estabelecimentos = {
+    dtype_empresa = {
             0:'string',
             1:'string',
             2:'string',
@@ -102,7 +103,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     for file_name in files_list_empresa:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_empresa_raw_temp = pd.read_parquet(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
+        df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
         dfs.append(df_empresa_raw_temp)
     # Consolidando    
     df_empresa = pd.concat(dfs, ignore_index=True)
