@@ -13,7 +13,7 @@ from deltalake import write_deltalake, DeltaTable
 def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_empresa, access_params):
 
     # Variaveis Conexão
-    BUCKET_SOURCE_RAW = "receita-federal"
+    BUCKET_SOURCE_RAW = "receita-federal-minio"
     RAW_EMPRESA_FOLDER =  "empresas/"
     RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
     BUCKET_SOURCE_REFINED = "pessoas-e-organizacoes"
@@ -21,9 +21,9 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
 
     # Conectando na trusted
     client = Minio(
-        access_params['endpoint_url_trusted'],
-        access_key = access_params['aws_access_key_id_trusted'],
-        secret_key = access_params['aws_secret_access_key_trusted'],
+        access_params['endpoint_url_raw'],
+        access_key = access_params['aws_access_key_id_raw'],
+        secret_key = access_params['aws_secret_access_key_raw'],
     )
 
     # Importando dados de ESTABELECIMENTO

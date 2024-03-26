@@ -18,7 +18,7 @@ RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 RECEITA_FEDERAL_EMPRESAS_FOLDER = "empresas/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-#yesterday = now - timedelta(month=1)
+#yesterday = now - timedelta(day=1)
 day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 
@@ -82,6 +82,9 @@ def organizacoes_receita_federal():
             "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
             "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
             "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
+            "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
+            "aws_access_key_id_raw": Variable.get("MINIO_RAW_ACCESS_KEY"),
+            "aws_secret_access_key_raw": Variable.get("MINIO_RAW_SECRET_KEY"),
             "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
             "trino_port": Variable.get("TRINO_PORT"),
             "trino_user": Variable.get("TRINO_USER"),
