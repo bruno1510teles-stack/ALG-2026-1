@@ -42,7 +42,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_estabelecimentos_raw_temp = pd.read_parquet(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
+        df_estabelecimentos_raw_temp = pd.read_parquet(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='pyarrow', dtype=dtype_estabelecimentos)
         dfs.append(df_estabelecimentos_raw_temp)
     # Consolidando    
     df_estabelecimentos = pd.concat(dfs, ignore_index=True)
