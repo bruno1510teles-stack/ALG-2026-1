@@ -50,7 +50,7 @@ def organizacoes_receita_federal():
     finish_data_load = EmptyOperator(task_id="finish")
 
     list_today_files_estabelecimento = S3ListOperator(
-        task_id="list_today_files",
+        task_id="list_today_files_estabelecimento",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
         prefix=day_to_process_estabelecimentos,
@@ -58,7 +58,7 @@ def organizacoes_receita_federal():
     )
     
     list_today_files_empresa = S3ListOperator(
-        task_id="list_today_files",
+        task_id="list_today_files_empresa",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
         prefix=day_to_process_empresas,
