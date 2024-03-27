@@ -75,7 +75,7 @@ def organizacoes_receita_federal():
     @task(
         executor_config={
         "KubernetesExecutor": {
-            "request_memory": "8192Mi"
+            "request_memory": "12288Mi"
         }
     }
     )
