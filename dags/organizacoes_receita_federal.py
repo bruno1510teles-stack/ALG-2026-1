@@ -72,7 +72,13 @@ def organizacoes_receita_federal():
         op_kwargs={'files_to_process': list_today_files_estabelecimento.output}
     )
     
-    @task()
+    @task(
+        executor_config={
+        "KubernetesExecutor": {
+            "request_memory": "4096Mi"
+        }
+    }
+    )
     def organizacoes_receita_federal(current_files_estabelecimento, current_files_empresa):
 
         access_params = {          
