@@ -7,6 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from concurrent.futures import ThreadPoolExecutor
 
 
 # Criando conexão
@@ -39,14 +40,25 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             5:'string',
             6:'string',
         }
-        
-    dfs = []
 
-    for file_name in files_list_empresa:
-        print(f"file_name: {file_name}")
+    #for file_name in files_list_empresa:
+    #    print(f"Importando: {file_name}")
+    #    file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+    #    df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
+    #    dfs.append(df_empresa_raw_temp)
+    #    print(f"Importado: {file_name}")
+        
+    def import_csv(file_name):
+        print(f"Importando: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
-        dfs.append(df_empresa_raw_temp)
+        df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
+        print(f"Importado: {file_name}")
+        return df_empresa_raw_temp        
+    
+    with ThreadPoolExecutor() as executor:
+    # Importar dados CSV em paralelo
+        dfs = list(executor.map(import_csv, files_list_empresa))
+        
     # Consolidando    
     df_empresa = pd.concat(dfs, ignore_index=True)
     
