@@ -48,43 +48,28 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     #    dfs.append(df_empresa_raw_temp)
     #    print(f"Importado: {file_name}")
         
+    # Função para importar dados de um arquivo CSV
     def import_csv(file_name):
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
-        print(f"Importado: {file_name}!")
-        return df_empresa_raw_temp        
-    
+        print(f"Importado: {file_name}")
+        return df_empresa_raw_temp
+
+    # Lista de nomes de arquivos
+    print(f'ARQUIVOS A SEREM PROCESSADOS:{files_list_empresa}')
+
+    # Ajuste do número de threads para controlar o uso de memória
+    num_threads = 5
 
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor(max_workers=5) as executor:  # Ajuste o número de workers conforme necessário
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
         # Importar dados CSV em paralelo
-        futures = [executor.submit(import_csv, file_name) for file_name in files_list_empresa]
-        
-        # Processar os resultados à medida que são concluídos
-        dfs = []
-        for future in as_completed(futures):
-            try:
-                print('Juntou à lista de empresas')
-                result = future.result()
-                dfs.append(result)
-            except Exception as e:
-                print(f"Erro ao processar tarefa: {e}")
-                
-    # Dividindo a lista de DataFrames em lotes menores
-    print("dividindo em batches")
-    batch_size = 10000  # Ajuste o tamanho do lote conforme necessário
-    df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
+        # Usando imap em vez de map para processar os arquivos em lotes menores
+        dfs = list(executor.imap(import_csv, files_list_empresa))
 
-    # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
-    print("concatenando os batches")
-    concatenated_dfs = []
-    for batch in df_batches:
-        concatenated_dfs.append(pd.concat(batch, ignore_index=True))
-
-    # Concatenando a lista de DataFrames intermediária em um único DataFrame final
-    print("Tentará concatenar agora os DFs de empresa")
-    df_empresa = pd.concat(concatenated_dfs, ignore_index=True)            
+    print('CONCATENANDO ARQUIVOS!')
+    # Consolidando
+    df_empresa = pd.concat(dfs, ignore_index=True)        
     
     # Renomeando colunas com o nome padrão da Recita
     colunas_empresa = {0: 'CNPJ BÁSICO',
