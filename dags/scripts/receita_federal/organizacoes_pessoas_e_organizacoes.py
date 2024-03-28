@@ -71,9 +71,20 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             except Exception as e:
                 print(f"Erro ao processar tarefa: {e}")
                 
+    # Dividindo a lista de DataFrames em lotes menores
+    print("dividindo em batches")
+    batch_size = 10000  # Ajuste o tamanho do lote conforme necessário
+    df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
+
+    # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
+    print("concatenando os batches")
+    concatenated_dfs = []
+    for batch in df_batches:
+        concatenated_dfs.append(pd.concat(batch, ignore_index=True))
+
+    # Concatenando a lista de DataFrames intermediária em um único DataFrame final
     print("Tentará concatenar agora os DFs de empresa")
-    # Consolidando
-    df_empresa = pd.concat(dfs, ignore_index=True)
+    df_empresa = pd.concat(concatenated_dfs, ignore_index=True)            
     
     # Renomeando colunas com o nome padrão da Recita
     colunas_empresa = {0: 'CNPJ BÁSICO',
