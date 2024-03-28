@@ -65,11 +65,13 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         dfs = []
         for future in as_completed(futures):
             try:
+                print('Juntou à lista de empresas')
                 result = future.result()
                 dfs.append(result)
             except Exception as e:
                 print(f"Erro ao processar tarefa: {e}")
-
+                
+    print("Tentará concatenar agora os DFs de empresa")
     # Consolidando
     df_empresa = pd.concat(dfs, ignore_index=True)
     
