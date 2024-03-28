@@ -57,14 +57,20 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         return df_empresa_raw_temp
 
 
-    # Ajuste do número de threads para controlar o uso de memória
-    num_threads = 5  # Experimente diferentes valores para ver o que funciona melhor
-
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:  # Ajuste o número de workers conforme necessário
         # Importar dados CSV em paralelo
-        # Usando imap em vez de map para processar os arquivos em lotes menores
-        dfs = list(executor.imap(import_csv, files_list_empresa))
+        futures = [executor.submit(import_csv, file_name) for file_name in files_list_empresa]
+        
+        # Processar os resultados à medida que são concluídos
+        dfs = []
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                dfs.append(result)
+                print("Arquivo Concatenou!")
+            except Exception as e:
+                print(f"Erro ao processar tarefa: {e}")
 
     print('CONCATENANDO ARQUIVOS!')
     # Consolidando
