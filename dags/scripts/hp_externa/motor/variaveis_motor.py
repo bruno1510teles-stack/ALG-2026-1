@@ -328,6 +328,58 @@ def VopAcumulado(df, meses):
 
     return df_saida
 
+def PercentualCompraRecorrente(df, meses=None):    
+
+    # Filtra pela quantidade de meses desejada se nessecário
+    if meses is None:
+        PercentualCompraRecorrente = df
+    
+    else:    
+        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+        PercentualCompraRecorrente = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+
+    # PercentualCompraRecorrente
+
+    PercentualCompraRecorrente['dias'] = PercentualCompraRecorrente['data_vencimento'] - PercentualCompraRecorrente['data_emissao']
+    PercentualCompraRecorrente['safra'] = PercentualCompraRecorrente['data_emissao'].dt.strftime('%Y-%m-01')
+
+    # Criando Aux
+    aux_PercentualCompraRecorrente = df
+    aux_PercentualCompraRecorrente = aux_PercentualCompraRecorrente[['fornecedor', 'safra']].drop_duplicates()
+    aux_PercentualCompraRecorrente = aux_PercentualCompraRecorrente.groupby(['fornecedor']).agg({
+    'safra': 'count'
+    }).reset_index()
+    aux_PercentualCompraRecorrente.columns = ['documento', 'qtde_de_safras']
+    PercentualCompraRecorrente = PercentualCompraRecorrente.merge(aux_PercentualCompraRecorrente, on=['documento'], how = 'inner')
+    PercentualCompraRecorrente['QTDE'] = 1
+    PercentualCompraRecorrente = PercentualCompraRecorrente[['documento', 'fornecedor', 'safra']].drop_duplicates()
+    PercentualCompraRecorrente = PercentualCompraRecorrente.groupby(['documento', 'fornecedor']).agg({
+    'QTDE':'sum',
+    'qtde_de_safras' : 'max'
+    }).reset_index()
+    PercentualCompraRecorrente.columns = ['documento', 'fornecedor', 'qtde_compras_geral', 'qtde_meses_total_safra']
+    PercentualCompraRecorrente['percentual_compra_safra_geral'] = PercentualCompraRecorrente['qtde_compras_geral'] / PercentualCompraRecorrente['qtde_meses_total_safra']
+    df_saida = pd.DataFrame(PercentualCompraRecorrente)
+    df_saida = df_saida.reset_index()
+    df_saida.columns = ['documento_raiz', 'fornecedor',f'prazo_medio_{meses}_meses']
+
+    return df_saida
+
 # Criando conexão
 def transform_data_to_refined(files_list, access_params):
 
