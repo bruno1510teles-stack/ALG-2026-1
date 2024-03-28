@@ -7,6 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Criando conexão
@@ -26,66 +27,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         secret_key = access_params['aws_secret_access_key_raw'],
     )
 
-    # Importando dados de ESTABELECIMENTO
-    print('IMPORTANDO ESTABELECIMENTO')
-    # Definindo tipo da coluna
-    dtype_estabelecimentos = {0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 
-                              5:'string', 6:'string', 7:'string', 8:'string', 9:'string', 
-                              10:'string', 11:'string', 12:'string', 13:'string', 14:'string',
-                              15:'string', 16:'string', 17:'string', 18:'string', 19:'string',
-                              20:'string', 21:'string', 22:'string', 23:'string', 24:'string',
-                              25:'string', 26:'string', 27:'string', 28:'string', 29:'string'}
-    
-    dfs = []
-    
-    
-    for file_name in files_list_estabelecimento:
-        print(f"file_name: {file_name}")
-        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_estabelecimentos_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
-        dfs.append(df_estabelecimentos_raw_temp)
-    # Consolidando    
-    df_estabelecimentos = pd.concat(dfs, ignore_index=True)
-    
-    # Selecionando apenas colunas necessárias
-    df_estabelecimentos = df_estabelecimentos[[0,  1,  2,  4,  5,  6, 10, 11, 12, 13, 14, 15, 16, 17,
-       18, 19, 20, 21, 22, 23, 24, 27]]
-    
-    #renomeando colunas conforme padrão da Receita
-    colunas_estabelecimentos = {0:'CNPJ BÁSICO',
-        1:'CNPJ ORDEM',
-        2:'CNPJ DV',
-        3:'IDENTIFICADOR MATRIZ/FILIAL',
-        4:'NOME FANTASIA',
-        5:'SITUAÇÃO CADASTRAL',
-        6:'DATA SITUAÇÃO CADASTRAL',
-        7:'MOTIVO SITUAÇÃO CADASTRAL',
-        8:'NOME DA CIDADE NO EXTERIOR',
-        9:'PAIS',
-        10:'DATA DE INÍCIO ATIVIDADE',
-        11:'CNAE FISCAL PRINCIPAL',
-        12:'CNAE FISCAL SECUNDÁRIA',
-        13:'TIPO DE LOGRADOURO',
-        14:'LOGRADOURO',
-        15:'NÚMERO',
-        16:'COMPLEMENTO',
-        17:'BAIRRO',
-        18:'CEP',
-        19:'UF',
-        20:'MUNICÍPIO',
-        21:'DDD 1',
-        22:'TELEFONE 1',
-        23:'DDD 2',
-        24:'TELEFONE 2',
-        25:'DDD DO FAX',
-        26:'FAX',
-        27:'CORREIO ELETRÔNICO',
-        28:'SITUAÇÃO ESPECIAL',
-        29:'DATA DA SITUAÇÃO ESPECIAL'}
 
-    df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
-    
-    print('IMPORTANDO ESTABELECIMENTO')
+    print('IMPORTANDO EMPRESA')
     # Importando dados de EMPRESA
     
     dtype_empresa = {
@@ -97,17 +40,64 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             5:'string',
             6:'string',
         }
-        
-    dfs = []
 
-    for file_name in files_list_empresa:
-        print(f"file_name: {file_name}")
+    #for file_name in files_list_empresa:
+    #    print(f"Importando: {file_name}")
+    #    file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+    #    df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
+    #    dfs.append(df_empresa_raw_temp)
+    #    print(f"Importado: {file_name}")
+        
+    # Função para importar dados de um arquivo CSV
+    def import_csv(file_name):
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
-        dfs.append(df_empresa_raw_temp)
-    # Consolidando    
-    df_empresa = pd.concat(dfs, ignore_index=True)
-    
+        df = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
+        print(f"Importado: {file_name}")
+        return df
+
+    # Define o número de workers para importação paralela
+    max_workers_import = 5
+
+    # Usando ThreadPoolExecutor para importar dados CSV em paralelo
+    with ThreadPoolExecutor(max_workers=max_workers_import) as import_executor:
+        import_futures = [import_executor.submit(import_csv, file_name) for file_name in files_list_empresa]
+
+        dfs = []
+        for future in as_completed(import_futures):
+            try:
+                df = future.result()
+                if df is not None:
+                    dfs.append(df)
+                    print("Arquivo Concatenou!")
+                    del df
+                    del future
+            except Exception as e:
+                print(f"Erro ao processar tarefa: {e}")
+
+    print('CONCATENANDO ARQUIVOS!')
+
+    # Define o número de workers para concatenação paralela
+    max_workers_concat = 3
+
+    # Usando ThreadPoolExecutor para concatenar os dataframes em paralelo
+    with ThreadPoolExecutor(max_workers=max_workers_concat) as concat_executor:
+        # Dividindo a lista de DataFrames em lotes menores
+        batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
+        df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
+
+        # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
+        concatenated_dfs = []
+        for batch in df_batches:
+            concatenated_dfs.append(concat_executor.submit(pd.concat, batch, ignore_index=True))
+
+    # Obter os resultados das operações de concatenação
+    final_dfs = [future.result() for future in as_completed(concatenated_dfs)]
+
+    # Concatenar todos os dataframes intermediários em um único dataframe final
+    result_df = pd.concat(final_dfs, ignore_index=True)
+
+    # Agora você pode trabalhar com o dataframe final result_df
+
     # Renomeando colunas com o nome padrão da Recita
     colunas_empresa = {0: 'CNPJ BÁSICO',
     1: 'RAZÃO SOCIAL / NOME EMPRESARIAL',
@@ -148,7 +138,9 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_estabelecimentos = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
+        df_estabelecimentos = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', 
+                                          header=None, engine='c', dtype=dtype_estabelecimentos, encoding_errors='ignore'
+                                          )
     
         # Selecionando apenas colunas necessárias
         df_estabelecimentos = df_estabelecimentos[[0,  1,  2,  4,  5,  6, 10, 11, 12, 13, 14, 15, 16, 17,
