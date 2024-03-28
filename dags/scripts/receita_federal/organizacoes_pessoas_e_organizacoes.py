@@ -50,26 +50,36 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         
     # Função para importar dados de um arquivo CSV
     def import_csv(file_name):
+        print(f"Importando: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
         print(f"Importado: {file_name}")
         return df_empresa_raw_temp
 
-    # Lista de nomes de arquivos
-    print(f'ARQUIVOS A SEREM PROCESSADOS:{files_list_empresa}')
 
     # Ajuste do número de threads para controlar o uso de memória
-    num_threads = 5
+    num_threads = 5  # Experimente diferentes valores para ver o que funciona melhor
 
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
         # Importar dados CSV em paralelo
-        dfs = list(executor.map(import_csv, files_list_empresa))
+        # Usando imap em vez de map para processar os arquivos em lotes menores
+        dfs = list(executor.imap(import_csv, files_list_empresa))
 
     print('CONCATENANDO ARQUIVOS!')
     # Consolidando
-    df_empresa = pd.concat(dfs, ignore_index=True)        
+    # Dividindo a lista de DataFrames em lotes menores
+    batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
+    df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
+    print('df_batches rodou')
     
+    # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
+    concatenated_dfs = []
+    
+    print("CONCATENANDO BATCHES")
+    for batch in df_batches:
+        concatenated_dfs.append(pd.concat(batch, ignore_index=True))
+
     # Renomeando colunas com o nome padrão da Recita
     colunas_empresa = {0: 'CNPJ BÁSICO',
     1: 'RAZÃO SOCIAL / NOME EMPRESARIAL',
