@@ -62,10 +62,9 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     num_threads = 5
 
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+    with ThreadPoolExecutor() as executor:
         # Importar dados CSV em paralelo
-        # Usando imap em vez de map para processar os arquivos em lotes menores
-        dfs = list(executor.imap(import_csv, files_list_empresa))
+        dfs = list(executor.map(import_csv, files_list_empresa))
 
     print('CONCATENANDO ARQUIVOS!')
     # Consolidando
