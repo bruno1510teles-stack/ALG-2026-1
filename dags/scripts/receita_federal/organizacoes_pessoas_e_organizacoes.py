@@ -49,17 +49,18 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     #    print(f"Importado: {file_name}")
         
     def import_csv(file_name):
-        print(f"Importando: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
-        print(f"Importado: {file_name}")
+        print(f"Importado: {file_name}!")
         return df_empresa_raw_temp        
     
     with ThreadPoolExecutor() as executor:
     # Importar dados CSV em paralelo
+        print("Executando executor!")
         dfs = list(executor.map(import_csv, files_list_empresa))
         
-    # Consolidando    
+    # Consolidando  
+    print("consolidando")  
     df_empresa = pd.concat(dfs, ignore_index=True)
     
     # Renomeando colunas com o nome padrão da Recita
