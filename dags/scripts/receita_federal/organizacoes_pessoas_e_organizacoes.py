@@ -41,60 +41,22 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             6:'string',
         }
 
-    #for file_name in files_list_empresa:
-    #    print(f"Importando: {file_name}")
-    #    file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-    #    df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_empresa)
-    #    dfs.append(df_empresa_raw_temp)
-    #    print(f"Importado: {file_name}")
-        
-    # Função para importar dados de um arquivo CSV
-    def import_csv(file_name):
+    dfs = []
+    cols = [0, 1, 4, 5]   
+    
+    for file_name in files_list_empresa:
+        print(f"Importando: {file_name}")
+        chunks = []
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
-        print(f"Importado: {file_name}")
-        return df
+        for chunk in pd.read_csv(BytesIO(file.data), sep=';', 
+                         encoding='latin1', low_memory=False,  dtype=dtype_empresa, chunksize=1000, usecols=cols, header=None):
+            chunks.append(chunk)
+        data = pd.concat(chunks)
+        print("importado")
+        dfs.append(data)
 
-    # Define o número de workers para importação paralela
-    max_workers_import = 5
-
-    # Usando ThreadPoolExecutor para importar dados CSV em paralelo
-    with ThreadPoolExecutor(max_workers=max_workers_import) as import_executor:
-        import_futures = [import_executor.submit(import_csv, file_name) for file_name in files_list_empresa]
-
-        dfs = []
-        for future in as_completed(import_futures):
-            try:
-                df = future.result()
-                if df is not None:
-                    dfs.append(df)
-                    print("Arquivo Concatenou!")
-                    del df
-                    del future
-            except Exception as e:
-                print(f"Erro ao processar tarefa: {e}")
-
-    print('CONCATENANDO ARQUIVOS!')
-
-    # Define o número de workers para concatenação paralela
-    max_workers_concat = 3
-
-    # Usando ThreadPoolExecutor para concatenar os dataframes em paralelo
-    with ThreadPoolExecutor(max_workers=max_workers_concat) as concat_executor:
-        # Dividindo a lista de DataFrames em lotes menores
-        batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
-        df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
-
-        # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
-        concatenated_dfs = []
-        for batch in df_batches:
-            concatenated_dfs.append(concat_executor.submit(pd.concat, batch, ignore_index=True))
-
-    # Obter os resultados das operações de concatenação
-    final_dfs = [future.result() for future in as_completed(concatenated_dfs)]
-
-    # Concatenar todos os dataframes intermediários em um único dataframe final
-    result_df = pd.concat(final_dfs, ignore_index=True)
+    # Consolidando    
+    df_empresa = pd.concat(dfs, ignore_index=True)
 
     # Agora você pode trabalhar com o dataframe final result_df
 
@@ -106,6 +68,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     4: 'CAPITAL SOCIAL DA EMPRESA',
     5: 'PORTE DA EMPRESA',
     6: 'ENTE FEDERATIVO RESPONSÁVEL'}
+    
+    
     
     df_empresa = df_empresa.rename(columns=colunas_empresa)
     
