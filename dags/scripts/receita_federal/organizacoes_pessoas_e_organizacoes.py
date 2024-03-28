@@ -25,8 +25,67 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         access_key = access_params['aws_access_key_id_raw'],
         secret_key = access_params['aws_secret_access_key_raw'],
     )
+
+    # Importando dados de ESTABELECIMENTO
+    print('IMPORTANDO ESTABELECIMENTO')
+    # Definindo tipo da coluna
+    dtype_estabelecimentos = {0:'string', 1:'string', 2:'string', 3:'string', 4:'string', 
+                              5:'string', 6:'string', 7:'string', 8:'string', 9:'string', 
+                              10:'string', 11:'string', 12:'string', 13:'string', 14:'string',
+                              15:'string', 16:'string', 17:'string', 18:'string', 19:'string',
+                              20:'string', 21:'string', 22:'string', 23:'string', 24:'string',
+                              25:'string', 26:'string', 27:'string', 28:'string', 29:'string'}
     
-    print('IMPORTANDO EMPRESA')
+    dfs = []
+    
+    
+    for file_name in files_list_estabelecimento:
+        print(f"file_name: {file_name}")
+        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+        df_estabelecimentos_raw_temp = pd.read_csv(BytesIO(file.data), sep = ';', encoding = 'latin1', header=None, engine='c', dtype=dtype_estabelecimentos)
+        dfs.append(df_estabelecimentos_raw_temp)
+    # Consolidando    
+    df_estabelecimentos = pd.concat(dfs, ignore_index=True)
+    
+    # Selecionando apenas colunas necessárias
+    df_estabelecimentos = df_estabelecimentos[[0,  1,  2,  4,  5,  6, 10, 11, 12, 13, 14, 15, 16, 17,
+       18, 19, 20, 21, 22, 23, 24, 27]]
+    
+    #renomeando colunas conforme padrão da Receita
+    colunas_estabelecimentos = {0:'CNPJ BÁSICO',
+        1:'CNPJ ORDEM',
+        2:'CNPJ DV',
+        3:'IDENTIFICADOR MATRIZ/FILIAL',
+        4:'NOME FANTASIA',
+        5:'SITUAÇÃO CADASTRAL',
+        6:'DATA SITUAÇÃO CADASTRAL',
+        7:'MOTIVO SITUAÇÃO CADASTRAL',
+        8:'NOME DA CIDADE NO EXTERIOR',
+        9:'PAIS',
+        10:'DATA DE INÍCIO ATIVIDADE',
+        11:'CNAE FISCAL PRINCIPAL',
+        12:'CNAE FISCAL SECUNDÁRIA',
+        13:'TIPO DE LOGRADOURO',
+        14:'LOGRADOURO',
+        15:'NÚMERO',
+        16:'COMPLEMENTO',
+        17:'BAIRRO',
+        18:'CEP',
+        19:'UF',
+        20:'MUNICÍPIO',
+        21:'DDD 1',
+        22:'TELEFONE 1',
+        23:'DDD 2',
+        24:'TELEFONE 2',
+        25:'DDD DO FAX',
+        26:'FAX',
+        27:'CORREIO ELETRÔNICO',
+        28:'SITUAÇÃO ESPECIAL',
+        29:'DATA DA SITUAÇÃO ESPECIAL'}
+
+    df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
+    
+    print('IMPORTANDO ESTABELECIMENTO')
     # Importando dados de EMPRESA
     
     dtype_empresa = {
