@@ -377,7 +377,6 @@ def PercentualCompraRecorrente(df, meses=None):
     df_saida = pd.DataFrame(PercentualCompraRecorrente)
     df_saida = df_saida.reset_index()
     df_saida.columns = ['documento_raiz', 'fornecedor',f'prazo_medio_{meses}_meses']
-
     return df_saida
 
 # Criando conexão
