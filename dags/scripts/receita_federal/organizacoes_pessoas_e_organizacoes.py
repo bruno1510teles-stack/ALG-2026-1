@@ -51,40 +51,50 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     # Função para importar dados de um arquivo CSV
     def import_csv(file_name):
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
+        df = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
         print(f"Importado: {file_name}")
-        return df_empresa_raw_temp
+        return df
 
+    # Define o número de workers para importação paralela
+    max_workers_import = 5
 
-    # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor(max_workers=5) as executor:  # Ajuste o número de workers conforme necessário
-        # Importar dados CSV em paralelo
-        futures = [executor.submit(import_csv, file_name) for file_name in files_list_empresa]
-        
-        # Processar os resultados à medida que são concluídos
+    # Usando ThreadPoolExecutor para importar dados CSV em paralelo
+    with ThreadPoolExecutor(max_workers=max_workers_import) as import_executor:
+        import_futures = [import_executor.submit(import_csv, file_name) for file_name in files_list_empresa]
+
         dfs = []
-        for future in as_completed(futures):
+        for future in as_completed(import_futures):
             try:
-                result = future.result()
-                dfs.append(result)
-                print("Arquivo Concatenou!")
-                del future
+                df = future.result()
+                if df is not None:
+                    dfs.append(df)
+                    print("Arquivo Concatenou!")
             except Exception as e:
                 print(f"Erro ao processar tarefa: {e}")
 
     print('CONCATENANDO ARQUIVOS!')
-    # Consolidando
-    # Dividindo a lista de DataFrames em lotes menores
-    batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
-    df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
-    print('df_batches rodou')
-    
-    # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
-    concatenated_dfs = []
-    
-    print("CONCATENANDO BATCHES")
-    for batch in df_batches:
-        concatenated_dfs.append(pd.concat(batch, ignore_index=True))
+
+    # Define o número de workers para concatenação paralela
+    max_workers_concat = 3
+
+    # Usando ThreadPoolExecutor para concatenar os dataframes em paralelo
+    with ThreadPoolExecutor(max_workers=max_workers_concat) as concat_executor:
+        # Dividindo a lista de DataFrames em lotes menores
+        batch_size = 1000  # Ajuste o tamanho do lote conforme necessário
+        df_batches = [dfs[i:i+batch_size] for i in range(0, len(dfs), batch_size)]
+
+        # Concatenando os lotes de DataFrames em uma lista de DataFrames intermediária
+        concatenated_dfs = []
+        for batch in df_batches:
+            concatenated_dfs.append(concat_executor.submit(pd.concat, batch, ignore_index=True))
+
+    # Obter os resultados das operações de concatenação
+    final_dfs = [future.result() for future in as_completed(concatenated_dfs)]
+
+    # Concatenar todos os dataframes intermediários em um único dataframe final
+    result_df = pd.concat(final_dfs, ignore_index=True)
+
+    # Agora você pode trabalhar com o dataframe final result_df
 
     # Renomeando colunas com o nome padrão da Recita
     colunas_empresa = {0: 'CNPJ BÁSICO',
