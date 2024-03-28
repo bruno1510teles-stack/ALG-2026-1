@@ -7,7 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Criando conexão
@@ -54,14 +54,21 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         print(f"Importado: {file_name}!")
         return df_empresa_raw_temp        
     
-    # Ajuste do número de threads para controlar o uso de memória
-    num_threads = 5  
-    
+
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
-    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+    # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
+    with ThreadPoolExecutor(max_workers=5) as executor:  # Ajuste o número de workers conforme necessário
         # Importar dados CSV em paralelo
-        # Usando imap em vez de map para processar os arquivos em lotes menores
-        dfs = list(executor.imap(import_csv, files_list_empresa))
+        futures = [executor.submit(import_csv, file_name) for file_name in files_list_empresa]
+        
+        # Processar os resultados à medida que são concluídos
+        dfs = []
+        for future in as_completed(futures):
+            try:
+                result = future.result()
+                dfs.append(result)
+            except Exception as e:
+                print(f"Erro ao processar tarefa: {e}")
 
     # Consolidando
     df_empresa = pd.concat(dfs, ignore_index=True)
