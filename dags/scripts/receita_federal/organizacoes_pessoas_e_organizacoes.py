@@ -68,6 +68,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 result = future.result()
                 dfs.append(result)
                 print("Arquivo Concatenou!")
+                del future
             except Exception as e:
                 print(f"Erro ao processar tarefa: {e}")
 
