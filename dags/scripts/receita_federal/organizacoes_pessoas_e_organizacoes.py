@@ -69,6 +69,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 if df is not None:
                     dfs.append(df)
                     print("Arquivo Concatenou!")
+                    del df
+                    del future
             except Exception as e:
                 print(f"Erro ao processar tarefa: {e}")
 
