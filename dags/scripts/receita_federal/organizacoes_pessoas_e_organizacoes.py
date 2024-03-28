@@ -54,13 +54,16 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         print(f"Importado: {file_name}!")
         return df_empresa_raw_temp        
     
-    with ThreadPoolExecutor() as executor:
-    # Importar dados CSV em paralelo
-        print("Executando executor!")
-        dfs = list(executor.map(import_csv, files_list_empresa))
-        
-    # Consolidando  
-    print("consolidando")  
+    # Ajuste do número de threads para controlar o uso de memória
+    num_threads = 10  
+    
+    # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
+    with ThreadPoolExecutor(max_workers=num_threads) as executor:
+        # Importar dados CSV em paralelo
+        # Usando imap em vez de map para processar os arquivos em lotes menores
+        dfs = list(executor.imap(import_csv, files_list_empresa))
+
+    # Consolidando
     df_empresa = pd.concat(dfs, ignore_index=True)
     
     # Renomeando colunas com o nome padrão da Recita
