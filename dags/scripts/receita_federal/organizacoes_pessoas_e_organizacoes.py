@@ -50,7 +50,6 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         
     # Função para importar dados de um arquivo CSV
     def import_csv(file_name):
-        print(f"Importando: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_empresa_raw_temp = pd.read_csv(BytesIO(file.data), sep=';', encoding='latin1', header=None, engine='c', dtype=dtype_empresa)
         print(f"Importado: {file_name}")
