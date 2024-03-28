@@ -55,7 +55,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         return df_empresa_raw_temp        
     
     # Ajuste do número de threads para controlar o uso de memória
-    num_threads = 10  
+    num_threads = 5  
     
     # Usando ThreadPoolExecutor para obter os objetos do cliente S3 de forma paralela
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
