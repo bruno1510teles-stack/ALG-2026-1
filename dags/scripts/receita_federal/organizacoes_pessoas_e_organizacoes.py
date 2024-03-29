@@ -42,6 +42,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     cols = [0, 1, 4, 5]   
         
     for file_name in files_list_empresa:
+        print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_empresa = pd.read_csv(BytesIO(file.data), sep=';', 
                             encoding='latin1', low_memory=False,  dtype=dtype_empresa, usecols=cols, header=None)
@@ -80,7 +81,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                                 encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
             
 
-                
+                print("Coluna Renomeada!")
                 #renomeando colunas conforme padrão da Receita
                 colunas_estabelecimentos = {0:'CNPJ BÁSICO',
                     1:'CNPJ ORDEM',
@@ -91,7 +92,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
                 
                 # CRIANDO A TABELA DE ORGANIZAÇÕES:
-                
+                print("Merge com Empresa")
                 df_organizacoes = df_estabelecimentos.merge(df_empresa, how='left',  on='CNPJ BÁSICO')
                 
                 df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
@@ -99,6 +100,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
 
                 df_organizacoes = df_organizacoes.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV'])
                 
+                print("Renomeando tabela final!")
                 df_organizacoes = df_organizacoes.rename(columns = {
                 'NOME FANTASIA': 'nome',
                 'DATA DE INÍCIO ATIVIDADE': 'inicio',
@@ -107,6 +109,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 'PORTE DA EMPRESA': 'tamanho'
                     })
                 
+                print("ordenando coluna final")
                 df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
                 
                 df_organizacoes['idade'] = None
@@ -128,9 +131,11 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                     "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
                 }
                 
+                print("Transformando em Pyarrow!")
                 # O pandas cria esse index, este codigo serve para remover caso ele crie
                 df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False)
 
+                print("Gravando na Trused!")
                 write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                                 df_organizacoes, 
                                 partition_by=["year", "month", "day"],
@@ -138,4 +143,4 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                                 mode="append",
                                 )
                 
-                print(f"fila writen {file_name}")
+                print("Gravado na Trused!")
