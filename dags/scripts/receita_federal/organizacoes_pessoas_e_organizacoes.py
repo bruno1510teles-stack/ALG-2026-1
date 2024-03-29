@@ -93,7 +93,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 
                 # CRIANDO A TABELA DE ORGANIZAÇÕES:
                 print(f"Merge com Empresa {psutil.virtual_memory()._asdict()}")
-                df_organizacoes = df_estabelecimentos.merge(df_empresa, how='left',  on='CNPJ BÁSICO')
+                df_organizacoes = df_estabelecimentos.merge(df_empresa, how='inner',  on='CNPJ BÁSICO')
                 
                 df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
                     [df_estabelecimentos['CNPJ ORDEM'].astype(str), df_estabelecimentos['CNPJ DV'].astype(str)], sep='')
