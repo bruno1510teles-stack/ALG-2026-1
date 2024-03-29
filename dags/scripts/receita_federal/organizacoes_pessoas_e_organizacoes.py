@@ -35,7 +35,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             0:'string',
             1:'string',
             4:'string',
-            5:'string'
+            5:'category'
         }
 
 
@@ -96,7 +96,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_organizacoes = df_estabelecimentos.merge(df_empresa, how='inner',  on='CNPJ BÁSICO')
                 
                 df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
-                    [df_estabelecimentos['CNPJ ORDEM'].astype(str), df_estabelecimentos['CNPJ DV'].astype(str)], sep='')
+                    [df_organizacoes['CNPJ ORDEM'].astype(str), df_organizacoes['CNPJ DV'].astype(str)], sep='')
 
                 df_organizacoes = df_organizacoes.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV'])
                 
