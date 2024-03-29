@@ -31,16 +31,16 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     print('IMPORTANDO EMPRESA')
     # Importando dados de EMPRESA
     
+    # Definindo colunas a serem utilizadas e respectivos tipos
     dtype_empresa = {
             0:'string',
             1:'string',
             4:'string',
             5:'category'
         }
-
-
     cols = [0, 1, 4, 5]   
         
+    #Loop para importar um arquivo de empresa por vez para diminuir a quanitdade de memoria utilizada    
     for file_name in files_list_empresa:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
@@ -68,12 +68,13 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         
         # Importando dados de ESTABELECIMENTO
         print('IMPORTANDO ESTABELECIMENTO')
-        # Definindo tipo da coluna
+        # Definindo tipo da coluna e colunas a serem utilizadas no estabelecimento
         dtype_estabelecimentos = {0:'string', 1:'string', 2:'string', 4:'string', 10:'string'}
         
         
         colunas_estabelecimentos = [0, 1, 2, 4, 10]
         
+        #Dentro do loop de empresa é feito um loop de estabelecimentos no qual, cada arquivo de estabelecimento vai ser divido em chunks e porcessado por partes
         for file_name in files_list_estabelecimento:
             print(f"file_name: {file_name}")
             file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
@@ -112,7 +113,10 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 print(f"ordenando coluna final {psutil.virtual_memory()._asdict()}")
                 df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
                 
+                #Como para a receita a idade é nula, é necessário especificar que a coluna é do tipo float (não int para aceitar valores nulos), para posteriormente outras fontes conseguirem acrescentar valores nulos
                 df_organizacoes['idade'] = None
+                df_organizacoes = df_organizacoes['idade'].astype(float)
+                
                 df_organizacoes['fonte'] = 'RECEITA FEDERAL'
                 
                 
