@@ -7,7 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import psutil
 
 
 # Criando conexão
@@ -78,10 +78,10 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             print(f"file_name: {file_name}")
             file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
             for df_estabelecimentos in pd.read_csv(BytesIO(file.data), sep=';', 
-                                encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
+                                encoding='latin1', low_memory=False, chunksize=2000000, dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
             
 
-                print("Coluna Renomeada!")
+                print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
                 #renomeando colunas conforme padrão da Receita
                 colunas_estabelecimentos = {0:'CNPJ BÁSICO',
                     1:'CNPJ ORDEM',
@@ -92,7 +92,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
                 
                 # CRIANDO A TABELA DE ORGANIZAÇÕES:
-                print("Merge com Empresa")
+                print(f"Merge com Empresa {psutil.virtual_memory()._asdict()}")
                 df_organizacoes = df_estabelecimentos.merge(df_empresa, how='left',  on='CNPJ BÁSICO')
                 
                 df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
@@ -100,7 +100,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
 
                 df_organizacoes = df_organizacoes.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV'])
                 
-                print("Renomeando tabela final!")
+                print(f"Renomeando tabela final! {psutil.virtual_memory()._asdict()}")
                 df_organizacoes = df_organizacoes.rename(columns = {
                 'NOME FANTASIA': 'nome',
                 'DATA DE INÍCIO ATIVIDADE': 'inicio',
@@ -109,7 +109,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 'PORTE DA EMPRESA': 'tamanho'
                     })
                 
-                print("ordenando coluna final")
+                print(f"ordenando coluna final {psutil.virtual_memory()._asdict()}")
                 df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
                 
                 df_organizacoes['idade'] = None
