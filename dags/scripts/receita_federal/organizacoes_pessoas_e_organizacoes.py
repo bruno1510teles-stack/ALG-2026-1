@@ -17,8 +17,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
     BUCKET_SOURCE_RAW = "receita-federal-minio"
     RAW_EMPRESA_FOLDER =  "empresas/"
     RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
-    BUCKET_SOURCE_REFINED = "pessoas-e-organizacoes"
-    REFINED_FOLDER = "organizacoes/"
+    BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
+    TRUSTED_FOLDER = "organizacoes/"
 
     # Conectando na trusted
     client = Minio(
@@ -124,9 +124,9 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_organizacoes['day'] = now.day
                     
                 storage_options = {
-                    "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-                    "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-                    "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_refined']}",
+                    "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+                    "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+                    "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
                     "AWS_REGION": "us-east-1",
                     "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
                 }
@@ -136,7 +136,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False)
 
                 print("Gravando na Trused!")
-                write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+                write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
                                 df_organizacoes, 
                                 partition_by=["year", "month", "day"],
                                 storage_options=storage_options,
