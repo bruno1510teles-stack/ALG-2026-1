@@ -35,7 +35,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             0:'string',
             1:'string',
             4:'string',
-            5:'category'
+            5:'string'
         }
 
 
