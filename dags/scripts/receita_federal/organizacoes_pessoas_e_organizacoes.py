@@ -115,7 +115,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 
                 #Como para a receita a idade é nula, é necessário especificar que a coluna é do tipo float (não int para aceitar valores nulos), para posteriormente outras fontes conseguirem acrescentar valores nulos
                 df_organizacoes['idade'] = None
-                df_organizacoes = df_organizacoes['idade'].astype(float)
+                df_organizacoes['idade'] = df_organizacoes['idade'].astype(float)
                 
                 df_organizacoes['fonte'] = 'RECEITA FEDERAL'
                 
