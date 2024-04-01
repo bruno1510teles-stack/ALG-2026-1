@@ -364,19 +364,18 @@ def PercentualCompraRecorrente(df, meses=None):
     aux_PercentualCompraRecorrente = aux_PercentualCompraRecorrente.groupby(['fornecedor']).agg({
     'safra': 'count'
     }).reset_index()
-    aux_PercentualCompraRecorrente.columns = ['documento', 'qtde_de_safras']
-    PercentualCompraRecorrente = PercentualCompraRecorrente.merge(aux_PercentualCompraRecorrente, on=['documento'], how = 'inner')
+    aux_PercentualCompraRecorrente.columns = ['fornecedor', 'qtde_de_safras']
+    PercentualCompraRecorrente = PercentualCompraRecorrente.merge(aux_PercentualCompraRecorrente, on=['fornecedor'], how = 'inner')
     PercentualCompraRecorrente['QTDE'] = 1
-    PercentualCompraRecorrente = PercentualCompraRecorrente[['documento', 'fornecedor', 'safra']].drop_duplicates()
+    PercentualCompraRecorrente = PercentualCompraRecorrente[['documento', 'fornecedor', 'safra', 'qtde_de_safras', 'QTDE']].drop_duplicates()
     PercentualCompraRecorrente = PercentualCompraRecorrente.groupby(['documento', 'fornecedor']).agg({
     'QTDE':'sum',
     'qtde_de_safras' : 'max'
     }).reset_index()
     PercentualCompraRecorrente.columns = ['documento', 'fornecedor', 'qtde_compras_geral', 'qtde_meses_total_safra']
     PercentualCompraRecorrente['percentual_compra_safra_geral'] = PercentualCompraRecorrente['qtde_compras_geral'] / PercentualCompraRecorrente['qtde_meses_total_safra']
-    df_saida = pd.DataFrame(PercentualCompraRecorrente)
-    df_saida = df_saida.reset_index()
-    df_saida.columns = ['documento_raiz', 'fornecedor',f'prazo_medio_{meses}_meses']
+    df_saida = PercentualCompraRecorrente[['documento', 'fornecedor', 'percentual_compra_safra_geral']]
+    df_saida.columns = ['documento_raiz', 'fornecedor',f'percentual_compra_safra_geral{meses}_meses']
     return df_saida
 
 # Criando conexão
@@ -488,6 +487,12 @@ def transform_data_to_refined(files_list, access_params):
     
     vop_6_meses = VopAcumulado(base,6)
     print('vop_6_meses: executado!')
+
+    percentual_compra_recorrente_geral = PercentualCompraRecorrente(base)
+    print('percentual_compra_recorrente_geral: executado!')
+
+    percentual_compra_recorrente_3_meses = PercentualCompraRecorrente(base, 3)
+    print('percentual_compra_recorrente_3_meses: executado!')
 
     #CONCATENANDO MEDIDAS
     dfs_inter = [
