@@ -489,7 +489,10 @@ def transform_data_to_refined(files_list, access_params):
     vop_6_meses = VopAcumulado(base,6)
     print('vop_6_meses: executado!')
 
-    percentual_compra_recorrente = PercentualCompraRecorrente(base, 3)
+    percentual_compra_recorrente_geral = PercentualCompraRecorrente(base)
+    print('percentual_compra_recorrente_geral: executado!')
+
+    percentual_compra_recorrente_3_meses = PercentualCompraRecorrente(base, 3)
     print('percentual_compra_recorrente_3_meses: executado!')
 
     #CONCATENANDO MEDIDAS
