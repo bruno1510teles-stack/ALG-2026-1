@@ -32,7 +32,7 @@ default_args = {
     "owner": "João Leite",
     "retries": 0,
     "retry_delay": 0,
-    "execution_timeout": timedelta(seconds=60 * 50),
+    "execution_timeout": timedelta(seconds=60 * 60 * 4),
 }
 
 # DEFINE DAG
