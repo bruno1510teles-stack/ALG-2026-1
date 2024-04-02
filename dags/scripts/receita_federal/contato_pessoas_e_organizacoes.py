@@ -11,7 +11,7 @@ import psutil
 
 
 # Criando conexão
-def transform_receita_to_situacao_cadastral(files_list_estabelecimento, access_params):
+def transform_receita_to_contato(files_list_estabelecimento, access_params):
 
     # Variaveis Conexão
     BUCKET_SOURCE_RAW = "receita-federal"
