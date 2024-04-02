@@ -66,7 +66,7 @@ def transform_receita_to_situacao_cadastral(files_list_estabelecimento, access_p
             df.loc[df['data'] == '0','data'] = None
 
             # Transformando colunas de data da situação cadastral no tipo data
-            df['data'] = pd.to_datetime(df['data'], format='%Y%m%d').dt.date
+            df['data'] = pd.to_datetime(df['data'], format='%Y%m%d', errors='coerce').dt.date
 
             # Juntando os diferentes campos de cnpj em uma coluna de documento unico
             df['identificador'] = df['CNPJ BÁSICO'].astype(str).str.cat(
