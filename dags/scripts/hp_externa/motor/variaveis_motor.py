@@ -509,7 +509,9 @@ def transform_data_to_refined(files_list, access_params):
         percentual_pago_em_dia_3_meses,
         over_5,
         ever_10,
-        vop_6_meses]
+        vop_6_meses,
+        percentual_compra_recorrente_geral,
+        percentual_compra_recorrente_3_meses]
 
     df_final = prazo_medio_geral
     
@@ -532,7 +534,9 @@ def transform_data_to_refined(files_list, access_params):
     'percentual_pago_em_dia_3_meses',
     'over_5',
     'ever_10',
-    'vop_6_meses']
+    'vop_6_meses',
+    'percentual_compra_recorrente_geral',
+    'percentual_compra_recorrente_3_meses']
     
     df_final.columns = colunas
     
@@ -549,9 +553,11 @@ def transform_data_to_refined(files_list, access_params):
         'percentual_pago_em_dia_3_meses',
         'over_5',
         'ever_10',
-        'vop_6_meses'
+        'vop_6_meses',
+        'percentual_compra_recorrente_geral',
+        'percentual_compra_recorrente_3_meses'
     ]
-    print( 'AAAAAAAAAAAA')
+    print('Rodou tudo')
     df_final[colunas_float] = df_final[colunas_float].astype('float')
 
     
