@@ -98,6 +98,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
 
                         df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
                         
+                        
                         # CRIANDO A TABELA DE ORGANIZAÇÕES:
                         print(f"Merge com Empresa {psutil.virtual_memory()._asdict()}")
                         df_organizacoes = df_estabelecimentos.merge(df_empresa, how='inner',  on='CNPJ BÁSICO')
@@ -124,6 +125,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                         df_organizacoes['idade'] = df_organizacoes['idade'].astype(float)
                         
                         df_organizacoes['fonte'] = 'RECEITA FEDERAL'
+                        
+                        df_organizacoes['inicio'] = pd.to_datetime(df_organizacoes['inicio'], format='%Y%m%d').dt.date
                         
                         
                         #Definindo data de tratamento do arquivo
