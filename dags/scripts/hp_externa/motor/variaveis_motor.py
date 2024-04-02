@@ -356,6 +356,7 @@ def PercentualCompraRecorrente(df, meses=None):
     # PercentualCompraRecorrente
 
     PercentualCompraRecorrente['dias'] = PercentualCompraRecorrente['data_vencimento'] - PercentualCompraRecorrente['data_emissao']
+    PercentualCompraRecorrente['data_emissao'] = pd.to_datetime(PercentualCompraRecorrente['data_emissao'])
     PercentualCompraRecorrente['safra'] = PercentualCompraRecorrente['data_emissao'].dt.strftime('%Y-%m-01')
 
     # Criando Aux
@@ -367,14 +368,14 @@ def PercentualCompraRecorrente(df, meses=None):
     aux_PercentualCompraRecorrente.columns = ['fornecedor', 'qtde_de_safras']
     PercentualCompraRecorrente = PercentualCompraRecorrente.merge(aux_PercentualCompraRecorrente, on=['fornecedor'], how = 'inner')
     PercentualCompraRecorrente['QTDE'] = 1
-    PercentualCompraRecorrente = PercentualCompraRecorrente[['documento', 'fornecedor', 'safra', 'qtde_de_safras', 'QTDE']].drop_duplicates()
-    PercentualCompraRecorrente = PercentualCompraRecorrente.groupby(['documento', 'fornecedor']).agg({
+    PercentualCompraRecorrente = PercentualCompraRecorrente[['documento_raiz', 'fornecedor', 'safra', 'qtde_de_safras', 'QTDE']].drop_duplicates()
+    PercentualCompraRecorrente = PercentualCompraRecorrente.groupby(['documento_raiz', 'fornecedor']).agg({
     'QTDE':'sum',
     'qtde_de_safras' : 'max'
     }).reset_index()
-    PercentualCompraRecorrente.columns = ['documento', 'fornecedor', 'qtde_compras_geral', 'qtde_meses_total_safra']
+    PercentualCompraRecorrente.columns = ['documento_raiz', 'fornecedor', 'qtde_compras_geral', 'qtde_meses_total_safra']
     PercentualCompraRecorrente['percentual_compra_safra_geral'] = PercentualCompraRecorrente['qtde_compras_geral'] / PercentualCompraRecorrente['qtde_meses_total_safra']
-    df_saida = PercentualCompraRecorrente[['documento', 'fornecedor', 'percentual_compra_safra_geral']]
+    df_saida = PercentualCompraRecorrente[['documento_raiz', 'fornecedor', 'percentual_compra_safra_geral']]
     df_saida.columns = ['documento_raiz', 'fornecedor',f'percentual_compra_safra_geral{meses}_meses']
     return df_saida
 
