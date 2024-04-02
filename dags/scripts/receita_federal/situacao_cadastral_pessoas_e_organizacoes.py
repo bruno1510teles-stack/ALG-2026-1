@@ -35,12 +35,7 @@ def transform_receita_to_situacao_cadastral(files_list_estabelecimento, access_p
     #definindo tipo das colunas para importacao
     dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 5:'string', 6:'string'}
     
-    tentativas = 3
-    tentativa_atual = 0
-    sucesso = False
-
-    #Dentro do loop de empresa é feito um loop de estabelecimentos no qual, cada arquivo de estabelecimento vai ser divido em chunks e porcessado por partes
-
+    #Tratando um arquivo por vez
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
 
