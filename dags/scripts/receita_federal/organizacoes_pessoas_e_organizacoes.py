@@ -79,7 +79,8 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
             print(f"file_name: {file_name}")
             file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
             for df_estabelecimentos in pd.read_csv(BytesIO(file.data), sep=';', 
-                                encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
+                                encoding='latin1', low_memory=False, #chunksize=6000000, 
+                                dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
             
 
                 print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
