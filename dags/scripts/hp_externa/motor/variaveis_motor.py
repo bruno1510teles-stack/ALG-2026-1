@@ -515,9 +515,12 @@ def transform_data_to_refined(files_list, access_params):
 
     df_final = prazo_medio_geral
     
+    print('Concatenou as medidas')
     
     for df_inter in dfs_inter:
         df_final = pd.merge(df_final, df_inter, on=['documento_raiz', 'fornecedor'], how='outer')
+
+    print('Agrupou as medidas')
 
     #AJUSTANDO NOME DAS COLUNAS
     colunas = ['documento_raiz', 
@@ -539,6 +542,8 @@ def transform_data_to_refined(files_list, access_params):
     'percentual_compra_recorrente_3_meses']
     
     df_final.columns = colunas
+
+    print('Renomeou as colunas')
     
     colunas_float = [
         'prazo_medio_geral',
@@ -560,6 +565,7 @@ def transform_data_to_refined(files_list, access_params):
     print('Rodou tudo')
     df_final[colunas_float] = df_final[colunas_float].astype('float')
 
+    print('Aplicou float nas medidas')
     
     #Definindo data de tratamento do arquivo
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
