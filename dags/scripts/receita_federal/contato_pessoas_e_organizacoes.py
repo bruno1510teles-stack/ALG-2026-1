@@ -17,7 +17,7 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
     BUCKET_SOURCE_RAW = "receita-federal"
     RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
     BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
-    TRUSTED_FOLDER = "situacao-cadastral/"
+    TRUSTED_FOLDER = "contato/"
 
     # Conectando na trusted
     client = Minio(
