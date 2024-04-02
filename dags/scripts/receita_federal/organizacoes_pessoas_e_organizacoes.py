@@ -14,7 +14,7 @@ import psutil
 def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_empresa, access_params):
 
     # Variaveis Conexão
-    BUCKET_SOURCE_RAW = "receita-federal-minio"
+    BUCKET_SOURCE_RAW = "receita-federal"
     RAW_EMPRESA_FOLDER =  "empresas/"
     RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
     BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
