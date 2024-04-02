@@ -120,7 +120,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 
                 df_organizacoes['fonte'] = 'RECEITA FEDERAL'
                 
-                df_organizacoes['inicio'] = pd.to_datetime(df_organizacoes['inicio'], format='%Y%m%d').dt.date
+                df_organizacoes['inicio'] = pd.to_datetime(df_organizacoes['inicio'], format='%Y%m%d', errors='coerce').dt.date
                 
                 
                 #Definindo data de tratamento do arquivo
