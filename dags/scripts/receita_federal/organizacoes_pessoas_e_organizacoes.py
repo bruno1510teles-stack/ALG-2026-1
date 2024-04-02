@@ -74,78 +74,95 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
         
         colunas_estabelecimentos = [0, 1, 2, 4, 10]
         
+        tentativas = 3
+        tentativa_atual = 0
+        sucesso = False
+
         #Dentro do loop de empresa é feito um loop de estabelecimentos no qual, cada arquivo de estabelecimento vai ser divido em chunks e porcessado por partes
         for file_name in files_list_estabelecimento:
             print(f"file_name: {file_name}")
-            file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-            for df_estabelecimentos in pd.read_csv(BytesIO(file.data), sep=';', 
-                                encoding='latin1', low_memory=False, #chunksize=6000000, 
-                                dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
-            
-
-                print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
-                #renomeando colunas conforme padrão da Receita
-                colunas_estabelecimentos = {0:'CNPJ BÁSICO',
-                    1:'CNPJ ORDEM',
-                    2:'CNPJ DV',
-                    4:'NOME FANTASIA',
-                    10:'DATA DE INÍCIO ATIVIDADE'}
-
-                df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
-                
-                # CRIANDO A TABELA DE ORGANIZAÇÕES:
-                print(f"Merge com Empresa {psutil.virtual_memory()._asdict()}")
-                df_organizacoes = df_estabelecimentos.merge(df_empresa, how='inner',  on='CNPJ BÁSICO')
-                
-                df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
-                    [df_organizacoes['CNPJ ORDEM'].astype(str), df_organizacoes['CNPJ DV'].astype(str)], sep='')
-
-                df_organizacoes = df_organizacoes.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV'])
-                
-                print(f"Renomeando tabela final! {psutil.virtual_memory()._asdict()}")
-                df_organizacoes = df_organizacoes.rename(columns = {
-                'NOME FANTASIA': 'nome',
-                'DATA DE INÍCIO ATIVIDADE': 'inicio',
-                'RAZÃO SOCIAL / NOME EMPRESARIAL': 'razao_social',
-                'CAPITAL SOCIAL DA EMPRESA': 'capital',
-                'PORTE DA EMPRESA': 'tamanho'
-                    })
-                
-                print(f"ordenando coluna final {psutil.virtual_memory()._asdict()}")
-                df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
-                
-                #Como para a receita a idade é nula, é necessário especificar que a coluna é do tipo float (não int para aceitar valores nulos), para posteriormente outras fontes conseguirem acrescentar valores nulos
-                df_organizacoes['idade'] = None
-                df_organizacoes['idade'] = df_organizacoes['idade'].astype(float)
-                
-                df_organizacoes['fonte'] = 'RECEITA FEDERAL'
-                
-                
-                #Definindo data de tratamento do arquivo
-                now = datetime.now(tz=timezone(timedelta(hours=-3)))
-                
-                df_organizacoes['year'] = now.year
-                df_organizacoes['month'] = now.month
-                df_organizacoes['day'] = now.day
+            while tentativa_atual < tentativas and not sucesso:
+                try:
+                    file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+                    for df_estabelecimentos in pd.read_csv(BytesIO(file.data), sep=';', 
+                                        encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtype_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
                     
-                storage_options = {
-                    "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-                    "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-                    "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
-                    "AWS_REGION": "us-east-1",
-                    "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
-                }
-                
-                print("Transformando em Pyarrow!")
-                # O pandas cria esse index, este codigo serve para remover caso ele crie
-                df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False)
 
-                print("Gravando na Trused!")
-                write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
-                                df_organizacoes, 
-                                partition_by=["year", "month", "day"],
-                                storage_options=storage_options,
-                                mode="append",
-                                )
-                
-                print("Gravado na Trused!")
+                        print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
+                        #renomeando colunas conforme padrão da Receita
+                        colunas_estabelecimentos = {0:'CNPJ BÁSICO',
+                            1:'CNPJ ORDEM',
+                            2:'CNPJ DV',
+                            4:'NOME FANTASIA',
+                            10:'DATA DE INÍCIO ATIVIDADE'}
+
+                        df_estabelecimentos = df_estabelecimentos.rename(columns=colunas_estabelecimentos)
+                        
+                        # CRIANDO A TABELA DE ORGANIZAÇÕES:
+                        print(f"Merge com Empresa {psutil.virtual_memory()._asdict()}")
+                        df_organizacoes = df_estabelecimentos.merge(df_empresa, how='inner',  on='CNPJ BÁSICO')
+                        
+                        df_organizacoes['identificador'] = df_organizacoes['CNPJ BÁSICO'].astype(str).str.cat(
+                            [df_organizacoes['CNPJ ORDEM'].astype(str), df_organizacoes['CNPJ DV'].astype(str)], sep='')
+
+                        df_organizacoes = df_organizacoes.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV'])
+                        
+                        print(f"Renomeando tabela final! {psutil.virtual_memory()._asdict()}")
+                        df_organizacoes = df_organizacoes.rename(columns = {
+                        'NOME FANTASIA': 'nome',
+                        'DATA DE INÍCIO ATIVIDADE': 'inicio',
+                        'RAZÃO SOCIAL / NOME EMPRESARIAL': 'razao_social',
+                        'CAPITAL SOCIAL DA EMPRESA': 'capital',
+                        'PORTE DA EMPRESA': 'tamanho'
+                            })
+                        
+                        print(f"ordenando coluna final {psutil.virtual_memory()._asdict()}")
+                        df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
+                        
+                        #Como para a receita a idade é nula, é necessário especificar que a coluna é do tipo float (não int para aceitar valores nulos), para posteriormente outras fontes conseguirem acrescentar valores nulos
+                        df_organizacoes['idade'] = None
+                        df_organizacoes['idade'] = df_organizacoes['idade'].astype(float)
+                        
+                        df_organizacoes['fonte'] = 'RECEITA FEDERAL'
+                        
+                        
+                        #Definindo data de tratamento do arquivo
+                        now = datetime.now(tz=timezone(timedelta(hours=-3)))
+                        
+                        df_organizacoes['year'] = now.year
+                        df_organizacoes['month'] = now.month
+                        df_organizacoes['day'] = now.day
+                            
+                        storage_options = {
+                            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+                            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+                            "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
+                            "AWS_REGION": "us-east-1",
+                            "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+                        }
+                        
+                        print("Transformando em Pyarrow!")
+                        # O pandas cria esse index, este codigo serve para remover caso ele crie
+                        df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False)
+
+                        print("Gravando na Trused!")
+                        write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
+                                        df_organizacoes, 
+                                        partition_by=["year", "month", "day"],
+                                        storage_options=storage_options,
+                                        mode="append",
+                                        )
+                        
+                        print("Gravado na Trused!")
+                        sucesso = True
+                        
+                except Exception as e:
+                    tentativa_atual += 1
+                    print(f"Tentativa {tentativa_atual} falhou:", str(e))
+                    sucesso = False    
+                    
+                if not sucesso:
+                    print("Falha após", tentativas, "tentativas. Importação não foi bem-sucedida.")
+                else:
+                    sucesso = False  # resetar o sucesso para próxima iteração    
+                    tentativa_atual = 0
