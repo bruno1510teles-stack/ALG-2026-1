@@ -13,7 +13,7 @@ from scripts.receita_federal.organizacoes_pessoas_e_organizacoes import transfor
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
-MINIO_RAW_BUCKET = "receita-federal-minio"
+MINIO_RAW_BUCKET = "receita-federal"
 RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 RECEITA_FEDERAL_EMPRESAS_FOLDER = "empresas/"
 
