@@ -355,14 +355,13 @@ def PercentualCompraRecorrente(df, meses=None):
 
     # PercentualCompraRecorrente
 
-    PercentualCompraRecorrente['dias'] = PercentualCompraRecorrente['data_vencimento'] - PercentualCompraRecorrente['data_emissao']
     PercentualCompraRecorrente['data_emissao'] = pd.to_datetime(PercentualCompraRecorrente['data_emissao'])
+    PercentualCompraRecorrente['data_vencimento'] = pd.to_datetime(PercentualCompraRecorrente['data_vencimento'])
+    PercentualCompraRecorrente['dias'] = (PercentualCompraRecorrente['data_vencimento'] - PercentualCompraRecorrente['data_emissao']).dt.days
     PercentualCompraRecorrente['safra'] = PercentualCompraRecorrente['data_emissao'].dt.strftime('%Y-%m-01')
 
     # Criando Aux
-    aux_PercentualCompraRecorrente = df
-    aux_PercentualCompraRecorrente['data_emissao'] = pd.to_datetime(aux_PercentualCompraRecorrente['data_emissao'])
-    aux_PercentualCompraRecorrente['safra'] = aux_PercentualCompraRecorrente['data_emissao'].dt.strftime('%Y-%m-01')
+    aux_PercentualCompraRecorrente = PercentualCompraRecorrente
     aux_PercentualCompraRecorrente = aux_PercentualCompraRecorrente[['fornecedor', 'safra']].drop_duplicates()
     aux_PercentualCompraRecorrente = aux_PercentualCompraRecorrente.groupby(['fornecedor']).agg({
     'safra': 'count'
