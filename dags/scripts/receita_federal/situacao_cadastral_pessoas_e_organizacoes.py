@@ -17,7 +17,7 @@ def transform_receita_to_situacao_cadastral(files_list_estabelecimento, access_p
     BUCKET_SOURCE_RAW = "receita-federal"
     RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
     BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
-    TRUSTED_FOLDER = "organizacoes/"
+    TRUSTED_FOLDER = "situacao-cadastral/"
 
     # Conectando na trusted
     client = Minio(
