@@ -562,7 +562,6 @@ def transform_data_to_refined(files_list, access_params):
         'percentual_compra_recorrente_geral',
         'percentual_compra_recorrente_3_meses'
     ]
-    print('Rodou tudo')
     df_final[colunas_float] = df_final[colunas_float].astype('float')
 
     print('Aplicou float nas medidas')
