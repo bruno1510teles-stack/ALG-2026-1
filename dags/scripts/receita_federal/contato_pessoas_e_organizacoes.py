@@ -44,7 +44,7 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
-                            encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
+                            encoding='latin1', low_memory=False, chunksize=3000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
         
             print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
             #definindo nome das colunas para tratamento inicial
@@ -123,6 +123,8 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
             #Transformando em nulo casos em que o Telefone 1 for igual ao telefone 2
             df.loc[df['TELEFONE 1'] == df['TELEFONE 2'], 'TELEFONE 2'] = None
 
+            del mask1
+            del mask2
 
             print(f"Criando coluna única: {psutil.virtual_memory()._asdict()}")            
             
@@ -179,5 +181,5 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
             
             print("Gravado na Trused!")
             len(files_list_estabelecimento)
-            print(f'Processamento Concluido: {indice/len(files_list_estabelecimento)}')
+            print(f'Processamento Concluido: {indice/len(files_list_estabelecimento)}%')
             indice += 1
