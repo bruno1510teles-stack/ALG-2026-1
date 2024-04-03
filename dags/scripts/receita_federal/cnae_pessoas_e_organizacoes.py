@@ -27,9 +27,11 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
         access_key = access_params['aws_access_key_id_raw'],
         secret_key = access_params['aws_secret_access_key_raw'],
     )
+    df_cnae = None
     
     #Como é apenas um arquivo de CNAE por vez não é necessário concatenar DF como os outros tratamentos
     print('IMPORTANDO CNAES')
+    print(f'Lista de arquivos a serem processados: {files_list_cnae}')
     for file_name in files_list_cnae:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
