@@ -180,6 +180,6 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
                             )
             
             print("Gravado na Trused!")
-            len(files_list_estabelecimento)
-            print(f'Processamento Concluido: {indice/len(files_list_estabelecimento)}%')
-            indice += 1
+
+        print(f'Processamento Concluido: {indice/len(files_list_estabelecimento)}%')
+        indice += 1
