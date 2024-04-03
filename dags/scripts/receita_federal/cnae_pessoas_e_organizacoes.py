@@ -59,7 +59,7 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
 
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
-                            encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
+                            encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
         
             
             #definindo colunas a serem utilizadas
@@ -67,8 +67,6 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
 
             #definindo tipo das colunas para importacao
             dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 11:'string', 12:'string'}
-
-            df = pd.read_csv(r'C:\Users\joao.leite\OneDrive - Yandeh\Desktop\receita-federal\estabelecimentos\K3241.K03200Y1.D40210.ESTABELE', sep=';', dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, encoding='latin1', nrows = 2000, low_memory=False, header=None)
 
             #definindo nome das colunas para tratamento inicial
             nome_colunas_estabelecimentos = {0:'CNPJ BÁSICO',
