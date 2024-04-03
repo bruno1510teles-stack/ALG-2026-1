@@ -72,23 +72,23 @@ def transform_receita_to_endereco(files_list_estabelecimento, files_list_enderec
                 19:'uf',
                 20:'municipio'}
 
-            df_estabelecimentos = df_estabelecimentos.rename(columns=nome_colunas_estabelecimentos)
+            df = df.rename(columns=nome_colunas_estabelecimentos)
 
             #criando coluna de identificador juntando todas as colunas de documento
-            df_estabelecimentos['identificador'] = df_estabelecimentos['CNPJ BÁSICO'] + df_estabelecimentos['CNPJ ORDEM'] + df_estabelecimentos['CNPJ DV']
+            df['identificador'] = df['CNPJ BÁSICO'] + df['CNPJ ORDEM'] + df['CNPJ DV']
 
             #juntando tipo de logradouro e logradouro em única coluna
-            df_estabelecimentos['logradouro'] = df_estabelecimentos['tipo logradouro'] + ' ' + df_estabelecimentos['logradouro'] 
+            df['logradouro'] = df['tipo logradouro'] + ' ' + df['logradouro'] 
 
             # dropando colunas descenecessárias
-            df_estabelecimentos = df_estabelecimentos.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV', 'tipo logradouro'])
+            df = df.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV', 'tipo logradouro'])
 
             print(f"substituindo chave valor de municipio {psutil.virtual_memory()._asdict()}")
             #substituindo código do munícipio pela descrição do município
-            df_estabelecimentos['municipio'] = df_estabelecimentos['municipio'].map(dict_municipio)
+            df['municipio'] = df['municipio'].map(dict_municipio)
 
             #reoordenando colunas 
-            df_estabelecimentos = df_estabelecimentos[['identificador', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'cep', 'uf']]
+            df = df[['identificador', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'cep', 'uf']]
 
             df['fonte'] = 'RECEITA FEDERAL'
 
