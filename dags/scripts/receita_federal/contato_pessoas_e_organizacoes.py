@@ -41,12 +41,11 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
     #Tratando um arquivo por vez
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
-
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
                             encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
         
-            
+            print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
             #definindo nome das colunas para tratamento inicial
             nome_colunas_estabelecimentos = {0:'CNPJ BÁSICO',
                 1:'CNPJ ORDEM',
@@ -61,11 +60,12 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
 
             df = df.rename(columns=nome_colunas_estabelecimentos)
 
+            print(f"Coluna identificador criada! {psutil.virtual_memory()._asdict()}")
             #criando coluna de identificador juntando todas as colunas de documento
             df['identificador'] = df['CNPJ BÁSICO'] + df['CNPJ ORDEM'] + df['CNPJ DV']
 
             #TRATAMENTO TELEFONE/FAZ E DDD:
-
+            print(f"Tratando telefone: {psutil.virtual_memory()._asdict()}")
             #TELEFONE1 E DD1
             #Caso nem DDD nem Telefone são nulos
             mask1 = df['DDD 1'].notna()
@@ -122,6 +122,9 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
             #Transformando em nulo casos em que o Telefone 1 for igual ao telefone 2
             df.loc[df['TELEFONE 1'] == df['TELEFONE 2'], 'TELEFONE 2'] = None
 
+
+            print(f"Criando coluna única: {psutil.virtual_memory()._asdict()}")            
+            
             # Padronizando todos os valores de contatato em única coluna
             df = df.melt(id_vars='identificador', value_vars=['TELEFONE 1', 'TELEFONE 2', 'FAX', 'CORREIO ELETRONICO'], 
                                 value_name='valor')
@@ -161,11 +164,11 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
                 "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
             }
             
-            print("Transformando em Pyarrow!")
+            print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
             # O pandas cria esse index, este codigo serve para remover caso ele crie
             df = pa.Table.from_pandas(df, preserve_index=False)
 
-            print("Gravando na Trused!")
+            print(f"Gravando na Trused! {psutil.virtual_memory()._asdict()}")
             write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
                             df, 
                             partition_by=["year", "month", "day"],
