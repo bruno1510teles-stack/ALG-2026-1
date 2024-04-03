@@ -52,7 +52,7 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
                             24:'string', 25:'string', 26:'string',
                             27:'string'}
 
-    
+    print(f"Estabelecimentos: {files_list_estabelecimento}")
     #Tratando um arquivo por vez
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
