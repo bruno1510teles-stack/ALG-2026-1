@@ -39,6 +39,7 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
 
     #transformando df em dict para posterior map
     dict_cnaes = dict(zip(df_cnae[0], df_cnae[1]))
+    del df_cnae
     
     # Importando dados de ESTABELECIMENTO
     print('IMPORTANDO ESTABELECIMENTO')
