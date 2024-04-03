@@ -28,6 +28,7 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
     
     # Importando dados de ESTABELECIMENTO
     print('IMPORTANDO ESTABELECIMENTO')
+    print(f'ARQUIVOS: {files_list_estabelecimento}')
 
     #definindo colunas a serem utilizadas
     colunas_estabelecimentos = [0, 1, 2, 21, 22, 23, 24, 25, 26, 27]
@@ -37,13 +38,13 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
                             21:'string', 22:'string', 23:'string',
                             24:'string', 25:'string', 26:'string',
                             27:'string'}
-    
+    indice = 1
     #Tratando um arquivo por vez
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
-                            encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
+                            encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
         
             print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
             #definindo nome das colunas para tratamento inicial
@@ -177,3 +178,6 @@ def transform_receita_to_contato(files_list_estabelecimento, access_params):
                             )
             
             print("Gravado na Trused!")
+            len(files_list_estabelecimento)
+            print(f'Processamento Concluido: {indice/len(files_list_estabelecimento)}')
+            indice += 1
