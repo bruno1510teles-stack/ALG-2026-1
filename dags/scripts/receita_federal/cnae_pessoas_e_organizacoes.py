@@ -45,13 +45,10 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
     print('IMPORTANDO ESTABELECIMENTO')
 
     #definindo colunas a serem utilizadas
-    colunas_estabelecimentos = [0, 1, 2, 21, 22, 23, 24, 25, 26, 27]
+    colunas_estabelecimentos = [0, 1, 2, 11, 12]
 
     #definindo tipo das colunas para importacao
-    dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string',
-                            21:'string', 22:'string', 23:'string',
-                            24:'string', 25:'string', 26:'string',
-                            27:'string'}
+    dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 11:'string', 12:'string'}
 
     print(f"Estabelecimentos: {files_list_estabelecimento}")
     #Tratando um arquivo por vez
@@ -61,13 +58,7 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
                             encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
-        
-            
-            #definindo colunas a serem utilizadas
-            colunas_estabelecimentos = [0, 1, 2, 11, 12]
 
-            #definindo tipo das colunas para importacao
-            dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 11:'string', 12:'string'}
 
             #definindo nome das colunas para tratamento inicial
             nome_colunas_estabelecimentos = {0:'CNPJ BÁSICO',
