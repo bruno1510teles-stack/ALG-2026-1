@@ -15,7 +15,7 @@ from scripts.receita_federal.cnae_pessoas_e_organizacoes import transform_receit
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "receita-federal"
 RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
-RECEITA_FEDERAL_CNAE_FOLDER = "cnae/"
+RECEITA_FEDERAL_CNAE_FOLDER = "cnaes/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(day=1)

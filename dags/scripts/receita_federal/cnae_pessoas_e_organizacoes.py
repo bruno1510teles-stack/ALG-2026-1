@@ -32,11 +32,12 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
     #Como é apenas um arquivo de CNAE por vez não é necessário concatenar DF como os outros tratamentos
     print('IMPORTANDO CNAES')
     print(f'Lista de arquivos a serem processados: {files_list_cnae}')
-    for file_name in files_list_cnae:
-        print(f"file_name: {file_name}")
-        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        df_cnae = pd.read_csv(BytesIO(file.data), dtype='str', sep=';', header=None, encoding='latin1')
+    
+    file_name = files_list_cnae[0]
+    file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+    df_cnae = pd.read_csv(BytesIO(file.data), dtype='str', sep=';', header=None, encoding='latin1')
 
+    #transformando df em dict para posterior map
     dict_cnaes = dict(zip(df_cnae[0], df_cnae[1]))
     
     # Importando dados de ESTABELECIMENTO
