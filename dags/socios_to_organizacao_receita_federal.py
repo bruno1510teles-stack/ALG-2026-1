@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.socios_to_organizacoes_pessoas_e_organizacoes import transform_receita_to_socios_to_organizacoes
+from scripts.receita_federal.socios_to_organizacoes_pessoas_e_organizacoes import transform_socios_receita_to_organizacoes
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
@@ -93,7 +93,7 @@ def socios_to_organizacoes_receita_federal():
 
         print(f"current_files_socios as { type(current_files_socios) } and size of { len(current_files_socios) }")
 
-        transform_receita_to_socios_to_organizacoes(current_files_socios, access_params)
+        transform_socios_receita_to_organizacoes(current_files_socios, access_params)
 
     unique_clients = socios_to_organizacoes_receita_federal(list_today_files_socios.output)
 
