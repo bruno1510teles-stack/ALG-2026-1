@@ -28,12 +28,10 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     # Importando dados de SOCIOS
     print('IMPORTANDO SOCIOS')
 
-    #definindo colunas a serem utilizadas
-    colunas_socios = [0, 1, 2, 5, 6]
-
-    #definindo tipo das colunas para importacao
-    dtypes_socios = {0:'string', 1:'string', 2:'string', 5:'string', 6:'string'}
-    
+    #definindo colunas e tipos que serão importandos
+    colunas_socios = [2, 3, 5, 10]
+    dtypes_socios = 'str'
+            
     dfs = []
 
     #Tratando um arquivo por vez
