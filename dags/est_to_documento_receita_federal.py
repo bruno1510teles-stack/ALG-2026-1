@@ -65,7 +65,7 @@ def estabelecimento_to_documento_receita_federal():
     @task(
         executor_config={
         "KubernetesExecutor": {
-            "request_memory": "8000Mi"
+            "request_memory": "16000Mi"
         }
     }
     )

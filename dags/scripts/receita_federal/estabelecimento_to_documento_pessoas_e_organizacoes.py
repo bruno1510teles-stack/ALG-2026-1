@@ -38,15 +38,20 @@ def transform_estabelecimento_receita_to_documento(files_list_estabelecimento, a
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_estabelecimentos = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None)
 
+        (f"Criando coluna identificador {psutil.virtual_memory()._asdict()}")
         df_estabelecimentos['identificador'] = df_estabelecimentos[0] + df_estabelecimentos[1] + df_estabelecimentos[2]
+        
+        (f"Criando coluna tipo {psutil.virtual_memory()._asdict()}")
         df_estabelecimentos['tipo'] = 'CNPJ'
+        
+        (f"Criando coluna valor {psutil.virtual_memory()._asdict()}")
         df_estabelecimentos['valor'] = df_estabelecimentos['identificador']
- 
+
+        (f"Criando coluna fonte {psutil.virtual_memory()._asdict()}")
         df_estabelecimentos['fonte'] = 'RECEITA FEDERAL'
         df_estabelecimentos['fonte'] = df_estabelecimentos['fonte'].astype(str)
-        
-        print(f"Ordenando colunas: {psutil.virtual_memory()._asdict()}")   
 
+        (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
         #Definindo data de tratamento do arquivo
         now = datetime.now(tz=timezone(timedelta(hours=-3)))
         
