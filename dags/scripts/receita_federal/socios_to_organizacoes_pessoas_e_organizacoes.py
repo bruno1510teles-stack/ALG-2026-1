@@ -32,30 +32,12 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     colunas_socios = [2, 3, 5, 10]
     dtypes_socios = 'str'
             
-    dfs = []
-    
-    #Dividindo a lista de arquivos em 2 para diminuir a memoria pela metade ao processar
-    metade = len(files_list_socio) // 4
-    lista_aninhada = [files_list_socio[:metade], files_list_socio[metade:]]
 
-    # Iterando sobre cada metade da lista
-    for metade_da_lista in lista_aninhada:
-        print("Metade:")
-        #Tratando um arquivo por vez
-        for file_name in metade_da_lista:
-            print(f"file_name: {file_name} {psutil.virtual_memory()._asdict()}")
-            file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-            df_inter = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
-            dfs.append(df_inter)
-            del df_inter
-            print(f"arquivo lido: {file_name} {psutil.virtual_memory()._asdict()}")
-        
-        print(f"CONCATENANDO ARQUIVOS: {psutil.virtual_memory()._asdict()}")    
-        df_socios = pd.concat(dfs, ignore_index=True)
-        
-        print(f"CONCATENADOS: {psutil.virtual_memory()._asdict()}")    
-        #Alterando nome das colunas
-        
+    for file_name in files_list_socio:
+        print(f"file_name: {file_name} {psutil.virtual_memory()._asdict()}")
+        file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
+        df_socios = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
+
         print(f"Renomeando colunas: {psutil.virtual_memory()._asdict()}")   
         nome_colunas = {2: 'identificador', 
         3: 'nome', 
