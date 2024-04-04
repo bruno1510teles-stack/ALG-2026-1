@@ -7,6 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+from pyspark.sql import SparkSession
 from scripts.query_trino_payments import query_trino
 
 # Calculando Variáveis
@@ -582,12 +583,19 @@ def transform_data_to_refined(files_list, access_params):
     }
     
     # O pandas cria esse index, este codigo serve para remover caso ele crie
-    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
+    #df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
-    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
-                    df_final, 
-                    partition_by=["year", "month", "day"],
-                    storage_options=storage_options,
-                    mode="append",
-                    mergeSchema=True
-                    )
+    # Inicialize a sessão Spark
+    spark = SparkSession.builder \
+        .appName("Write to Delta Lake") \
+        .getOrCreate()
+    
+    # Convertendo DataFrame Pandas em um DataFrame Spark
+    spark_df = spark.createDataFrame(df_final)
+
+    # Salvando para o Delta Lake com a opção mergeSchema ativada
+    spark_df.write.format("delta") \
+        .mode("append") \
+        .partitionBy("year", "month", "day") \
+        .option("mergeSchema", "true") \
+        .save(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}")
