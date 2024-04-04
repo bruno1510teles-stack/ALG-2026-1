@@ -29,7 +29,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     print('IMPORTANDO SOCIOS')
 
     #definindo colunas e tipos que serão importandos
-    colunas_socios = [2, 3, 5, 10]
+    colunas_socios = [1, 2, 3, 5, 10]
     dtypes_socios = 'str'
             
 
@@ -38,9 +38,15 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_socios = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
 
+        # removendo os que não são CPF pois os registros de CNPJ já estão sendo fornecidos pela tabela estabelecimentos e os ESTRANGEIROS vem com identificador nulo
+        df_socios = df_socios[df_socios[1] == '2']
+        
+        #removendo coluna que só serviu para retirar os que não são CPF
+        df_socios = df_socios[[2, 3, 5, 10]]
+        
         print(f"Renomeando colunas: {psutil.virtual_memory()._asdict()}")   
-        nome_colunas = {2: 'identificador', 
-        3: 'nome', 
+        nome_colunas = {2: 'nome', 
+        3: 'identificador', 
         5: 'inicio', 
         10: 'idade'}
 
