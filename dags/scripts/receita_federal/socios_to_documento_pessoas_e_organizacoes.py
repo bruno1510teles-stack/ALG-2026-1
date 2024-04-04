@@ -55,7 +55,7 @@ def transform_socios_receita_to_documento(files_list_socio, access_params):
         df_socios['tipo'] = df_socios['tipo'].map(dict_documento)
         
         #reoordenando colunas
-        df_socios = df_socios['identificador', 'tipo', 'valor']
+        df_socios = df_socios[['identificador', 'tipo', 'valor']]
 
         df_socios['fonte'] = 'RECEITA FEDERAL'
         df_socios['fonte'] = df_socios['fonte'].astype(str)
