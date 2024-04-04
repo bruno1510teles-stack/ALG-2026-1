@@ -11,12 +11,12 @@ import psutil
 
 
 # Criando conexão
-def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
+def transform_socios_receita_to_documento(files_list_socio, access_params):
 
     # Variaveis Conexão
     BUCKET_SOURCE_RAW = "receita-federal"
     BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
-    TRUSTED_FOLDER = "organizacoes/"
+    TRUSTED_FOLDER = "documento/"
 
     # Conectando na trusted
     client = Minio(

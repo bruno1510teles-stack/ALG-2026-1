@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.socios_to_documentos_pessoas_e_organizacoes import transform_socios_receita_to_documento
+from scripts.receita_federal.socios_to_documento_pessoas_e_organizacoes import transform_socios_receita_to_documento
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
