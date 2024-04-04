@@ -125,4 +125,5 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
                         mode="append",
                         )
         
+        del df_socios
         print(f"Gravado na Trused! {psutil.virtual_memory()._asdict()}")
