@@ -44,15 +44,14 @@ def transform_socios_receita_to_documento(files_list_socio, access_params):
 
         df_socios = df_socios.rename(columns=nome_colunas)
         
+        #Removendo documentos de CNPJ, pois esses já virão da tabela estabelecimentos, e ESTRANGEIROS, pois estes retornam o valor de documento como nulo
+        mask = df_socios['tipo'] == '2'
+        df_socios = df_socios[mask]
+        
+        df_socios['tipo'] = 'CPF'
+        
         #criando coluna valor
         df_socios['valor'] = df_socios['identificador']
-        
-        #alterando valores coluna tipo
-        dict_documento = {'1': 'CNPJ',
-                '2': 'CPF',
-                '3': 'ESTRANGEIRO'}
-        
-        df_socios['tipo'] = df_socios['tipo'].map(dict_documento)
         
         #reoordenando colunas
         df_socios = df_socios[['identificador', 'tipo', 'valor']]
