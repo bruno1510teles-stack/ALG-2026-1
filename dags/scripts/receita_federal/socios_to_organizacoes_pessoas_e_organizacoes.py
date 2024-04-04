@@ -35,7 +35,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     dfs = []
     
     #Dividindo a lista de arquivos em 2 para diminuir a memoria pela metade ao processar
-    metade = len(files_list_socio) // 2
+    metade = len(files_list_socio) // 4
     lista_aninhada = [files_list_socio[:metade], files_list_socio[metade:]]
 
     # Iterando sobre cada metade da lista
