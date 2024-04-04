@@ -69,7 +69,7 @@ def socios_to_organizacoes_receita_federal():
         }
     }
     )
-    def socios_to_organizacoes_receita_federal(current_files_socios):
+    def socios_to_documento_receita_federal(current_files_socios):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -95,9 +95,9 @@ def socios_to_organizacoes_receita_federal():
 
         transform_socios_receita_to_documento(current_files_socios, access_params)
 
-    unique_clients = socios_to_organizacoes_receita_federal(list_today_files_socios.output)
+    unique_clients = socios_to_documento_receita_federal(list_today_files_socios.output)
 
     # run order
     init_data_load >> list_today_files_socios >> check_files >> unique_clients >> finish_data_load
 
-socios_to_organizacoes_receita_federal()
+socios_to_documento_receita_federal()
