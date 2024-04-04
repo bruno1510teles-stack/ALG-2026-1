@@ -38,13 +38,16 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
 
     #Tratando um arquivo por vez
     for file_name in files_list_socio:
-        print(f"file_name: {file_name}")
+        print(f"file_name: {file_name} {psutil.virtual_memory()._asdict()}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_inter = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
         dfs.append(df_inter)
-
+        print(f"arquivo lido: {file_name} {psutil.virtual_memory()._asdict()}")
+     
+    print(f"CONCATENANDO ARQUIVOS: {psutil.virtual_memory()._asdict()}")    
     df_socios = pd.concat(dfs, ignore_index=True)
-
+    
+    print(f"CONCATENADOS: {psutil.virtual_memory()._asdict()}")    
     #Alterando nome das colunas
     nome_colunas = {2: 'identificador', 
     3: 'nome', 
@@ -90,7 +93,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     df_socios['year'] = now.year
     df_socios['month'] = now.month
     df_socios['day'] = now.day
-        
+    
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
