@@ -572,7 +572,13 @@ def transform_data_to_refined(files_list, access_params):
     df_final['year'] = now.year
     df_final['month'] = now.month
     df_final['day'] = now.day
-        
+
+    schema = df_final.schema
+
+    # Imprima o esquema do DataFrame PyArrow
+    print("Esquema do DataFrame PyArrow:")
+    print(schema)
+
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
