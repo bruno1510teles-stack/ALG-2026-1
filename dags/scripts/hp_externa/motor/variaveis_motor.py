@@ -574,8 +574,6 @@ def transform_data_to_refined(files_list, access_params):
     df_final['day'] = now.day
 
     schema = df_final.schema
-
-    # Imprima o esquema do DataFrame PyArrow
     print("Esquema do DataFrame PyArrow:")
     print(schema)
 
