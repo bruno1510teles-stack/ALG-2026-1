@@ -40,6 +40,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
         df_inter = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
         dfs.append(df_inter)
+        del df_inter
         print(f"arquivo lido: {file_name} {psutil.virtual_memory()._asdict()}")
      
     print(f"CONCATENANDO ARQUIVOS: {psutil.virtual_memory()._asdict()}")    
