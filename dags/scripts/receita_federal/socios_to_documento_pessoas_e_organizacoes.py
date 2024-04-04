@@ -29,7 +29,7 @@ def transform_socios_receita_to_documento(files_list_socio, access_params):
     print('IMPORTANDO SOCIOS')
 
     #definindo colunas e tipos que serão importandos
-    colunas_socios = [2, 3, 5, 10]
+    colunas_socios = [1, 3]
     dtypes_socios = 'str'
             
 
@@ -39,48 +39,28 @@ def transform_socios_receita_to_documento(files_list_socio, access_params):
         df_socios = pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', dtype=dtypes_socios, usecols=colunas_socios, header=None)
 
         print(f"Renomeando colunas: {psutil.virtual_memory()._asdict()}")   
-        nome_colunas = {2: 'identificador', 
-        3: 'nome', 
-        5: 'inicio', 
-        10: 'idade'}
+        nome_colunas = {1: 'tipo', 
+        3: 'identificador'}
 
         df_socios = df_socios.rename(columns=nome_colunas)
         
-        df_socios['inicio'] = pd.to_datetime(df_socios['inicio'], format='%Y%m%d', errors='coerce').dt.date
+        #criando coluna valor
+        df_socios['valor'] = df_socios['identificador']
         
-        print(f"Criando colunas novas: {psutil.virtual_memory()._asdict()}")      
-        #Criando colunas que não vem originalmente no DF
-        df_socios['razao social'] = None
-        df_socios['razao social'] = df_socios['razao social'].astype(str)
-
-        df_socios['capital'] = None
-        df_socios['capital'] = df_socios['capital'].astype(str)
-
-        df_socios['tamanho'] = None
-        df_socios['tamanho'] = df_socios['tamanho'].astype(str)
+        #alterando valores coluna tipo
+        dict_documento = {'1': 'CNPJ',
+                '2': 'CPF',
+                '3': 'ESTRANGEIRO'}
+        
+        df_socios['tipo'] = df_socios['tipo'].map(dict_documento)
+        
+        #reoordenando colunas
+        df_socios = df_socios['identificador', 'tipo', 'valor']
 
         df_socios['fonte'] = 'RECEITA FEDERAL'
         df_socios['fonte'] = df_socios['fonte'].astype(str)
         
         print(f"Ordenando colunas: {psutil.virtual_memory()._asdict()}")   
-        #alterando ordem das colunas
-        df_socios = df_socios[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho', 'fonte', 'idade']]
-        
-        print(f"De-para idade: {psutil.virtual_memory()._asdict()}")
-        #Substituindo código de idade com descrição
-        dict_idades = {"1": '0 a 12 anos', 
-            "2": '13 a 20 anos',
-            "3": '21 a 30 anos',
-            "4": '31 a 40 anos',
-            "5": '41 a 50 anos',
-            "6": '51 a 60 anos',
-            "7": '61 a 70 anos',
-            "8": '71 a 80 anos',
-            "9": '> 80 anos',
-            "0": 'não se aplica'}
-
-        df_socios['idade'] = df_socios['idade'].map(dict_idades)
-
 
         #Definindo data de tratamento do arquivo
         now = datetime.now(tz=timezone(timedelta(hours=-3)))
