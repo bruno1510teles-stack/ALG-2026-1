@@ -14,7 +14,7 @@ from scripts.receita_federal.estabelecimento_to_documento_pessoas_e_organizacoes
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "receita-federal"
-RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimento/"
+RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(day=1)
