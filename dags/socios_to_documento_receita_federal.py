@@ -42,7 +42,7 @@ default_args = {
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def socios_to_organizacoes_receita_federal():
+def socios_to_documento_receita_federal():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
