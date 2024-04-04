@@ -60,7 +60,6 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         #Criando colunas com valores nulos
         df_socios['razao social'] = None
         df_socios['razao social'] = df_socios['razao social'].astype(str)
-        df_socios['razao social'] = None
 
         df_socios['capital'] = df_socios['razao social']
 
