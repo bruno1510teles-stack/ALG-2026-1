@@ -12,14 +12,12 @@ import numpy as np
 
 
 # Criando conexão
-def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, access_params):
+def transform_receita_to_endereco(files_list_estabelecimento, files_list_endereco, access_params):
 
     # Variaveis Conexão
     BUCKET_SOURCE_RAW = "receita-federal"
-    RAW_ESTABELECIMENTO_FOLDER = "estabelecimentos/"
-    RAW_CNAE_FOLDER = "cnae/"
     BUCKET_SOURCE_TRUSTED = "pessoas-e-organizacoes"
-    TRUSTED_FOLDER = "cnae/"
+    TRUSTED_FOLDER = "endereco/"
 
     # Conectando na trusted
     client = Minio(
@@ -27,28 +25,29 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
         access_key = access_params['aws_access_key_id_raw'],
         secret_key = access_params['aws_secret_access_key_raw'],
     )
-    df_cnae = None
     
-    #Como é apenas um arquivo de CNAE por vez não é necessário concatenar DF como os outros tratamentos
-    print('IMPORTANDO CNAES')
-    print(f'Lista de arquivos a serem processados: {files_list_cnae}')
+    #Como é apenas um arquivo de endereco por vez não é necessário concatenar DF como os outros tratamentos
+    print('IMPORTANDO MUNICIPIOS')
+    print(f'Lista de arquivos a serem processados: {files_list_endereco}')
     
-    file_name = files_list_cnae[0]
+    file_name = files_list_endereco[0]
     file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-    df_cnae = pd.read_csv(BytesIO(file.data), dtype='str', sep=';', header=None, encoding='latin1')
+    df_municipio = pd.read_csv(BytesIO(file.data), dtype='str', sep=';', header=None, encoding='latin1')
 
     #transformando df em dict para posterior map
-    dict_cnaes = dict(zip(df_cnae[0], df_cnae[1]))
-    del df_cnae
+    dict_municipio = dict(zip(df_municipio[0], df_municipio[1]))
+    del df_municipio
     
     # Importando dados de ESTABELECIMENTO
     print('IMPORTANDO ESTABELECIMENTO')
 
     #definindo colunas a serem utilizadas
-    colunas_estabelecimentos = [0, 1, 2, 11, 12]
+    colunas_estabelecimentos = [0, 1, 2, 13, 14, 15, 16, 17, 18, 19, 20]
 
     #definindo tipo das colunas para importacao
-    dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 11:'string', 12:'string'}
+    dtypes_estabelecimentos = {0:'string', 1:'string', 2:'string', 13:'string', 14:'string',
+                                15:'string', 16:'string', 17:'string', 18:'string', 19:'string',
+                                20:'string'}
 
     print(f"Estabelecimentos: {files_list_estabelecimento}")
     #Tratando um arquivo por vez
@@ -59,54 +58,38 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
         for df in pd.read_csv(BytesIO(file.data), sep=';', 
                             encoding='latin1', low_memory=False, chunksize=4000000, dtype=dtypes_estabelecimentos, usecols=colunas_estabelecimentos, header=None):
 
-
+            print(f"renomeando colunas {psutil.virtual_memory()._asdict()}")
             #definindo nome das colunas para tratamento inicial
             nome_colunas_estabelecimentos = {0:'CNPJ BÁSICO',
                 1:'CNPJ ORDEM',
                 2:'CNPJ DV',
-                11:'CNAE FISCAL PRINCIPAL',
-                12:'CNAE FISCAL SECUNDARIA'}
+                13:'tipo logradouro', 
+                14:'logradouro',
+                15:'numero',
+                16:'complemento',
+                17:'bairro', 
+                18:'cep', 
+                19:'uf',
+                20:'municipio'}
 
             df = df.rename(columns=nome_colunas_estabelecimentos)
 
             #criando coluna de identificador juntando todas as colunas de documento
             df['identificador'] = df['CNPJ BÁSICO'] + df['CNPJ ORDEM'] + df['CNPJ DV']
 
-            #criando coluna de código cnae
-            df['CODIGO CNAE PRINCIPAL'] = df['CNAE FISCAL PRINCIPAL']
-            df['CODIGO CNAE SECUNDARIA'] = df['CNAE FISCAL SECUNDARIA']
+            #juntando tipo de logradouro e logradouro em única coluna
+            df['logradouro'] = df['tipo logradouro'] + ' ' + df['logradouro'] 
 
-            #separando string de CNEAS secundários em linhas diferentes
-            df['CODIGO CNAE SECUNDARIA'] = df['CODIGO CNAE SECUNDARIA'].str.split(',')
-            df = df.explode('CODIGO CNAE SECUNDARIA')
+            # dropando colunas descenecessárias
+            df = df.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV', 'tipo logradouro'])
 
-            #Como o código anterior dupliaca o numero de cnaes principais, ao deixar cada CNAE SECUNDARIA em uma linha, anulamos os cnaes principais duplicados para posterior remoção.
-            df['CODIGO CNAE PRINCIPAL'] = np.where(df.duplicated(subset=['identificador', 'CODIGO CNAE PRINCIPAL']), np.nan, df['CODIGO CNAE PRINCIPAL'])
+            print(f"substituindo chave valor de municipio {psutil.virtual_memory()._asdict()}")
+            #substituindo código do munícipio pela descrição do município
+            df['municipio'] = df['municipio'].map(dict_municipio)
 
-            #eliminando colunas desnecessárioas após o tratamento
-            df = df.drop(columns=['CNPJ BÁSICO', 'CNPJ ORDEM', 'CNPJ DV', 'CNAE FISCAL PRINCIPAL', 'CNAE FISCAL SECUNDARIA'])
+            #reoordenando colunas 
+            df = df[['identificador', 'logradouro', 'numero', 'complemento', 'bairro', 'municipio', 'cep', 'uf']]
 
-            #deixando um CNAE por linha
-            df = df.melt(id_vars='identificador', value_vars=['CODIGO CNAE PRINCIPAL', 'CODIGO CNAE SECUNDARIA'], 
-                            value_name='codigo')
-
-            #usando dict para renomear os códigos de CNAES
-            df['descricao'] = df['codigo'].map(dict_cnaes)
-
-            df = df.rename(columns={'variable': 'tipo'})
-
-            #ordenando colunas
-            df = df[['identificador', 'codigo', 'descricao', 'tipo']]
-
-            #alterando registro da coluna tipo
-            dict_tipo = {'CODIGO CNAE PRINCIPAL': 'PRIMÁRIO',
-                        'CODIGO CNAE SECUNDARIA': 'SECUNDÁRIO'}
-            df['tipo'] = df['tipo'].map(dict_tipo)
-
-            #eliminando CNAES nulos criados no tratamento de duplicatas
-            df = df.dropna(subset='codigo')
-
-            
             df['fonte'] = 'RECEITA FEDERAL'
 
             #Definindo data de tratamento do arquivo
@@ -124,11 +107,11 @@ def transform_receita_to_cnae(files_list_estabelecimento, files_list_cnae, acces
                 "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
             }
             
-            print("Transformando em Pyarrow!")
+            print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
             # O pandas cria esse index, este codigo serve para remover caso ele crie
             df = pa.Table.from_pandas(df, preserve_index=False)
 
-            print("Gravando na Trused!")
+            print(f"Gravando na Trused! {psutil.virtual_memory()._asdict()}")
             write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
                             df, 
                             partition_by=["year", "month", "day"],

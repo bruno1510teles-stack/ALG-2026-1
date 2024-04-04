@@ -9,18 +9,20 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.cnae_pessoas_e_organizacoes import transform_receita_to_cnae
+from scripts.receita_federal.natureza_juridica_pessoas_e_organizacoes import transform_receita_to_natureza_juridica
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "receita-federal"
 RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
-RECEITA_FEDERAL_CNAE_FOLDER = "cnaes/"
+RECEITA_FEDERAL_EMPRESAS_FOLDER = "empresas/"
+RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER = "naturezas/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(day=1)
 day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
-day_to_process_cnae = f"{RECEITA_FEDERAL_CNAE_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_CNAE_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_natureza_juridica = f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -44,7 +46,7 @@ default_args = {
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def cnae_receita_federal():
+def natureza_juridica_receita_federal():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -57,12 +59,20 @@ def cnae_receita_federal():
         apply_wildcard=True,
     )
     
-    list_today_files_cnae = S3ListOperator(
-        task_id="list_today_files_cnae",
+    list_today_files_empresa = S3ListOperator(
+        task_id="list_today_files_empresa",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
-        prefix=day_to_process_cnae,
+        prefix=day_to_process_empresas,
         apply_wildcard=True,
+    )
+    
+    list_today_files_natureza_juridica = S3ListOperator(
+    task_id="list_today_files_natureza_juridica",
+    aws_conn_id=MINIO_CONN_RAW,
+    bucket=MINIO_RAW_BUCKET,
+    prefix=day_to_process_natureza_juridica,
+    apply_wildcard=True,
     )
 
     check_files = ShortCircuitOperator(
@@ -79,7 +89,7 @@ def cnae_receita_federal():
         }
     }
     )
-    def cnae_receita_federal(current_files_estabelecimento, current_files_cnae):
+    def natureza_juridica_receita_federal(current_files_estabelecimento, current_files_empresa, current_files_natureza_juridica):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -102,13 +112,14 @@ def cnae_receita_federal():
         }
 
         print(f"current_files_estabelecimento as { type(current_files_estabelecimento) } and size of { len(current_files_estabelecimento) }")
-        print(f"current_files_cnae as { type(current_files_cnae) } and size of { len(current_files_cnae) }")
+        print(f"current_files_empresa as { type(current_files_empresa) } and size of { len(current_files_empresa) }")
+        print(f"current_files_natureza_juridica as { type(current_files_natureza_juridica) } and size of { len(current_files_natureza_juridica) }")
         
-        transform_receita_to_cnae(current_files_estabelecimento, current_files_cnae, access_params)
+        transform_receita_to_natureza_juridica(current_files_estabelecimento, current_files_empresa, current_files_natureza_juridica, access_params)
 
-    unique_clients = cnae_receita_federal(list_today_files_estabelecimento.output, list_today_files_cnae.output)
+    unique_clients = natureza_juridica_receita_federal(list_today_files_estabelecimento.output, list_today_files_empresa.output, list_today_files_natureza_juridica.output)
 
     # run order
-    init_data_load >> list_today_files_estabelecimento >> check_files >> list_today_files_cnae >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_estabelecimento >> check_files >> list_today_files_empresa >> list_today_files_natureza_juridica >> unique_clients >> finish_data_load
 
-cnae_receita_federal()
+natureza_juridica_receita_federal()
