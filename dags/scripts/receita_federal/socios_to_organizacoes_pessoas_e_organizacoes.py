@@ -48,13 +48,16 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     
     print(f"CONCATENADOS: {psutil.virtual_memory()._asdict()}")    
     #Alterando nome das colunas
+    
+    print(f"Renomeando colunas: {psutil.virtual_memory()._asdict()}")   
     nome_colunas = {2: 'identificador', 
     3: 'nome', 
     5: 'inicio', 
     10: 'idade'}
 
     df_socios = df_socios.rename(columns=nome_colunas)
-    
+ 
+    print(f"Criando colunas novas: {psutil.virtual_memory()._asdict()}")      
     #Criando colunas que não vem originalmente no DF
     df_socios['razao social'] = None
     df_socios['razao social'] = df_socios['razao social'].astype(str)
@@ -68,9 +71,11 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     df_socios['fonte'] = 'RECEITA FEDERAL'
     df_socios['fonte'] = df_socios['fonte'].astype(str)
     
+    print(f"Ordenando colunas: {psutil.virtual_memory()._asdict()}")   
     #alterando ordem das colunas
     df_socios = df_socios[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho', 'fonte', 'idade']]
     
+    print(f"De-para idade: {psutil.virtual_memory()._asdict()}")
     #Substituindo código de idade com descrição
     dict_idades = {"1": '0 a 12 anos', 
         "2": '13 a 20 anos',
@@ -101,11 +106,11 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
     
-    print("Transformando em Pyarrow!")
+    print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
     # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_socios = pa.Table.from_pandas(df_socios, preserve_index=False)
 
-    print("Gravando na Trused!")
+    print(f"Gravando na Trused! {psutil.virtual_memory()._asdict()}")
     write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
                     df_socios, 
                     partition_by=["year", "month", "day"],
@@ -113,4 +118,4 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
                     mode="append",
                     )
     
-    print("Gravado na Trused!")
+    print(f"Gravado na Trused! {psutil.virtual_memory()._asdict()}")
