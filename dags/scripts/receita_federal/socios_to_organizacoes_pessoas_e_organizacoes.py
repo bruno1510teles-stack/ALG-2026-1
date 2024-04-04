@@ -63,7 +63,9 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         10: 'idade'}
 
         df_socios = df_socios.rename(columns=nome_colunas)
-    
+        
+        df_socios['inicio'] = pd.to_datetime(df_socios['inicio'], format='%Y%m%d', errors='coerce').dt.date
+        
         print(f"Criando colunas novas: {psutil.virtual_memory()._asdict()}")      
         #Criando colunas que não vem originalmente no DF
         df_socios['razao social'] = None
