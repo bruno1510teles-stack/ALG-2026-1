@@ -589,4 +589,5 @@ def transform_data_to_refined(files_list, access_params):
                     partition_by=["year", "month", "day"],
                     storage_options=storage_options,
                     mode="append",
+                    mergeSchema=True
                     )
