@@ -56,16 +56,16 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
     
     #Criando colunas que não vem originalmente no DF
     df_socios['razao social'] = None
-    df_socios['razao social'].astype(str)
+    df_socios['razao social'] = df_socios['razao social'].astype(str)
 
     df_socios['capital'] = None
-    df_socios['capital'].astype(str)
+    df_socios['capital'] = df_socios['capital'].astype(str)
 
     df_socios['tamanho'] = None
-    df_socios['tamanho'].astype(str)
+    df_socios['tamanho'] = df_socios['tamanho'].astype(str)
 
     df_socios['fonte'] = 'RECEITA FEDERAL'
-    df_socios['fonte'].astype(str)
+    df_socios['fonte'] = df_socios['fonte'].astype(str)
     
     #alterando ordem das colunas
     df_socios = df_socios[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho', 'fonte', 'idade']]
