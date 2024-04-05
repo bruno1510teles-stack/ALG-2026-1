@@ -114,7 +114,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
             ('capital', pa.string()),
             ('tamanho', pa.string()),
             ('idade', pa.string()),
-            ('fonte', pa.int64()),
+            ('fonte', pa.string()),
             ('year', pa.int32()),
             ('month', pa.int32()),
             ('day', pa.int32())
