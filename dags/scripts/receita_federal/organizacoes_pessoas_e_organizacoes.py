@@ -106,13 +106,13 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 df_organizacoes = df_organizacoes.rename(columns = {
                 'NOME FANTASIA': 'nome',
                 'DATA DE INÍCIO ATIVIDADE': 'inicio',
-                'RAZÃO SOCIAL / NOME EMPRESARIAL': 'razao_social',
+                'RAZÃO SOCIAL / NOME EMPRESARIAL': 'razao social',
                 'CAPITAL SOCIAL DA EMPRESA': 'capital',
                 'PORTE DA EMPRESA': 'tamanho'
                     })
                 
                 print(f"ordenando coluna final {psutil.virtual_memory()._asdict()}")
-                df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao_social', 'inicio', 'capital', 'tamanho']]
+                df_organizacoes = df_organizacoes[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho']]
                 
                 #Como para a receita a idade é nula, é necessário especificar que a coluna é do tipo float (não int para aceitar valores nulos), para posteriormente outras fontes conseguirem acrescentar valores nulos
                 df_organizacoes['idade'] = None

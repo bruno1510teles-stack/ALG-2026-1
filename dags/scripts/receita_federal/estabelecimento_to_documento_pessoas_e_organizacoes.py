@@ -9,6 +9,7 @@ import os
 from deltalake import write_deltalake, DeltaTable
 import psutil
 
+print('Working')
 
 # Criando conexão
 def transform_estabelecimento_receita_to_documento(files_list_estabelecimento, access_params):
