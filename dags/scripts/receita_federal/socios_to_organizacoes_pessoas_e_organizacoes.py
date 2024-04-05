@@ -71,7 +71,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         
         print(f"Ordenando colunas: {psutil.virtual_memory()._asdict()}")   
         #alterando ordem das colunas
-        df_socios = df_socios[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho', 'fonte', 'idade']]
+        df_socios = df_socios[['identificador', 'nome', 'razao social', 'inicio', 'capital', 'tamanho', 'idade', 'fonte']]
         
         print(f"De-para idade: {psutil.virtual_memory()._asdict()}")
         #Substituindo código de idade com descrição
