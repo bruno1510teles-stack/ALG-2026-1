@@ -23,6 +23,7 @@ day_to_process_estabelecimento = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
     print(len(files_to_process))
+    print(f'files_to_process{files_to_process}')
     return len(files_to_process) > 0
 
 # DEFINE DEFAULT ARGS
