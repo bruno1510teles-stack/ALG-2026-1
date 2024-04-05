@@ -154,7 +154,7 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                 
                 print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
                 # O pandas cria esse index, este codigo serve para remover caso ele crie
-                df_socios = pa.Table.from_pandas(df_socios, preserve_index=False, schema=schema)
+                df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False, schema=schema)
 
                 print("Gravando na Trused!")
                 write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
