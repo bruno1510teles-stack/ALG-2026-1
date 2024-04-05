@@ -59,7 +59,7 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
         
         #Criando colunas com valores nulos
         df_socios['razao social'] = None
-        df_socios['razao social'] = df_socios['razao social'].astype(str)
+        #df_socios['razao social'] = df_socios['razao social'].astype(str)
 
         df_socios['capital'] = df_socios['razao social']
 
@@ -104,9 +104,25 @@ def transform_socios_receita_to_organizacoes(files_list_socio, access_params):
             "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
         }
         
+
+        #Definindo schema para salvar no PyArrow
+        schema = pa.schema([
+            ('identificador', pa.string()),
+            ('nome', pa.string()),
+            ('razao social', pa.string()),
+            ('inicio', pa.date32()),
+            ('capital', pa.string()),
+            ('tamanho', pa.string()),
+            ('idade', pa.string()),
+            ('fonte', pa.int64()),
+            ('year', pa.int32()),
+            ('month', pa.int32()),
+            ('day', pa.int32())
+        ])
+        
         print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
         # O pandas cria esse index, este codigo serve para remover caso ele crie
-        df_socios = pa.Table.from_pandas(df_socios, preserve_index=False)
+        df_socios = pa.Table.from_pandas(df_socios, preserve_index=False, schema=schema)
 
         print(f"Gravando na Trused! {psutil.virtual_memory()._asdict()}")
         write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
