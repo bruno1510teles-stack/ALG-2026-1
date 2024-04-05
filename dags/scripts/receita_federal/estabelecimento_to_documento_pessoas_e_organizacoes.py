@@ -60,6 +60,10 @@ def transform_estabelecimento_receita_to_documento(files_list_estabelecimento, a
             df_estabelecimentos['month'] = now.month
             df_estabelecimentos['day'] = now.day
             
+            #Dropando colunas desnecessárias
+            
+            df_estabelecimentos = df_estabelecimentos[['identificador', 'tipo', 'valor', 'fonte', 'year', 'month', 'day']]
+            
             storage_options = {
                 "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
                 "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
