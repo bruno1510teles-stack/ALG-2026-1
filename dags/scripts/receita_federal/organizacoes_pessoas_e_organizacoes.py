@@ -138,9 +138,24 @@ def transform_receita_to_organizacoes(files_list_estabelecimento, files_list_emp
                     "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
                 }
                 
-                print("Transformando em Pyarrow!")
+                #Definindo schema para salvar no PyArrow
+                schema = pa.schema([
+                    ('identificador', pa.string()),
+                    ('nome', pa.string()),
+                    ('razao social', pa.string()),
+                    ('inicio', pa.date32()),
+                    ('capital', pa.string()),
+                    ('tamanho', pa.string()),
+                    ('idade', pa.string()),
+                    ('fonte', pa.string()),
+                    ('year', pa.int32()),
+                    ('month', pa.int32()),
+                    ('day', pa.int32())
+                ])
+                
+                print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
                 # O pandas cria esse index, este codigo serve para remover caso ele crie
-                df_organizacoes = pa.Table.from_pandas(df_organizacoes, preserve_index=False)
+                df_socios = pa.Table.from_pandas(df_socios, preserve_index=False, schema=schema)
 
                 print("Gravando na Trused!")
                 write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
