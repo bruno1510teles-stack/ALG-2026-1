@@ -93,9 +93,6 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 df_relacionamento = df_estabelecimento.merge(df_socios, how='inner',  on='CNPJ BÁSICO')
                 
                 print(f"Excluindo dfs intermediários {psutil.virtual_memory()._asdict()}")
-                #Excluindo df_intermediários
-                del df_estabelecimento
-                del df_socios
                 
                 print(f"Criando identificador {psutil.virtual_memory()._asdict()}")
                 df_relacionamento['documento_estabelecimento'] = df_relacionamento['CNPJ BÁSICO'] + df_relacionamento['CNPJ ORDEM'] + df_relacionamento['CNPJ DV']
