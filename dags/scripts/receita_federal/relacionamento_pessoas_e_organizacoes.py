@@ -70,14 +70,14 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 1:'string',
                 2:'string'
             }
-        cols = [0, 1, 2]   
+        cols_estabelecimentos = [0, 1, 2]   
         
         #Dentro do loop de empresa é feito um loop de estabelecimentos no qual, cada arquivo de estabelecimento vai ser divido em chunks e porcessado por partes
         for file_name in files_list_estabelecimento:
             print(f"file_name: {file_name}")
             file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
             for df_estabelecimento in pd.read_csv(BytesIO(file.data), sep=';', 
-                                encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtype_estabelecimento, usecols=cols, header=None):
+                                encoding='latin1', low_memory=False, chunksize=6000000, dtype=dtype_estabelecimento, usecols=cols_estabelecimentos, header=None):
             
 
                 print(f"Coluna Renomeada! {psutil.virtual_memory()._asdict()}")
