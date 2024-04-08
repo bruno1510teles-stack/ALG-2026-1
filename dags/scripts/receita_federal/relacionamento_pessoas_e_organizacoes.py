@@ -156,16 +156,28 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                                 mode="append",
                                 )
                 
-                #Gravando o relacionamento inverso
+                
                 print(f"Gravado Relacionamento 1 na Trused!{psutil.virtual_memory()._asdict()}")
                 
-                df_relacionamento = df_relacionamento[['contraparte', 'identificador', 'classificação', 'tipo', 'fonte', 'year', 'month', 'day']]
+                
+                #Gravando o relacionamento inverso
+                print(f"Gravando Relacionamento 2 na Trused!{psutil.virtual_memory()._asdict()}")
+                
+                nova_ordem = ['contraparte', 'identificador', 'classificação', 'tipo', 'fonte', 'year', 'month', 'day']
+                
+                df_relacionamento = df_relacionamento.select(nova_ordem)
+                
+                # Dicionário de mapeamento de nome antigo para nome novo
+                column_rename_mapping = {'contraparte': 'identificador', 'identificador': 'contraparte'}
+
+                # Renomeia as colunas usando o dicionário de mapeamento
+                df_relacionamento = df_relacionamento.rename_columns(column_rename_mapping)
                 
                 df_relacionamento.columns = ['identificador', 'contraparte', 'classificação', 'tipo', 'fonte', 'year', 'month', 'day']
                 
-                df_relacionamento['tipo'] = 'ACIONISTA'
+                df_relacionamento = df_relacionamento.set_column('tipo', pa.array(['ACIONISTA'] * len(df_relacionamento), type='str'))
                 
-                print(f"Gravando Relacionamento 2 na Trused!{psutil.virtual_memory()._asdict()}")
+
                 write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
                                 df_relacionamento, 
                                 partition_by=["year", "month", "day"],
