@@ -146,16 +146,15 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 
                 print(f"Transformando em Pyarrow! {psutil.virtual_memory()._asdict()}")
                 # O pandas cria esse index, este codigo serve para remover caso ele crie
-                df_relacionamento = pa.Table.from_pandas(df_relacionamento, preserve_index=False, schema=schema)
+                df_relacionamento_pyarrow = pa.Table.from_pandas(df_relacionamento, preserve_index=False, schema=schema)
 
                 print(f"Gravando Relacionamento 1 na Trused! {psutil.virtual_memory()._asdict()}")
                 write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
-                                df_relacionamento, 
+                                df_relacionamento_pyarrow, 
                                 partition_by=["year", "month", "day"],
                                 storage_options=storage_options,
                                 mode="append",
                                 )
-                
                 
                 print(f"Gravado Relacionamento 1 na Trused!{psutil.virtual_memory()._asdict()}")
                 
@@ -163,28 +162,16 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 #Gravando o relacionamento inverso
                 print(f"Gravando Relacionamento 2 na Trused!{psutil.virtual_memory()._asdict()}")
                 
-                nova_ordem = ['contraparte', 'identificador', 'classificacao', 'tipo', 'fonte', 'year', 'month', 'day']
+                df_relacionamento = df_relacionamento[['contraparte', 'identificador', 'classificacao', 'tipo', 'fonte', 'year', 'month', 'day']]
                 
-                df_relacionamento = df_relacionamento.select(nova_ordem)
+                df_relacionamento.columns = ['identificador', 'contraparte', 'classificacao', 'tipo', 'fonte', 'year', 'month', 'day']
                 
-                # Dicionário de mapeamento de nome antigo para nome novo
-                column_rename_mapping = {'contraparte': 'identificador', 
-                                         'identificador': 'contraparte',
-                                         'classificacao': 'classificacao', 
-                                         'tipo': 'tipo', 
-                                         'fonte': 'fonte', 
-                                         'year': 'year', 
-                                         'month': 'month', 
-                                         'day': 'day'}
-
-                # Renomeia as colunas usando o dicionário de mapeamento
-                df_relacionamento = df_relacionamento.rename_columns(column_rename_mapping)
+                df_relacionamento['tipo'] = 'ACIONISTA'     
                 
-                df_relacionamento = df_relacionamento.set_column('tipo', pa.array(['ACIONISTA'] * len(df_relacionamento), type='str'))
-                
+                df_relacionamento_pyarrow = pa.Table.from_pandas(df_relacionamento, preserve_index=False, schema=schema)           
 
                 write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{TRUSTED_FOLDER}", 
-                                df_relacionamento, 
+                                df_relacionamento_pyarrow, 
                                 partition_by=["year", "month", "day"],
                                 storage_options=storage_options,
                                 mode="append",
@@ -192,3 +179,4 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 print(f"Gravado Relacionamento 2 na Trused!{psutil.virtual_memory()._asdict()}")
                 
                 del df_relacionamento
+                del df_relacionamento_pyarrow
