@@ -44,13 +44,14 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
         df_socios = pd.read_csv(BytesIO(file.data), sep=';', 
                             encoding='latin1', low_memory=False,  dtype=dtype_socios, usecols=cols, header=None)
 
-
+        print(f'colunas socios {df_socios.columns}')
         # Renomeando colunas com o nome padrão da Recita
         header_socios = {0: 'CNPJ BÁSICO',
                  1: 'IDENTIFICADOR DE SÓCIO',
                  3: 'CNPJ/CPF DO SÓCIO'}
         
         df_socios = df_socios.rename(columns=header_socios)
+        print(f'colunas socios renomeadas {df_socios.columns}')
         
         # Retirando Estrangeiros pois estes não entraram na relacao de organizações
         df_socios = df_socios[df_socios['IDENTIFICADOR DE SÓCIO'] != '3']
