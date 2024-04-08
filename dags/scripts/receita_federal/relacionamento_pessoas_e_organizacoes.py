@@ -180,8 +180,6 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 # Renomeia as colunas usando o dicionário de mapeamento
                 df_relacionamento = df_relacionamento.rename_columns(column_rename_mapping)
                 
-                df_relacionamento.columns = ['identificador', 'contraparte', 'classificacao', 'tipo', 'fonte', 'year', 'month', 'day']
-                
                 df_relacionamento = df_relacionamento.set_column('tipo', pa.array(['ACIONISTA'] * len(df_relacionamento), type='str'))
                 
 
