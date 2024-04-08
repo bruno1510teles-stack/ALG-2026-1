@@ -103,6 +103,7 @@ def transform_receita_to_relacionamento(files_list_estabelecimento, files_list_e
                 df_relacionamento['tipo'] = 'SÓCIO'
                 df_relacionamento['fonte'] = 'RECEITA FEDERAL'
                 
+                print(f'COLUNAS RELACIONAMENTO: {df_relacionamento.columns}')
                 print(f"Ordenando colunas {psutil.virtual_memory()._asdict()}")
                 #Ordenando Colunas
                 df_relacionamento = df_relacionamento[['documento_estabelecimento', 'CNPJ/CPF DO SÓCIO', 'IDENTIFICADOR DE SÓCIO', 'tipo', 'fonte']]
