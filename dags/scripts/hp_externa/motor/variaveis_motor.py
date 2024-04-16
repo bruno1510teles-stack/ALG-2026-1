@@ -512,9 +512,11 @@ def transform_data_to_refined(files_list, access_params):
         percentual_pago_em_dia_3_meses,
         over_5,
         ever_10,
-        vop_6_meses,
-        percentual_compra_recorrente_geral,
-        percentual_compra_recorrente_3_meses]
+        vop_6_meses
+        # ,
+        # percentual_compra_recorrente_geral,
+        # percentual_compra_recorrente_3_meses
+        ]
 
     df_final = prazo_medio_geral
     
@@ -540,9 +542,11 @@ def transform_data_to_refined(files_list, access_params):
     'percentual_pago_em_dia_3_meses',
     'over_5',
     'ever_10',
-    'vop_6_meses',
-    'percentual_compra_recorrente_geral',
-    'percentual_compra_recorrente_3_meses']
+    'vop_6_meses'
+    # ,
+    # 'percentual_compra_recorrente_geral',
+    # 'percentual_compra_recorrente_3_meses'
+    ]
     
     df_final.columns = colunas
 
@@ -561,9 +565,10 @@ def transform_data_to_refined(files_list, access_params):
         'percentual_pago_em_dia_3_meses',
         'over_5',
         'ever_10',
-        'vop_6_meses',
-        'percentual_compra_recorrente_geral',
-        'percentual_compra_recorrente_3_meses'
+        'vop_6_meses'
+        # ,
+        # 'percentual_compra_recorrente_geral',
+        # 'percentual_compra_recorrente_3_meses'
     ]
     df_final[colunas_float] = df_final[colunas_float].astype('float')
 
@@ -585,30 +590,30 @@ def transform_data_to_refined(files_list, access_params):
     }
     
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
-    # df_final = pa.Table.from_pandas(df_final, preserve_index=False)
-    # write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
-    #                 df_final, 
-    #                 partition_by=["year", "month", "day"],
-    #                 storage_options=storage_options,
-    #                 mode="append",
-    #                 )
+    df_final = pa.Table.from_pandas(df_final, preserve_index=False)
+    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+                    df_final, 
+                    partition_by=["year", "month", "day"],
+                    storage_options=storage_options,
+                    mode="append",
+                    )
     
-    # Inicialize a sessão Spark
-    spark = ( 
-        SparkSession
-        .builder
-        .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0")
-        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-        .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-        .getOrCreate() 
-)
+#     # Inicialize a sessão Spark
+#     spark = ( 
+#         SparkSession
+#         .builder
+#         .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0")
+#         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+#         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+#         .getOrCreate() 
+# )
     
-    # Convertendo DataFrame Pandas em um DataFrame Spark
-    spark_df = spark.createDataFrame(df_final)
+#     # Convertendo DataFrame Pandas em um DataFrame Spark
+#     spark_df = spark.createDataFrame(df_final)
 
-    # Salvando para o Delta Lake com a opção mergeSchema ativada
-    spark_df.write.format("delta") \
-        .mode("append") \
-        .partitionBy("year", "month", "day") \
-        .option("mergeSchema", "true") \
-        .save(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}")
+#     # Salvando para o Delta Lake com a opção mergeSchema ativada
+#     spark_df.write.format("delta") \
+#         .mode("append") \
+#         .partitionBy("year", "month", "day") \
+#         .option("mergeSchema", "true") \
+#         .save(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}")
