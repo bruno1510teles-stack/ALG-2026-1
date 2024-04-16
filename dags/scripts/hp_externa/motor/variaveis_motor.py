@@ -8,7 +8,7 @@ from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
 from pyspark.sql import SparkSession
-from pyspark.types import StructType, StructField, StringType, FloatType
+from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from delta import *
 from scripts.query_trino_payments import query_trino
 
