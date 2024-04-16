@@ -8,6 +8,8 @@ from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
 from pyspark.sql import SparkSession
+from pyspark.types import StructType, StructField, StringType, FloatType
+from delta import *
 from scripts.query_trino_payments import query_trino
 
 # Calculando Variáveis
@@ -592,9 +594,14 @@ def transform_data_to_refined(files_list, access_params):
     #                 )
     
     # Inicialize a sessão Spark
-    spark = SparkSession.builder \
-        .appName("Write to Delta Lake") \
-        .getOrCreate()
+    spark = ( 
+        SparkSession
+        .builder
+        .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0")
+        .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+        .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+        .getOrCreate() 
+)
     
     # Convertendo DataFrame Pandas em um DataFrame Spark
     spark_df = spark.createDataFrame(df_final)
