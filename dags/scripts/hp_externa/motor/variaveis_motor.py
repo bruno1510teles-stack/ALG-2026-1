@@ -592,14 +592,14 @@ def transform_data_to_refined(files_list, access_params):
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
+    # Caminho para o diretório Delta Lake
     delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}"
 
+    # Crie ou abra uma tabela Delta existente
     delta_table = DeltaTable(delta_path)
 
     # Escreva a tabela Delta Lake, especificando o modo 'append' para adicionar dados
-    delta_table.write(df_final, mode="append", partition_cols=["year", "month", "day"],
-                      storage_options=storage_options,
-                      location=delta_path)
+    delta_table.write(df_final, mode="append", partition_cols=["year", "month", "day"], storage_options=storage_options)
 
     # Confirme as alterações no Delta Lake
     delta_table.updateSchema()
