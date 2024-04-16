@@ -513,9 +513,9 @@ def transform_data_to_refined(files_list, access_params):
         over_5,
         ever_10,
         vop_6_meses
-        # ,
-        # percentual_compra_recorrente_geral,
-        # percentual_compra_recorrente_3_meses
+        ,
+        percentual_compra_recorrente_geral,
+        percentual_compra_recorrente_3_meses
         ]
 
     df_final = prazo_medio_geral
@@ -543,9 +543,9 @@ def transform_data_to_refined(files_list, access_params):
     'over_5',
     'ever_10',
     'vop_6_meses'
-    # ,
-    # 'percentual_compra_recorrente_geral',
-    # 'percentual_compra_recorrente_3_meses'
+    ,
+    'percentual_compra_recorrente_geral',
+    'percentual_compra_recorrente_3_meses'
     ]
     
     df_final.columns = colunas
@@ -566,9 +566,9 @@ def transform_data_to_refined(files_list, access_params):
         'over_5',
         'ever_10',
         'vop_6_meses'
-        # ,
-        # 'percentual_compra_recorrente_geral',
-        # 'percentual_compra_recorrente_3_meses'
+        ,
+        'percentual_compra_recorrente_geral',
+        'percentual_compra_recorrente_3_meses'
     ]
     df_final[colunas_float] = df_final[colunas_float].astype('float')
 
@@ -591,12 +591,25 @@ def transform_data_to_refined(files_list, access_params):
     
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
-    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
-                    df_final, 
-                    partition_by=["year", "month", "day"],
-                    storage_options=storage_options,
-                    mode="append",
-                    )
+
+    delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}"
+
+    delta_table = DeltaTable(delta_path)
+
+    # Escreva a tabela Delta Lake, especificando o modo 'append' para adicionar dados
+    delta_table.write(df_final, mode="append", partition_cols=["year", "month", "day"],
+                      storage_options=storage_options,
+                      location=delta_path)
+
+    # Confirme as alterações no Delta Lake
+    delta_table.updateSchema()
+
+    # write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+    #                 df_final, 
+    #                 partition_by=["year", "month", "day"],
+    #                 storage_options=storage_options,
+    #                 mode="append",
+    #                 )
     
 #     # Inicialize a sessão Spark
 #     spark = ( 
