@@ -584,7 +584,13 @@ def transform_data_to_refined(files_list, access_params):
     
     # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
-
+    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+                    df_final, 
+                    partition_by=["year", "month", "day"],
+                    storage_options=storage_options,
+                    mode="append",
+                    )
+    
     # # Inicialize a sessão Spark
     # spark = SparkSession.builder \
     #     .appName("Write to Delta Lake") \
