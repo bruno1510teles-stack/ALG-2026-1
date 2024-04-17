@@ -10,6 +10,7 @@ from deltalake import write_deltalake, DeltaTable
 from pyspark.sql import SparkSession
 from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from delta import *
+import delta
 from scripts.query_trino_payments import query_trino
 
 # Calculando Variáveis
@@ -599,7 +600,7 @@ def transform_data_to_refined(files_list, access_params):
     print("Caminho Delta:", delta_path)
 
     # Carregue os dados do Delta Lake usando pyarrow
-    delta_table = DeltaTable.forPath(delta_path)
+    delta_table = delta.tables.load_table(delta_path)
 
     # # Obtenha o esquema atual da tabela Delta
     # current_schema = delta_table.schema()
