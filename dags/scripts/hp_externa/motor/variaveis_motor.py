@@ -595,14 +595,25 @@ def transform_data_to_refined(files_list, access_params):
     # Caminho para o diretório Delta Lake
     delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}"
 
-    # Crie ou abra uma tabela Delta existente
-    delta_table = DeltaTable(delta_path)
+    # Carregue os dados do Delta Lake usando pyarrow
+    delta_table = DeltaTable.forPath(delta_path)
+
+    # Obtenha o esquema atual da tabela Delta
+    current_schema = delta_table.schema()
+
+    # Obtenha o esquema do DataFrame final
+    new_schema = pa.Table.from_pandas(df_final).schema
+
+    # Verifique se há alterações no esquema
+    if current_schema.equals(new_schema):
+        print("O esquema já está atualizado.")
+    else:
+        # Atualize o esquema
+        delta_table.updateSchema(new_schema)
 
     # Escreva a tabela Delta Lake, especificando o modo 'append' para adicionar dados
     delta_table.write(df_final, mode="append", partition_cols=["year", "month", "day"], storage_options=storage_options)
 
-    # Confirme as alterações no Delta Lake
-    delta_table.updateSchema()
 
     # write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
     #                 df_final, 
