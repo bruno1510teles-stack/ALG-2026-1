@@ -594,7 +594,7 @@ def transform_data_to_refined(files_list, access_params):
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
     # Caminho para o diretório Delta Lake
-    delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}/_delta_log"
+    delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}_delta_log"
 
     # Verifique se delta_path está definido corretamente
     print("Caminho Delta:", delta_path)
