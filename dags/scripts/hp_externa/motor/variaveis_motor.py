@@ -598,8 +598,8 @@ def transform_data_to_refined(files_list, access_params):
     # Verifique se delta_path está definido corretamente
     print("Caminho Delta:", delta_path)
 
-    # # Carregue os dados do Delta Lake usando pyarrow
-    # delta_table = DeltaTable.forPath(delta_path)
+    # Carregue os dados do Delta Lake usando pyarrow
+    delta_table = DeltaTable.forPath(delta_path)
 
     # # Obtenha o esquema atual da tabela Delta
     # current_schema = delta_table.schema()
