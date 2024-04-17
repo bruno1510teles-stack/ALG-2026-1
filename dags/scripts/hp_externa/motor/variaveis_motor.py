@@ -12,6 +12,7 @@ from pyspark.sql.types import StructType, StructField, StringType, FloatType
 from delta import *
 import pyarrow.parquet as pq
 from scripts.query_trino_payments import query_trino
+import pyarrow.fs as fs
 
 # Calculando Variáveis
 def PrazoMedio(df, meses=None):    
@@ -599,8 +600,11 @@ def transform_data_to_refined(files_list, access_params):
     # Verifique se delta_path está definido corretamente
     print("Caminho Delta:", delta_path)
 
+    # Crie um sistema de arquivos S3
+    s3 = fs.S3FileSystem()
+
     # Carregue os dados do Delta Lake usando pyarrow
-    delta_table = pq.read_table(delta_path)
+    delta_table = pq.read_table(delta_path, filesystem=s3)
 
     # Obtenha o esquema atual da tabela Delta
     current_schema = delta_table.schema()
