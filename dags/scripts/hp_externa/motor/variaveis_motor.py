@@ -594,59 +594,9 @@ def transform_data_to_refined(files_list, access_params):
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
-    # Caminho para o diretório Delta Lake
-    delta_path = f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}month=3/day=13/"
-
-    # Verifique se delta_path está definido corretamente
-    print("Caminho Delta:", delta_path)
-
-    # Crie um sistema de arquivos S3
-    s3 = fs.S3FileSystem()
-
-    # Carregue os dados do Delta Lake usando pyarrow
-    delta_table = pq.read_table(delta_path, filesystem=s3)
-
-    # Obtenha o esquema atual da tabela Delta
-    current_schema = delta_table.schema()
-    print("colunas schema", current_schema)
-
-    # # Obtenha o esquema do DataFrame final
-    # new_schema = pa.Table.from_pandas(df_final).schema
-
-    # # Verifique se há alterações no esquema
-    # if current_schema.equals(new_schema):
-    #     print("O esquema já está atualizado.")
-    # else:
-    #     # Atualize o esquema
-    #     delta_table.updateSchema(new_schema)
-
-    # # Escreva a tabela Delta Lake, especificando o modo 'append' para adicionar dados
-    # delta_table.write(df_final, mode="append", partition_cols=["year", "month", "day"], storage_options=storage_options)
-
-
-    # write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
-    #                 df_final, 
-    #                 partition_by=["year", "month", "day"],
-    #                 storage_options=storage_options,
-    #                 mode="append",
-    #                 )
-    
-#     # Inicialize a sessão Spark
-#     spark = ( 
-#         SparkSession
-#         .builder
-#         .config("spark.jars.packages", "io.delta:delta-core_2.12:2.4.0")
-#         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-#         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
-#         .getOrCreate() 
-# )
-    
-#     # Convertendo DataFrame Pandas em um DataFrame Spark
-#     spark_df = spark.createDataFrame(df_final)
-
-#     # Salvando para o Delta Lake com a opção mergeSchema ativada
-#     spark_df.write.format("delta") \
-#         .mode("append") \
-#         .partitionBy("year", "month", "day") \
-#         .option("mergeSchema", "true") \
-#         .save(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}")
+    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+                    df_final, 
+                    partition_by=["year", "month", "day"],
+                    storage_options=storage_options,
+                    mode="append",
+                    )
