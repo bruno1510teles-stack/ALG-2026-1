@@ -602,8 +602,9 @@ def transform_data_to_refined(files_list, access_params):
     # Carregue os dados do Delta Lake usando pyarrow
     delta_table = delta.tables.load_as_arrow(delta_path)
 
-    # # Obtenha o esquema atual da tabela Delta
-    # current_schema = delta_table.schema()
+    # Obtenha o esquema atual da tabela Delta
+    current_schema = delta_table.schema()
+    print("colunas schema", current_schema)
 
     # # Obtenha o esquema do DataFrame final
     # new_schema = pa.Table.from_pandas(df_final).schema
