@@ -132,10 +132,10 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
     
     print(f"removendo valores não referentes ao json {psutil.virtual_memory()._asdict()}")
     # Remove o começo o inicio da string do Jira Issue
-    df_mesa['json'] = df_mesa['parse_file'].str.replace('java.util.LinkedHashMap|','')
+    df_mesa['json'] = df_mesa['parse_file'].str.split('|').str[1]
 
     # Remove o começo o inicio da string do Jira Issue
-    df_motor['json'] = df_motor['parse_file'].str.replace('java.lang.String|','')
+    df_motor['json'] = df_motor['parse_file'].str.split('|').str[1]
 
     print(f"Juntando dfs {psutil.virtual_memory()._asdict()}")
     #Juntando dataframes
