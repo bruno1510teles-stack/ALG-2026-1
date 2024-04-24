@@ -14,8 +14,8 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
 
     # Variaveis Conexão
     BUCKET_SOURCE_RAW = "opdb-alpe"
-    BUCKET_SOURCE_REFINED = "risco"
-    REFINED_FOLDER = "motor/book_de_variaveis/"
+    BUCKET_SOURCE_TRUSTED = "risco"
+    REFINED_FOLDER = "analises_credito/politica_v1"
 
     # Conectando na raw
     client = Minio(
@@ -339,9 +339,9 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
     
     print(f"Salvando no Minio {psutil.virtual_memory()._asdict()}")
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_refined']}",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
@@ -406,7 +406,7 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
 
     print(f"Salvando no Minio {psutil.virtual_memory()._asdict()}")
     
-    write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
+    write_deltalake(f"s3a://{BUCKET_SOURCE_TRUSTED}/{REFINED_FOLDER}", 
                     df_final, 
                     partition_by=["year", "month", "day"],
                     storage_options=storage_options,
