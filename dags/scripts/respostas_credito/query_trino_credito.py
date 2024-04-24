@@ -5,7 +5,9 @@ import time
 import pandas as pd
 
 def query_trino(query, host, port, user, password):
-
+    
+    print('criando conexão')
+    
     conn = trino.dbapi.connect(
         host=host,
         port=port,
@@ -18,6 +20,7 @@ def query_trino(query, host, port, user, password):
                             password),
     )
 
+    print('conectando')
     cur = conn.cursor()
     cur.execute(query)
 
@@ -48,6 +51,7 @@ def query_trino(query, host, port, user, password):
         return_val = async_result.get()
         return return_val
 
+    print('executando query')
     # get a cur (cursor) object from above
     rows = fetch_rows(cur)
     columns = [x[0] for x in cur.description]
