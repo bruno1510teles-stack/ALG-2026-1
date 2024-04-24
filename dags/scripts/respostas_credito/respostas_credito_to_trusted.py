@@ -112,7 +112,7 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
                  WHERE id IN {ids_mesa}"""
     
     print(f'quantidade de CNPJs a serem atualziados: {len(ids_mesa)}')
-    print(f"query: {ids_mesa}")
+    print(f"query: {query_mesa}")
     
     print(f"Realizando Query {psutil.virtual_memory()._asdict()}")
     df_mesa = query_trino(query_mesa, 
