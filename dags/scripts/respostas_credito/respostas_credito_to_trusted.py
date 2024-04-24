@@ -132,10 +132,10 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
     
     print(f"removendo valores não referentes ao json {psutil.virtual_memory()._asdict()}")
     # Remove o começo o inicio da string do Jira Issue
-    df_mesa['json'] = df_mesa['parse_file'].str.split('|').str[1]
+    df_mesa['json'] = df_mesa['parse_file'].str.split('|', 1).str[1]
 
     # Remove o começo o inicio da string do Jira Issue
-    df_motor['json'] = df_motor['parse_file'].str.split('|').str[1]
+    df_motor['json'] = df_motor['parse_file'].str.split('|', 1).str[1]
 
     print(f"Juntando dfs {psutil.virtual_memory()._asdict()}")
     #Juntando dataframes
@@ -148,21 +148,9 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
     print(f"Extraindo jsons {psutil.virtual_memory()._asdict()}")
     
     #Extraindo jsons
-    try:
-        problematic_values = df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa']
-        for idx, value in problematic_values.items():
-            try:
-                json.loads(value)
-            except json.decoder.JSONDecodeError as e:
-                print(f"Erro ao decodificar JSON na linha {idx}: {e}")
-                print("Valor problemático:", value)
-    except Exception as ex:
-        print("Ocorreu uma exceção:", ex)
-    
-    try:
-        df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'] = df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'].apply(json.loads).apply(json.loads)
-    except json.decoder.JSONDecodeError as e:
-        print("Error decoding JSON:", e)
+    df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'] = df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'].apply(json.loads)
+    df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'] = df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'].apply(json.loads).apply(json.loads)
+
         
     
     #'external_reference' == 'urn:reprocess' REPROCESSAMENTO DE ERROS
