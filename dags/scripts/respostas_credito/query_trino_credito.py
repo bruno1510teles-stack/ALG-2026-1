@@ -43,7 +43,7 @@ def query_trino(query, host, port, user, password):
             else:
                 perc = '0'
                 print(cur.stats['state']+'-'+str(perc)+'%')
-                time.sleep(4)
+                time.sleep(1)
         if bar_start:
             bar.finish()
         print(cur.stats['state']+'-'+str(cur.stats.get('progressPercentage','')))
@@ -54,7 +54,11 @@ def query_trino(query, host, port, user, password):
     print('executando query')
     # get a cur (cursor) object from above
     rows = fetch_rows(cur)
+    
+    print('definindo nome da coluna no DF')
     columns = [x[0] for x in cur.description]
+    
+    print('Transformando em Df')
     result = pd.DataFrame(rows, columns=columns)
 
     return result
