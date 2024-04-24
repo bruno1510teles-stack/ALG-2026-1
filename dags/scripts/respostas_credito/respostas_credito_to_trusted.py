@@ -7,7 +7,7 @@ from io import BytesIO
 from deltalake import write_deltalake, DeltaTable
 import psutil
 import json
-from query_trino_credito import query_trino
+from respostas_credito.query_trino_credito import query_trino
 
 # Criando conexão
 def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params):
