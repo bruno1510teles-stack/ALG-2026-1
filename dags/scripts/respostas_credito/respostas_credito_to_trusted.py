@@ -60,7 +60,7 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
                     from_utf8(pgl.data) as parse_file
                 from postgres.inrp_prd_default.report_execution re
                 join postgres.pg_catalog.pg_largeobject pgl on re."output" = cast(pgl.loid as varchar)
-                WHERE id IN {ids_motor} AND resolution = 'DONE' and	state = 'CLOSED' """
+                WHERE id IN {ids_motor} AND resolution = 'DONE' and	state = 'CLOSED'"""
     
     print(f'quantidade de CNPJs a serem atualziados: {len(ids_motor)}')
     print(f"query: {query_motor}")
@@ -108,7 +108,7 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
                         pageno,
                         from_utf8(pgl.data) as parse_file
                     from postgres.inrp_prd_default.jira_issue ji
-                    join postgres.pg_catalog.pg_largeobject pgl on ji."input" = cast(pgl.loid as varchar);
+                    join postgres.pg_catalog.pg_largeobject pgl on ji."input" = cast(pgl.loid as varchar)
                  WHERE id IN {ids_mesa}"""
     
     print(f'quantidade de CNPJs a serem atualziados: {len(ids_mesa)}')
