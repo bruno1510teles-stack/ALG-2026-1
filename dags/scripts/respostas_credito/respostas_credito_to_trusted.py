@@ -148,11 +148,15 @@ def transform_credito_to_trusted(files_list_motor, file_list_mesa, access_params
     print(f"Extraindo jsons {psutil.virtual_memory()._asdict()}")
     
     #Extraindo jsons
-    print(df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'])
-    df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'] = df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'].apply(json.loads)
+    try:
+        df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'] = df_merged.loc[df_merged['json_mesa'].notna(), 'json_mesa'].apply(json.loads)
+    except json.decoder.JSONDecodeError as e:
+        print("Error decoding JSON:", e)
     
-    
+    try:
     df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'] = df_merged.loc[df_merged['json_motor'].notna(), 'json_motor'].apply(json.loads).apply(json.loads)
+        except json.decoder.JSONDecodeError as e:
+        print("Error decoding JSON:", e)
     
     #'external_reference' == 'urn:reprocess' REPROCESSAMENTO DE ERROS
     #'external_reference' == 'urn:jira:issue:alpe:cmgt PRODUÇÃO DO JIRA
