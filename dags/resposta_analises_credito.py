@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.resposta_credito.respostas_credito_to_trusted import transform_credito_to_trusted
+from scripts.respostas_credito.respostas_credito_to_trusted import transform_credito_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
