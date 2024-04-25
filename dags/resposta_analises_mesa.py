@@ -9,18 +9,15 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.respostas_credito.respostas_credito_to_trusted import transform_credito_to_trusted
+from scripts.respostas_credito.mesa.respostas_mesa_to_trusted import transform_mesa_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = Variable.get("OPDB_BUCKET")
-RESPOSTA_MOTOR_RAW_FOLDER = f"topics/opdb.inrp_prd_default.report_execution/"
 RESPOSTA_MESA_RAW_FOLDER = f"topics/opdb.inrp_prd_default.jira_issue/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-
-day_to_process_motor = f"{RESPOSTA_MOTOR_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
 day_to_process_mesa = f"{RESPOSTA_MESA_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
@@ -46,18 +43,10 @@ default_args = {
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
 )
-def respostas_credito():
+def respostas_credito_mesa():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
-
-    list_today_files_motor = S3ListOperator(
-        task_id="list_today_files_motor",
-        aws_conn_id=MINIO_CONN_RAW,
-        bucket=MINIO_RAW_BUCKET,
-        prefix=day_to_process_motor,
-        apply_wildcard=True,
-    )
     
     list_today_files_mesa = S3ListOperator(
         task_id="list_today_files_mesa",
@@ -71,12 +60,12 @@ def respostas_credito():
         task_id='check_files_motor',
         python_callable=check_files_to_processed,
         provide_context=True,
-        op_kwargs={'files_to_process': list_today_files_motor.output}
+        op_kwargs={'files_to_process': list_today_files_mesa.output}
     )
     
     
     @task()
-    def transform_raw_to_trusted(current_files_motor, current_files_mesa):
+    def transform_raw_to_trusted(current_files_motor):
 
         access_params = {
             "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
@@ -94,13 +83,12 @@ def respostas_credito():
         }
 
         print(f"current_files_motor as { type(current_files_motor) } and size of { len(current_files_motor) }")
-        print(f"current_files_mesa as { type(current_files_mesa) } and size of { len(current_files_mesa) }")
 
-        transform_credito_to_trusted(current_files_motor, current_files_mesa, access_params)
+        transform_mesa_to_trusted(current_files_motor, access_params)
 
-    unique_clients = transform_raw_to_trusted(list_today_files_motor.output, list_today_files_mesa.output)
+    unique_clients = transform_raw_to_trusted( list_today_files_mesa.output)
 
     # run order
-    init_data_load >> list_today_files_motor >> list_today_files_mesa >> check_files_motor >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_mesa >> check_files_motor >> unique_clients >> finish_data_load
 
-respostas_credito()
+respostas_credito_mesa()
