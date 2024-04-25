@@ -138,7 +138,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     
     print(f"Selecionando e ordenando colunas que permanecerão no DataFrame {psutil.virtual_memory()._asdict()}")
     #Selecionando colunas a serem utilizadas
-    colunas_finais = ['id', 'report_execution_id' 'created_date',
+    colunas_finais = ['id', 'report_execution_id', 'created_date',
         'last_modified_date', 'titulo', 'responsavel',
         'razao_social_do_cedente',
         'razao_social_do_sacado', 'limite_aprovado',
