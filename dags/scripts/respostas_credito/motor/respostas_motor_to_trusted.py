@@ -10,7 +10,7 @@ import json
 from scripts.respostas_credito.query_trino_credito import query_trino
 
 # Criando conexão
-def transform_credito_to_trusted(files_list_motor, access_params):
+def transform_motor_to_trusted(files_list_motor, access_params):
 
     # Variaveis Conexão
     BUCKET_SOURCE_RAW = "opdb-alpe"
