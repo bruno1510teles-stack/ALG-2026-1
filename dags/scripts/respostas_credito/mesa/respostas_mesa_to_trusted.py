@@ -234,7 +234,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         ('limite_utilizado', pa.float32()),
         ('parecer_final', pa.string()),
         ('fonte', pa.string()),
-        ('atualizado_em', pa.timestamp(tz='-3:00')),
+        ('atualizado_em', pa.timestamp(unit='ms', tz='-3:00')),
         ('year', pa.int32()),
         ('month', pa.int32()),
         ('day', pa.int32())
