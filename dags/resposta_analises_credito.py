@@ -20,11 +20,11 @@ RESPOSTA_MESA_RAW_FOLDER = f"topics/opdb.inrp_prd_default.jira_issue/"
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-day_to_process_motor = f"{RESPOSTA_MOTOR_RAW_FOLDER}year={yesterday.year}
+day_to_process_motor = f"{RESPOSTA_MOTOR_RAW_FOLDER}year={yesterday.year}/"
 
 #/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
-day_to_process_mesa = f"{RESPOSTA_MESA_RAW_FOLDER}year={yesterday.year}/
+day_to_process_mesa = f"{RESPOSTA_MESA_RAW_FOLDER}year={yesterday.year}/"
 
 # month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
