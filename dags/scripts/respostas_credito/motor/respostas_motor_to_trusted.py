@@ -247,7 +247,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         ('resolution', pa.string()),
         ('state', pa.string()),
         ('fonte', pa.string()),
-        ('atualizado_em', pa.timestamp('BRT')),
+        ('atualizado_em', pa.timestamp(tz='-3:00')),
         ('year', pa.int32()),
         ('month', pa.int32()),
         ('day', pa.int32())
