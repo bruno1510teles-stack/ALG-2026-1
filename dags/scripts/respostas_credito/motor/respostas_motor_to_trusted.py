@@ -199,7 +199,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     
     df_final['atualizado_em'] = now
-    df_final['atualizado_em'] = df_final['atualizado_em'].dt.floor('ms')   
+    df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')  
     
     df_final['year'] = now.year
     df_final['month'] = now.month
@@ -249,7 +249,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         ('resolution', pa.string()),
         ('state', pa.string()),
         ('fonte', pa.string()),
-        ('atualizado_em', pa.timestamp(unit='ms', tz='UTC-3:00')),
+        ('atualizado_em', pa.string()),
         ('year', pa.int32()),
         ('month', pa.int32()),
         ('day', pa.int32())
