@@ -56,8 +56,8 @@ def respostas_credito_mesa():
         apply_wildcard=True,
     )
 
-    check_files_motor = ShortCircuitOperator(
-        task_id='check_files_motor',
+    check_files_mesa = ShortCircuitOperator(
+        task_id='check_files_mesa',
         python_callable=check_files_to_processed,
         provide_context=True,
         op_kwargs={'files_to_process': list_today_files_mesa.output}
@@ -89,6 +89,6 @@ def respostas_credito_mesa():
     unique_clients = transform_raw_to_trusted( list_today_files_mesa.output)
 
     # run order
-    init_data_load >> list_today_files_mesa >> check_files_motor >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_mesa >> check_files_mesa >> unique_clients >> finish_data_load
 
 respostas_credito_mesa()
