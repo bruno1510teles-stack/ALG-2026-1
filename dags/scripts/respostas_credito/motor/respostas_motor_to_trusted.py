@@ -113,7 +113,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     
     print(f"Convertendo Json do motor em colunas {psutil.virtual_memory()._asdict()}")
     # Convertendo Json de motor em colunas
-    df_normalizado_motor = pd.json_normalize(df_motor['json_motor'])
+    df_normalizado_motor = pd.json_normalize(df_motor['json'])
 
     #juntando tudo em um dataframe final
     df_final = pd.concat([df_normalizado_motor, df_motor], axis=1)
@@ -198,6 +198,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     #Definindo data de tratamento do arquivo
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     
+    df_final['atualizado_em'] = now
     df_final['year'] = now.year
     df_final['month'] = now.month
     df_final['day'] = now.day
@@ -246,6 +247,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         ('resolution', pa.string()),
         ('state', pa.string()),
         ('fonte', pa.string()),
+        ('atualizado_em', pa.timestamp()),
         ('year', pa.int32()),
         ('month', pa.int32()),
         ('day', pa.int32())

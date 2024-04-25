@@ -198,6 +198,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     #Definindo data de tratamento do arquivo
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     
+    df_mesa['atualizado_em'] = now
     df_mesa['year'] = now.year
     df_mesa['month'] = now.month
     df_mesa['day'] = now.day
@@ -233,6 +234,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         ('limite_utilizado', pa.float32()),
         ('parecer_final', pa.string()),
         ('fonte', pa.string()),
+        ('atualizado_em', pa.timestamp()),
         ('year', pa.int32()),
         ('month', pa.int32()),
         ('day', pa.int32())
