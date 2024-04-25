@@ -109,7 +109,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
 
     print(f"Retirando dados de modelo antigo do motor {psutil.virtual_memory()._asdict()}")
     # Retirando dados do motor anteriores ao modelo da política atual
-    df_motor = df_motor[df_motor['created_date_motor'] >= '2023-11-23'].reset_index()
+    df_motor = df_motor[df_motor['created_date'] >= '2023-11-23'].reset_index()
     
     print(f"Convertendo Json do motor em colunas {psutil.virtual_memory()._asdict()}")
     # Convertendo Json de motor em colunas
