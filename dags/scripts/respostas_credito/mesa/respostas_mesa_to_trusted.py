@@ -73,6 +73,11 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     print("::group::Tratando DFs")
     
     print(f"Juntando parsefiles em uma linha só {psutil.virtual_memory()._asdict()}")
+    
+    #Ajustando o report_execution_id para str
+    df_mesa.loc[df_mesa['report_execution_id'].notna(), 'report_execution_id'] = df_mesa.loc[df_mesa['report_execution_id'].notna(), 'report_execution_id'].astype(int).astype(str)
+    
+    
     # Concatena os valores de parse_file que correspondem a mesma análise
     df_mesa = df_mesa.sort_values(by=['loid', 'pageno', 'created_date']).groupby(['id', 'created_date', 'last_modified_date', 'input', 'report_execution_id', 'loid'])['parse_file'].apply(''.join).reset_index()
     
@@ -155,9 +160,19 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     def sustituindo_caracteres_despreziveis(df):
         return str(df).replace('NAO ENCONTRADO', '').replace('N/A', '').replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0').replace('nan', '').replace('None', '')
 
+    colunas_com_possivel_caracter_desprezivel = ['limite_aprovado', 'limite_atual', 'limite_solicitado',
+        'limite_disponível', 'limite_utilizado']
+    
     #aplicando Função e tratando strings vazias
+    for coluna in colunas_com_possivel_caracter_desprezivel:
+        df_mesa[coluna] = df_mesa[coluna].apply(sustituindo_caracteres_despreziveis)
+        
+    def tratando_nulos(df):
+        return str(df).replace('nan', '').replace('None', '')
+    
     for coluna in df_mesa.columns:
-        df_mesa[coluna] = df_mesa[coluna].apply(sustituindo_caracteres_despreziveis).replace('', None)
+        df_mesa[coluna] = df_mesa[coluna].apply(tratando_nulos).replace('', None)
+    
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     #Definindo tipo dos dados

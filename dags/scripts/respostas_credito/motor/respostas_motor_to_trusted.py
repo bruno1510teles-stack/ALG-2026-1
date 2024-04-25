@@ -143,9 +143,27 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     def sustituindo_caracteres_despreziveis(df):
         return str(df).replace('NAO ENCONTRADO', '').replace('N/A', '').replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0').replace('nan', '').replace('None', '')
 
+    colunas_com_possivel_caracter_desprezivel = ['cnpj_ativo', 'cnae_aceito',
+        'natureza_juridica_aceita', 'fundacao_valida',
+        'inadimplente_fornecedor', 'resposta_pre_filtro',
+        'vop', 'hp', 'atrasos', 'titulos_vencidos',
+        'tempo_de_fundacao', 'restritivos_bvs',
+        'restritivos_spc', 'restritivos_bvs_ou_spc',
+        'score_positivo_bvs', 'socio_com_restritivo',
+        'resposta_motor', 'casa', 'limite_concedido',
+        'media_vop', 'codigo_cnae',
+        'last_modified_date']
+    
     #aplicando Função e tratando strings vazias
+    for coluna in colunas_com_possivel_caracter_desprezivel:
+        df_final[coluna] = df_final[coluna].apply(sustituindo_caracteres_despreziveis)     
+        
+    def tratando_nulos(df):
+        return str(df).replace('nan', '').replace('None', '')
+    
     for coluna in df_final.columns:
-        df_final[coluna] = df_final[coluna].apply(sustituindo_caracteres_despreziveis).replace('', None)
+        df_final[coluna] = df_final[coluna].apply(tratando_nulos).replace('', None)
+        
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     #Definindo tipo dos dados
