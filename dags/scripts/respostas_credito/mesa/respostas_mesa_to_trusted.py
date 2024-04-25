@@ -136,13 +136,14 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     #Dropando coluna já normalizada
     df_mesa = df_mesa.drop(columns = 'json')
     
+    
     print(f"Selecionando e ordenando colunas que permanecerão no DataFrame {psutil.virtual_memory()._asdict()}")
     #Selecionando colunas a serem utilizadas
     colunas_finais = ['id', 'report_execution_id', 'created_date',
         'last_modified_date', 'titulo', 'responsavel',
         'razao_social_do_cedente',
         'razao_social_do_sacado', 'limite_aprovado',
-        'cnpj_do_cedente', 'limite_atual',
+        'cnpj_do_cedente', 'cnpj_do_sacado', 'limite_atual',
         'limite_solicitado', 'score_de_credito',
         'limite_disponível', 'limite_utilizado',
         'parecer_final']
@@ -171,6 +172,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     'razao_social_do_sacado': 'str',
     'limite_aprovado': 'float',
     'cnpj_do_cedente': 'str',
+    'cnpj_do_sacado': 'str',
     'limite_atual': 'float',
     'limite_solicitado': 'float',
     'score_de_credito': 'float',
@@ -223,6 +225,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         ('razao_social_do_sacado', pa.string()),
         ('limite_aprovado', pa.float32()),
         ('cnpj_do_cedente', pa.string()),
+        ('cnpj_do_sacado', pa.string()),
         ('limite_atual', pa.float32()),
         ('limite_solicitado', pa.float32()),
         ('score_de_credito', pa.float32()),
