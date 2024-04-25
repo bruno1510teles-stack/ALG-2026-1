@@ -158,17 +158,17 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     print(f"Retirando caracteres indevidos do Dataframe {psutil.virtual_memory()._asdict()}")
     #Criando função que retira caracteres despreziveis 
     def sustituindo_caracteres_despreziveis(df):
-        return str(df).replace('NAO ENCONTRADO', '').replace('N/A', '').replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0').replace('nan', '').replace('None', '')
+        return str(df).replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0')
 
     colunas_com_possivel_caracter_desprezivel = ['limite_aprovado', 'limite_atual', 'limite_solicitado',
-        'limite_disponível', 'limite_utilizado']
+        'limite_disponível', 'limite_utilizado', 'score_de_credito']
     
     #aplicando Função e tratando strings vazias
     for coluna in colunas_com_possivel_caracter_desprezivel:
         df_mesa[coluna] = df_mesa[coluna].apply(sustituindo_caracteres_despreziveis)
         
     def tratando_nulos(df):
-        return str(df).replace('nan', '').replace('None', '')
+        return str(df).replace('NAO ENCONTRADO', '').replace('N/A', '').replace('nan', '').replace('None', '')
     
     for coluna in df_mesa.columns:
         df_mesa[coluna] = df_mesa[coluna].apply(tratando_nulos).replace('', None)
