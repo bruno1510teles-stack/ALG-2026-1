@@ -167,6 +167,10 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     #Definindo tipo dos dados
+    
+    df_final['created_date'] = df_final['created_date'].dt.strftime('%Y-%m-%d %X') 
+    df_final['last_modified_date'] = df_final['last_modified_date'].dt.strftime('%Y-%m-%d %X')
+    
     data_types_dict = {'cnpj_do_sacado': 'str',
     'razao_social_sacado': 'str',
     'id': 'str',
@@ -193,19 +197,10 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     'media_vop': 'float',
     'codigo_cnae': 'str',
     'cpf_do_principal_socio': 'str',
-    'created_date': 'datetime64[us]',
-    'last_modified_date': 'datetime64[us]',
+    'created_date': 'str',
+    'last_modified_date': 'str',
     'resolution': 'str',
     'state': 'str'}
-    
-    #Tratando colunas date antes de trocar o tipo de dado:
-    colunas_datetime = []
-    for chave, valor in data_types_dict.items():
-        if valor == 'datetime64[us]':
-            colunas_datetime.append(chave)
-
-    for coluna in colunas_datetime:
-        df_final[coluna] = df_final[coluna].str[0:19]
 
     #Ajustando tipo de dado
     df_final = df_final.astype(data_types_dict)
@@ -262,8 +257,8 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         ('media_vop', pa.float32()),
         ('codigo_cnae', pa.string()),
         ('cpf_do_principal_socio', pa.string()),
-        ('created_date', pa.date64()),
-        ('last_modified_date', pa.date64()),
+        ('created_date', pa.string),
+        ('last_modified_date', pa.string),
         ('resolution', pa.string()),
         ('state', pa.string()),
         ('fonte', pa.string()),

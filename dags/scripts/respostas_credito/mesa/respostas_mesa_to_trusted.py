@@ -175,12 +175,16 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
+    
+    df_mesa['created_date'] = df_mesa['created_date'].dt.strftime('%Y-%m-%d %X') 
+    df_mesa['last_modified_date'] = df_mesa['last_modified_date'].dt.strftime('%Y-%m-%d %X')
+    
     #Definindo tipo dos dados
     data_types_dict = {
     'id': 'str',
     'report_execution_id': 'str',
-    'created_date': 'datetime64[us]',
-    'last_modified_date': 'datetime64[us]',
+    'created_date': 'str',
+    'last_modified_date': 'str',
     'titulo': 'str',
     'responsavel': 'str',
     'razao_social_do_cedente': 'str',
@@ -194,15 +198,6 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     'limite_disponível': 'float',
     'limite_utilizado': 'float',
     'parecer_final': 'str'}
-    
-    #Tratando colunas date antes de trocar o tipo de dado:
-    colunas_datetime = []
-    for chave, valor in data_types_dict.items():
-        if valor == 'datetime64[us]':
-            colunas_datetime.append(chave)
-
-    for coluna in colunas_datetime:
-        df_mesa[coluna] = df_mesa[coluna].str[0:19]
 
     #Ajustando tipo de dado
     df_mesa = df_mesa.astype(data_types_dict)
@@ -235,8 +230,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     schema = pa.schema([
         ('id', pa.string()),
         ('report_execution_id', pa.string()),
-        ('created_date', pa.date64()),
-        ('last_modified_date', pa.date64()),
+        ('created_date', pa.string()),
+        ('last_modified_date', pa.string()),
         ('titulo', pa.string()),
         ('responsavel', pa.string()),
         ('razao_social_do_cedente', pa.string()),
