@@ -166,6 +166,11 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
+    
+     #Deixando YYYY-MM-DD HH:mm:SS
+    df_final['created_date'] = df_final['created_date'].str[0:19]
+    df_final['last_modified_date'] = df_final['last_modified_date'].str[0:19]
+    
     #Definindo tipo dos dados
     
     data_types_dict = {'cnpj_do_sacado': 'str',
