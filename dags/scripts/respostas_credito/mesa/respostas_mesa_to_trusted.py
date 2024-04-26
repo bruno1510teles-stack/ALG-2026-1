@@ -175,11 +175,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
-    print(df_mesa['created_date'][0])
-    print(df_mesa['created_date'].dtype)
-    df_mesa['created_date'] = df_mesa['created_date'].dt.strftime('%Y-%m-%d %X') 
-    df_mesa['last_modified_date'] = df_mesa['last_modified_date'].dt.strftime('%Y-%m-%d %X')
-    
+   
     #Definindo tipo dos dados
     data_types_dict = {
     'id': 'str',
