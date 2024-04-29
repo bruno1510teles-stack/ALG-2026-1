@@ -165,7 +165,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     for coluna in df_final.columns:
         df_final[coluna] = df_final[coluna].apply(tratando_nulos)
         
-    df_final.replace('', np.nan)
+    df_final.replace('', np.nan, inplace=True)
     
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     
