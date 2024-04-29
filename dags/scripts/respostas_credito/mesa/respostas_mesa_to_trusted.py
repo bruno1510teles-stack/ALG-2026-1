@@ -168,11 +168,12 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         df_mesa[coluna] = df_mesa[coluna].apply(sustituindo_caracteres_despreziveis)
         
     def tratando_nulos(df):
-        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '')
+        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '').replace('NONE', '')
     
     for coluna in df_mesa.columns:
-        df_mesa[coluna] = df_mesa[coluna].apply(tratando_nulos).replace('', None)
+        df_mesa[coluna] = df_mesa[coluna].apply(tratando_nulos)
     
+    df_mesa.replace('', None, inplace=True)
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     
@@ -202,6 +203,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
 
     #Ajustando tipo de dado
     df_mesa = df_mesa.astype(data_types_dict)
+    
+    df_mesa.replace('None', None, inplace=True)
     
     print(f"Definindo colunas de fonte de partições {psutil.virtual_memory()._asdict()}")
     df_mesa['fonte'] = 'JIRA ISSUE'

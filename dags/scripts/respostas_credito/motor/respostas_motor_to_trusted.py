@@ -159,7 +159,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         df_final[coluna] = df_final[coluna].apply(sustituindo_caracteres_despreziveis)     
         
     def tratando_nulos(df):
-        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '')
+        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '').replace('NONE', '')
     
     for coluna in df_final.columns:
         df_final[coluna] = df_final[coluna].apply(tratando_nulos)
