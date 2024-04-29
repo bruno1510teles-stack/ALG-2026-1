@@ -7,7 +7,6 @@ from io import BytesIO
 from deltalake import write_deltalake, DeltaTable
 import psutil
 import json
-import numpy as np
 from scripts.respostas_credito.query_trino_credito import query_trino
 
 # Criando conexão
@@ -165,7 +164,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     for coluna in df_final.columns:
         df_final[coluna] = df_final[coluna].apply(tratando_nulos)
         
-    df_final.replace('', np.nan, inplace=True)
+    df_final.replace('', None, inplace=True)
     
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     
@@ -208,6 +207,8 @@ def transform_motor_to_trusted(files_list_motor, access_params):
 
     #Ajustando tipo de dado
     df_final = df_final.astype(data_types_dict)
+    
+    df_final.replace('None', None, inplace=True)
     
     print(f"Definindo colunas de fonte de partições {psutil.virtual_memory()._asdict()}")
     df_final['fonte'] = 'REPORT EXECUTION'
