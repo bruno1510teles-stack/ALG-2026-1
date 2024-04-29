@@ -163,7 +163,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '')
     
     for coluna in df_final.columns:
-        df_final[coluna] = df_final[coluna].apply(tratando_nulos).replace('', np.nan)
+        df_final[coluna] = df_final[coluna].apply(tratando_nulos).replace(r'^\s*$', np.nan, regex=True)
         
         
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
