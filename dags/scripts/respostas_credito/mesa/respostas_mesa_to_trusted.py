@@ -155,7 +155,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         'razao_social_do_sacado', 'limite_aprovado',
         'cnpj_do_cedente', 'cnpj_do_sacado', 'limite_atual',
         'limite_solicitado', 'score_de_credito',
-        'limite_disponível', 'limite_utilizado', 'resposta_mesa', 'data_resposta'
+        'limite_disponível', 'limite_utilizado', 'resposta_mesa', 'data_resposta',
         'parecer_final']
 
     df_mesa = df_mesa[colunas_finais]
