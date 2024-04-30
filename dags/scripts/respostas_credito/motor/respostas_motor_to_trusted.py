@@ -141,9 +141,6 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     df_final = df_final.rename(columns = {'cnpj':'cnpj_do_sacado', 'razao_social':'razao_social_sacado'})
     
     print(f"Retirando caracteres indevidos do Dataframe {psutil.virtual_memory()._asdict()}")
-    #Criando função que retira caracteres despreziveis 
-    def sustituindo_caracteres_despreziveis(df):
-        return str(df).replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0')
 
     colunas_com_possivel_caracter_desprezivel = ['cnpj_ativo', 'cnae_aceito',
         'natureza_juridica_aceita', 'fundacao_valida',
@@ -155,10 +152,6 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         'resposta_motor', 'casa', 'limite_concedido',
         'media_vop', 'codigo_cnae',
         'last_modified_date']
-    
-    #aplicando Função e tratando strings vazias
-    for coluna in colunas_com_possivel_caracter_desprezivel:
-        df_final[coluna] = df_final[coluna].apply(sustituindo_caracteres_despreziveis)     
         
     def tratando_nulos(df):
         return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '').replace('NONE', '')
