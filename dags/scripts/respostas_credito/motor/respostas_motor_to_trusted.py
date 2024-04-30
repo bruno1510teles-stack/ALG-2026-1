@@ -111,6 +111,8 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     # Retirando dados do motor anteriores ao modelo da política atual
     df_motor = df_motor[df_motor['created_date'] >= '2023-11-23'].reset_index()
     
+    df_motor['data_analise'] = df_motor['created_date']
+    
     print(f"Convertendo Json do motor em colunas {psutil.virtual_memory()._asdict()}")
     # Convertendo Json de motor em colunas
     df_normalizado_motor = pd.json_normalize(df_motor['json'])
@@ -130,7 +132,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         'score_positivo_bvs', 'socio_com_restritivo',
         'resposta_motor', 'casa', 'limite_concedido',
         'media_vop', 'codigo_cnae', 'cpf_do_principal_socio',
-        'created_date', 'last_modified_date',
+        'data_analise', 'last_modified_date',
         'resolution', 'state']
 
     df_final = df_final[colunas_finais]
@@ -169,7 +171,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     print(f"Definindo tipo de dados Dataframe {psutil.virtual_memory()._asdict()}")
     
      #Deixando YYYY-MM-DD HH:mm:SS
-    df_final['created_date'] = df_final['created_date'].str[0:19]
+    df_final['data_analise'] = df_final['data_analise'].str[0:19]
     df_final['last_modified_date'] = df_final['last_modified_date'].str[0:19]
     
     #Definindo tipo dos dados
@@ -200,7 +202,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
     'media_vop': 'float',
     'codigo_cnae': 'str',
     'cpf_do_principal_socio': 'str',
-    'created_date': 'str',
+    'data_analise': 'str',
     'last_modified_date': 'str',
     'resolution': 'str',
     'state': 'str'}
@@ -262,7 +264,7 @@ def transform_motor_to_trusted(files_list_motor, access_params):
         ('media_vop', pa.float32()),
         ('codigo_cnae', pa.string()),
         ('cpf_do_principal_socio', pa.string()),
-        ('created_date', pa.string()),
+        ('data_analise', pa.string()),
         ('last_modified_date', pa.string()),
         ('resolution', pa.string()),
         ('state', pa.string()),
