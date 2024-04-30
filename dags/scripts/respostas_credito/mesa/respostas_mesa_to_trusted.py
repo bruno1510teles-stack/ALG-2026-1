@@ -96,7 +96,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     colunas = {
         'titulo': [['data'],['issue'],['fields'],['summary']],
         
-        'responsavel_mesa': [['data'],['issue'],['fields'],['assignee'],['displayName']],
+        'responsavel': [['data'],['issue'],['fields'],['assignee'],['displayName']],
         
         'customer_request_type': [['data'],['issue'],['fields'],['issuetype'],['name']], 
         
