@@ -96,7 +96,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     colunas = {
         'titulo': [['data'],['issue'],['fields'],['summary']],
         
-        'responsavel': [['data'],['user'],['displayName']], 
+        'responsavel_mesa': [['data'],['issue'],['fields'],['assignee'],['displayName']],
         
         'customer_request_type': [['data'],['issue'],['fields'],['issuetype'],['name']], 
         
@@ -119,6 +119,10 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         'limite_disponível': [['data'],['issue'],['fields'],['customfield_13735']],
         
         'limite_utilizado': [['data'],['issue'],['fields'],['customfield_13736']],
+        
+        'resposta_mesa': [['data'],['issue'],['fields'],['resolution'],['name']],
+    
+        'data_resposta': [['data'],['issue'],['fields'],['resolutiondate']],
 
         'parecer_final': [['data'],['issue'],['fields'],['customfield_13753']]
     }
@@ -127,7 +131,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     def extraindo_json(json, chave):    
         # Para cada valor, de acordo com a chave fornecida, o loop vai entrando no Json até buscar o valor final
         for caminho_json in colunas[chave]:
-                json = json[caminho_json[0]]            
+                if json is not None:
+                    json = json[caminho_json[0]]      
         # Retorna o valor final do Json        
         return json
     
@@ -150,7 +155,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         'razao_social_do_sacado', 'limite_aprovado',
         'cnpj_do_cedente', 'cnpj_do_sacado', 'limite_atual',
         'limite_solicitado', 'score_de_credito',
-        'limite_disponível', 'limite_utilizado',
+        'limite_disponível', 'limite_utilizado', 'resposta_mesa', 'data_resposta'
         'parecer_final']
 
     df_mesa = df_mesa[colunas_finais]
@@ -180,6 +185,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     #Deixando YYYY-MM-DD HH:mm:SS
     df_mesa['created_date'] = df_mesa['created_date'].str[0:19]
     df_mesa['last_modified_date'] = df_mesa['last_modified_date'].str[0:19]
+    df_mesa['data_resposta'] = df_mesa['data_resposta'].str.replace('T',' ').str[:19]
+    
    
     #Definindo tipo dos dados
     data_types_dict = {
@@ -199,6 +206,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     'score_de_credito': 'float',
     'limite_disponível': 'float',
     'limite_utilizado': 'float',
+    'resposta_mesa': 'str',
+    'data_resposta': 'str',
     'parecer_final': 'str'}
 
     #Ajustando tipo de dado
@@ -248,6 +257,8 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         ('score_de_credito', pa.float32()),
         ('limite_disponível', pa.float32()),
         ('limite_utilizado', pa.float32()),
+        ('resposta_mesa', pa.string()),
+        ('data_resposta', pa.string()),
         ('parecer_final', pa.string()),
         ('fonte', pa.string()),
         ('atualizado_em', pa.string()),
