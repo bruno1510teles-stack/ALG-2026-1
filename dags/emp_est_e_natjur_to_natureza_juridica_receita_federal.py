@@ -20,9 +20,9 @@ RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER = "naturezas/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(day=1)
-day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
-day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
-day_to_process_natureza_juridica = f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year=2024/month=4/" #f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=4/" #f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_natureza_juridica = f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year=2024/month=4/" #f"{RECEITA_FEDERAL_NATUREZA_JURIDICA_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):

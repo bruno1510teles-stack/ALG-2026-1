@@ -18,7 +18,7 @@ RECEITA_FEDERAL_SOCIOS_FOLDER = "socios/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 #yesterday = now - timedelta(day=1)
-day_to_process_socios = f"{RECEITA_FEDERAL_SOCIOS_FOLDER}year=2024/month=2/" #f"{RECEITA_FEDERAL_SOCIOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+day_to_process_socios = f"{RECEITA_FEDERAL_SOCIOS_FOLDER}year=2024/month=4/" #f"{RECEITA_FEDERAL_SOCIOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
