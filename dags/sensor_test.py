@@ -52,16 +52,18 @@ def sensor_test():
     # TRUSTED_FOLDER = "relacionamento/"
 
     # Conectando na trusted
-    client = Minio(
-        access_params['endpoint_url_raw'],
-        access_key = access_params['aws_access_key_id_raw'],
-        secret_key = access_params['aws_secret_access_key_raw'],
-    )
+    storage_options = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+    }
     task1 = S3KeySensor(
         task_id='sensor_minio_s3',
         bucket_name='teste-vini',
         bucket_key='data.csv',
-        aws_conn_id=client
+        aws_conn_id=storage_options
     
     )
     
