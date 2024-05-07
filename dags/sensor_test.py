@@ -46,13 +46,11 @@ default_args = {
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
 def sensor_test():
-
+    key = access_params['aws_access_key_id_raw']
+    secret_key = access_params['aws_secret_access_key_raw']
+    host = access_params['endpoint_url_raw']
     # Conectando na trusted
-    storage_options = {
-        "aws_access_key_id": access_params['aws_access_key_id_raw'],
-        "aws_secret_access_key": access_params['aws_secret_access_key_raw'],
-        "host":f"https://{access_params['endpoint_url_raw']}"
-    }
+    storage_options = "'{aws_access_key_id':" + key + ", 'aws_secret_access_key':" + secret_key + ", 'host':" + host + "}"
     
     task1 = S3KeySensor(
         task_id='sensor_minio_s3',
