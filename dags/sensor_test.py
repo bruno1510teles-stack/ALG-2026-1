@@ -6,7 +6,7 @@ from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
-from airflow.providers.amazon.aws.sensor.s3_key import S3KeySensor
+from airflow.providers.amazon.aws.sensor.s3 import S3KeySensor
 from airflow.models import Variable
 from minio import Minio
 
