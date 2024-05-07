@@ -11,6 +11,7 @@ from airflow.models import Variable
 from minio import Minio
 from airflow.models import Connection
 from airflow.hooks.base import BaseHook
+from airflow.exceptions import AirflowException
 
 # Create the Minio connection dynamically
 def create_minio_connection():
@@ -20,19 +21,22 @@ def create_minio_connection():
     MINIO_ACCESS_KEY = "vGZStLPT4O0161DWwxBz"
     MINIO_SECRET_KEY = "ggXG2Ks71vu4nUUeyCfY2rjsfrqirFSSYBKHZVin"
 
-    # Create the Minio connection
-    conn = Connection(
+    # Add the Minio connection
+    conn = BaseHook.get_connection(conn_id=MINIO_CONN_ID)
+    if conn is None:
+        conn = Connection(
         conn_id=MINIO_CONN_ID,
         conn_type="S3",
         host=MINIO_HOST,
         login=MINIO_ACCESS_KEY,
         password=MINIO_SECRET_KEY,
-    )
-    conn.insert()
+        )
+        conn.add_connection()
+    else:
+        raise AirflowException(f"Connection with ID {MINIO_CONN_ID} already exists.")
 
 # Call the function to create the connection
 create_minio_connection()
-
 # DEFINE DEFAULT ARGS
 default_args = {
     "owner": "João Leite",
