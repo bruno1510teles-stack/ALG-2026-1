@@ -31,10 +31,11 @@ def create_minio_connection():
         login=MINIO_ACCESS_KEY,
         password=MINIO_SECRET_KEY,
         )
-        conn.add_connection()
+        conn.add_to_session(BaseHook.get_connection(session=None))
+        print(f"Minio connection with ID {MINIO_CONN_ID} created successfully.")
     else:
-        raise AirflowException(f"Connection with ID {MINIO_CONN_ID} already exists.")
-
+        print(f"Minio connection with ID {MINIO_CONN_ID} already exists.")
+        
 # Call the function to create the connection
 create_minio_connection()
 # DEFINE DEFAULT ARGS
