@@ -50,7 +50,7 @@ def sensor_test():
     secret_key = access_params['aws_secret_access_key_raw']
     host = access_params['endpoint_url_raw']
     # Conectando na trusted
-    storage_options = "'{aws_access_key_id':" + key + ", 'aws_secret_access_key':" + secret_key + ", 'host':" + host + "}"
+    storage_options = "{'aws_access_key_id':'" + key + "', 'aws_secret_access_key':'" + secret_key + "', 'host':'" + host + "'}"
     
     task1 = S3KeySensor(
         task_id='sensor_minio_s3',
