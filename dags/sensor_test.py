@@ -9,26 +9,30 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
 from airflow.models import Variable
 from minio import Minio
+from airflow.models import Connection
+from airflow.hooks.base import BaseHook
 
-access_params = {          
-    "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
-    "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
-    "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
-    "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
-    "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
-    "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
-    "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
-    "aws_access_key_id_raw": Variable.get("MINIO_RAW_ACCESS_KEY"),
-    "aws_secret_access_key_raw": Variable.get("MINIO_RAW_SECRET_KEY"),
-    "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
-    "trino_port": Variable.get("TRINO_PORT"),
-    "trino_user": Variable.get("TRINO_USER"),
-    "trino_password": Variable.get("TRINO_PASSWORD"),
-    "opdb_bucket": Variable.get("OPDB_BUCKET"),
-    "stage": Variable.get('STAGE')
+# Create the Minio connection dynamically
+def create_minio_connection():
+    # Define your Minio connection parameters
+    MINIO_CONN_ID = "minio_default"
+    MINIO_HOST = "https://minio-datalake.alpe.tech/raw/browser"
+    MINIO_ACCESS_KEY = "vGZStLPT4O0161DWwxBz"
+    MINIO_SECRET_KEY = "ggXG2Ks71vu4nUUeyCfY2rjsfrqirFSSYBKHZVin"
 
+    # Create the Minio connection
+    conn = Connection(
+        conn_id=MINIO_CONN_ID,
+        conn_type="S3",
+        host=MINIO_HOST,
+        login=MINIO_ACCESS_KEY,
+        password=MINIO_SECRET_KEY,
+    )
+    conn.insert()
 
-}
+# Call the function to create the connection
+create_minio_connection()
+
 # DEFINE DEFAULT ARGS
 default_args = {
     "owner": "João Leite",
@@ -49,19 +53,11 @@ def sensor_test():
     # # Variaveis Conexão
 
     # Conectando na trusted
-    storage_options = {
-        "aws_access_key_id": '7KHTsU5kRkNimWLf3J4y',
-        "aws_secret_access_key": "oYk8fTIEJHKYpiwtgmIqSBgxeiXILYI33efvWIJr",
-        "host":"https://minio-datalake.alpe.tech/raw/browser"
-        # "AWS_REGION": "us-east-1",
-        # "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-    }
     task1 = S3KeySensor(
         task_id='sensor_minio_s3',
         bucket_name='teste-vini',
         bucket_key='data.csv',
-        aws_conn_id=storage_options
-    
+        aws_conn_id="minio_default"
     )
     
     task1 
