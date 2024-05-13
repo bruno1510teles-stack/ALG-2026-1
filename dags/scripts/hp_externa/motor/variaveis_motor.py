@@ -582,6 +582,10 @@ def transform_data_to_refined(files_list, access_params):
     df_final['year'] = now.year
     df_final['month'] = now.month
     df_final['day'] = now.day
+    
+    #dropando colunas fora do schema
+    df_final.drop(columns=['percentual_compra_recorrente_geral',
+    'percentual_compra_recorrente_3_meses'])
 
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
