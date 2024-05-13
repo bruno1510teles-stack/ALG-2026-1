@@ -584,7 +584,7 @@ def transform_data_to_refined(files_list, access_params):
     df_final['day'] = now.day
     
     #dropando colunas fora do schema
-    df_final.drop(columns=['percentual_compra_recorrente_geral',
+    df_final = df_final.drop(columns=['percentual_compra_recorrente_geral',
     'percentual_compra_recorrente_3_meses'])
 
     storage_options = {
