@@ -591,10 +591,6 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
     
-    #carregando schema existente
-    existente = df_final.schema()
-    print(existente)
-
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
