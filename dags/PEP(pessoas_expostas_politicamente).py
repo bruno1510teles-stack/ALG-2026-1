@@ -66,7 +66,10 @@ def pep():
     @task()
     def pep_transform_raw_to_trusted(current_files):
 
-        access_params = {          
+        access_params = {     
+            "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
+            "aws_access_key_id_raw": Variable.get("MINIO_RAW_ACCESS_KEY"),
+            "aws_secret_access_key_raw": Variable.get("MINIO_RAW_SECRET_KEY"),     
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
             "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
             "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
