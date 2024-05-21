@@ -33,6 +33,7 @@ def transform_pep_to_trusted(files_list_pep, access_params):
     file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
     df = pd.read_csv(BytesIO(file.data), encoding='latin1', sep=';',header=0, dtype=str, names=nome_colunas)
 
+    print(file)
     print('Definindo ano ref')
     df['ano_ref'] = file[0:4]
     df['mes_ref'] = file[4:6]
