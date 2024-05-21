@@ -35,8 +35,8 @@ def transform_pep_to_trusted(files_list_pep, access_params):
 
     print(file_name)
     print('Definindo ano ref')
-    df['ano_ref'] = file_name[0:4]
-    df['mes_ref'] = file_name[4:6]
+    df['ano_ref'] = file_name[-14:-10]
+    df['mes_ref'] = file_name[-10:-8]
     
     print('Definindo particoes trusted')
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
