@@ -17,8 +17,8 @@ MINIO_RAW_BUCKET = "receita-federal"
 RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-#yesterday = now - timedelta(day=1)
-day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year=2024/month=4/" #f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/"
+yesterday = now - timedelta(day=1)
+day_to_process_estabelecimentos = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -37,7 +37,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 10 * * *',
+    schedule_interval='0 11 * * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
