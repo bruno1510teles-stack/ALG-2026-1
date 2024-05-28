@@ -17,8 +17,8 @@ MINIO_RAW_BUCKET = "receita-federal"
 RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER = "estabelecimentos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
-yesterday = now - timedelta(day=1)
-day_to_process_estabelecimento = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+yesterday = now - timedelta(days=1)
+day_to_process_estabelecimento = f"{RECEITA_FEDERAL_ESTABELECIMENTOS_FOLDER}year=2024/month=5/day=24/" #year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
