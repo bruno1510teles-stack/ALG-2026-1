@@ -38,7 +38,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 30), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='5 18 * * 3',
+    schedule_interval='5 20 * * 3',
     default_args=default_args,
     catchup=False,
     tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
