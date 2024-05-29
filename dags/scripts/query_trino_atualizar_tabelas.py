@@ -4,7 +4,7 @@ from multiprocessing.pool import ThreadPool
 import time
 import pandas as pd
 
-def query_trino(query, host, port, catalog, schema, user, password):
+def query_trino(query, catalog, host, port, user, password):
 
     conn = trino.dbapi.connect(
         host=host,
@@ -12,7 +12,6 @@ def query_trino(query, host, port, catalog, schema, user, password):
         user=user,
         http_scheme='https',
         catalog=catalog,
-        schema=schema,
         auth=trino.auth.BasicAuthentication(
                             user, 
                             password),
