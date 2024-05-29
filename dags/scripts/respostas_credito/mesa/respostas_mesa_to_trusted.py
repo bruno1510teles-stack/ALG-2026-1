@@ -77,13 +77,18 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     #Ajustando o report_execution_id para str
     df_mesa.loc[df_mesa['report_execution_id'].notna(), 'report_execution_id'] = df_mesa.loc[df_mesa['report_execution_id'].notna(), 'report_execution_id'].astype(int).astype(str)
     
+    #Substituindo Nulos para não dar erro no agrupamento
+    df_mesa.loc[df_mesa['report_execution_id'].isna(),'report_execution_id'] = 'NULO'
     
     # Concatena os valores de parse_file que correspondem a mesma análise
     df_mesa = df_mesa.sort_values(by=['loid', 'pageno', 'created_date']).groupby(['id', 'created_date', 'last_modified_date', 'input', 'report_execution_id', 'loid'])['parse_file'].apply(''.join).reset_index()
     
+    #Voltando Nulos ao normal
+    df_mesa = df_mesa.replace('NULO', None)
+    
     print(f"removendo valores não referentes ao json {psutil.virtual_memory()._asdict()}")
     # Remove o começo o inicio da string do Jira Issue
-    df_mesa['json'] = df_mesa['parse_file'].str.split('|', 1).str[1]
+    df_mesa['json'] = df_mesa['parse_file'].str.split('|', n=1).str[1]
 
     
     print(f"Extraindo jsons {psutil.virtual_memory()._asdict()}")
