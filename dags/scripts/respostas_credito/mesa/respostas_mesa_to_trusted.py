@@ -121,7 +121,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         
         'score_de_credito': [['data'],['issue'],['fields'],['customfield_13734']],
         
-        'limite_disponível': [['data'],['issue'],['fields'],['customfield_13735']],
+        'limite_disponivel': [['data'],['issue'],['fields'],['customfield_13735']],
         
         'limite_utilizado': [['data'],['issue'],['fields'],['customfield_13736']],
         
@@ -160,7 +160,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         'razao_social_do_sacado', 'limite_aprovado',
         'cnpj_do_cedente', 'cnpj_do_sacado', 'limite_atual',
         'limite_solicitado', 'score_de_credito',
-        'limite_disponível', 'limite_utilizado', 'resposta_mesa', 'data_resposta',
+        'limite_disponivel', 'limite_utilizado', 'resposta_mesa', 'data_resposta',
         'parecer_final']
 
     df_mesa = df_mesa[colunas_finais]
@@ -171,7 +171,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         return str(df).replace('R$', '').replace('.', '').replace(',', '.').replace('.00','0')
 
     colunas_com_possivel_caracter_desprezivel = ['limite_aprovado', 'limite_atual', 'limite_solicitado',
-        'limite_disponível', 'limite_utilizado', 'score_de_credito']
+        'limite_disponivel', 'limite_utilizado', 'score_de_credito']
     
     #aplicando Função e tratando strings vazias
     for coluna in colunas_com_possivel_caracter_desprezivel:
@@ -209,7 +209,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
     'limite_atual': 'float',
     'limite_solicitado': 'float',
     'score_de_credito': 'float',
-    'limite_disponível': 'float',
+    'limite_disponivel': 'float',
     'limite_utilizado': 'float',
     'resposta_mesa': 'str',
     'data_resposta': 'str',
@@ -260,7 +260,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         ('limite_atual', pa.float32()),
         ('limite_solicitado', pa.float32()),
         ('score_de_credito', pa.float32()),
-        ('limite_disponível', pa.float32()),
+        ('limite_disponivel', pa.float32()),
         ('limite_utilizado', pa.float32()),
         ('resposta_mesa', pa.string()),
         ('data_resposta', pa.string()),
