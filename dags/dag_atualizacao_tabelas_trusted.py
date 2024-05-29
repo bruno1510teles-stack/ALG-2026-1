@@ -71,11 +71,14 @@ def call_trino():
     
     @task()
     def atualizar_tabelas():
+        
+        print(f'CALLS A FAZER: {len(tabelas_atualizar)}')
         for call in tabelas_atualizar:
-            query = f"""{call}"""
             
-            print(f'quantidade de CNPJs a serem atualziados: {len(tabelas_atualizar)}')
+            query = f"""{call}"""
+                        
             print(f"query: {query}")
+            print(f"call: {call}")
             
             query_trino(query, 
                         catalog = 'miniotrusted',                    
