@@ -88,6 +88,8 @@ def atualizacao_tabelas_trusted():
                         port = access_params['trino_port'],
                         user = access_params['trino_user'],
                         password = access_params['trino_password'])
+            
+            i += 1
 
     atualizar_tabelas_task = atualizar_tabelas()
 
