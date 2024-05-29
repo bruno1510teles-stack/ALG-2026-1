@@ -72,13 +72,15 @@ def atualizacao_tabelas_trusted():
     @task()
     def atualizar_tabelas():
         
-        print(f'CALLS A FAZER: {len(tabelas_atualizar)}')
+        tamanho = len(tabelas_atualizar)
+        print(f'CALLS A FAZER: {tamanho}')
+        
+        i = 1
         for call in tabelas_atualizar:
-            
+            print(f"calls feitas: {i} de {tamanho}")   
             query = f"""{call}"""
                         
             print(f"query: {query}")
-            print(f"call: {call}")
             
             query_trino(query, 
                         catalog = 'miniotrusted',                    
