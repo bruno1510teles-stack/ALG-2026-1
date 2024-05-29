@@ -10,20 +10,20 @@ from airflow.models import Variable
 from scripts.query_trino_atualizar_tabelas import query_trino
 
 # DEFINE VARIABLES
-tabelas_atualizar = [
-    "call miniotrusted.system.sync_partition_metadata('payments', 'boletos', 'ADD', false)",	
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'cnae', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'contato', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'documento', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'endereco', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'natureza_juridica', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'organizacoes', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'pep', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'relacionamento', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'situacao_cadastral', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('risco', 'mesa', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false)"
-]
+# tabelas_atualizar = [
+#     "call miniotrusted.system.sync_partition_metadata('payments', 'boletos', 'ADD', false)",	
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'cnae', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'contato', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'documento', 'ADD', false)",
+    # "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'endereco', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'natureza_juridica', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'organizacoes', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'pep', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'relacionamento', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'situacao_cadastral', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('risco', 'mesa', 'ADD', false)",
+#     "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false)"
+# ]
 
 access_params = {     
             "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
@@ -41,9 +41,6 @@ access_params = {
             "trino_password": Variable.get("TRINO_PASSWORD"),
             "opdb_bucket": Variable.get("OPDB_BUCKET"),
             "stage": Variable.get('STAGE')
-            	
-	
-
         }
 
 # DEFINE DEFAULT ARGS
@@ -58,12 +55,12 @@ default_args = {
 @dag(
     start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 21 * * *',
+    schedule_interval='10 21 * * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'call_trino']
 )
-def atualizacao_tabelas_trusted():
+def atualizacao_tabelas_refined():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -83,7 +80,7 @@ def atualizacao_tabelas_trusted():
             print(f"query: {query}")
             
             query_trino(query, 
-                        catalog = 'miniotrusted',                    
+                        catalog = 'miniorefined',                    
                         host = access_params['trino_endpoint'],
                         port = access_params['trino_port'],
                         user = access_params['trino_user'],
@@ -96,4 +93,4 @@ def atualizacao_tabelas_trusted():
     # run order
     init_data_load >> atualizar_tabelas_task >> finish_data_load
 
-atualizacao_tabelas_trusted()
+atualizacao_tabelas_refined()
