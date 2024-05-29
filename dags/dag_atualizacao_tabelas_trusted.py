@@ -11,18 +11,18 @@ from scripts.query_trino_atualizar_tabelas import query_trino
 
 # DEFINE VARIABLES
 tabelas_atualizar = [
-    "call miniotrusted.system.sync_partition_metadata('payments', 'boletos', 'ADD', false);",	
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'cnae', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'contato', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'documento', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'endereco', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'natureza_juridica', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'organizacoes', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'pep', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'relacionamento', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'situacao_cadastral', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('risco', 'mesa', 'ADD', false);",
-    "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false);"
+    "call miniotrusted.system.sync_partition_metadata('payments', 'boletos', 'ADD', false)",	
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'cnae', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'contato', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'documento', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'endereco', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'natureza_juridica', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'organizacoes', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'pep', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'relacionamento', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'situacao_cadastral', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('risco', 'mesa', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false)"
 ]
 
 access_params = {     
