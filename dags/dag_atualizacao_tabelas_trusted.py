@@ -58,12 +58,12 @@ default_args = {
 @dag(
     start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='30 11 * * *',
+    schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'call_trino']
 )
-def call_trino():
+def atualizacao_tabelas_trusted():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -92,4 +92,4 @@ def call_trino():
     # run order
     init_data_load >> atualizar_tabelas_task >> finish_data_load
 
-call_trino()
+atualizacao_tabelas_trusted()
