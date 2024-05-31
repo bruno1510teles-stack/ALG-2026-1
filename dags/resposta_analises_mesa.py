@@ -19,7 +19,7 @@ RESPOSTA_MESA_RAW_FOLDER = f"topics/opdb.inrp_prd_default.jira_issue/"
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 
-day_to_process_mesa = f"{RESPOSTA_MESA_RAW_FOLDER}year={yesterday.year}/"#{str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
+day_to_process_mesa = f"{RESPOSTA_MESA_RAW_FOLDER}year={yesterday.year}/month={str(yesterday.month).zfill(2)}/day={str(yesterday.day).zfill(2)}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -38,10 +38,10 @@ default_args = {
 @dag(
     start_date=datetime(2024, 1, 30), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='5 23 * * 3',
+    schedule_interval='30 9 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['development', 'elt', 'minio', 'first_batch', 'boleto alpe']
+    tags=['mesa', 'etl', 'minio']
 )
 def respostas_credito_mesa():
     # init & finish task
