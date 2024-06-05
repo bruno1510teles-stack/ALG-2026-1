@@ -1,10 +1,5 @@
 # IMPORT LIBS
 from datetime import datetime, timedelta, timezone
-import sys
-import inspect
-
-# setting path
-#sys.path.append('../dags')
 
 # AIRFLOW LIBS
 from airflow.decorators import dag, task
@@ -24,11 +19,6 @@ BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
 day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
-
-source_code = inspect.getsource(transform_data_to_refined)
-
-# Print the source code
-print(source_code)
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
