@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import sys
  
 # setting path
-sys.path.append('../dags')
+#sys.path.append('../dags')
 
 # AIRFLOW LIBS
 from airflow.decorators import dag, task
