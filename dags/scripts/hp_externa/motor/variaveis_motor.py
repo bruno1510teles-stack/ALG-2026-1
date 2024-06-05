@@ -14,6 +14,25 @@ import pyarrow.parquet as pq
 from scripts.query_trino_payments import query_trino
 import pyarrow.fs as fs
 
+def definicao_safra(df, meses):
+    #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
+    DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
+    DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
+
+    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
+    df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+    df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+    #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
+    df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
+    df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
+
+    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
+    df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
+    df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
+
+    return df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+
 # Calculando Variáveis
 def PrazoMedio(df, meses=None):    
 
@@ -22,23 +41,8 @@ def PrazoMedio(df, meses=None):
         hpex_vop_acumulado = df
     
     else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
 
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+        hpex_vop_acumulado = definicao_safra(df, meses)
 
     # Soma vop
 
@@ -56,24 +60,8 @@ def MediaDifDiasFaturamento(df, meses=None):
     if meses is None:
         hpex_vop_acumulado = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        hpex_vop_acumulado = definicao_safra(df, meses)
 
     # Soma vop
     
@@ -108,24 +96,8 @@ def PercentMedAlavancagemPeriodo(df, meses=None):
     if meses is None:
         hpex_vop_acumulado = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        hpex_vop_acumulado = definicao_safra(df, meses)
         
     #Compila os valores por data de emissao e vencimento
     emissao = hpex_vop_acumulado[['documento_raiz', 'fornecedor', 'data_emissao', 'valor_titulo']]
@@ -158,24 +130,8 @@ def PercentMedAlavancagemFinal(df, meses=None):
     if meses is None:
         hpex_vop_acumulado = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        hpex_vop_acumulado = definicao_safra(df, meses)
     
     
     FiltroVencido = hpex_vop_acumulado['data_vencimento'] < hpex_vop_acumulado['data_hp']
@@ -194,24 +150,8 @@ def QtdDiasMaxPagamentoAtrasado(df, meses=None):
     if meses is None:
         hpex_vop_acumulado = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        hpex_vop_acumulado = definicao_safra(df, meses)
     
     #Calcula a quantidade máxima de dias que um pagamento ficou em atraso
     
@@ -232,24 +172,8 @@ def PercentPagoEmDia(df, meses=None):
     if meses is None:
         hpex_vop_acumulado = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        hpex_vop_acumulado = definicao_safra(df, meses)
     
     # Calcula o percentual pago em dia
     
@@ -304,24 +228,8 @@ def Over(df, dias):
 def VopAcumulado(df, meses):    
 
     # Filtra pela quantidade de meses desejada
-
-    #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-    DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-    DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-    df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-    df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-    #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-    df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-    df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-    #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-    df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-    df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-    hpex_vop_acumulado = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+         
+    hpex_vop_acumulado = definicao_safra(df, meses)
         
     # Soma vop
     
@@ -339,24 +247,8 @@ def PercentualCompraRecorrente(df, meses=None):
     if meses is None:
         PercentualCompraRecorrente = df
     
-    else:    
-        #    O offsets.MonthBegin e o offsets.MonthEnd se comportam de forma diferente caso o dia seja o primeiro ou último dia do mês e esses filtros abaixo servem para esses casos
-        DateInitEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthBegin(0))
-        DateEndEqual = (df['data_hp'] == df['data_hp'] + pd.offsets.MonthEnd(0))
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data inicial do mês
-        df.loc[DateInitEqual, 'data_inicial'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateInitEqual, 'data_final'] = df.loc[DateInitEqual, 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP não for igual a data inicial ou final do mês
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_inicial'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthBegin(-meses-1)
-        df.loc[~(DateInitEqual | DateEndEqual), 'data_final'] = df.loc[~(DateInitEqual | DateEndEqual), 'data_hp'] + pd.offsets.MonthEnd(-1)
-
-        #    Aplica o tratamento correto para os casos em que a data da HP for igual a data final do mês
-        df.loc[DateEndEqual, 'data_inicial'] = df.loc[DateEndEqual, 'data_hp'] + pd.offsets.MonthBegin(-meses)
-        df.loc[DateEndEqual, 'data_final'] = df.loc[DateEndEqual, 'data_hp']
-
-        PercentualCompraRecorrente = df[(df['data_emissao'] >= df['data_inicial']) & (df['data_emissao'] <= df['data_final'])]
+    else:            
+        PercentualCompraRecorrente = definicao_safra(df, meses)
 
     # PercentualCompraRecorrente
 
