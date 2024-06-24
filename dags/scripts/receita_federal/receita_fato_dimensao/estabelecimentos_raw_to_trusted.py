@@ -60,7 +60,7 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
     for file_name in files_list_estabelecimento:
         print(f"file_name: {file_name} {psutil.virtual_memory()._asdict()}")
         file = client.get_object(bucket_name=BUCKET_SOURCE_RAW, object_name=file_name)
-        for df in pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', header = None, dtype=str,  chunksize=4000000):
+        for df in pd.read_csv(BytesIO(file.data), sep=';', encoding = 'latin1', header = None, dtype=str,  chunksize=3000000):
             print(f'df importado {psutil.virtual_memory()._asdict()}')
             
             df.columns = header_inicial
@@ -141,6 +141,8 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
             (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
             #Definindo data de tratamento do arquivo
             now = datetime.now(tz=timezone(timedelta(hours=-3)))
+            
+            df['atualizado_em'] = now.strftime('%Y-%m-%d %X')  
             
             df['year'] = now.year
             df['month'] = now.month
