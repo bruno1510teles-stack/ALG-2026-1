@@ -101,4 +101,4 @@ def receita_federal_estabelecimentos():
     # run order
     init_data_load >> list_today_files_estabelecimento >> check_files >> unique_clients >> finish_data_load
 
-estabelecimentos()
+receita_federal_estabelecimentos()
