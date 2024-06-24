@@ -9,17 +9,17 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.receita_fato_dimensao.empresas_raw_to_trusted import empresa_to_trusted
+from scripts.receita_federal.receita_fato_dimensao.simples_raw_to_trusted import simples_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "receita-federal"
-RECEITA_FEDERAL_EMPRESAS_FOLDER = "empresas/"
+RECEITA_FEDERAL_SIMPLES_FOLDER = "simples/"
 
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process_empresas = f"{RECEITA_FEDERAL_EMPRESAS_FOLDER}year=2024/month=5/day=24/" #year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+day_to_process_simples = f"{RECEITA_FEDERAL_SIMPLES_FOLDER}year=2024/month=5/day=24/" #year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -43,16 +43,16 @@ default_args = {
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def receita_federal_empresas():
+def receita_federal_simples():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    list_today_files_empresa = S3ListOperator(
-        task_id="list_today_files_empresa",
+    list_today_files_simples = S3ListOperator(
+        task_id="list_today_files_simples",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
-        prefix=day_to_process_empresas,
+        prefix=day_to_process_simples,
         apply_wildcard=True,
     )
     
@@ -60,7 +60,7 @@ def receita_federal_empresas():
         task_id='check_files',
         python_callable=check_files_to_processed,
         provide_context=True,
-        op_kwargs={'files_to_process': list_today_files_empresa.output}
+        op_kwargs={'files_to_process': list_today_files_simples.output}
     )
     
     @task(
@@ -70,7 +70,7 @@ def receita_federal_empresas():
         }
     }
     )
-    def empresas(current_files_empresa):
+    def simples(current_files_simples):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -92,13 +92,13 @@ def receita_federal_empresas():
 
         }
 
-        print(f"current_files_empresa as { type(current_files_empresa) } and size of { len(current_files_empresa) }")
+        print(f"current_files_simples as { type(current_files_simples) } and size of { len(current_files_simples) }")
 
-        empresa_to_trusted(current_files_empresa, access_params)
+        simples_to_trusted(current_files_simples, access_params)
 
-    unique_clients = empresas(list_today_files_empresa.output)
+    unique_clients = simples(list_today_files_simples.output)
 
     # run order
-    init_data_load >> list_today_files_empresa >> check_files >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_simples >> check_files >> unique_clients >> finish_data_load
 
-receita_federal_empresas()
+receita_federal_simples()
