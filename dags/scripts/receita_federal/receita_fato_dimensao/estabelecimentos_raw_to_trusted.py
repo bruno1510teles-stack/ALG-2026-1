@@ -121,7 +121,7 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
             'documento_formatado',
             'is_matriz',
             'nome_fantasia',
-            'codigo_situacao_cadastral'
+            'codigo_situacao_cadastral',
             'situacao_cadastral',
             'data_situacao_cadastral',
             'motivo_situacao_cadastral',
