@@ -45,20 +45,42 @@ def empresa_to_trusted(files_list_empresa, access_params):
 
             df['CAPITAL SOCIAL DA EMPRESA'] = df['CAPITAL SOCIAL DA EMPRESA'].str.replace(',','.').astype(float)
             
+            
+            df.loc[df['PORTE DA EMPRESA'].isna(), 'PORTE DA EMPRESA'] = '00'
+            
             renomeando = {'CNPJ BÁSICO': 'cnpj_raiz',
             'RAZÃO SOCIAL / NOME EMPRESARIAL': 'razao_social',
             'NATUREZA JURÍDICA': 'natureza_juridica',
             'QUALIFICAÇÃO DO RESPONSÁVEL': 'qualificacao_responsavel',
             'CAPITAL SOCIAL DA EMPRESA': 'capital_social_empresa',
-            'PORTE DA EMPRESA': 'porte_empresa',
+            'PORTE DA EMPRESA': 'codigo_porte_empresa',
             'ENTE FEDERATIVO RESPONSÁVEL': 'ente_federativo_responsavel'}
             
             df = df.rename(columns = renomeando)
 
+            porte_empresa_dict = {
+                '00': 'NÃO INFORMADO',
+                '01': 'MICRO EMPRESA',
+                '03': 'EMPRESA DE PEQUENO PORTE',
+                '05': 'DEMAIS'
+            }
+
+            # Criar nova coluna usando o dicionário de mapeamento
+            df['porte_empresa'] = df['codigo_porte_empresa'].map(porte_empresa_dict)
+            
+            colunas_ordem = ['cnpj_raiz',
+            'razao_social',
+            'natureza_juridica',
+            'qualificacao_responsavel',
+            'capital_social_empresa',
+            'codigo_porte_empresa',
+            'porte_empresa',
+            'ente_federativo_responsavel']
+
+            df = df[colunas_ordem]
 
             print(f'criando datas_ref {psutil.virtual_memory()._asdict()}')
-            df['mes_ref'] = file_name[-13:-11]
-            df['ano_ref'] = str(datetime.now().year)[0:3] + file_name[-14:-13]
+            df['data_ref'] = file_name[-13:-11] + str(datetime.now().year)[0:3] + file_name[-14:-13]
 
             (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
             #Definindo data de tratamento do arquivo

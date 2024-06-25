@@ -75,11 +75,15 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
             print(f'dropando colunas {psutil.virtual_memory()._asdict()}')
             df = df.drop(columns = {'CNPJ ORDEM', 'CNPJ DV', 'TIPO DE LOGRADOURO', 'LOGRADOURO', 'DDD 1', 'TELEFONE 1', 'DDD 2', 'TELEFONE 2', 'DDD DO FAX', 'FAX'})
 
+            #convertendo coluna categorica em dummy
+            df['IDENTIFICADOR MATRIZ/FILIAL'] = df['IDENTIFICADOR MATRIZ/FILIAL'] == "1"
+            
+                
             print(f'renomeando colunas {psutil.virtual_memory()._asdict()}')
-            renomeando = {'IDENTIFICADOR MATRIZ/FILIAL': 'identificador_matriz/filial',
+            renomeando = {'IDENTIFICADOR MATRIZ/FILIAL': 'is_matriz',
                 'CNPJ BÁSICO': 'cnpj_raiz', 
                 'NOME FANTASIA': 'nome_fantasia',
-                'SITUAÇÃO CADASTRAL': 'situacao_cadastral',
+                'SITUAÇÃO CADASTRAL': 'codigo_situacao_cadastral',
                 'DATA SITUAÇÃO CADASTRAL': 'data_situacao_cadastral',
                 'MOTIVO SITUAÇÃO CADASTRAL': 'motivo_situacao_cadastral',
                 'NOME DA CIDADE NO EXTERIOR': 'nome_cidade_exterior', 
@@ -99,13 +103,25 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
             
             df = df.rename(columns = renomeando)
             
+            situacao_cadastral_dict = {
+                '01': 'NULA',
+                '02': 'ATIVA',
+                '03': 'SUSPENSA',
+                '04': 'INAPTA',
+                '08': 'BAIXADA'
+            }
+
+            # Criar nova coluna usando o dicionário de mapeamento
+            df['situacao_cadastral'] = df['codigo_situacao_cadastral'].map(situacao_cadastral_dict)
+            
             print(f'ordenando colunas {psutil.virtual_memory()._asdict()}')
             colunas_ordem = [
             'cnpj_raiz',
             'documento_sem_formatacao',
             'documento_formatado',
-            'identificador_matriz/filial',
+            'is_matriz',
             'nome_fantasia',
+            'codigo_situacao_cadastral'
             'situacao_cadastral',
             'data_situacao_cadastral',
             'motivo_situacao_cadastral',
@@ -135,8 +151,7 @@ def estabelecimento_to_trusted(files_list_estabelecimento, access_params):
             df = df[colunas_ordem]
 
             print(f'criando datas_ref {psutil.virtual_memory()._asdict()}')
-            df['mes_ref'] = file_name[-13:-11]
-            df['ano_ref'] = str(datetime.now().year)[0:3] + file_name[-14:-13]
+            df['data_ref'] = file_name[-13:-11] + str(datetime.now().year)[0:3] + file_name[-14:-13]
 
             (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
             #Definindo data de tratamento do arquivo
