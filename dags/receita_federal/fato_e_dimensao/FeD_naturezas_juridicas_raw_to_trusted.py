@@ -9,17 +9,17 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.receita_fato_dimensao.cnaes_raw_to_trusted import cnaes_to_trusted
+from scripts.receita_federal.receita_fato_dimensao.naturezas_juridicas_raw_to_trusted import naturezas_juridicas_to_trusted
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
 MINIO_RAW_BUCKET = "receita-federal"
-RECEITA_FEDERAL_CNAES_FOLDER = "cnaes/"
+RECEITA_FEDERAL_NATUREZAS_JURIDICAS_FOLDER = "naturezas/"
 
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process_cnaes = f"{RECEITA_FEDERAL_CNAES_FOLDER}year=2024/month=5/day=24/" #year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+day_to_process_naturezas_juridicas = f"{RECEITA_FEDERAL_NATUREZAS_JURIDICAS_FOLDER}year=2024/month=5/day=24/" #year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -43,16 +43,16 @@ default_args = {
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def receita_federal_cnaes():
+def receita_federal_naturezas_juridicas():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    list_today_files_cnaes = S3ListOperator(
-        task_id="list_today_files_cnaes",
+    list_today_files_naturezas_juridicas = S3ListOperator(
+        task_id="list_today_files_naturezas_juridicas",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
-        prefix=day_to_process_cnaes,
+        prefix=day_to_process_naturezas_juridicas,
         apply_wildcard=True,
     )
     
@@ -60,7 +60,7 @@ def receita_federal_cnaes():
         task_id='check_files',
         python_callable=check_files_to_processed,
         provide_context=True,
-        op_kwargs={'files_to_process': list_today_files_cnaes.output}
+        op_kwargs={'files_to_process': list_today_files_naturezas_juridicas.output}
     )
     
     @task(
@@ -70,7 +70,7 @@ def receita_federal_cnaes():
         }
     }
     )
-    def cnaes(current_files_cnaes):
+    def naturezas_juridicas(current_files_naturezas_juridicas):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -92,13 +92,13 @@ def receita_federal_cnaes():
 
         }
 
-        print(f"current_files_cnaes as { type(current_files_cnaes) } and size of { len(current_files_cnaes) }")
+        print(f"current_files_naturezas_juridicas as { type(current_files_naturezas_juridicas) } and size of { len(current_files_naturezas_juridicas) }")
 
-        cnaes_to_trusted(current_files_cnaes, access_params)
+        naturezas_juridicas_to_trusted(current_files_naturezas_juridicas, access_params)
 
-    unique_clients = cnaes(list_today_files_cnaes.output)
+    unique_clients = naturezas_juridicas(list_today_files_naturezas_juridicas.output)
 
     # run order
-    init_data_load >> list_today_files_cnaes >> check_files >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_naturezas_juridicas >> check_files >> unique_clients >> finish_data_load
 
-receita_federal_cnaes()
+receita_federal_naturezas_juridicas()
