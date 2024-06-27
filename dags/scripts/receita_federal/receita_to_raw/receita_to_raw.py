@@ -13,5 +13,8 @@ import requests
 # Criando conexão
 
 def receita_to_raw():
+    
+    print('AAAAAAA COMEÇOU AAAAA')
     print(os.getcwd())
     print(os.listdir(os.getcwd()))
+    print('ZZZZZZZ TERMINOU ZZZZZ')
