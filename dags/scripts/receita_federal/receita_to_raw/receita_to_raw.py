@@ -43,9 +43,9 @@ def receita_to_raw():
     print(os.getcwd())
     print(os.listdir(os.getcwd()))
     
-    download_and_extract_zip(fonte_receita, '.cnae', 'Cnaes.zip')
+ #   download_and_extract_zip(fonte_receita, '.cnae', 'Cnaes.zip')
     
     
-    print(os.getcwd())
-    print(os.listdir(os.getcwd()))
+    # print(os.getcwd())
+    # print(os.listdir(os.getcwd()))
     print('ZZZZZZZ TERMINOU ZZZZZ')
