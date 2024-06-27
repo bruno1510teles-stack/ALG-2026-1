@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.receita_federal.raw.receita_to_raw import receita_to_raw
+from scripts.receita_federal.receita_to_raw.receita_to_raw import receita_to_raw
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_raw"
