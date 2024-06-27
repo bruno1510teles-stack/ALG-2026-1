@@ -10,7 +10,6 @@ from deltalake import write_deltalake, DeltaTable
 import psutil
 import requests
 import zipfile
-from tqdm import tqdm
 
 # Criando conexão
 
