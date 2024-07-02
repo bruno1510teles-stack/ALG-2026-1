@@ -14,10 +14,13 @@ from scripts.query_trino_payments import query_trino
 # Criando conexão
 def pre_filtro():
 
+    print('começou função')
+    
     # Variaveis Conexão
     BUCKET_SOURCE_REFINED = "payments"
     REFINED_FOLDER = "motor/pre_filtro/"
 
+    print('declarando client')
     # Conectando na trusted
     client = Minio(
         access_params['endpoint_url_refined'],
