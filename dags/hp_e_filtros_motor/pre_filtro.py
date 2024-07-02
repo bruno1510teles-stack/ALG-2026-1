@@ -65,7 +65,7 @@ def pre_filtro_to_refined():
             "stage": Variable.get('STAGE')
         }
 
-        pre_filtro()
+        pre_filtro(access_params)
 
     unique_clients = pre_filtro_function()
 

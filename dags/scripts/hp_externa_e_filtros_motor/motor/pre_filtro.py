@@ -12,7 +12,7 @@ from scripts.query_trino_payments import query_trino
 
 
 # Criando conexão
-def pre_filtro():
+def pre_filtro(access_params):
 
     print('começou função')
     
