@@ -18,7 +18,7 @@ BOLETOS_ALPE_TRUSTED_FOLDER = "pep/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month=5/"#{yesterday.month}/day={yesterday.day}/"
 
 
 # DEFINE FUNCTIONS
