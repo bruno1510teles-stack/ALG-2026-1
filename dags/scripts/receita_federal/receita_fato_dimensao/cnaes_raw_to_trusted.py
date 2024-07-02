@@ -39,7 +39,7 @@ def cnaes_to_trusted(files_list_cnaes, access_params):
             
         df.columns = header_inicial
 
-        df['data_ref'] = file_name[-12:-10] + str(datetime.now().year)[0:3] + file_name[-13:-12]
+        df['data_ref'] = str(datetime.now().year)[0:3] + file_name[-13:-12] + file_name[-12:-10]
 
         (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
         #Definindo data de tratamento do arquivo

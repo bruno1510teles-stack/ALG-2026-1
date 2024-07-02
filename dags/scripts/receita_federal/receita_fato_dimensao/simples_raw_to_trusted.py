@@ -66,7 +66,7 @@ def simples_to_trusted(files_list_simples, access_params):
             df['data_exclusao_mei'] = df['data_exclusao_mei'].str[0:4] + '-' + df['data_exclusao_mei'].str[4:6] + '-' + df['data_exclusao_mei'].str[6:8]
 
 
-            df['data_ref'] = file_name[-4:-2] + str(datetime.now().year)[0:3] + file_name[-5:-4]
+            df['data_ref'] = str(datetime.now().year)[0:3] + file_name[-5:-4] + file_name[-4:-2]
 
             (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
             #Definindo data de tratamento do arquivo

@@ -91,7 +91,7 @@ def socios_to_trusted(files_list_socios, access_params):
             
             df = df.rename(columns = renomeando)
             
-            df['data_ref'] = file_name[-13:-11] + str(datetime.now().year)[0:3] + file_name[-14:-13]
+            df['data_ref'] = str(datetime.now().year)[0:3] + file_name[-14:-13] + file_name[-13:-11]
             
             (f"Criando colunas de particionamento {psutil.virtual_memory()._asdict()}")
             #Definindo data de tratamento do arquivo
