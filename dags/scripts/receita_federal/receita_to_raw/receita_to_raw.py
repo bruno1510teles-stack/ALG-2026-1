@@ -13,6 +13,18 @@ import zipfile
 
 # Criando conexão
 
+
+MINIO_ENDPOINT = "api-raw.alpe.tech"
+MINIO_ACCESS_KEY = "SLKUByScHZG5DBz5xIrT"
+MINIO_SECRET_KEY = "Ohs5IAwBBWoJY8NszPQFBZ9J4hXU60KzZLE007jM"
+
+# Conexão
+client = Minio(
+    MINIO_ENDPOINT,
+    MINIO_ACCESS_KEY,
+    MINIO_SECRET_KEY,
+)
+
 def download_and_extract_zip(url_path, extract_to, file_name):
     
     # Step 0: Creates path if dont exist
@@ -43,7 +55,7 @@ def receita_to_raw():
     print(os.getcwd())
     print(os.listdir(os.getcwd()))
     
- #   download_and_extract_zip(fonte_receita, '.cnae', 'Cnaes.zip')
+    download_and_extract_zip(fonte_receita, '.cnae', 'Cnaes.zip')
     
     
     # print(os.getcwd())
