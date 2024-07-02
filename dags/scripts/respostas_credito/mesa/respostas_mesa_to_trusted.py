@@ -178,7 +178,7 @@ def transform_mesa_to_trusted(file_list_mesa, access_params):
         df_mesa[coluna] = df_mesa[coluna].apply(sustituindo_caracteres_despreziveis)
         
     def tratando_nulos(df):
-        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '').replace('NONE', '')
+        return str(df).replace('NAO ENCONTRADO', '').replace('Nao encontrado', '').replace('N/A', '').replace('nan', '').replace('None', '').replace('NONE', '').replace(' ', '')
     
     for coluna in df_mesa.columns:
         df_mesa[coluna] = df_mesa[coluna].apply(tratando_nulos)
