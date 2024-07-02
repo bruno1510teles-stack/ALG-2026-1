@@ -12,7 +12,6 @@ def query_trino(query, host, port, user, password):
         user=user,
         http_scheme='https',
         catalog='miniotrusted',
-        schema='payments',
         auth=trino.auth.BasicAuthentication(
                             user, 
                             password),

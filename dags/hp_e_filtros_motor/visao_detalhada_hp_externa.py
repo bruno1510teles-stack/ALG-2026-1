@@ -10,7 +10,7 @@ from airflow.models import Variable
 from kubernetes.client import models as k8s
 
 # SCRIPTS
-from scripts.hp_externa.mesa.mesa_variaveis_detalhada import transform_data_to_refined
+from scripts.hp_externa_e_filtros_motor.mesa.mesa_variaveis_detalhada import transform_data_to_refined
 
 
 

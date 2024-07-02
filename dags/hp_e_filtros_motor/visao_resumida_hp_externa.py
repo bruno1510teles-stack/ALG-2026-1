@@ -9,7 +9,7 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.hp_externa.mesa.mesa_variaveis_resumida import transform_data_to_refined
+from scripts.hp_externa_e_filtros_motor.mesa.mesa_variaveis_resumida import transform_data_to_refined
 
 # DEFINE VARIABLES
 MINIO_CONN_RAW = "minio_trusted"
