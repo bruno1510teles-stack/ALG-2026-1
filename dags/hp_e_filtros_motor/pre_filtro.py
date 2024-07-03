@@ -41,7 +41,7 @@ def pre_filtro_to_refined():
     @task(
         executor_config={
         "KubernetesExecutor": {
-            "request_memory": "8000Mi"
+            "request_memory": "12000Mi"
         }
     }
     )
