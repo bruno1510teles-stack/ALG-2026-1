@@ -7,6 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 from deltalake import write_deltalake, DeltaTable
+import psutil
 from scripts.query_trino_payments import query_trino
 
 
@@ -14,13 +15,13 @@ from scripts.query_trino_payments import query_trino
 # Criando conexão
 def pre_filtro(access_params):
 
-    print('começou função')
+    print(f"começou função {psutil.virtual_memory()._asdict()}")
     
     # Variaveis Conexão
     BUCKET_SOURCE_REFINED = "payments"
     REFINED_FOLDER = "motor/pre_filtro/"
 
-    print('declarando client')
+    print(f'declarando client {psutil.virtual_memory()._asdict()}')
     # Conectando na trusted
     client = Minio(
         access_params['endpoint_url_refined'],
@@ -28,33 +29,9 @@ def pre_filtro(access_params):
         secret_key = access_params['aws_secret_access_key_refined'],
     )
     
-    print('Rodando query')
+    print(f'Rodando query {psutil.virtual_memory()._asdict()}')
     
-    query = f""" with venc as (SELECT 
-        DISTINCT substring(s.numero_cnpj_sacado, 1, 8) cnpj_raiz,
-            True AS inad_alpe 
-    FROM 
-        postgres.ccred_schema_prd_default.boleto_titulo bt
-        LEFT JOIN postgres.ccred_schema_prd_default.boleto_titulo_endosso bte ON bt.id = bte.boleto_titulo_id_endossado 
-        LEFT JOIN postgres.ccred_schema_prd_default.boleto_titulo bt2 ON bte.boleto_titulo_id = bt2.id AND bt2.codigo_empresa = 3
-        LEFT JOIN postgres.ccred_schema_prd_default.sacado s ON bt.codigo_sacado = s.codigo_sacado 
-    WHERE 
-        bt.titulo_pagamento
-        AND bt.excluido != true
-        AND bt.codigo_estagio_titulo IN (5, 6)
-        AND bt.data_efetivacao IS NOT NULL
-        AND bt.codigo_cedente NOT IN (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372)
-        AND bt.status_titulo = 'VENCIDO'),
-        
-    lim as (SELECT 
-            DISTINCT cnpj_raiz, True AS possui_limite 
-        FROM 
-            postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
-        WHERE 
-            cedente_principal = true 
-            AND sumarizado = true
-            AND limite_atribuido >= 0
-    ),
+    query = f""" with 
 
     tem_pep as (select 
         distinct
@@ -89,7 +66,7 @@ def pre_filtro(access_params):
 """
     
 
-    print(f"query: {query}")
+    print(f"query: {query} {psutil.virtual_memory()._asdict()}")
     
     df = query_trino(query, 
                                 access_params['trino_endpoint'],
@@ -97,14 +74,19 @@ def pre_filtro(access_params):
                                 access_params['trino_user'],
                                 access_params['trino_password'])
 
+    print(f'query carregada {psutil.virtual_memory()._asdict()}')
+    
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
+    print(f'acrescentando coluna de data{psutil.virtual_memory()._asdict()}')
+    
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
 
     df['year'] = now.year
     df['month'] = now.month
     df['day'] = now.day    
     
+    print(f'tornando false colunas booleanas nulas {psutil.virtual_memory()._asdict()}')
     colunas_bool = ['is_mei', 'tem_pep']
     for coluna in colunas_bool:
         df.loc[df[coluna].isna(), coluna] = False
@@ -123,6 +105,8 @@ def pre_filtro(access_params):
               'month': int,
               'day':int}  
     
+    print(f'definindo tipo das colunas {psutil.virtual_memory()._asdict()}')
+    
     df = df.astype(dict_types)
 
         
@@ -134,10 +118,27 @@ def pre_filtro(access_params):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
 
-    
+    schema = pa.schema([
+            ('cnpj_raiz', pa.string()),
+              ('documento_sem_formatacao', pa.string()),
+              ('cod_cnae', pa.string()), 
+              ('cod_natureza_juridica', pa.string()),
+              ('idade', pa.float64),
+              ('situacao_cadastral', pa.string()),
+              ('is_mei', pa.bool_),
+              ('tem_pep', pa.bool_),
+              ('data_ref_receita', pa.string()),
+              ('atualizado_em', pa.string()),
+              ('year', pa.int32()),
+              ('month', pa.int32()),
+              ('day', pa.int32())
+        ])
+        
+    print(f'convertendo em pyarrow {psutil.virtual_memory()._asdict()}')    
     # O pandas cria esse index, este codigo serve para remover caso ele crie
-    df = pa.Table.from_pandas(df, preserve_index=False)
+    df = pa.Table.from_pandas(df, preserve_index=False, schema=schema)  
     
+    print(f'escrevendo na tabela {psutil.virtual_memory()._asdict()}')
     write_deltalake(f"s3a://{BUCKET_SOURCE_REFINED}/{REFINED_FOLDER}", 
                     df, 
                     partition_by=["year", "month", "day"],
