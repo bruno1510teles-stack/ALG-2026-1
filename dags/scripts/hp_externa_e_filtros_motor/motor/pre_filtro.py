@@ -67,18 +67,13 @@ def pre_filtro(access_params):
     )
 
     select 
-        est.cnpj_raiz,
-        est.documento_sem_formatacao,
-        est.cnae_principal,
-        cnaes.descricao,
-        emp.natureza_juridica,
-        natjur.descricao,
-        est.data_inicio_atividade,
+        est.cnpj_raiz cnpj_raiz,
+        est.documento_sem_formatacao documento_sem_formatacao,
+        est.cnae_principal cod_cnae,
+        emp.natureza_juridica cod_natureza_juridica,
         (date_diff('day', date(est.data_inicio_atividade), date(now())) / 365.00) AS idade,
-        est.situacao_cadastral,
-        coalesce(venc.inad_alpe, false) inad_alpe,
-        coalesce(lim.possui_limite, false) possui_limite,
-        sim.is_mei,
+        est.situacao_cadastral situacao_cadastral,
+        sim.is_mei is_mei,
         coalesce(tem_pep, false) tem_pep,
         est.data_ref data_ref_receita
         
@@ -87,8 +82,6 @@ def pre_filtro(access_params):
     left join miniotrusted.receita_federal.simples sim on sim.cnpj_raiz = est.cnpj_raiz and est.data_ref = sim.data_ref
     left join miniotrusted.receita_federal.naturezas_juridicas natjur on natjur.codigo = emp.natureza_juridica and est.data_ref = natjur.data_ref
     left join miniotrusted.receita_federal.cnaes on cnaes.codigo = est.cnae_principal and est.data_ref = cnaes.data_ref
-    left join lim on lim.cnpj_raiz = est.cnpj_raiz 
-    left join venc on venc.cnpj_raiz = est.cnpj_raiz
     left join tem_pep on tem_pep.cnpj_raiz = est.cnpj_raiz
 
     where est.data_ref = (select max(data_ref) data_ref from miniotrusted.receita_federal.estabelecimentos)
@@ -119,10 +112,7 @@ def pre_filtro(access_params):
     dict_types = {'cnpj_raiz': str,
               'documento_sem_formatacao': str,
               'cod_cnae': str, 
-              'cnae': str,
               'cod_natureza_juridica': str,
-              'natureza_juridica': str,
-              'data_inicio_atividade': str,
               'idade': float,
               'situacao_cadastral': str,
               'is_mei': bool,
