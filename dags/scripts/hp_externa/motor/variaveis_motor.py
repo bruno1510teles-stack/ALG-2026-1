@@ -487,6 +487,46 @@ def transform_data_to_refined(files_list, access_params):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
     
+    # Criando sessão Spark
+    spark = SparkSession.builder \
+    .appName(# Dando um Nome para a instância 
+        "PandasToSpark") \
+        \
+    .config(# Jars Necessários para utilizar os recursos
+        "spark.jars", 
+        "C:/Users/felipe.ferraz/OneDrive - Yandeh/Documentos/spark-3.5.1-bin-hadoop3/jars/hadoop-aws-3.3.4.jar,"
+        "C:/Users/felipe.ferraz/OneDrive - Yandeh/Documentos/spark-3.5.1-bin-hadoop3/jars/aws-java-sdk-bundle-1.12.732.jar,"
+        "C:/Users/felipe.ferraz/OneDrive - Yandeh/Documentos/spark-3.5.1-bin-hadoop3/jars/delta-storage-3.2.0.jar,"
+        "C:/Users/felipe.ferraz/OneDrive - Yandeh/Documentos/spark-3.5.1-bin-hadoop3/jars/delta-spark_2.12-3.2.0.jar") \
+        \
+    .config(# Credenciais MiniO - MINIO_ACCESS_KEY
+        "spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY) \
+        \
+    .config(# Credenciais MiniO - MINIO_SECRET_KEY
+        "spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY) \
+        \
+    .config(# Credenciais MiniO - MINIO_ENDPOINT
+        "spark.hadoop.fs.s3a.endpoint", MINIO_ENDPOINT) \
+        \
+    .config(# Ativa o acesso baseado em caminho (path-style) ao invés de virtual-hosted style. 
+        "fs.s3a.path.style.access", "true") \
+        \
+    .config(# Define que o Spark deve usar a implementação do sistema de arquivos S3A para acessar o S3
+        "spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
+        \
+    .config(# Usa a implementação de armazenamento de log S3SingleDriverLogStore para operações Delta Lake
+        "spark.delta.logStore.class", "org.apache.spark.sql.delta.storage.S3SingleDriverLogStore") \
+        \
+    .config(# Ativa extensões Delta Lake no Spark SQL, adicionando funcionalidades específicas do Delta Lake
+        "spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
+        \
+    .config(# Define o catálogo Delta Lake como o catálogo SQL padrão do Spark, permitindo a criação e gestão de tabelas Delta Lake usando comandos SQL
+        "spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+        \
+    .getOrCreate()
+
+
+
     # # O pandas cria esse index, este codigo serve para remover caso ele crie
     df_final = pa.Table.from_pandas(df_final, preserve_index=False)
 
