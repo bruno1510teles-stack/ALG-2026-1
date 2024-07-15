@@ -9,40 +9,41 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.hpex_raw_to_trusted import transform_data_to_trusted
+from scripts.analises_credito.mesa.mesa_variaveis_resumida import transform_data_to_refined
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_raw_dev"
-MINIO_RAW_BUCKET = "hp-externa"
-HPEX_RAW_FOLDER = "hp_externa/"
+MINIO_CONN_RAW = "minio_trusted"
+MINIO_RAW_BUCKET = "payments"
+BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
+yesterday = now - timedelta(days=1)
+day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
 
-day_to_process = f"{HPEX_RAW_FOLDER}year={now.year}/month={now.month}/day={str(now.day).zfill(2)}/"
-# day_to_process = f"{HPEX_RAW_FOLDER}year={now.year}/month={now.month}/day=30/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
+    print(len(files_to_process))
     return len(files_to_process) > 0
 
 # DEFINE DEFAULT ARGS
 default_args = {
-    "owner": "Mayer",
-    "retries": 2,
+    "owner": "João Leite",
+    "retries": 0,
     "retry_delay": 0,
-    "execution_timeout": timedelta(seconds=60 * 500),
+    "execution_timeout": timedelta(seconds=60 * 50),
 }
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 1, 31),
+    start_date=datetime(2024, 2, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval=None, 
+    schedule_interval='0 10 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['development', 'elt', 'minio', 'first_batch', 'HPEX']
+    tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
 )
-def hpexterna_to_trusted():
+def visao_resumida_hp_externa():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
@@ -63,30 +64,33 @@ def hpexterna_to_trusted():
     )
     
     @task()
-    def transform_raw_to_trusted(current_files):
+    def visao_resumida_hp_externa(current_files):
 
-        access_params = {
-            "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
-            "aws_access_key_id_raw": Variable.get("MINIO_RAW_ACCESS_KEY"),
-            "aws_secret_access_key_raw": Variable.get("MINIO_RAW_SECRET_KEY"),
+        access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
             "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
             "aws_secret_access_key_trusted": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
+            "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
+            "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
+            "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
             "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
             "trino_port": Variable.get("TRINO_PORT"),
             "trino_user": Variable.get("TRINO_USER"),
             "trino_password": Variable.get("TRINO_PASSWORD"),
             "opdb_bucket": Variable.get("OPDB_BUCKET"),
             "stage": Variable.get('STAGE')
+            	
+	
+
         }
 
         print(f"current_files as { type(current_files) } and size of { len(current_files) }")
 
-        transform_data_to_trusted(current_files, access_params)
+        transform_data_to_refined(current_files, access_params)
 
-    unique_clients = transform_raw_to_trusted(list_today_files.output)
+    unique_clients = visao_resumida_hp_externa(list_today_files.output)
 
     # run order
     init_data_load >> list_today_files >> check_files >> unique_clients >> finish_data_load
 
-hpexterna_to_trusted()
+visao_resumida_hp_externa()

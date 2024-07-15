@@ -22,7 +22,17 @@ tabelas_atualizar = [
     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'relacionamento', 'ADD', false)",
     "call miniotrusted.system.sync_partition_metadata('pessoas_e_organizacoes', 'situacao_cadastral', 'ADD', false)",
     "call miniotrusted.system.sync_partition_metadata('risco', 'mesa', 'ADD', false)",
-    "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false)"
+    "call miniotrusted.system.sync_partition_metadata('risco', 'motor', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'cnaes', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'empresas', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'estabelecimentos', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'motivos', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'municipios', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'naturezas_juridicas', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'paises', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'simples', 'ADD', false)",
+    "call miniotrusted.system.sync_partition_metadata('receita_federal', 'socios', 'ADD', false)"
+    
 ]
 
 access_params = {     

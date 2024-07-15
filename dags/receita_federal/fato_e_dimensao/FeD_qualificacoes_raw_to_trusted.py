@@ -9,17 +9,17 @@ from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.hp_externa.mesa.mesa_variaveis_resumida import transform_data_to_refined
+from scripts.receita_federal.receita_fato_dimensao.qualificacoes_raw_to_trusted import qualificacoes_to_trusted
 
 # DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_trusted"
-MINIO_RAW_BUCKET = "payments"
-BOLETOS_ALPE_TRUSTED_FOLDER = "boletos/"
+MINIO_CONN_RAW = "minio_raw"
+MINIO_RAW_BUCKET = "receita-federal"
+RECEITA_FEDERAL_QUALIFICACOES_FOLDER = "qualificacoes/"
+
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process = f"{BOLETOS_ALPE_TRUSTED_FOLDER}year={yesterday.year}/month={str(yesterday.month)}/day={str(yesterday.day)}/"
-
+day_to_process_qualificacoes = f"{RECEITA_FEDERAL_QUALIFICACOES_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
@@ -31,40 +31,46 @@ default_args = {
     "owner": "João Leite",
     "retries": 0,
     "retry_delay": 0,
-    "execution_timeout": timedelta(seconds=60 * 50),
+    "execution_timeout": timedelta(seconds=60 * 60 * 4),
 }
 
 # DEFINE DAG
 @dag(
-    start_date=datetime(2024, 2, 1), # definir quando for rodar automatico
+    start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 10 * * *',
+    schedule_interval='0 8 * * *',
     default_args=default_args,
     catchup=False,
-    tags=['development', 'elt', 'minio', 'first_batch', 'mesa']
+    tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def visao_resumida_hp_externa():
+def receita_federal_qualificacoes():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    list_today_files = S3ListOperator(
-        task_id="list_today_files",
+    list_today_files_qualificacoes = S3ListOperator(
+        task_id="list_today_files_qualificacoes",
         aws_conn_id=MINIO_CONN_RAW,
         bucket=MINIO_RAW_BUCKET,
-        prefix=day_to_process,
+        prefix=day_to_process_qualificacoes,
         apply_wildcard=True,
     )
-
+    
     check_files = ShortCircuitOperator(
         task_id='check_files',
         python_callable=check_files_to_processed,
         provide_context=True,
-        op_kwargs={'files_to_process': list_today_files.output}
+        op_kwargs={'files_to_process': list_today_files_qualificacoes.output}
     )
     
-    @task()
-    def visao_resumida_hp_externa(current_files):
+    @task(
+        executor_config={
+        "KubernetesExecutor": {
+            "request_memory": "8000Mi"
+        }
+    }
+    )
+    def qualificacoes(current_files_qualificacoes):
 
         access_params = {          
             "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -73,24 +79,26 @@ def visao_resumida_hp_externa():
             "endpoint_url_refined": Variable.get("MINIO_REFINED_ENDPOINT"),
             "aws_access_key_id_refined": Variable.get("MINIO_REFINED_ACCESS_KEY"),
             "aws_secret_access_key_refined": Variable.get("MINIO_REFINED_SECRET_KEY"),
+            "endpoint_url_raw": Variable.get("MINIO_RAW_ENDPOINT"),
+            "aws_access_key_id_raw": Variable.get("MINIO_RAW_ACCESS_KEY"),
+            "aws_secret_access_key_raw": Variable.get("MINIO_RAW_SECRET_KEY"),
             "trino_endpoint": Variable.get("TRINO_ENDPOINT"),
             "trino_port": Variable.get("TRINO_PORT"),
             "trino_user": Variable.get("TRINO_USER"),
             "trino_password": Variable.get("TRINO_PASSWORD"),
             "opdb_bucket": Variable.get("OPDB_BUCKET"),
             "stage": Variable.get('STAGE')
-            	
 	
 
         }
 
-        print(f"current_files as { type(current_files) } and size of { len(current_files) }")
+        print(f"current_files_qualificacoes as { type(current_files_qualificacoes) } and size of { len(current_files_qualificacoes) }")
 
-        transform_data_to_refined(current_files, access_params)
+        qualificacoes_to_trusted(current_files_qualificacoes, access_params)
 
-    unique_clients = visao_resumida_hp_externa(list_today_files.output)
+    unique_clients = qualificacoes(list_today_files_qualificacoes.output)
 
     # run order
-    init_data_load >> list_today_files >> check_files >> unique_clients >> finish_data_load
+    init_data_load >> list_today_files_qualificacoes >> check_files >> unique_clients >> finish_data_load
 
-visao_resumida_hp_externa()
+receita_federal_qualificacoes()

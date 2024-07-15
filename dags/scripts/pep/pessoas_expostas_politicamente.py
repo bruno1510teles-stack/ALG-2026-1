@@ -34,9 +34,8 @@ def transform_pep_to_trusted(files_list_pep, access_params):
     df = pd.read_csv(BytesIO(file.data), encoding='latin1', sep=';',header=0, dtype=str, names=nome_colunas)
 
     print(file_name)
-    print('Definindo ano ref')
-    df['ano_ref'] = file_name[-14:-10]
-    df['mes_ref'] = file_name[-10:-8]
+    print('Definindo data ref')
+    df['data_ref'] = file_name[-14:-10] + file_name[-10:-8]
     
     print('Definindo particoes trusted')
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -65,11 +64,10 @@ def transform_pep_to_trusted(files_list_pep, access_params):
     ('funcao', pa.string()),
     ('nivel_funcao', pa.string()),
     ('nome_orgao', pa.string()),
-    ('data_inicio_exercicio', pa.date64()),
-    ('data_fim_exercicio', pa.date64()),
-    ('data_fim_carencia', pa.date64()),
-    ('ano_ref', pa.string()),
-    ('mes_ref', pa.string()),
+    ('data_inicio_exercicio', pa.date32()),
+    ('data_fim_exercicio', pa.date32()),
+    ('data_fim_carencia', pa.date32()),
+    ('data_ref', pa.string()),
     ('atualizado_em', pa.string()),
     ('year', pa.int32()),
     ('month', pa.int32()),

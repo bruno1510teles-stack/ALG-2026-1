@@ -1,4 +1,4 @@
-# IMPORT LIBS
+    # IMPORT LIBS
 from datetime import datetime, timedelta, timezone
 
 # AIRFLOW LIBS
@@ -6,10 +6,13 @@ from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
-from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
 from airflow.models import Variable
-from minio import Minio
 
+# SCRIPTS
+from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
+from scripts.analises_credito.motor.execucao_motor import execucao_motor
+
+#PARAMETROS DE ACESSO
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
     "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
@@ -26,9 +29,13 @@ access_params = {
     "trino_password": Variable.get("TRINO_PASSWORD"),
     "opdb_bucket": Variable.get("OPDB_BUCKET"),
     "stage": Variable.get('STAGE')
-
-
 }
+    
+# DEFINE VARIABLES
+MINIO_CONN_RAW = "minio_raw"
+MINIO_RAW_BUCKET = "receita-federal"
+RECEITA_FEDERAL_SIMPLES_FOLDER = "simples/"
+
 # DEFINE DEFAULT ARGS
 default_args = {
     "owner": "João Leite",
@@ -37,24 +44,32 @@ default_args = {
     "execution_timeout": timedelta(seconds=60 * 60 * 4),
 }
 
+# DEFINE DAG
 @dag(
     start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 10 * * *',
+    schedule_interval='0 18 28 * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
-def sensor_test():
 
-    task1 = S3KeySensor(
-        task_id='sensor_minio_s3',
-        bucket_name='teste-vini',
-        bucket_key='data.csv',
-        aws_conn_id="minio_raw"
+def execucao_motor():
+    # init & finish task
+    init_data_load = EmptyOperator(task_id="init")
+    finish_data_load = EmptyOperator(task_id="finish")
     
-    )
-    
-    task1 
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    def pre_filtro(access_params):
+        
+        return analise_pre_filtro(access_params)
 
-sensor_test()
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    def motor(access_params):
+         
+         return execucao_motor(access_params)
+
+    # run order
+    init_data_load >> pre_filtro >> motor >> finish_data_load
+
+execucao_motor()
