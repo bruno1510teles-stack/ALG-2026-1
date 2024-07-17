@@ -26,9 +26,6 @@ def execucao_modelo(access_params=None):
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
 
     base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=str, sep = ';')
-        
-    # Separando os casos já decididos como "Mesa" ou "Recusados"
-    mesa_recusados_prefiltro = base_pre_filtro[(base_pre_filtro['resposta'] == 'MESA') | (base_pre_filtro['resposta'] == 'REPROVADO')]
 
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
