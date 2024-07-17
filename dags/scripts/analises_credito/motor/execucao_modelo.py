@@ -12,6 +12,7 @@ from trino.auth import BasicAuthentication
 
 def execucao_modelo(access_params=None):
 
+    # VARIAVEIS DE DOS ARQUIVOS
     BUCKET_SOURCE_REFINED = "motor"
     FOLDER_SOURCE_REFINED = 'analise_credito/auxiliar'
     FOLDER_DESTINATION_REFINED = 'analise_credito/auxiliar'
@@ -23,8 +24,8 @@ def execucao_modelo(access_params=None):
         secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
     )
 
+    # BAIXANDO ARQUIVO A SER ANALISADO
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
-
     base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=str, sep = ';')
 
     # Separando os casos que seguem analise
@@ -85,12 +86,10 @@ def execucao_modelo(access_params=None):
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
 
+    # PUXANDO ARQUIVO COM O MODELO
     model_file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name='analise_credito/auxiliar/modelo_score_1_arcelor.pkl')
-
     model_file = model_file.read()
-
     model_file = BytesIO(model_file)
-
     model = joblib.load(model_file)
 
     # Fazer uma cópia do DataFrame original
@@ -99,6 +98,7 @@ def execucao_modelo(access_params=None):
     # Remova a coluna 'CNPJ' do DataFrame de entrada
     nova_base = df.drop(columns=['documento_raiz','fornecedor','over_5','ever_10','vop_6_meses','year', 'month','day'], axis=1)
 
+    # Criando colunas temporarias que deverão ser analisadas  (REMOVER QUANDO CONSEGUIRMOS ESSAS COLUNAS)
     nova_base['PCTO_COMPRA_SAFRA_GERAL'] = None
     nova_base['PCTO_COMPRA_SAFRA_GERAL_2SEM'] = None
     nova_base['IDADE'] = None
@@ -106,6 +106,7 @@ def execucao_modelo(access_params=None):
 
     nova_base[['PCTO_COMPRA_SAFRA_GERAL','PCTO_COMPRA_SAFRA_GERAL_2SEM','IDADE','COD_PORTE_EMPRESA']] = nova_base[['PCTO_COMPRA_SAFRA_GERAL','PCTO_COMPRA_SAFRA_GERAL_2SEM','IDADE','COD_PORTE_EMPRESA']].astype(float)
 
+    #ALTERANDO NOME DAS COLUNAS PARA SEREM DE ACORDO COM O MODELO
     colunas = {'prazo_medio_geral':'PRAZO_MEDIO_GERAL', 
             'prazo_medio_3_meses':'PRAZO_MEDIO_3M', 
             'alavancagem_data_analise':'ALAVANCAGEM_DATA_ANALISE',
@@ -122,6 +123,7 @@ def execucao_modelo(access_params=None):
 
     # Faça as previsões com base nos dados de entrada
     score = model.predict_proba(nova_base)[:, 1]
+
 
     # Adicione as colunas de scores ao DataFrame base_final
     base_final['Score_Model_Geral'] = score
@@ -145,7 +147,8 @@ def execucao_modelo(access_params=None):
     lista_df = [base_pre_filtro,base_final]
     saida_modelo = pd.concat(lista_df, axis=1)
 
-    # Nome do arquivo CSV que você deseja criar
+    #GRAVANDO
+    # Nome do arquivo CSV de output que subirá para a execução da política
     file_out = f'LANDING_MODELO.csv'
 
     csv_bytes = saida_modelo.to_csv(index=False, sep=';').encode('utf-8')

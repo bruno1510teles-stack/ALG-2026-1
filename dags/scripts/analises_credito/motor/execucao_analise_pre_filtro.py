@@ -9,6 +9,7 @@ from trino.auth import BasicAuthentication
 
 def analise_pre_filtro(access_params=None):
 
+    # VARIAVEIS DE DOS ARQUIVOS
     BUCKET_SOURCE_REFINED = "motor"
     FOLDER_SOURCE_REFINED = 'analise_credito/in/a_processar'
     FOLDER_DESTINATION_REFINED = 'analise_credito/auxiliar'
@@ -20,6 +21,7 @@ def analise_pre_filtro(access_params=None):
         secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
     )
 
+    # BAIXANDO ARQUIVO A SER ANALISADO
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BASE_PRE_FILTRO.csv')
 
     base_analisar = pd.read_csv(BytesIO(file.data), dtype=str)
@@ -213,9 +215,11 @@ def analise_pre_filtro(access_params=None):
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
     
+    # Concatenando dimensão de cnae e natureza juridica
     df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
     
+    # criando função para verificar se é SPE, Consorcio ou Construtora
     def spe_consorcio_construtora(data_frame):
         is_spe = (data_frame['cod_natureza_juridica'] == '2062') & (data_frame['razao_social'].str.startswith("SPE ") | data_frame['razao_social'].str.endswith(" SPE"))
 
@@ -227,6 +231,7 @@ def analise_pre_filtro(access_params=None):
 
     df['is_spe_consorcio_construtora'] = spe_consorcio_construtora(df)
     
+    # VERIFICANDO EM QUE RAMIFICAÇÃO O CNPJ CAI
     df['ramificacao'] = None
 
     # PF 1
@@ -253,7 +258,9 @@ def analise_pre_filtro(access_params=None):
     df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 11'
     # PF 12
     df.loc[df['ramificacao'].isna(), 'ramificacao'] = 'PF 12'
-    
+ 
+ 
+     #TRATANDO A RESPOSTA COM BASE NA RAMIFICAÇÃO   
     df['resposta'] = None
 
     # REPROVADO
