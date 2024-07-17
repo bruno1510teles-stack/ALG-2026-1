@@ -10,7 +10,9 @@ from airflow.models import Variable
 
 # SCRIPTS
 from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
-from scripts.analises_credito.motor.execucao_motor import execucao_motor
+from scripts.analises_credito.motor.execucao_modelo import execucao_modelo
+#from scripts.analises_credito.motor.analise_politica import analise_politica
+
 
 #PARAMETROS DE ACESSO
 access_params = {          
@@ -31,10 +33,6 @@ access_params = {
     "stage": Variable.get('STAGE')
 }
     
-# DEFINE VARIABLES
-MINIO_CONN_RAW = "minio_raw"
-MINIO_RAW_BUCKET = "receita-federal"
-RECEITA_FEDERAL_SIMPLES_FOLDER = "simples/"
 
 # DEFINE DEFAULT ARGS
 default_args = {
@@ -65,11 +63,16 @@ def execucao_motor():
         return analise_pre_filtro(access_params)
 
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def motor(access_params):
+    def modelo(access_params):
          
-         return execucao_motor(access_params)
+         return execucao_modelo(access_params)
+     
+    # @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    # def politica(access_params):
+         
+    #      return analise_politica(access_params)
 
     # run order
-    init_data_load >> pre_filtro >> motor >> finish_data_load
+    init_data_load >> pre_filtro >> modelo >>  finish_data_load
 
 execucao_motor()
