@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python_operator import ShortCircuitOperator
+from airflow.operators.python import PythonOperator
 from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
 from airflow.models import Variable
 
@@ -58,18 +59,25 @@ def execucao_motor():
     finish_data_load = EmptyOperator(task_id="finish")
 
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def pre_filtro(access_params):
-        """
-        This task calls the analise_pre_filtro function.
-        """
-        return analise_pre_filtro(access_params)
+    def pre_filtro_task(**kwargs):
+        return analise_pre_filtro(kwargs['access_params'])
+    
+    pre_filtro = PythonOperator(
+        task_id='pre_filtro',
+        python_callable=pre_filtro_task,
+        op_kwargs={'access_params': access_params},
+        executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}}
+    )
 
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def modelo(access_params):
-        """
-        This task calls the execucao_modelo function.
-        """
-        return execucao_modelo(access_params)
+    def modelo_task(**kwargs):
+        return execucao_modelo(kwargs['access_params'])
+
+    modelo = PythonOperator(
+        task_id='modelo',
+        python_callable=modelo_task,
+        op_kwargs={'access_params': access_params},
+        executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}}
+    )
 
     # Set dependencies between tasks
     init_data_load >> pre_filtro >> modelo >> finish_data_load
