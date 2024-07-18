@@ -56,23 +56,22 @@ def execucao_motor():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
-    
 
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def pre_filtro(access_params):
+        """
+        This task calls the analise_pre_filtro function.
+        """
         return analise_pre_filtro(access_params)
 
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def modelo(access_params):
+        """
+        This task calls the execucao_modelo function.
+        """
         return execucao_modelo(access_params)
 
-     
-    # @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    # def politica(access_params):
-         
-    #      return analise_politica(access_params)
-
-    # run order
-    init_data_load >> pre_filtro >> modelo >>  finish_data_load
+    # Set dependencies between tasks
+    init_data_load >> pre_filtro >> modelo >> finish_data_load
 
 execucao_motor()
