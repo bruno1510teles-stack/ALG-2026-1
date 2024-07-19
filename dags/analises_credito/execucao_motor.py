@@ -47,7 +47,7 @@ default_args = {
 @dag(
     start_date=datetime(2024, 3, 1), # definir quando for rodar automatico
     max_active_runs=1,
-    schedule_interval='0 18 28 * *',
+    schedule_interval='0 18 * * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
