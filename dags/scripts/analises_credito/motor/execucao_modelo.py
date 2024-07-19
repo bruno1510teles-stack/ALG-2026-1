@@ -24,9 +24,16 @@ def execucao_modelo(access_params=None):
         secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
     )
 
+    dtype = {'cnpj_raiz':str,
+        'documento_sem_formatacao':str,
+        'razao_social':str,
+        'cod_cnae':str,
+        'cod_natureza_juridica':str
+    }
+
     # BAIXANDO ARQUIVO A SER ANALISADO
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
-    base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=str, sep = ';')
+    base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=dtype, sep = ';')
 
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
@@ -49,28 +56,31 @@ def execucao_modelo(access_params=None):
     # Cria um cursor e executa a query
     cur = conn.cursor()
     query = (f"""
-    select 
-        bv.*
-    from 
-        miniorefined.payments.book_de_variaveis bv
-    join (
-        select 
-            documento_raiz ,
-            MAX(year) AS max_year,
-            MAX(month) AS max_month,
-            MAX(day) AS max_day
-        from 
-            miniorefined.payments.book_de_variaveis
-        where 
-            documento_raiz IN {ids_query}
-        group by 
-            documento_raiz
-    ) max_dates on bv.documento_raiz = max_dates.documento_raiz 
-        and bv.year = max_dates.max_year
-        and bv.month = max_dates.max_month
-        and bv.day = max_dates.max_day
-    where 
-        bv.documento_raiz in {ids_query}
+        select
+            documento_raiz cnpj_raiz,
+            fornecedor,
+            prazo_medio_geral,
+            prazo_medio_3_meses,
+            alavancagem_data_analise,
+            alavancagem_media_historica,
+            media_diferenca_dias_pedidos,
+            media_diferenca_dias_pedidos_3_meses,
+            maior_atraso_em_dias,
+            maior_atraso_em_dias_3_meses,
+            percentual_pago_em_dia,
+            percentual_pago_em_dia_3_meses,
+            over_5,
+            ever_10,
+            vop_6_meses,
+            percentual_compra_recorrente_geral,
+            percentual_compra_recorrente_3_meses
+        FROM (
+            SELECT
+                *,
+                ROW_NUMBER() OVER (PARTITION BY documento_raiz, fornecedor ORDER BY dataprocessamento DESC) AS row_num
+            FROM miniorefined.payments.book_variaveis
+        ) t
+        WHERE row_num = 1 and documento_raiz in {ids_query}
         """)
 
     cur.execute(query)
@@ -86,6 +96,8 @@ def execucao_modelo(access_params=None):
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
 
+    df = df.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
+
     # PUXANDO ARQUIVO COM O MODELO
     model_file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name='analise_credito/auxiliar/modelo_score_1_arcelor.pkl')
     model_file = model_file.read()
@@ -96,19 +108,13 @@ def execucao_modelo(access_params=None):
     base_final = df
 
     # Remova a coluna 'CNPJ' do DataFrame de entrada
-    nova_base = df.drop(columns=['documento_raiz','fornecedor','over_5','ever_10','vop_6_meses','year', 'month','day'], axis=1)
-
-    # Criando colunas temporarias que deverão ser analisadas  (REMOVER QUANDO CONSEGUIRMOS ESSAS COLUNAS)
-    nova_base['PCTO_COMPRA_SAFRA_GERAL'] = None
-    nova_base['PCTO_COMPRA_SAFRA_GERAL_2SEM'] = None
-    nova_base['IDADE'] = None
-    nova_base['COD_PORTE_EMPRESA'] = None
-
-    nova_base[['PCTO_COMPRA_SAFRA_GERAL','PCTO_COMPRA_SAFRA_GERAL_2SEM','IDADE','COD_PORTE_EMPRESA']] = nova_base[['PCTO_COMPRA_SAFRA_GERAL','PCTO_COMPRA_SAFRA_GERAL_2SEM','IDADE','COD_PORTE_EMPRESA']].astype(float)
+    nova_base = df.drop(columns=['cnpj_raiz','fornecedor','over_5','ever_10','vop_6_meses'], axis=1)
+    
+    
 
     #ALTERANDO NOME DAS COLUNAS PARA SEREM DE ACORDO COM O MODELO
-    colunas = {'prazo_medio_geral':'PRAZO_MEDIO_GERAL', 
-            'prazo_medio_3_meses':'PRAZO_MEDIO_3M', 
+    colunas = {'prazo_medio_geral':'PRAZO_MEDIO_GERAL',
+            'prazo_medio_3_meses':'PRAZO_MEDIO_3M',
             'alavancagem_data_analise':'ALAVANCAGEM_DATA_ANALISE',
             'alavancagem_media_historica':'ALAVANCAGEM_MEDIA_HISTORICA',
             'media_diferenca_dias_pedidos':'MEDIA_DIFERENCA_DIAS_PEDIDOS',
@@ -116,8 +122,13 @@ def execucao_modelo(access_params=None):
             'maior_atraso_em_dias':'MAIOR_ATRASO_EM_DIAS',
             'maior_atraso_em_dias_3_meses':'MAIOR_ATRASO_EM_DIAS_3M',
             'percentual_pago_em_dia':'PERCENTUAL_PAGO_EM_DIA',
-            'percentual_pago_em_dia_3_meses':'PERCENTUAL_PAGO_EM_DIA_3M'
+            'percentual_pago_em_dia_3_meses':'PERCENTUAL_PAGO_EM_DIA_3M',
+            'percentual_compra_recorrente_geral':'PCTO_COMPRA_SAFRA_GERAL',
+            'percentual_compra_recorrente_3_meses': 'PCTO_COMPRA_SAFRA_GERAL_2SEM',
+            'idade':'IDADE',
+            'codigo_porte_empresa':'COD_PORTE_EMPRESA'
             }
+ 
 
     nova_base = nova_base.rename(columns=colunas)
 
@@ -140,12 +151,12 @@ def execucao_modelo(access_params=None):
         else:
             return 'E'
 
-
     # Aplicar a função para criar a classificação
     base_final['CLASSIFICACAO'] = base_final['Score_Model_Geral'].apply(categorizar_faixa)
 
-    lista_df = [base_pre_filtro,base_final]
-    saida_modelo = pd.concat(lista_df, axis=1)
+
+    saida_modelo = base_pre_filtro.merge(base_final, on='cnpj_raiz', how='left')
+ 
 
     #GRAVANDO
     # Nome do arquivo CSV de output que subirá para a execução da política

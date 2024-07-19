@@ -178,6 +178,7 @@ def analise_pre_filtro(access_params=None):
             emp.razao_social,
             est.cnae_principal cod_cnae,
             emp.natureza_juridica cod_natureza_juridica,
+            emp.codigo_porte_empresa,
             (date_diff('day', date(est.data_inicio_atividade), date(now())) / 365.00) AS idade,
             est.situacao_cadastral situacao_cadastral,
             (date_diff('day', date(s.mais_recente), date(now())) / 365.00) AS idade_socio,

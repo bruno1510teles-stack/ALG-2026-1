@@ -62,22 +62,12 @@ def execucao_motor():
     def pre_filtro_task():
         return analise_pre_filtro(access_params)
     
-    pre_filtro = PythonOperator(
-        task_id='pre_filtro',
-        python_callable=pre_filtro_task,
-        #op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}}
-    )
-
     def modelo_task():
         return execucao_modelo(access_params)
-
-    modelo = PythonOperator(
-        task_id='modelo',
-        python_callable=modelo_task,
-        #op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}}
-    )
+    
+    pre_filtro = pre_filtro_task
+    
+    modelo = modelo_task
 
     # Set dependencies between tasks
     init_data_load >> pre_filtro >> modelo >> finish_data_load
