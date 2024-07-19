@@ -66,9 +66,9 @@ def execucao_motor():
     def modelo_task():
         execucao_modelo()
     
-    pre_filtro = pre_filtro_task
+    pre_filtro = pre_filtro_task()
     
-    modelo = modelo_task
+    modelo = modelo_task()
 
     # Set dependencies between tasks
     init_data_load >> pre_filtro >> modelo >> finish_data_load
