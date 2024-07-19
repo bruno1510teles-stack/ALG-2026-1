@@ -83,6 +83,8 @@ def execucao_modelo(access_params=None):
         WHERE row_num = 1 and documento_raiz in {ids_query}
         """)
 
+    print(query)
+    
     cur.execute(query)
 
     # Obtém os resultados
@@ -95,14 +97,20 @@ def execucao_modelo(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
-
+    
+    print('rodou a query')
+    
     df = df.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
 
+    print('puxando modelo')
     # PUXANDO ARQUIVO COM O MODELO
     model_file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name='analise_credito/auxiliar/modelo_score_1_arcelor.pkl')
     model_file = model_file.read()
     model_file = BytesIO(model_file)
+    
+    print('carregando modelo')
     model = joblib.load(model_file)
+    print('modelo carregado')
 
     # Fazer uma cópia do DataFrame original
     base_final = df
