@@ -62,6 +62,7 @@ def execucao_motor():
     def pre_filtro_task():
         return analise_pre_filtro(access_params)
     
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def modelo_task():
         return execucao_modelo(access_params)
     
