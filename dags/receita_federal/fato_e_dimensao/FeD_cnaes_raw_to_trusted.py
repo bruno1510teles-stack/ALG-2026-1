@@ -19,7 +19,7 @@ RECEITA_FEDERAL_CNAES_FOLDER = "cnaes/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process_cnaes = f"{RECEITA_FEDERAL_CNAES_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+day_to_process_cnaes = f"{RECEITA_FEDERAL_CNAES_FOLDER}year=2024/month=6/"#'#year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 # DEFINE FUNCTIONS
 def check_files_to_processed(files_to_process):
