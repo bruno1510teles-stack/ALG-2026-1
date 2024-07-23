@@ -157,7 +157,7 @@ def execucao_modelo(access_params=None):
             return 'E'
 
     # Aplicar a função para criar a classificação
-    base_final['classificacao'] = base_final['Score_Model_Geral'].apply(categorizar_faixa)
+    base_final['CLASSIFICACAO'] = base_final['Score_Model_Geral'].apply(categorizar_faixa)
 
 
     saida_modelo = base_pre_filtro.merge(base_final, on='cnpj_raiz', how='left')
