@@ -32,8 +32,8 @@ def execucao_politica(access_params=None):
 
     # Acrescentando possui ou não HP
 
-    sem_hp = (saida_modelo['CLASSIFICACAO'].isna()) & (saida_modelo['resposta'] == 'SEGUE')
-    com_hp = (saida_modelo['CLASSIFICACAO'].notna()) & (saida_modelo['resposta'] == 'SEGUE')
+    sem_hp = (saida_modelo['classificacao'].isna()) & (saida_modelo['resposta'] == 'SEGUE')
+    com_hp = (saida_modelo['classificacao'].notna()) & (saida_modelo['resposta'] == 'SEGUE')
 
     saida_modelo['possui_hp'] = None
 
@@ -49,10 +49,10 @@ def execucao_politica(access_params=None):
         elif rating =='E':
             return 'REPROVADO'
     
-    saida_modelo['resposta_modelo'] = saida_modelo['CLASSIFICACAO'].apply(classificar)
+    saida_modelo['resposta_modelo'] = saida_modelo['classificacao'].apply(classificar)
 
     # Separando os casos que seguem analise com HP
-    seguem_analise_com_hp = saida_modelo[saida_modelo['CLASSIFICACAO'].isin(['A','B','C'])]
+    seguem_analise_com_hp = saida_modelo[saida_modelo['classificacao'].isin(['A','B','C'])]
 
     dados_texto = {'CPF do Principal Socio':'str', 'CNPJ':'str'}
 
@@ -73,7 +73,7 @@ def execucao_politica(access_params=None):
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.csv')
     spc_pj = pd.read_csv(BytesIO(file.data), sep = ';')
 
-    spc_pj['TOTAL RESTRITIVOS'] = spc_pj['TOTAL RESTRITIVOS'].str.replace(',','.').astype(float)
+    spc_pj['total_restritivos'] = spc_pj['total_restritivos'].str.replace(',','.').astype(float)
 
     # Ajustando a formatação do CNPJ para 14 digitos
     spc_pj['CNPJ'] = spc_pj['CNPJ'].astype(str).str.zfill(14)
@@ -101,7 +101,7 @@ def execucao_politica(access_params=None):
 
     # unificando os dados pj MODELO + BVS com SPC
     base_modelo_bvs_spc = pd.merge(base_modelo_bvs,
-        spc_pj[['cnpj_raiz','CNPJ','TOTAL RESTRITIVOS','QTD RESTRITIVOS','QTD CHEQUE']],
+        spc_pj[['cnpj_raiz','CNPJ','total_restritivos','quantidade_restritivos','quantidade_cheque']],
         left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
 
     #Trazendo os dados PF
@@ -115,203 +115,203 @@ def execucao_politica(access_params=None):
         how='left')
 
     base_modelo_bureau = base_modelo_bureau.drop(columns = ['CNPJ_x','CNPJ_y'])
-    base_modelo_bureau = base_modelo_bureau.rename(columns={'RESTRITIVOS':'RESTRITIVOS PF'})
-    base_modelo_bureau = base_modelo_bureau.rename(columns={'CHEQUE':'CHEQUE PF'})
+    base_modelo_bureau = base_modelo_bureau.rename(columns={'RESTRITIVOS':'restritivos_pf'})
+    base_modelo_bureau = base_modelo_bureau.rename(columns={'CHEQUE':'cheque_pf'})
 
 
-    print(f'Base modelo + bvs \n',base_modelo_bvs['CLASSIFICACAO'].value_counts())
-    print(f'Base modelo + bvs + spc \n',base_modelo_bvs_spc['CLASSIFICACAO'].value_counts())
-    print(f'Base modelo + bvs \n',base_modelo_bureau['CLASSIFICACAO'].value_counts())
+    print(f'Base modelo + bvs \n',base_modelo_bvs['classificacao'].value_counts())
+    print(f'Base modelo + bvs + spc \n',base_modelo_bvs_spc['classificacao'].value_counts())
+    print(f'Base modelo + bvs \n',base_modelo_bureau['classificacao'].value_counts())
 
     # Função com a árvore de decisão
     def politica_com_hp(linha):
-        if(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] > 0):  
+        if(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] > 0):  
                 return 'A - C7'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and 
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and 
             linha['Score Positivo PJ'] == 2):
                 return 'A - C6'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] > 100000000) :
                 return 'A - C6'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] > 500000):
+            linha['total_restritivos'] > 500000):
                 return 'A - C5'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] < 646):
                 return 'A - C4'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'A - C3'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             linha['Score Positivo PJ'] < 646): 
                 return 'A - C2'
-        elif(linha['CLASSIFICACAO'] == 'C' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'C' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'A - C1'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] > 0):  
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] > 0):  
                 return 'A - B7'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] == 2):
                 return 'A - B6'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and 
             linha['Capital Social'] > 100000000):
                 return 'A - B6'    
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] > 500000):
+            linha['total_restritivos'] > 500000):
                 return 'A - B5'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] < 646):
                 return 'A - B4'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] >= 646):
                 return 'A - B3'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             linha['Score Positivo PJ'] < 646): 
                 return 'A - B2'
-        elif(linha['CLASSIFICACAO'] == 'B' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'B' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'A - B1'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] > 0):  
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] > 0):  
                 return 'A - A11'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] == 2):
                 return 'A - A10'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             linha['Capital Social'] > 100000000) :
                 return 'A - A10'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] > 500000):
+            linha['total_restritivos'] > 500000):
                 return 'A - A9'
-        elif(linha['CLASSIFICACAO'] == 'A' and    
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and    
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] < 646):
                 return 'A - A8'
-        elif(linha['CLASSIFICACAO'] == 'A' and    
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and    
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] >= 646):
                 return 'A - A7'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             linha['Score Positivo PJ'] < 646):
                 return 'A - A6'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             646 < linha['Score Positivo PJ'] <= 711):
                 return 'A - A5'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             linha['Score Positivo PJ'] > 710 and
-            linha['RESTRITIVOS PF'] > 500):
+            linha['restritivos_pf'] > 500):
                 return 'A - A4'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             linha['Score Positivo PJ'] > 710 and
             pd.isnull(linha['CPF do Principal Socio'])):
                 return 'A - A3'    
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             linha['Score Positivo PJ'] > 710 and
-            linha['RESTRITIVOS PF'] <= 500 and
+            linha['restritivos_pf'] <= 500 and
             linha['idade_socio'] < 2) :
                 return 'A - A2'
-        elif(linha['CLASSIFICACAO'] == 'A' and
-            linha['QTD CHEQUE'] == 0 and
+        elif(linha['classificacao'] == 'A' and
+            linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and      
+            linha['total_restritivos'] <= 1000 and      
             linha['Score Positivo PJ'] > 710 and
-            linha['RESTRITIVOS PF'] <= 500 and
+            linha['restritivos_pf'] <= 500 and
             linha['idade_socio'] >= 2) :
                 return 'A - A1'  
         return "Verificar"
 
-    base_modelo_bureau['DECISAO_POLITICA'] = base_modelo_bureau.apply(politica_com_hp, axis=1)
+    base_modelo_bureau['decisao_politica'] = base_modelo_bureau.apply(politica_com_hp, axis=1)
 
     base_modelo_bureau['resposta_motor'] = None
 
     # REPROVADO
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8']), 'resposta_motor'] = 'REPROVADO'
+    base_modelo_bureau.loc[base_modelo_bureau['decisao_politica'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1']), 'resposta_motor'] = 'MESA'
+    base_modelo_bureau.loc[base_modelo_bureau['decisao_politica'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1']), 'resposta_motor'] = 'MESA'
     
     # APROVADO
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A1']), 'resposta_motor'] = 'APROVADO'
+    base_modelo_bureau.loc[base_modelo_bureau['decisao_politica'].isin(['A - A1']), 'resposta_motor'] = 'APROVADO'
 
     # Separando as linhas que não possuem HP para rodar a politica
 
@@ -330,7 +330,7 @@ def execucao_politica(access_params=None):
     base_bvs_pj.head()
 
     base_bvs_spc_pj = pd.merge(base_bvs_pj,
-        spc_pj[['cnpj_raiz','TOTAL RESTRITIVOS','QTD RESTRITIVOS','QTD CHEQUE']],
+        spc_pj[['cnpj_raiz','total_restritivos','quantidade_restritivos','quantidade_cheque']],
         left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
 
     #Trazendo os dados PF
@@ -340,96 +340,96 @@ def execucao_politica(access_params=None):
         how='left')
 
     base_sem_hp = base_sem_hp.drop(columns=['CNPJ_y'])
-    base_sem_hp = base_sem_hp.rename(columns={'RESTRITIVOS':'RESTRITIVOS PF'})
-    base_sem_hp = base_sem_hp.rename(columns={'CHEQUE':'CHEQUE PF'})
+    base_sem_hp = base_sem_hp.rename(columns={'RESTRITIVOS':'restritivos_pf'})
+    base_sem_hp = base_sem_hp.rename(columns={'CHEQUE':'cheque_pf'})
     base_sem_hp = base_sem_hp.rename(columns={'CNPJ_x':'CNPJ'})
 
     # Função com a árvore de decisão sem HP
     def politica_sem_hp(linha):
-        if linha['QTD CHEQUE'] > 0: 
+        if linha['quantidade_cheque'] > 0: 
             return 'B - 11'
-        elif(linha['QTD CHEQUE'] == 0 and 
+        elif(linha['quantidade_cheque'] == 0 and 
             linha['Score Positivo PJ'] == 2):
                 return 'B - 10'
-        elif(linha['QTD CHEQUE'] == 0 and 
+        elif(linha['quantidade_cheque'] == 0 and 
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] > 100000000):
                 return 'B - 10'
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            linha['TOTAL RESTRITIVOS'] > 500000):
+            linha['total_restritivos'] > 500000):
                 return 'B - 9'
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] < 646):
                 return 'B - 8'
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
-            1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
+            1000 < linha['total_restritivos'] <= 500000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'B - 7'
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and 
             linha['Capital Social'] <= 100000000 and    
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             linha['Score Positivo PJ'] < 646):
                 return 'B - 6'
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and    
-            linha['TOTAL RESTRITIVOS'] <= 1000 and
+            linha['total_restritivos'] <= 1000 and
             646 <= linha['Score Positivo PJ'] <= 900):
                 return "B - 5"
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and        
+            linha['total_restritivos'] <= 1000 and        
             linha['Score Positivo PJ'] > 900 and
             pd.isnull(linha['CPF do Principal Socio'])):
                 return "B - 4"
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and        
+            linha['total_restritivos'] <= 1000 and        
             linha['Score Positivo PJ'] > 900 and
-            linha['RESTRITIVOS PF'] > 500):
+            linha['restritivos_pf'] > 500):
                 return "B - 3"
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and        
+            linha['total_restritivos'] <= 1000 and        
             linha['Score Positivo PJ'] > 900 and   
-            linha['RESTRITIVOS PF'] <= 500 and
+            linha['restritivos_pf'] <= 500 and
             linha['idade_socio'] < 2):
                 return "B - 2"
-        elif(linha['QTD CHEQUE'] == 0 and
+        elif(linha['quantidade_cheque'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
-            linha['TOTAL RESTRITIVOS'] <= 1000 and        
+            linha['total_restritivos'] <= 1000 and        
             linha['Score Positivo PJ'] > 900 and   
-            linha['RESTRITIVOS PF'] <= 500 and
+            linha['restritivos_pf'] <= 500 and
             linha['idade_socio'] >= 2):
                 return "B - 1"
         
         
         return "Verificar"
 
-    base_sem_hp['DECISAO_POLITICA'] = base_sem_hp.apply(politica_sem_hp, axis=1)
+    base_sem_hp['decisao_politica'] = base_sem_hp.apply(politica_sem_hp, axis=1)
 
     base_sem_hp['resposta_motor'] = None
     
     # REPROVADO
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
+    base_sem_hp.loc[base_sem_hp['decisao_politica'].isin(['B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
+    base_sem_hp.loc[base_sem_hp['decisao_politica'].isin(['B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
     
     # APROVADO
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 1']), 'resposta_motor'] = 'APROVADO'
+    base_sem_hp.loc[base_sem_hp['decisao_politica'].isin(['B - 1']), 'resposta_motor'] = 'APROVADO'
 
     cnpjs_politica_c = list(base_modelo_bureau['cnpj_raiz'])
     cnpjs_politica_s = list(base_sem_hp['cnpj_raiz'])
@@ -448,9 +448,9 @@ def execucao_politica(access_params=None):
     filtro_na = resposta_motor['resposta_motor'].isnull()
     resposta_motor.loc[filtro_na, 'resposta_motor'] = resposta_motor.loc[filtro_na, 'resposta']
 
-    resposta_motor['ramificacao_motor'] = resposta_motor['DECISAO_POLITICA']
+    resposta_motor['ramificacao_motor'] = resposta_motor['decisao_politica']
 
-    filtro_na = resposta_motor['DECISAO_POLITICA'].isnull()
+    filtro_na = resposta_motor['decisao_politica'].isnull()
     resposta_motor.loc[filtro_na, 'ramificacao_motor'] = resposta_motor.loc[filtro_na, 'ramificacao_pre_filtro']
 
     resposta_motor_resumida = resposta_motor[['cnpj_raiz', 'documento_sem_formatacao', 'ramificacao_motor', 'resposta_motor']]
