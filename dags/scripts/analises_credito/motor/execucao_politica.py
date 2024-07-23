@@ -451,7 +451,7 @@ def execucao_politica(access_params=None):
     resposta_motor['ramificacao_motor'] = resposta_motor['DECISAO_POLITICA']
 
     filtro_na = resposta_motor['DECISAO_POLITICA'].isnull()
-    resposta_motor.loc[filtro_na, 'ramificacao_motor'] = resposta_motor.loc[filtro_na, 'ramificacao']
+    resposta_motor.loc[filtro_na, 'ramificacao_motor'] = resposta_motor.loc[filtro_na, 'ramificacao_pre_filtro']
 
     resposta_motor_resumida = resposta_motor[['cnpj_raiz', 'documento_sem_formatacao', 'ramificacao_motor', 'resposta_motor']]
 
@@ -459,7 +459,7 @@ def execucao_politica(access_params=None):
     # Nome do arquivo CSV de output que subirá para a execução da política
     file_out = f'RESPOSTA_MOTOR_RESUMIDA.csv'
 
-    csv_bytes = saida_modelo.to_csv(index=False, sep=';').encode('utf-8')
+    csv_bytes = resposta_motor_resumida.to_csv(index=False, sep=';').encode('utf-8')
     csv_buffer = BytesIO(csv_bytes)
 
     client.put_object(f'{BUCKET_SOURCE_REFINED}',
