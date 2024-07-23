@@ -3,11 +3,8 @@ import pandas as pd
 import joblib
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
-from datetime import datetime, timezone, timedelta
 from minio import Minio
 from io import BytesIO
-from trino.dbapi import connect
-from trino.auth import BasicAuthentication
 
 
 def execucao_modelo(access_params=None):

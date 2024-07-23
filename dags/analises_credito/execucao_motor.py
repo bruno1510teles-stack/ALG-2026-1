@@ -12,7 +12,7 @@ from airflow.models import Variable
 # SCRIPTS
 from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
 from scripts.analises_credito.motor.execucao_modelo import execucao_modelo
-#from scripts.analises_credito.motor.analise_politica import analise_politica
+from scripts.analises_credito.motor.execucao_politica import execucao_politica
 
 
 #PARAMETROS DE ACESSO
@@ -65,12 +65,16 @@ def execucao_motor():
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def modelo_task():
         execucao_modelo()
+        
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    def politica_task():
+        execucao_politica()
     
-    pre_filtro = pre_filtro_task()
-    
+    pre_filtro = pre_filtro_task()    
     modelo = modelo_task()
+    politica = politica_task()
 
     # Set dependencies between tasks
-    init_data_load >> pre_filtro >> modelo >> finish_data_load
+    init_data_load >> pre_filtro >> modelo >> politica >> finish_data_load
 
 execucao_motor()

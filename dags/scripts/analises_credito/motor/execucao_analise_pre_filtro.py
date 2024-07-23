@@ -233,45 +233,45 @@ def analise_pre_filtro(access_params=None):
     df['is_spe_consorcio_construtora'] = spe_consorcio_construtora(df)
     
     # VERIFICANDO EM QUE RAMIFICAÇÃO O CNPJ CAI
-    df['ramificacao'] = None
+    df['ramificacao_pre_filtro'] = None
 
     # PF 1
-    df.loc[df['situacao_cadastral'] != 'ATIVA', 'ramificacao'] = 'PF 1'
+    df.loc[df['situacao_cadastral'] != 'ATIVA', 'ramificacao_pre_filtro'] = 'PF 1'
     # PF 2
-    df.loc[(df['situacao_especial'] == 'RECUPERACAO JUDICIAL') & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 2'
+    df.loc[(df['situacao_especial'] == 'RECUPERACAO JUDICIAL') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 2'
     # PF 3
-    df.loc[((df['is_mei'] == True) | (df['is_mei'] == 'True')) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 3'
+    df.loc[((df['is_mei'] == True) | (df['is_mei'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 3'
     # PF 4
-    df.loc[(df['cnae_aceito'] == 'NAO') & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 4'
+    df.loc[(df['cnae_aceito'] == 'NAO') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 4'
     # PF 5
-    df.loc[(df['nat_ju_aceita'] == 'NAO') & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 5'
+    df.loc[(df['nat_ju_aceita'] == 'NAO') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 5'
     # PF 6
-    df.loc[(df['idade'] < 2) & (df['ramificacao'].isna()), 'ramificacao'] == 'PF 6'
+    df.loc[(df['idade'] < 2) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] == 'PF 6'
     # PF 7
-    df.loc[((df['tem_pep'] == 'True') | (df['tem_pep'] == True)) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 7'
+    df.loc[((df['tem_pep'] == 'True') | (df['tem_pep'] == True)) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 7'
     # PF 8
-    df.loc[(df['idade_socio'].notna()) & ((df['idade_socio'] < 2) | ((df['tem_socio_pj'] == 'True') | (df['tem_socio_pj'] == True))) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 8'
+    df.loc[(df['idade_socio'].notna()) & ((df['idade_socio'] < 2) | ((df['tem_socio_pj'] == 'True') | (df['tem_socio_pj'] == True))) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 8'
     # PF 9
-    df.loc[(df['is_spe_consorcio_construtora']) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 9'
+    df.loc[(df['is_spe_consorcio_construtora']) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 9'
     # PF 10
-    df.loc[(df['inad_alpe'] == 'SIM') & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 10'
+    df.loc[(df['inad_alpe'] == 'SIM') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 10'
     # PF 11
-    df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao'].isna()), 'ramificacao'] = 'PF 11'
+    df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 11'
     # PF 12
-    df.loc[df['ramificacao'].isna(), 'ramificacao'] = 'PF 12'
+    df.loc[df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = 'PF 12'
  
  
      #TRATANDO A RESPOSTA COM BASE NA RAMIFICAÇÃO   
     df['resposta'] = None
 
     # REPROVADO
-    df.loc[df['ramificacao'].isin(['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 6', 'PF 7', 'PF 10']), 'resposta'] = 'REPROVADO'
+    df.loc[df['ramificacao_pre_filtro'].isin(['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 6', 'PF 7', 'PF 10']), 'resposta'] = 'REPROVADO'
 
     # MESA
-    df.loc[df['ramificacao'].isin(['PF 8', 'PF 9', 'PF 11']), 'resposta'] = 'MESA'
+    df.loc[df['ramificacao_pre_filtro'].isin(['PF 8', 'PF 9', 'PF 11']), 'resposta'] = 'MESA'
 
     # SEGUE
-    df.loc[df['ramificacao'].isin(['PF 12']), 'resposta'] = 'SEGUE'
+    df.loc[df['ramificacao_pre_filtro'].isin(['PF 12']), 'resposta'] = 'SEGUE'
     
     # Nome do arquivo CSV que você deseja criar
     file_out = f'LANDING_PRE_FILTRO.csv'
