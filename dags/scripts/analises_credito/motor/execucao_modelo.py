@@ -31,9 +31,11 @@ def execucao_modelo(access_params=None):
     # BAIXANDO ARQUIVO A SER ANALISADO
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
     base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=dtype, sep = ';')
-
+    
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
+
+    print(segue_analise_prefiltro)
 
     # Criando uma lista com os CNPJ's do df cnpj_segue_analise, para consulta de dados de HP no lake 
     cnpj_segue_analise = segue_analise_prefiltro['cnpj_raiz']
@@ -41,6 +43,8 @@ def execucao_modelo(access_params=None):
     ids_query = ', '.join(f"'{cnpj_raiz}'" for cnpj_raiz in cnpj_segue_analise)
     ids_query = f"({ids_query})"
 
+    print(ids_query)
+    
     # Configura a conexão com o Trino
     conn = connect(
         host="trino.alpe.com.br",
