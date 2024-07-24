@@ -73,8 +73,6 @@ def execucao_politica(access_params=None):
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.xlsx')
     spc_pj = pd.read_excel(BytesIO(file.data))
 
-    spc_pj['TOTAL RESTRITIVOS'] = spc_pj['TOTAL RESTRITIVOS'].str.replace(',','.').astype(float)
-
     # Ajustando a formatação do CNPJ para 14 digitos
     spc_pj['CNPJ'] = spc_pj['CNPJ'].astype(str).str.zfill(14)
     spc_pj['cnpj_raiz'] = spc_pj['CNPJ'].astype(str).str.slice(0, 8)
