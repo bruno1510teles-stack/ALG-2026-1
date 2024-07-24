@@ -70,8 +70,8 @@ def execucao_politica(access_params=None):
 
     # importando a base SPC PJ
 
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.csv')
-    spc_pj = pd.read_csv(BytesIO(file.data), sep = ';')
+    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.xlsx')
+    spc_pj = pd.read_excel(BytesIO(file.data))
 
     spc_pj['TOTAL RESTRITIVOS'] = spc_pj['TOTAL RESTRITIVOS'].str.replace(',','.').astype(float)
 
@@ -80,10 +80,10 @@ def execucao_politica(access_params=None):
     spc_pj['cnpj_raiz'] = spc_pj['CNPJ'].astype(str).str.slice(0, 8)
 
     # importando a base SPC PF
-    dados_texto_pf = {'CPF':'str', 'CNPJ':'str'}
+    #dados_texto_pf = {'CPF':'str', 'CNPJ':'str'}
 
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PF.csv')
-    spc_pf = pd.read_csv(BytesIO(file.data), dtype = dados_texto_pf, sep = ';')
+    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PF.xlsx')
+    spc_pf = pd.read_excel(BytesIO(file.data))
 
     # formatando o CPF
     spc_pf['CPF'] = spc_pf['CPF'].astype(str).str.zfill(11)
