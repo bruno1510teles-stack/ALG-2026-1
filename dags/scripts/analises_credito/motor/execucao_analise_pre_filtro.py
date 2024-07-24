@@ -120,17 +120,7 @@ def analise_pre_filtro(access_params=None):
     cur = conn.cursor()
     query = (f"""
 
-    with
-        tem_pep as (select
-            distinct
-            cnpj_raiz,
-            true as tem_pep
-        from miniotrusted.pessoas_e_organizacoes.pep pep
-        join miniotrusted.receita_federal.socios socios on replace(replace(documento, '.', ''), '-', '') = socios.documento_socio and pep.nome = socios."nome/razao_social"
-        where socios.data_ref = (select max(data_ref) data_ref from miniotrusted.receita_federal.socios)
-        and pep.data_ref = (select max(data_ref) data_ref from miniotrusted.pessoas_e_organizacoes.pep)
-        ),
-        
+    with        
         venc as (
             SELECT
                 DISTINCT s.numero_cnpj_sacado, 'SIM' AS inad_alpe
@@ -156,50 +146,32 @@ def analise_pre_filtro(access_params=None):
             WHERE cedente_principal = true
                 AND sumarizado = true
                 AND limite_atribuido >= 0
-        ) ,
-        
-        socio as (select
-            cnpj_raiz,
-            MAX(data_entrada_sociedade) as mais_recente,
-            CASE 
-                WHEN 
-                    MAX(CASE WHEN identificador_socio = 'PESSOA JURÍDICA' THEN 1 ELSE 0 END) = 1 
-                THEN true 
-                ELSE false 
-                END as tem_socio_pj,
-                max(data_ref) data_ref 
-            from miniotrusted.receita_federal.socios sc
-        group by cnpj_raiz
         )
 
-        select
-            est.cnpj_raiz cnpj_raiz,
-            est.documento_sem_formatacao documento_sem_formatacao,
-            emp.razao_social,
-            est.cnae_principal cod_cnae,
-            emp.natureza_juridica cod_natureza_juridica,
+        select 
+            pre.cnpj_raiz cnpj_raiz,
+            pre.documento_sem_formatacao,
+            pre.razao_social,
+            pre.cod_cnae,
+            pre.cod_natureza_juridica,
             emp.codigo_porte_empresa,
-            (date_diff('day', date(est.data_inicio_atividade), date(now())) / 365.00) AS idade,
-            est.situacao_cadastral situacao_cadastral,
-            (date_diff('day', date(s.mais_recente), date(now())) / 365.00) AS idade_socio,
-            tem_socio_pj,
-            sim.is_mei is_mei,
-            coalesce(tem_pep, false) tem_pep,
+            pre.idade,
+            pre.situacao_cadastral situacao_cadastral,
+            pre.idade_socio,
+            pre.tem_socio_pj,
+            pre.is_mei,
+            pre.tem_pep,
             COALESCE(venc.inad_alpe, 'NAO') as inad_alpe,
             COALESCE(limi.possui_limite, False) as limite_alpe,
-            est.situacao_especial,
-            est.data_ref data_ref_receita
-        from miniotrusted.receita_federal.estabelecimentos est
-        left join miniotrusted.receita_federal.empresas emp on emp.cnpj_raiz = est.cnpj_raiz and est.data_ref = emp.data_ref
-        left join miniotrusted.receita_federal.simples sim on sim.cnpj_raiz = est.cnpj_raiz and est.data_ref = sim.data_ref
-        left join miniotrusted.receita_federal.naturezas_juridicas natjur on natjur.codigo = emp.natureza_juridica and est.data_ref = natjur.data_ref
-        left join miniotrusted.receita_federal.cnaes on cnaes.codigo = est.cnae_principal and est.data_ref = cnaes.data_ref
-        left join tem_pep on tem_pep.cnpj_raiz = est.cnpj_raiz
-        left join venc ON est.documento_sem_formatacao = venc.numero_cnpj_sacado
-        left join limi ON est.cnpj_raiz = limi.cnpj_raiz
-        left join socio s on est.cnpj_raiz = s.cnpj_raiz and est.data_ref = s.data_ref
+            pre.situacao_especial,
+            pre.data_ref_receita
+        from 
+            deltalakerefined.motor.pre_filtro pre
+        left join miniotrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz and pre.data_ref_receita = emp.data_ref
+        left join venc ON pre.documento_sem_formatacao = venc.numero_cnpj_sacado
+        left join limi ON pre.cnpj_raiz = limi.cnpj_raiz
 
-        where est.documento_sem_formatacao in {ids_query}
+        where pre.documento_sem_formatacao in {ids_query}
 
         """)
 
