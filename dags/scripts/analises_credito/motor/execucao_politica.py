@@ -303,13 +303,13 @@ def execucao_politica(access_params=None):
     base_modelo_bureau['resposta_motor'] = None
 
     # REPROVADO
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8']), 'resposta_motor'] = 'REPROVADO'
+    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1']), 'resposta_motor'] = 'MESA'
+    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1']), 'resposta_motor'] = 'MESA'
     
     # APROVADO
-    base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A1']), 'resposta_motor'] = 'APROVADO'
+    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A1']), 'resposta_motor'] = 'APROVADO'
 
     # Separando as linhas que não possuem HP para rodar a politica
 
@@ -321,9 +321,6 @@ def execucao_politica(access_params=None):
     base_bvs_pj = pd.merge(segue_analise_sem_hp,
         bvs_pj[['cnpj_raiz','CNPJ','Razao Social','CPF do Principal Socio','Data de Fundacao','Faixa Faturamento Presumido Positivo','Capital Social','Score Positivo PJ','Indicativo de Restritivo']],
         left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
-    #base_bvs_pj = base_bvs_pj.drop(columns = ['cnpj_raiz'])
-
-    print(base_bvs_pj['cnpj_raiz'].count())
 
     base_bvs_pj.head()
 
@@ -412,23 +409,13 @@ def execucao_politica(access_params=None):
             linha['RESTRITIVOS PF'] <= 500 and
             linha['idade_socio'] >= 2):
                 return "B - 1"
-        
-        
+       
         return "Verificar"
+    
 
     base_sem_hp['DECISAO_POLITICA'] = base_sem_hp.apply(politica_sem_hp, axis=1)
-
-    base_sem_hp['resposta_motor'] = None
     
-    # REPROVADO
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
-    
-    # MESA
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
-    
-    # APROVADO
-    base_sem_hp.loc[base_sem_hp['DECISAO_POLITICA'].isin(['B - 1']), 'resposta_motor'] = 'APROVADO'
-
+    #  Juntando DFs
     cnpjs_politica_c = list(base_modelo_bureau['cnpj_raiz'])
     cnpjs_politica_s = list(base_sem_hp['cnpj_raiz'])
 
@@ -439,6 +426,28 @@ def execucao_politica(access_params=None):
     sem_politica = saida_modelo[filtro]
 
     resposta_motor = pd.concat([sem_politica, base_modelo_bureau, base_sem_hp], axis=0)
+    
+    #Aplicando decisão de politica nos classificados com E e D no score do Modelo   
+    
+    resposta_motor.loc[resposta_motor['CLASSIFICACAO'] == 'E', 'DECISAO_POLITICA'] = 'A - E1'
+    
+    resposta_motor.loc[resposta_motor['CLASSIFICACAO'] == 'D', 'DECISAO_POLITICA'] = 'A - D1' 
+    
+    
+    
+    
+
+    resposta_motor['resposta_motor'] = None    
+    
+    # REPROVADO
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
+    
+    # MESA
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
+    
+    # APROVADO
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'B - 1']), 'resposta_motor'] = 'APROVADO'
+
 
     filtro_na = resposta_motor['resposta_motor'].isnull()
     resposta_motor.loc[filtro_na, 'resposta_motor'] = resposta_motor.loc[filtro_na, 'resposta_modelo']
