@@ -218,11 +218,11 @@ def analise_pre_filtro(access_params=None):
     # PF 5
     df.loc[(df['nat_ju_aceita'] == 'NAO') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 5'
     # PF 6
-    df.loc[((df['idade'] < 2) & (df['ramificacao_pre_filtro'].isna())), 'ramificacao_pre_filtro'] == 'PF 6'
+    df.loc[((df['idade'] < 2) & (df['ramificacao_pre_filtro'].isna())), 'ramificacao_pre_filtro'] = 'PF 6'
     # PF 7
     df.loc[((df['tem_pep'] == 'True') | (df['tem_pep'] == True)) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 7'
     # PF 8
-    df.loc[(df['idade_socio'].notna()) & ((df['idade_socio'] < 2) | ((df['tem_socio_pj'] == 'True') | (df['tem_socio_pj'] == True))) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 8'
+    df.loc[((df['idade_socio'].notna()) & ((df['idade_socio'] < 2) | (df['tem_socio_pj'] == 'True'))) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 8'
     # PF 9
     df.loc[(df['is_spe_consorcio_construtora']) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 9'
     # PF 10
