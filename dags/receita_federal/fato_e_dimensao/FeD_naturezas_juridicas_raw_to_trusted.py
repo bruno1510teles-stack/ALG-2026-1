@@ -19,7 +19,7 @@ RECEITA_FEDERAL_NATUREZAS_JURIDICAS_FOLDER = "naturezas/"
 
 now = datetime.now(tz=timezone(timedelta(hours=-3)))
 yesterday = now - timedelta(days=1)
-day_to_process_naturezas_juridicas = f"{RECEITA_FEDERAL_NATUREZAS_JURIDICAS_FOLDER}year=2024/month=6/"#'#year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
+day_to_process_naturezas_juridicas = f"{RECEITA_FEDERAL_NATUREZAS_JURIDICAS_FOLDER}year={yesterday.year}/month={yesterday.month}/day={yesterday.day}/"
 
 
 # DEFINE FUNCTIONS
