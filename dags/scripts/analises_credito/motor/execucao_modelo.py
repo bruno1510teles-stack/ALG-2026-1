@@ -141,6 +141,23 @@ def execucao_modelo(access_params=None):
 
     nova_base = nova_base.rename(columns=colunas)
 
+    dtype = {'PRAZO_MEDIO_GERAL':float,
+            'PRAZO_MEDIO_3M':float,
+            'ALAVANCAGEM_DATA_ANALISE':float,
+            'ALAVANCAGEM_MEDIA_HISTORICA':float,
+            'MEDIA_DIFERENCA_DIAS_PEDIDOS':float,
+            'MEDIA_DIFERENCA_DIAS_PEDIDOS_3M':float,
+            'MAIOR_ATRASO_EM_DIAS':float,
+            'MAIOR_ATRASO_EM_DIAS_3M':float,
+            'PERCENTUAL_PAGO_EM_DIA':float,
+            'PERCENTUAL_PAGO_EM_DIA_3M':float,
+            'PCTO_COMPRA_SAFRA_GERAL':float,
+            'PCTO_COMPRA_SAFRA_GERAL_2SEM': float,
+            'IDADE':float,
+            'COD_PORTE_EMPRESA':float
+            }
+    nova_base = nova_base.astype(dtype)
+
     # Faça as previsões com base nos dados de entrada
     score = model.predict_proba(nova_base)[:, 1]
 
