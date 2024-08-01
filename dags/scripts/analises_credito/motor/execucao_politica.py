@@ -459,6 +459,9 @@ def execucao_politica(access_params=None):
 
     filtro_na = resposta_motor['DECISAO_POLITICA'].isnull()
     resposta_motor.loc[filtro_na, 'ramificacao_motor'] = resposta_motor.loc[filtro_na, 'ramificacao_pre_filtro']
+    resposta_motor = resposta_motor.drop(columns=['idade_y', 'codigo_porte_empresa_y','CNPJ'])
+    resposta_motor = resposta_motor.rename(columns={'codigo_porte_empresa_x':'codigo_porte_empresa'})
+    resposta_motor = resposta_motor.rename(columns={'idade_x':'idade'})
 
     resposta_motor_resumida = resposta_motor[['cnpj_raiz', 'documento_sem_formatacao', 'ramificacao_motor', 'resposta_motor']]
 
