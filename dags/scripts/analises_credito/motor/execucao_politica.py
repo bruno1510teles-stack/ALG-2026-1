@@ -440,7 +440,7 @@ def execucao_politica(access_params=None):
     resposta_motor['resposta_motor'] = None    
     
     # REPROVADO
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2', 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
     resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
