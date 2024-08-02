@@ -54,7 +54,7 @@ def execucao_politica(access_params=None):
     # Separando os casos que seguem analise com HP
     seguem_analise_com_hp = saida_modelo[saida_modelo['CLASSIFICACAO'].isin(['A','B','C'])]
 
-    dados_texto = {'CPF do Principal Socio':'str', 'CNPJ':'str'}
+    dados_texto = {'CPF do Principal Socio':'str', 'CNPJ':'str', 'Capital Social':'float'}
 
     # importando consulta BVS
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BVS.csv')
