@@ -5,31 +5,53 @@ from minio import Minio
 from io import BytesIO
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
+import os
+from datetime import datetime
 
 
 def analise_pre_filtro(access_params=None):
 
     # VARIAVEIS DE DOS ARQUIVOS
+    agora = datetime.now()
+    ano = agora.strftime('%Y')
+    mes = agora.strftime('%m')
+    dia = agora.strftime('%d')
+
     BUCKET_SOURCE_REFINED = "motor"
     FOLDER_SOURCE_REFINED = 'analise_credito/in/a_processar'
     FOLDER_DESTINATION_REFINED = 'analise_credito/auxiliar'
 
     # Conectando na refined
     client = Minio(
-        'api-refined.alpe.com.br',
-        access_key = '0FKu1vkOJbq0K4C0qRuF',
-        secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+        access_params['endpoint_url_refined'],
+        access_key=access_params['aws_access_key_id_refined'],
+        secret_key=access_params['aws_secret_access_key_refined'],
     )
 
-    # BAIXANDO ARQUIVO A SER ANALISADO
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BASE_PRE_FILTRO.csv')
+    # client = Minio(
+    #     'api-refined.alpe.com.br',
+    #     access_key = '0FKu1vkOJbq0K4C0qRuF',
+    #     secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+    # )
 
-    base_analisar = pd.read_csv(BytesIO(file.data), dtype=str)
+    # BAIXANDO ARQUIVO A SER ANALISADO
+    file = client.get_object(
+        bucket_name=BUCKET_SOURCE_REFINED, 
+        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/BASE_PRE_FILTRO_teste.csv'
+    )
+
+    base_analisar = pd.read_csv(BytesIO(file.data), dtype=str, sep=';')
+    base_analisar['CNPJ'] = base_analisar['CNPJ'].str.zfill(14)
+    base_analisar['cnpj_raiz'] = base_analisar['CNPJ'].str.slice(0, 8).str.zfill(8)
+    print(f"Quantidade de CNPJs na base_analisar: {base_analisar.shape[0]}")
 
     cnpjs = base_analisar['CNPJ'].unique()
-    cnpjs_raiz = base_analisar['CNPJ'].str.slice(0, 8).unique()
+    cnpjs_raiz = base_analisar['cnpj_raiz'].str.slice(0, 8).unique()
+    print(f"Quantidade de CNPJs na cnpjs_raiz: {cnpjs_raiz.shape[0]}")
+
     ## Criar uma string formatada para a cláusula IN
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs_raiz)
+    print(ids_query)
     ids_query = f"({ids_query})"
     
     # Configura a conexão
@@ -91,7 +113,7 @@ def analise_pre_filtro(access_params=None):
     cur = conn.cursor()
     query = (f"""
     select 
-        est.documento_sem_formatacao 
+        distinct est.documento_sem_formatacao
     from 
         miniotrusted.receita_federal.estabelecimentos est
     where
@@ -110,6 +132,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     base_analisar_raiz = pd.DataFrame(rows, columns=columns)
+    print(f"Quantidade de CNPJs que retornou da estabelecimentos: {base_analisar_raiz.shape[0]}")
 
     ## Criar uma string formatada para a cláusula IN
     cnpjs = base_analisar_raiz['documento_sem_formatacao'].unique()
@@ -187,6 +210,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão de cnae e natureza juridica
     df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
@@ -228,7 +252,7 @@ def analise_pre_filtro(access_params=None):
     # PF 10
     df.loc[(df['inad_alpe'] == 'SIM') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 10'
     # PF 11
-    #df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 11'
+    df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 11'
     # PF 12
     df.loc[df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = 'PF 12'
  
@@ -247,6 +271,9 @@ def analise_pre_filtro(access_params=None):
     # Nome do arquivo CSV que você deseja criar
     file_out = f'LANDING_PRE_FILTRO.csv'
     
+    print(df)
+
+
     csv_bytes = df.to_csv(index=False, sep=';').encode('utf-8')
     csv_buffer = BytesIO(csv_bytes)
 

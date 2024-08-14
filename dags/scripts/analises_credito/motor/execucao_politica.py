@@ -4,6 +4,10 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
 from io import BytesIO
+import os
+from confluent_kafka import Producer
+import json
+from datetime import datetime
 
 
 def execucao_politica(access_params=None):
@@ -11,14 +15,26 @@ def execucao_politica(access_params=None):
     FOLDER_SOURCE_REFINED = 'analise_credito/auxiliar'
     FOLDER_DESTINATION_REFINED = 'analise_credito/out'
 
+    # variaveis
+    agora = datetime.now()
+    ano = agora.strftime('%Y')
+    mes = agora.strftime('%m')
+    dia = agora.strftime('%d')
 
-    # Conectando na refined
+
+    # # Conectando na refined
     client = Minio(
-        'api-refined.alpe.com.br',
-        access_key = '0FKu1vkOJbq0K4C0qRuF',
-        secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+        access_params['endpoint_url_refined'],
+        access_key=access_params['aws_access_key_id_refined'],
+        secret_key=access_params['aws_secret_access_key_refined'],
     )
         
+
+    # client = Minio(
+    #     'api-refined.alpe.com.br',
+    #     access_key = '0FKu1vkOJbq0K4C0qRuF',
+    #     secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+    # )
 
     # importando resposta modelo (score 1)
     dado_texto = {'cnpj_raiz':str}
@@ -57,7 +73,13 @@ def execucao_politica(access_params=None):
     dados_texto = {'CPF do Principal Socio':'str', 'CNPJ':'str', 'Capital Social':'float'}
 
     # importando consulta BVS
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BVS.csv')
+    file = client.get_object(
+        bucket_name=BUCKET_SOURCE_REFINED, 
+        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/BVS.csv'
+    )
+
+
+    #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BVS.csv')
     bvs_pj = pd.read_csv(BytesIO(file.data), sep=';',dtype = dados_texto)
 
     # Ajustando a formatação do CNPJ para 14 digitos
@@ -69,8 +91,11 @@ def execucao_politica(access_params=None):
 
 
     # importando a base SPC PJ
-
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.xlsx')
+    file = client.get_object(
+        bucket_name=BUCKET_SOURCE_REFINED, 
+        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/SPC_PJ.xlsx'
+    )
+    #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.xlsx')
     spc_pj = pd.read_excel(BytesIO(file.data))
 
     # Ajustando a formatação do CNPJ para 14 digitos
@@ -80,7 +105,12 @@ def execucao_politica(access_params=None):
     # importando a base SPC PF
     dados_texto_pf = {'CPF':'str', 'CNPJ':'str'}
 
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PF.xlsx')
+    file = client.get_object(
+        bucket_name=BUCKET_SOURCE_REFINED, 
+        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/SPC_PF.xlsx'
+    )
+
+    #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PF.xlsx')
     spc_pf = pd.read_excel(BytesIO(file.data), dtype=dados_texto_pf)
 
     # formatando o CPF
@@ -123,7 +153,10 @@ def execucao_politica(access_params=None):
 
     # Função com a árvore de decisão
     def politica_com_hp(linha):
-        if(linha['CLASSIFICACAO'] == 'C' and
+        if (linha['CLASSIFICACAO'] == 'C' and
+        pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any()):
+            return 'A - C8' 
+        elif(linha['CLASSIFICACAO'] == 'C' and
             linha['QTD CHEQUE'] > 0):  
                 return 'A - C7'
         elif(linha['CLASSIFICACAO'] == 'C' and
@@ -169,6 +202,9 @@ def execucao_politica(access_params=None):
             linha['TOTAL RESTRITIVOS'] <= 1000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'A - C1'
+        elif (linha['CLASSIFICACAO'] == 'B' and
+        pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any()):
+            return 'A - B8' 
         elif(linha['CLASSIFICACAO'] == 'B' and
             linha['QTD CHEQUE'] > 0):  
                 return 'A - B7'
@@ -215,6 +251,9 @@ def execucao_politica(access_params=None):
             linha['TOTAL RESTRITIVOS'] <= 1000 and
             linha['Score Positivo PJ'] >= 646): 
                 return 'A - B1'
+        elif (linha['CLASSIFICACAO'] == 'A' and
+        pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any()):
+            return 'A - A12' 
         elif(linha['CLASSIFICACAO'] == 'A' and
             linha['QTD CHEQUE'] > 0):  
                 return 'A - A11'
@@ -341,7 +380,9 @@ def execucao_politica(access_params=None):
 
     # Função com a árvore de decisão sem HP
     def politica_sem_hp(linha):
-        if linha['QTD CHEQUE'] > 0: 
+        if pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any():
+            return 'B - 12'
+        elif linha['QTD CHEQUE'] > 0: 
             return 'B - 11'
         elif(linha['QTD CHEQUE'] == 0 and 
             linha['Score Positivo PJ'] == 2):
@@ -391,6 +432,13 @@ def execucao_politica(access_params=None):
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
             linha['Score Positivo PJ'] > 900 and
+            pd.isnull(linha['idade_socio'])):
+                return "B - 4"
+        elif(linha['QTD CHEQUE'] == 0 and
+            linha['Score Positivo PJ'] != 2 and
+            linha['Capital Social'] <= 100000000 and     
+            linha['TOTAL RESTRITIVOS'] <= 1000 and        
+            linha['Score Positivo PJ'] > 900 and
             linha['RESTRITIVOS PF'] > 500):
                 return "B - 3"
         elif(linha['QTD CHEQUE'] == 0 and
@@ -434,21 +482,19 @@ def execucao_politica(access_params=None):
     resposta_motor.loc[resposta_motor['CLASSIFICACAO'] == 'D', 'DECISAO_POLITICA'] = 'A - D1' 
     
     
-    
-    
-
     resposta_motor['resposta_motor'] = None    
     
     # REPROVADO
     resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2', 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2']), 'resposta_motor'] = 'MESA'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2','B - 12', 'A -A12', 'A - B8', 'A - C8']), 'resposta_motor'] = 'MESA'
     
     # APROVADO
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'B - 1']), 'resposta_motor'] = 'APROVADO'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'B - 1']), 'resposta_motor'] = 'MESA'
 
 
+    
     filtro_na = resposta_motor['resposta_motor'].isnull()
     resposta_motor.loc[filtro_na, 'resposta_motor'] = resposta_motor.loc[filtro_na, 'resposta_modelo']
 
@@ -463,9 +509,30 @@ def execucao_politica(access_params=None):
     resposta_motor = resposta_motor.rename(columns={'codigo_porte_empresa_x':'codigo_porte_empresa'})
     resposta_motor = resposta_motor.rename(columns={'idade_x':'idade'})
 
-    resposta_motor_resumida = resposta_motor[['cnpj_raiz', 'documento_sem_formatacao', 'ramificacao_motor', 'resposta_motor']]
+    #DEFININDO O PARECER DO MOTOR, PARA OS CASOS NEGADOS
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
 
-    #GRAVANDO
+
+    resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'documento_sem_formatacao', 'parecer', 'ramificacao_motor']].rename(columns={
+    'documento_sem_formatacao': 'cnpj_ec',
+    'resposta_motor': 'resolucao',
+    'ramificacao_motor': 'ramificacao'
+    })
+
+    resposta_motor_resumida['path_arquivos_minio'] = ''
+    resposta_motor_resumida['valor_aprovado'] = 0
+
+    resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
+
+
+    # criando data aux para salvar no dia correto da análise
+    agora = datetime.now()
+    ano = agora.strftime('%Y')
+    mes = agora.strftime('%m')
+    dia = agora.strftime('%d')
+
+    # GRAVANDO
     # Nome do arquivo CSV de output que subirá para a execução da política
     file_out = f'RESPOSTA_MOTOR_RESUMIDA.csv'
 
@@ -473,11 +540,11 @@ def execucao_politica(access_params=None):
     csv_buffer = BytesIO(csv_bytes)
 
     client.put_object(f'{BUCKET_SOURCE_REFINED}',
-                        f'{FOLDER_DESTINATION_REFINED}/{file_out}',
-                            data=csv_buffer,
-                            length=len(csv_bytes))
+                      f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{file_out}',
+                      data=csv_buffer,
+                      length=len(csv_bytes))
 
-    #GRAVANDO
+    # GRAVANDO
     # Nome do arquivo CSV de output que subirá para a execução da política
     file_out = f'RESPOSTA_MOTOR_DETALHADA.csv'
 
@@ -485,6 +552,6 @@ def execucao_politica(access_params=None):
     csv_buffer = BytesIO(csv_bytes)
 
     client.put_object(f'{BUCKET_SOURCE_REFINED}',
-                        f'{FOLDER_DESTINATION_REFINED}/{file_out}',
-                            data=csv_buffer,
-                            length=len(csv_bytes))
+                      f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{file_out}',
+                      data=csv_buffer,
+                      length=len(csv_bytes))
