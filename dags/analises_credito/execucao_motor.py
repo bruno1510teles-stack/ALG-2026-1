@@ -58,19 +58,19 @@ def execucao_motor():
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}})
     def pre_filtro_task():
         analise_pre_filtro(access_params)
     
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}})
     def modelo_task():
         execucao_modelo(access_params)
         
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}})
     def politica_task():
         execucao_politica(access_params)
 
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}})
     def envio_kafka_task():
         envio_kafka(access_params)
     
