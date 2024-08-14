@@ -4,15 +4,14 @@ from datetime import datetime, timedelta, timezone
 # AIRFLOW LIBS
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python_operator import ShortCircuitOperator
-from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
+
 from airflow.models import Variable
 
 # SCRIPTS
 from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
 from scripts.analises_credito.motor.execucao_modelo import execucao_modelo
 from scripts.analises_credito.motor.execucao_politica import execucao_politica
+from scripts.analises_credito.motor.execucao_envio_kafka import envio_kafka
 
 
 #PARAMETROS DE ACESSO
@@ -31,7 +30,8 @@ access_params = {
     "trino_user": Variable.get("TRINO_USER"),
     "trino_password": Variable.get("TRINO_PASSWORD"),
     "opdb_bucket": Variable.get("OPDB_BUCKET"),
-    "stage": Variable.get('STAGE')
+    "stage": Variable.get('STAGE'),
+    "kafka_url": Variable.get('KAFKA_DATALAKE_ENDPOINT')
 }
     
 
@@ -60,21 +60,26 @@ def execucao_motor():
 
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def pre_filtro_task():
-        analise_pre_filtro()
+        analise_pre_filtro(access_params)
     
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def modelo_task():
-        execucao_modelo()
+        execucao_modelo(access_params)
         
     @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
     def politica_task():
-        execucao_politica()
+        execucao_politica(access_params)
+
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
+    def envio_kafka_task():
+        envio_kafka(access_params)
     
     pre_filtro = pre_filtro_task()    
     modelo = modelo_task()
     politica = politica_task()
+    kafka = envio_kafka_task()
 
     # Set dependencies between tasks
-    init_data_load >> pre_filtro >> modelo >> politica >> finish_data_load
+    init_data_load >> pre_filtro >> modelo >> politica >> kafka >> finish_data_load
 
 execucao_motor()
