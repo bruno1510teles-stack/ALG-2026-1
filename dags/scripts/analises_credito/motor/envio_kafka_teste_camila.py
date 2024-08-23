@@ -72,4 +72,4 @@ def envio_kafka_teste_camila(access_params):
     producer.flush()
 
 if __name__ == "__main__":
-    envio_kafka()
+    envio_kafka_teste_camila()
