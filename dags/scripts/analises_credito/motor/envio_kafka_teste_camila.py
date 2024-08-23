@@ -15,7 +15,7 @@ def envio_kafka_teste_camila(access_params):
     hora = agora.strftime('%H')
 
     # Coletando pastas necessárias
-    BUCKET_SOURCE_REFINED = "motor/"
+    BUCKET_SOURCE_REFINED = "motor"
     FOLDER_DESTINATION_REFINED = 'teste_camila/'
 
     # Conectando no MiniO
