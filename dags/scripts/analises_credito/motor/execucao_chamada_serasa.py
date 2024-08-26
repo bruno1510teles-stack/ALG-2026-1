@@ -101,6 +101,8 @@ def chamando_serasa(access_params=None):
     authorization = base64.b64encode(bytes(client_id + ":" + client_secret, "ISO-8859-1")).decode("ascii")
 
     keycloak = access_params['keycloack_token_url']
+    print(keycloak)
+    print(access_params['exrep_url'])
     content_headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {authorization}",
@@ -114,7 +116,10 @@ def chamando_serasa(access_params=None):
         "Content-Length": "29"
     }
     request_body = {
-        "grant_type": "client_credentials"}
+        "grant_type": "client_credentials",
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
     auth = None
     token = None
 
