@@ -46,7 +46,7 @@ def chamando_serasa(access_params=None):
     def retrieve(cnpj, token):
         ## Chamada da API do exrep para consulta do Serasa
         logging.info(f'Chamada do Serasa para o CNPJ {cnpj}')
-        url = f"{access_params['exrep_url']}/api/v1/report-executions"
+        url = f"{access_params['exrep_url']}api/v1/report-executions"
         headers = {
             'Content-Type': "application/json",
             'Authorization': f"Bearer {token}"
@@ -112,7 +112,8 @@ def chamando_serasa(access_params=None):
         "Connection": "keep-alive",
         "Content-Length": "29"
     }
-    request_body = {"grant_type": "client_credentials"}
+    request_body = {
+        "grant_type": "client_credentials"}
     auth = None
     token = None
 
