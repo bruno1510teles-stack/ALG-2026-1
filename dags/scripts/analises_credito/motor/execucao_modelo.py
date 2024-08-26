@@ -6,7 +6,7 @@ from trino.auth import BasicAuthentication
 from minio import Minio
 from io import BytesIO
 import os
-
+import base64, requests, sys, json
 
 def execucao_modelo(access_params=None):
 
@@ -21,13 +21,6 @@ def execucao_modelo(access_params=None):
         access_key=access_params['aws_access_key_id_refined'],
         secret_key=access_params['aws_secret_access_key_refined'],
     )
-
-    # client = Minio(
-    #     'api-refined.alpe.com.br',
-    #     access_key = '0FKu1vkOJbq0K4C0qRuF',
-    #     secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
-    # )
-
 
     dtype = {'cnpj_raiz':str,
         'documento_sem_formatacao':str,
@@ -61,6 +54,15 @@ def execucao_modelo(access_params=None):
         auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
+
+
+    # conn = connect(
+    #     host=access_params['endpoint_url_trusted'],
+    #     port=access_params['trino_port'],
+    #     user=access_params['trino_user'],
+    #     auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+    #     http_scheme="https",
+    # )
 
     # Cria um cursor e executa a query
     cur = conn.cursor()

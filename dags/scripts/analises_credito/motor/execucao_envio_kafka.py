@@ -3,17 +3,20 @@ import pandas as pd
 from io import BytesIO
 from minio import Minio
 from confluent_kafka import Producer
+import pytz
 
 def envio_kafka(access_params):
     # Variáveis de Data
-    agora = datetime.now()
+    fuso_horario = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso_horario)
     ano = agora.strftime('%Y')
     mes = agora.strftime('%m')
     dia = agora.strftime('%d')
+    hora = agora.strftime('%H')
 
     # Coletando pastas necessárias
     BUCKET_SOURCE_REFINED = "motor"
-    FOLDER_DESTINATION_REFINED = 'analise_credito/out'
+    FOLDER_DESTINATION_REFINED = f'analise_credito/out/{ano}/{mes}/{dia}/{hora}/resumida/'
 
     # Conectando no MiniO
     client = Minio(
@@ -22,13 +25,9 @@ def envio_kafka(access_params):
         secret_key=access_params['aws_secret_access_key_refined'],
     )
 
-    # Obtendo o arquivo CSV do MinIO
-    file = client.get_object(
-        bucket_name=BUCKET_SOURCE_REFINED, 
-        object_name=f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/RESPOSTA_MOTOR_RESUMIDA.csv'
-    )
+    # Listando todos os arquivos no diretório especificado
+    objects = client.list_objects(BUCKET_SOURCE_REFINED, prefix=FOLDER_DESTINATION_REFINED, recursive=True)
 
-    saida_politica = pd.read_csv(BytesIO(file.data), sep=';', dtype=str)
 
     # Configurações do Kafka
     kafka_config = {
@@ -46,12 +45,23 @@ def envio_kafka(access_params):
         else:
             print(f"Mensagem enviada para {msg.topic()} [{msg.partition()}]")
 
-    # Iterar sobre as linhas do DataFrame e enviar para o Kafka
-    for index, row in saida_politica.iterrows():
-        key = row['cnpj_ec']
-        value = row.to_json()
-        producer.produce(topic, key=str(key), value=value, callback=delivery_report)
-    
+ # Iterar sobre cada objeto listado e processar o envio para o Kafka
+    for obj in objects:
+        # Obtendo o arquivo CSV do MinIO
+        file = client.get_object(
+            bucket_name=BUCKET_SOURCE_REFINED, 
+            object_name=obj.object_name
+        )
+        
+        # Carregando o arquivo CSV em um DataFrame
+        saida_politica = pd.read_csv(BytesIO(file.data), sep=';', dtype=str)
+        
+        # Iterar sobre as linhas do DataFrame e enviar para o Kafka
+        for index, row in saida_politica.iterrows():
+            key = row['cnpj_ec']
+            value = row.to_json()
+            producer.produce(topic, key=str(key), value=value, callback=delivery_report)
+
     # Esperar a entrega de todas as mensagens
     producer.flush()
 
