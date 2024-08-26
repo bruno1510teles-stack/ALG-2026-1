@@ -102,18 +102,10 @@ def chamando_serasa(access_params=None):
 
     keycloak = access_params['keycloack_token_url']
     print(keycloak)
-    print(access_params['exrep_url'])
     content_headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Authorization": f"Basic {authorization}",
-        "User-Agent": "PostmanRuntime/7.37.3",
-        "Accept": "*/*",
-        "Cache-Control": "no-cache",
-        "Postman-Token": "3a1ab209-fe96-4b1e-99e4-45e996eb4211",
-        "Host": access_params['exrep_url'],
-        "Accept-Encoding": "gzip, deflate, br",
-        "Connection": "keep-alive",
-        "Content-Length": "29"
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Authorization": f"Basic {authorization}",
+    "Accept": "*/*"
     }
     request_body = {
         "grant_type": "client_credentials",
