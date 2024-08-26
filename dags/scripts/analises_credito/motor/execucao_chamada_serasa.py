@@ -1,6 +1,6 @@
 # Carregando libs
 import pandas as pd
-import joblib
+import joblib, logging
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
@@ -11,7 +11,6 @@ import base64, requests, sys, json
 
 
 def chamando_serasa(access_params=None):
-
 
     # VARIAVEIS DE DOS ARQUIVOS
     BUCKET_SOURCE_REFINED = "motor"
@@ -25,59 +24,75 @@ def chamando_serasa(access_params=None):
         secret_key=access_params['aws_secret_access_key_refined'],
     )
 
-    dtype = {'cnpj_raiz':str,
-        'documento_sem_formatacao':str,
-        'razao_social':str,
-        'cod_cnae':str,
-        'cod_natureza_juridica':str
+    dtype = {
+        'cnpj_raiz': str,
+        'documento_sem_formatacao': str,
+        'razao_social': str,
+        'cod_cnae': str,
+        'cod_natureza_juridica': str
     }
 
     # BAIXANDO ARQUIVO A SER ANALISADO
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
-    base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=dtype, sep = ';')
-    
+    try:
+        file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_PRE_FILTRO.csv')
+        base_pre_filtro = pd.read_csv(BytesIO(file.data), dtype=dtype, sep=';')
+    except Exception as e:
+        logging.error(f"Erro ao baixar ou ler o arquivo: {e}")
+        return
+
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
 
-
     def retrieve(cnpj, token):
-            ## Chamada da API do exrep para consulta do serasa
-            print(f'######## Chamada do Serasa para o cnpj {cnpj} #########')
-            res = None
-            url = f"{access_params['exrep_url']}/api/v1/report-executions"
-            headers = {
+        ## Chamada da API do exrep para consulta do Serasa
+        logging.info(f'Chamada do Serasa para o CNPJ {cnpj}')
+        url = f"{access_params['exrep_url']}/api/v1/report-executions"
+        headers = {
             'Content-Type': "application/json",
             'Authorization': f"Bearer {token}"
-            }
-            body = [
-                {
-                    "definition": {
-                        "id": "yXL"
-                    },
-                    "cacheMaxDays": 60,
-                    "involved": [
-                        {
-                            "role": "TARGET",
-                            "party": {
-                                "identifications": [
-                                    {
-                                        "type": "CNPJ",
-                                        "value": cnpj
-                                    }
-                                ]
-                            }
+        }
+        body = [
+            {
+                "definition": {
+                    "id": "yXL"
+                },
+                "cacheMaxDays": 60,
+                "involved": [
+                    {
+                        "role": "TARGET",
+                        "party": {
+                            "identifications": [
+                                {
+                                    "type": "CNPJ",
+                                    "value": cnpj
+                                }
+                            ]
                         }
-                    ],
-                    "synchronous": "true"
-                }
-            ]
+                    }
+                ],
+                "synchronous": "true"
+            }
+        ]
 
-            try:
-                res = requests.post(url, json=body, headers=headers)    
-            except Exception as e:
-                print(e)
-            if res != None and res.status_code == 200:
-                print(json.loads(res.text))
+        try:
+            res = requests.post(url, json=body, headers=headers)
+            res.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            logging.error(f"HTTP Error: {errh}")
+        except requests.exceptions.ConnectionError as errc:
+            logging.error(f"Error Connecting: {errc}")
+        except requests.exceptions.Timeout as errt:
+            logging.error(f"Timeout Error: {errt}")
+        except requests.exceptions.RequestException as err:
+            logging.error(f"General Error: {err}")
+        else:
+            logging.info("Request was successful.")
+
+        # Independente do status, mostrar a resposta
+        if res is not None:
+            logging.info(f"Raw Response for CNPJ {cnpj}: {res.text}")
+        else:
+            logging.warning(f"No response for CNPJ {cnpj}.")
 
     # Autenticação no Keycloak
     client_id = access_params['exrep_client_id']
@@ -103,16 +118,20 @@ def chamando_serasa(access_params=None):
 
     try:
         auth = requests.post(keycloak, data=request_body, headers=content_headers)
-    except Exception as e:
-        print(e)
-    if auth != None and auth.status_code == 200:
+        auth.raise_for_status()
         result = json.loads(auth.text)
         token = result['access_token']
-        print(token)
-    
-    cnpjs = segue_analise_prefiltro['documento_sem_formatacao'].unique()
-    #df = pd.createDataFrame(cnpjs).collect()
-    print(cnpjs)
+        logging.info(f"Token recebido: {token}")
+    except Exception as e:
+        logging.error(f"Erro durante a autenticação: {e}")
+        return
+
+    try:
+        cnpjs = segue_analise_prefiltro['documento_sem_formatacao'].unique()
+        logging.info(f"CNPJs a serem analisados: {cnpjs}")
+    except Exception as e:
+        logging.error(f"Erro ao processar CNPJs: {e}")
+        return
 
     for cnpj in cnpjs:
         retrieve(cnpj, token)
