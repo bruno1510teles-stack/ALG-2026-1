@@ -5,7 +5,8 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
 from io import BytesIO
-
+import os
+import base64, requests, sys, json
 
 def execucao_modelo(access_params=None):
 
@@ -16,9 +17,9 @@ def execucao_modelo(access_params=None):
 
     # Conectando na refined
     client = Minio(
-        'api-refined.alpe.com.br',
-        access_key = '0FKu1vkOJbq0K4C0qRuF',
-        secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+        access_params['endpoint_url_refined'],
+        access_key=access_params['aws_access_key_id_refined'],
+        secret_key=access_params['aws_secret_access_key_refined'],
     )
 
     dtype = {'cnpj_raiz':str,
@@ -47,12 +48,21 @@ def execucao_modelo(access_params=None):
     
     # Configura a conexão com o Trino
     conn = connect(
-        host="trino.alpe.com.br",
-        port=443,
-        user="trinodados",
-        auth=BasicAuthentication("trinodados", "hosgzPvuhyXkP<j}RyT+"),
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
+
+
+    # conn = connect(
+    #     host=access_params['endpoint_url_trusted'],
+    #     port=access_params['trino_port'],
+    #     user=access_params['trino_user'],
+    #     auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+    #     http_scheme="https",
+    # )
 
     # Cria um cursor e executa a query
     cur = conn.cursor()
@@ -100,8 +110,29 @@ def execucao_modelo(access_params=None):
     df = pd.DataFrame(rows, columns=columns)
     
     print('rodou a query')
+
+    #dtype_hp = {'cnpj_raiz':str,
+    #    'DOCUMENTO':str,    
+    #    'PRAZO_MEDIO_GERAL':float,
+    #    'PRAZO_MEDIO_3M':float,
+    #    'ALAVANCAGEM_DATA_ANALISE':float,
+    #    'ALAVANCAGEM_MEDIA_HISTORICA':float,
+    #    'MEDIA_DIFERENCA_DIAS_PEDIDOS':float,
+    #    'MEDIA_DIFERENCA_DIAS_PEDIDOS_3M':float,
+    #    'MAIOR_ATRASO_EM_DIAS':float,
+    #    'MAIOR_ATRASO_EM_DIAS_3M':float,
+    #    'PERCENTUAL_PAGO_EM_DIA':float,
+    #    'PERCENTUAL_PAGO_EM_DIA_3M':float,
+    #    'PCTO_COMPRA_SAFRA_GERAL':float,
+    #    'PCTO_COMPRA_SAFRA_GERAL_2SEM':float
+    #}
+    # BAIXANDO ARQUIVO COM AS VARIÁVEIS CALCULADAS MANUALMENTE
+    #file_2 = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/VARIAVEIS_HP.xlsx')
+    #Variaveis_hp_manual = pd.read_excel(BytesIO(file_2.data), dtype=dtype)
+
     
     df = df.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
+    #df = Variaveis_hp_manual.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
 
     print('puxando modelo')
     # PUXANDO ARQUIVO COM O MODELO
@@ -118,8 +149,8 @@ def execucao_modelo(access_params=None):
 
     # Remova a coluna 'CNPJ' do DataFrame de entrada
     nova_base = df.drop(columns=['cnpj_raiz','fornecedor','over_5','ever_10','vop_6_meses'], axis=1)
-    
-    
+    #nova_base = df.drop(columns=['cnpj_raiz','FORNECEDOR','DOCUMENTO'], axis=1)
+      
 
     #ALTERANDO NOME DAS COLUNAS PARA SEREM DE ACORDO COM O MODELO
     colunas = {'prazo_medio_geral':'PRAZO_MEDIO_GERAL',
@@ -182,6 +213,8 @@ def execucao_modelo(access_params=None):
 
 
     saida_modelo = base_pre_filtro.merge(base_final, on='cnpj_raiz', how='left')
+    
+    print(saida_modelo)
  
 
     #GRAVANDO

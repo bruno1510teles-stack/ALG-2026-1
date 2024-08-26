@@ -1,18 +1,15 @@
-    # IMPORT LIBS
+# IMPORT LIBS
 from datetime import datetime, timedelta, timezone
 
 # AIRFLOW LIBS
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python_operator import ShortCircuitOperator
-from airflow.operators.python import PythonOperator
-from airflow.providers.amazon.aws.operators.s3 import S3ListOperator
+from airflow.sensors.time_delta import TimeDeltaSensor
 from airflow.models import Variable
 
 # SCRIPTS
-from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
-from scripts.analises_credito.motor.execucao_modelo import execucao_modelo
-from scripts.analises_credito.motor.execucao_politica import execucao_politica
+from scripts.analises_credito.motor.envio_kafka_teste_camila import envio_kafka_teste_camila
+
 
 
 #PARAMETROS DE ACESSO
@@ -31,13 +28,14 @@ access_params = {
     "trino_user": Variable.get("TRINO_USER"),
     "trino_password": Variable.get("TRINO_PASSWORD"),
     "opdb_bucket": Variable.get("OPDB_BUCKET"),
-    "stage": Variable.get('STAGE')
+    "stage": Variable.get('STAGE'),
+    "kafka_url": Variable.get('KAFKA_DATALAKE_ENDPOINT')
 }
     
 
 # DEFINE DEFAULT ARGS
 default_args = {
-    "owner": "João Leite",
+    "owner": "Felipe Ferraz",
     "retries": 0,
     "retry_delay": 0,
     "execution_timeout": timedelta(seconds=60 * 60 * 4),
@@ -53,28 +51,19 @@ default_args = {
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
 )
 
-def execucao_motor():
+def teste_camila():
     # init & finish task
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def pre_filtro_task():
-        analise_pre_filtro()
-    
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def modelo_task():
-        execucao_modelo()
-        
-    @task(executor_config={"KubernetesExecutor": {"request_memory": "12000Mi"}})
-    def politica_task():
-        execucao_politica()
-    
-    pre_filtro = pre_filtro_task()    
-    modelo = modelo_task()
-    politica = politica_task()
+    @task(executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}})
+    def envio_kafka_task():
+        envio_kafka_teste_camila(access_params)
+
+    kafka = envio_kafka_task()
 
     # Set dependencies between tasks
-    init_data_load >> pre_filtro >> modelo >> politica >> finish_data_load
+    init_data_load >> kafka >> finish_data_load
+    #init_data_load >> pre_filtro >> serasa >> modelo >> politica >> finish_data_load
 
-execucao_motor()
+teste_camila()

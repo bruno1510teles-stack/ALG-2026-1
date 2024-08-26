@@ -5,31 +5,50 @@ from minio import Minio
 from io import BytesIO
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
+import os, pytz
+from datetime import datetime
 
 
 def analise_pre_filtro(access_params=None):
 
     # VARIAVEIS DE DOS ARQUIVOS
+    fuso_horario = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso_horario)
+    ano = agora.strftime('%Y')
+    mes = agora.strftime('%m')
+    dia = agora.strftime('%d')
+    hora = agora.strftime('%H')
+
     BUCKET_SOURCE_REFINED = "motor"
     FOLDER_SOURCE_REFINED = 'analise_credito/in/a_processar'
     FOLDER_DESTINATION_REFINED = 'analise_credito/auxiliar'
 
     # Conectando na refined
     client = Minio(
-        'api-refined.alpe.com.br',
-        access_key = '0FKu1vkOJbq0K4C0qRuF',
-        secret_key = 'PIqXSinLX2q9XTvGsVrw5Z5jzyuBl7ng7hIq62oA',
+        access_params['endpoint_url_refined'],
+        access_key=access_params['aws_access_key_id_refined'],
+        secret_key=access_params['aws_secret_access_key_refined'],
     )
 
-    # BAIXANDO ARQUIVO A SER ANALISADO
-    file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BASE_PRE_FILTRO.csv')
 
-    base_analisar = pd.read_csv(BytesIO(file.data), dtype=str)
+    # BAIXANDO ARQUIVO A SER ANALISADO
+    file = client.get_object(
+        bucket_name=BUCKET_SOURCE_REFINED, 
+        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/{hora}/BASE_ANALISAR.csv'
+    )
+
+    base_analisar = pd.read_csv(BytesIO(file.data), dtype=str, sep=';')
+    base_analisar['CNPJ'] = base_analisar['CNPJ'].str.zfill(14)
+    base_analisar['cnpj_raiz'] = base_analisar['CNPJ'].str.slice(0, 8).str.zfill(8)
+    print(f"Quantidade de CNPJs na base_analisar: {base_analisar.shape[0]}")
 
     cnpjs = base_analisar['CNPJ'].unique()
-    cnpjs_raiz = base_analisar['CNPJ'].str.slice(0, 8).unique()
+    cnpjs_raiz = base_analisar['cnpj_raiz'].str.slice(0, 8).unique()
+    print(f"Quantidade de CNPJs na cnpjs_raiz: {cnpjs_raiz.shape[0]}")
+
     ## Criar uma string formatada para a cláusula IN
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs_raiz)
+    print(ids_query)
     ids_query = f"({ids_query})"
     
     # Configura a conexão
@@ -40,6 +59,15 @@ def analise_pre_filtro(access_params=None):
         auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
+
+    # conn = connect(
+    #     host=access_params['endpoint_url_trusted'],
+    #     port=access_params['trino_port'],
+    #     user=access_params['trino_user'],
+    #     auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+    #     http_scheme="https",
+    # )
+
 
     # Cria um cursor e executa a query
     # Base auxiliar CNAE
@@ -91,9 +119,9 @@ def analise_pre_filtro(access_params=None):
     cur = conn.cursor()
     query = (f"""
     select 
-        est.documento_sem_formatacao 
+        distinct est.documento_sem_formatacao
     from 
-        miniotrusted.receita_federal.estabelecimentos est
+        deltalaketrusted.receita_federal.estabelecimentos est
     where
         est.cnpj_raiz in {ids_query} and is_matriz = true
         """)
@@ -110,6 +138,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     base_analisar_raiz = pd.DataFrame(rows, columns=columns)
+    print(f"Quantidade de CNPJs que retornou da estabelecimentos: {base_analisar_raiz.shape[0]}")
 
     ## Criar uma string formatada para a cláusula IN
     cnpjs = base_analisar_raiz['documento_sem_formatacao'].unique()
@@ -120,56 +149,25 @@ def analise_pre_filtro(access_params=None):
     cur = conn.cursor()
     query = (f"""
 
-    with        
-        venc as (
-            SELECT
-                DISTINCT s.numero_cnpj_sacado, 'SIM' AS inad_alpe
-            FROM
-                postgres.ccred_schema_prd_default.boleto_titulo bt
-                LEFT JOIN postgres.ccred_schema_prd_default.boleto_titulo_endosso bte ON bt.id = bte.boleto_titulo_id_endossado
-                LEFT JOIN postgres.ccred_schema_prd_default.boleto_titulo bt2 ON bte.boleto_titulo_id = bt2.id AND bt2.codigo_empresa = 3
-                LEFT JOIN postgres.ccred_schema_prd_default.sacado s ON bt.codigo_sacado = s.codigo_sacado
-            WHERE
-                bt.titulo_pagamento
-                AND bt.excluido != true
-                AND bt.codigo_estagio_titulo IN (5, 6)
-                AND bt.data_efetivacao IS NOT NULL
-                AND bt.codigo_cedente NOT IN (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372)
-                AND bt.status_titulo = 'VENCIDO'
-        ),    
-        
-        limi as (
-            SELECT
-                DISTINCT cnpj_raiz, True AS possui_limite
-            FROM
-                postgres.ccred_schema_prd_default.vw_limite_sacado_v3
-            WHERE cedente_principal = true
-                AND sumarizado = true
-                AND limite_atribuido >= 0
-        )
-
         select 
             pre.cnpj_raiz cnpj_raiz,
             pre.documento_sem_formatacao,
             pre.razao_social,
             pre.cod_cnae,
             pre.cod_natureza_juridica,
-            emp.codigo_porte_empresa,
+            CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
+            emp.capital_social_empresa as "Capital Social",
             pre.idade,
             pre.situacao_cadastral situacao_cadastral,
             pre.idade_socio,
             pre.tem_socio_pj,
             pre.is_mei,
             pre.tem_pep,
-            COALESCE(venc.inad_alpe, 'NAO') as inad_alpe,
-            COALESCE(limi.possui_limite, False) as limite_alpe,
             pre.situacao_especial,
             pre.data_ref_receita
         from 
             deltalakerefined.motor.pre_filtro pre
-        left join miniotrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz and pre.data_ref_receita = emp.data_ref
-        left join venc ON pre.documento_sem_formatacao = venc.numero_cnpj_sacado
-        left join limi ON pre.cnpj_raiz = limi.cnpj_raiz
+        left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
 
         where pre.documento_sem_formatacao in {ids_query}
 
@@ -187,6 +185,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'limite_alpe']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão de cnae e natureza juridica
     df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
@@ -228,7 +227,7 @@ def analise_pre_filtro(access_params=None):
     # PF 10
     df.loc[(df['inad_alpe'] == 'SIM') & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 10'
     # PF 11
-    #df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 11'
+    df.loc[((df['limite_alpe'] == True) | (df['limite_alpe'] == 'True')) & (df['ramificacao_pre_filtro'].isna()), 'ramificacao_pre_filtro'] = 'PF 11'
     # PF 12
     df.loc[df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = 'PF 12'
  
@@ -247,6 +246,9 @@ def analise_pre_filtro(access_params=None):
     # Nome do arquivo CSV que você deseja criar
     file_out = f'LANDING_PRE_FILTRO.csv'
     
+    print(df)
+
+
     csv_bytes = df.to_csv(index=False, sep=';').encode('utf-8')
     csv_buffer = BytesIO(csv_bytes)
 
