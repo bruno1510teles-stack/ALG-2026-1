@@ -44,7 +44,7 @@ def chamando_serasa(access_params=None):
             ## Chamada da API do exrep para consulta do serasa
             print(f'######## Chamada do Serasa para o cnpj {cnpj} #########')
             res = None
-            url = "https://apps.alpe.tech/api/dev/exrep/api/v1/report-executions"
+            url = f"{access_params['exrep_url']}/api/v1/report-executions"
             headers = {
             'Content-Type': "application/json",
             'Authorization': f"Bearer {token}"
@@ -80,11 +80,11 @@ def chamando_serasa(access_params=None):
                 print(json.loads(res.text))
 
     # Autenticação no Keycloak
-    client_id = 'exrep-dev-default'
-    client_secret = 'a4761831-110e-6ae7-7cf1-0264d501d3d4'
+    client_id = access_params['exrep_client_id']
+    client_secret = access_params['exrep_client_secret']
     authorization = base64.b64encode(bytes(client_id + ":" + client_secret, "ISO-8859-1")).decode("ascii")
 
-    keycloak = "https://keycloak.alpe-dev.com/realms/main/protocol/openid-connect/token"
+    keycloak = access_params['keycloack_token_url']
     content_headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Authorization": f"Basic {authorization}",
@@ -92,7 +92,7 @@ def chamando_serasa(access_params=None):
         "Accept": "*/*",
         "Cache-Control": "no-cache",
         "Postman-Token": "3a1ab209-fe96-4b1e-99e4-45e996eb4211",
-        "Host": "keycloak.alpe-dev.com",
+        "Host": access_params['exrep_url'],
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
         "Content-Length": "29"

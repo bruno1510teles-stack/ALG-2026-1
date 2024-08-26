@@ -33,7 +33,11 @@ access_params = {
     "trino_password": Variable.get("TRINO_PASSWORD"),
     "opdb_bucket": Variable.get("OPDB_BUCKET"),
     "stage": Variable.get('STAGE'),
-    "kafka_url": Variable.get('KAFKA_DATALAKE_ENDPOINT')
+    "kafka_url": Variable.get('KAFKA_DATALAKE_ENDPOINT'),
+    "exrep_url": Variable.get('EXREP_BASE_URL'),
+    "exrep_client_id": Variable.get('EXREP_CLIENT_ID'),
+    "exrep_client_secret": Variable.get('EXREP_CLIENT_SECRET'),
+    "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
 }
 
 # DEFINE DEFAULT ARGS
