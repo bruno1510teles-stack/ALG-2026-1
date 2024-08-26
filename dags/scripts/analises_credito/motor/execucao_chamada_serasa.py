@@ -94,13 +94,8 @@ def chamando_serasa(access_params=None):
 
             # Independente do status, mostrar a resposta
             if res is not None:
-                try:
-                    # Tenta decodificar o JSON se for possível
-                    response_json = res.json()
-                    print("Response JSON:", json.dumps(response_json, indent=4))
-                except ValueError:
-                    # Se não for JSON, exibe o texto bruto
-                    print("Response Text:", res.text)
+                print(f"Raw Response: {res.text}")
+
 
     # Autenticação no Keycloak
     client_id = access_params['exrep_client_id']
