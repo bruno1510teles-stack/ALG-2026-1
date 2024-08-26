@@ -95,6 +95,8 @@ def chamando_serasa(access_params=None):
             # Independente do status, mostrar a resposta
             if res is not None:
                 print(f"Raw Response: {res.text}")
+            else:
+                print(f"No response for CNPJ {cnpj}.")
 
 
     # Autenticação no Keycloak
