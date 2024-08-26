@@ -72,32 +72,12 @@ def chamando_serasa(access_params=None):
                 }
             ]
 
-            # try:
-            #     res = requests.post(url, json=body, headers=headers)    
-            # except Exception as e:
-            #     print(e)
-            # if res != None and res.status_code == 200:
-            #     print(json.loads(res.text))
             try:
                 res = requests.post(url, json=body, headers=headers)    
-                res.raise_for_status()  # Levanta uma exceção se o status code for 4xx ou 5xx
-            except requests.exceptions.HTTPError as errh:
-                print(f"HTTP Error: {errh}")
-            except requests.exceptions.ConnectionError as errc:
-                print(f"Error Connecting: {errc}")
-            except requests.exceptions.Timeout as errt:
-                print(f"Timeout Error: {errt}")
-            except requests.exceptions.RequestException as err:
-                print(f"General Error: {err}")
-            else:
-                print("Request was successful.")
-
-            # Independente do status, mostrar a resposta
-            if res is not None:
-                print(f"Raw Response: {res.text}")
-            else:
-                print(f"No response for CNPJ {cnpj}.")
-
+            except Exception as e:
+                print(e)
+            if res != None and res.status_code == 200:
+                print(json.loads(res.text))
 
     # Autenticação no Keycloak
     client_id = access_params['exrep_client_id']
