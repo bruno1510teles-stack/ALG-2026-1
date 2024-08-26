@@ -52,9 +52,9 @@ def chamando_serasa(access_params=None):
             body = [
                 {
                     "definition": {
-                        "id": "mDBG"
+                        "id": "yXL"
                     },
-                    "cacheMaxDays": -1,
+                    "cacheMaxDays": 60,
                     "involved": [
                         {
                             "role": "TARGET",
