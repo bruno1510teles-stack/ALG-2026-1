@@ -47,6 +47,7 @@ def chamando_serasa(access_params=None):
         ## Chamada da API do exrep para consulta do Serasa
         logging.info(f'Chamada do Serasa para o CNPJ {cnpj}')
         url = f"{access_params['exrep_url']}api/v1/report-executions"
+        print(url)
         headers = {
             'Content-Type': "application/json",
             'Authorization': f"Bearer {token}"
