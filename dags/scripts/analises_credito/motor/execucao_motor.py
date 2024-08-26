@@ -97,7 +97,7 @@ with DAG(
     
     wait_1_minute = PythonOperator(
         task_id="wait_1_minute",
-        python_callable=lambda: sleep(60),  # Espera por 60 segundos
+        python_callable=lambda: sleep(2400),  # Espera por 60 segundos
     )
 
     # Set dependencies between tasks
