@@ -1,5 +1,6 @@
 # IMPORT LIBS
 from datetime import datetime, timedelta, timezone
+from time import sleep
 
 # AIRFLOW LIBS
 from airflow.decorators import dag, task
@@ -79,11 +80,15 @@ def execucao_motor():
     def envio_kafka_task():
         envio_kafka(access_params)
     
-    # Define a time delay of 1 minute between tasks
-    wait_1_minute = TimeDeltaSensor(
-        task_id="wait_1_minute",
-        delta=timedelta(minutes=1)
-    )
+    @task 
+    def wait_1_minute():
+        sleep(2400)  # Espera por 60 segundos
+
+    # # Define a time delay of 1 minute between tasks
+    # wait_1_minute = TimeDeltaSensor(
+    #     task_id="wait_1_minute",
+    #     delta=timedelta(minutes=1)
+    # )
 
     pre_filtro = pre_filtro_task()   
     serasa = serasa_task()
