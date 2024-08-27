@@ -9,11 +9,12 @@ from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 
 # SCRIPTS
+from scripts.analises_credito.motor.execucao_import_base_analisar import base_analisar
 from scripts.analises_credito.motor.execucao_analise_pre_filtro import analise_pre_filtro
+from scripts.analises_credito.motor.execucao_chamada_serasa import chamando_serasa
 from scripts.analises_credito.motor.execucao_modelo import execucao_modelo
 from scripts.analises_credito.motor.execucao_politica import execucao_politica
 from scripts.analises_credito.motor.execucao_envio_kafka import envio_kafka
-from scripts.analises_credito.motor.execucao_chamada_serasa import chamando_serasa
 
 
 # PARAMETROS DE ACESSO
@@ -63,7 +64,14 @@ with DAG(
     init_data_load = EmptyOperator(task_id="init")
     finish_data_load = EmptyOperator(task_id="finish")
 
-    # Define Python tasks
+    # Python tasks
+    base = PythonOperator(
+        task_id="base_analisar_task",
+        python_callable=base_analisar,
+        op_kwargs={'access_params': access_params},
+        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+    )
+
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
         python_callable=analise_pre_filtro,
@@ -92,7 +100,7 @@ with DAG(
         executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
 
-    envio_kafka = PythonOperator(
+    enviar_kafka = PythonOperator(
         task_id="envio_kafka_task",
         python_callable=envio_kafka,
         op_kwargs={'access_params': access_params},
@@ -104,5 +112,5 @@ with DAG(
         python_callable=lambda: sleep(2400),  # Espera por 60 segundos
     )
 
-    # Set dependencies between tasks
-    init_data_load >> pre_filtro >> serasa >> wait_1_minute >> modelo >> politica >> envio_kafka >> finish_data_load
+    # Ordem
+    init_data_load >> base >> pre_filtro >> serasa >> wait_1_minute >> modelo >> politica >> enviar_kafka >> finish_data_load

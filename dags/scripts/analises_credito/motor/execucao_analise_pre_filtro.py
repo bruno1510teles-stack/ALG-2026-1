@@ -34,7 +34,7 @@ def analise_pre_filtro(access_params=None):
     # BAIXANDO ARQUIVO A SER ANALISADO
     file = client.get_object(
         bucket_name=BUCKET_SOURCE_REFINED, 
-        object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/{hora}/BASE_ANALISAR.csv'
+        object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_BASE_ANALISAR.csv'
     )
 
     base_analisar = pd.read_csv(BytesIO(file.data), dtype=str, sep=';')
