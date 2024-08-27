@@ -39,7 +39,7 @@ access_params = {
     "exrep_client_id": Variable.get('EXREP_CLIENT_ID'),
     "exrep_client_secret": Variable.get('EXREP_CLIENT_SECRET'),
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')#,
-    #"jira_url": Variable.get('JIRA_BASE_URL'),
+    #"jira_url": Variable.get('JIRA_API_URL'),
     #"jira_token": Variable.get('JIRA_TOKEN'),
     #"jira_user": Variable.get('JIRA_USER')
 }

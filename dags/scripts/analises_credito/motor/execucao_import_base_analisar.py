@@ -12,6 +12,7 @@ def base_analisar(access_params=None):
     jira_url = "https://alpe.atlassian.net/rest/api/2/search"
     # Credenciais de acesso
     #email = access_params['jira_user']
+    
     email = "felipe.ferraz@alpe.com.br"
     #api_token = access_params['jira_token']
     api_token = "ATATT3xFfGF0HVdx6POVBSFWH3BnpC0HyKvTF9EXgjLZ6rpwZuHnIAcI1UDeNTht79mL-O60ezlE4a2qKr4d-H_A3DmY7VCwATPRMABBMQns1ubEjMI_uFgCjEMPeUKkpVgb_-BZ5btV7yQQal1ZNmEm2dGZY_NTpUpOkHdC-SjK0iiBIj3EP80=037ADAA4"
