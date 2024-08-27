@@ -678,6 +678,12 @@ def execucao_politica(access_params=None):
 
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
 
+    print("Quantidade de CNPJs por ramificação:")
+    print(resposta_motor_resumida.groupby('ramificacao')['cnpj_ec'].size())
+
+    print("Quantidade de CNPJs por parecer:")
+    print(resposta_motor_resumida.groupby('parecer')['cnpj_ec'].size())
+
     print(resposta_motor_resumida)
 
     # Tratando para Salvar Arquivos
