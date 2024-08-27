@@ -8,10 +8,14 @@ from io import BytesIO
 def base_analisar(access_params=None):
 
     # Configurações da API do Jira
+    #jira_url = f"{access_params['jira_url']}/rest/api/2/search"
     jira_url = "https://alpe.atlassian.net/rest/api/2/search"
     # Credenciais de acesso
+    #email = access_params['jira_user']
     email = "felipe.ferraz@alpe.com.br"
+    #api_token = access_params['jira_token']
     api_token = "ATATT3xFfGF0HVdx6POVBSFWH3BnpC0HyKvTF9EXgjLZ6rpwZuHnIAcI1UDeNTht79mL-O60ezlE4a2qKr4d-H_A3DmY7VCwATPRMABBMQns1ubEjMI_uFgCjEMPeUKkpVgb_-BZ5btV7yQQal1ZNmEm2dGZY_NTpUpOkHdC-SjK0iiBIj3EP80=037ADAA4"
+
     # Gerando o header de autenticação em Base64
     auth = base64.b64encode(f"{email}:{api_token}".encode()).decode()
 
@@ -22,7 +26,7 @@ def base_analisar(access_params=None):
 
     # Query para buscar os tickets da fila desejada
     query = {
-        "jql": "project = cmgt and issueType = 'Credit Limit Request' AND (status = 'Awaiting Execution' OR status = 'In Progress') AND NOT (summary ~ REVISÃO OR summary ~ LOTE) AND 'Payee Identification' is not EMPTY ORDER BY key ASC, cf[13737] ASC, cf[13730] ASC, createdDate ASC",
+        "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
         "fields": ["key", # ISSUE_JIRA
                 "customfield_13729", # CNPJ
                 "customfield_13732", # LIMITE ALPE

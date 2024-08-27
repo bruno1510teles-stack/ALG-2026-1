@@ -46,23 +46,23 @@ def execucao_modelo(access_params=None):
 
     print(ids_query)
     
-    # Configura a conexão com o Trino
-    conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-        http_scheme="https",
-    )
-
-
+    # # Configura a conexão com o Trino
     # conn = connect(
-    #     host=access_params['endpoint_url_trusted'],
-    #     port=access_params['trino_port'],
-    #     user=access_params['trino_user'],
-    #     auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+    #     host='trino.alpe.com.br',
+    #     port='443',
+    #     user='trinodados',
+    #     auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
     #     http_scheme="https",
     # )
+
+
+    conn = connect(
+        host=access_params['endpoint_url_trusted'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        http_scheme="https",
+    )
 
     # Cria um cursor e executa a query
     cur = conn.cursor()

@@ -38,7 +38,10 @@ access_params = {
     "exrep_url": Variable.get('EXREP_BASE_URL'),
     "exrep_client_id": Variable.get('EXREP_CLIENT_ID'),
     "exrep_client_secret": Variable.get('EXREP_CLIENT_SECRET'),
-    "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
+    "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')#,
+    #"jira_url": Variable.get('JIRA_BASE_URL'),
+    #"jira_token": Variable.get('JIRA_TOKEN'),
+    #"jira_user": Variable.get('JIRA_USER')
 }
 
 # DEFINE DEFAULT ARGS
