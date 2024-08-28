@@ -35,8 +35,6 @@ def execucao_politica(access_params=None):
 
     # importando resposta modelo (score 1)
     dado_texto = {'cnpj_raiz':str}
-
-    #saida_modelo = pd.read_csv(R'C:\Users\joao.leite\OneDrive - Yandeh\Desktop\Arvore Automatizada\AUXILIAR\LANDING_MODELO.csv', delimiter=';', dtype=dado_texto)
     file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/LANDING_MODELO.csv')
     saida_modelo = pd.read_csv(BytesIO(file.data), dtype=dado_texto, sep = ';')
 
@@ -71,16 +69,6 @@ def execucao_politica(access_params=None):
 
     # Separando os casos que seguem analise com HP
     seguem_analise_com_hp = saida_modelo[saida_modelo['CLASSIFICACAO'].isin(['A','B','C'])]
-
-
-    # # Configurando conexão Trino
-    # conn = connect(
-    #     host='trino.alpe.com.br',
-    #     port='443',
-    #     user='trinodados',
-    #     auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-    #     http_scheme="https",
-    # )
 
     # Configurando conexão Trino
     conn = connect(
@@ -176,6 +164,16 @@ def execucao_politica(access_params=None):
         deltalaketrusted.serasa.organizacoes org 
     group by
         org.cnpj_raiz
+    ),
+	RankedSocios AS (
+        SELECT 
+            org.id, 
+            so.documento_socio, 
+            so.percentual_capital,
+            ROW_NUMBER() OVER (PARTITION BY org.id ORDER BY so.percentual_capital DESC, so.documento_socio) AS rn
+        FROM 
+            deltalaketrusted.serasa.organizacoes org
+        LEFT JOIN deltalaketrusted.serasa.socios so ON org.id = so.id
     )
     select 
         trp.id,
@@ -203,8 +201,11 @@ def execucao_politica(access_params=None):
     inner join 
         consulta_mais_recente cmr
         on trp.cnpj_raiz = cmr.cnpj_raiz and trp.data_consulta = cmr.consulta_mais_recente
+    left join 
+        RankedSocios rs ON trp.id = rs.id
     where 
         trp.cnpj_raiz in {ids_query}
+        and and rs.rn = 1
 
         """)
 
@@ -226,87 +227,6 @@ def execucao_politica(access_params=None):
 
 
     seguem_analise_com_hp = seguem_analise_com_hp.merge(base_retorno_serasa, on = ['cnpj_raiz'], how = 'left')
-
-    # # # # # # # # dados_texto = {'CPF do Principal Socio':'str', 'CNPJ':'str', 'Capital Social':'float'}
-
-    # # # # # # # # # importando consulta BVS
-    # # # # # # # # file = client.get_object(
-    # # # # # # # #     bucket_name=BUCKET_SOURCE_REFINED, 
-    # # # # # # # #     object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/BVS.csv'
-    # # # # # # # # )
-
-
-    # # # # # # # # #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/BVS.csv')
-    # # # # # # # # bvs_pj = pd.read_csv(BytesIO(file.data), sep=';',dtype = dados_texto)
-
-    # # # # # # # # # Ajustando a formatação do CNPJ para 14 digitos
-    # # # # # # # # bvs_pj['CNPJ'] = bvs_pj['CNPJ'].astype(str).str.zfill(14)
-    # # # # # # # # bvs_pj['cnpj_raiz'] = bvs_pj['CNPJ'].astype(str).str.slice(0, 8)
-
-    # # # # # # # # # Ajustando a formatação do CPF para 11 digitos
-    # # # # # # # # bvs_pj['CPF do Principal Socio'] = bvs_pj['CPF do Principal Socio'].str.zfill(11)
-
-
-    # # # # # # # # # importando a base SPC PJ
-    # # # # # # # # file = client.get_object(
-    # # # # # # # #     bucket_name=BUCKET_SOURCE_REFINED, 
-    # # # # # # # #     object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/SPC_PJ.xlsx'
-    # # # # # # # # )
-    # # # # # # # # #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PJ.xlsx')
-    # # # # # # # # spc_pj = pd.read_excel(BytesIO(file.data))
-
-    # # # # # # # # # Ajustando a formatação do CNPJ para 14 digitos
-    # # # # # # # # spc_pj['CNPJ'] = spc_pj['CNPJ'].astype(str).str.zfill(14)
-    # # # # # # # # spc_pj['cnpj_raiz'] = spc_pj['CNPJ'].astype(str).str.slice(0, 8)
-
-    # # # # # # # # # importando a base SPC PF
-    # # # # # # # # dados_texto_pf = {'CPF':'str', 'CNPJ':'str'}
-
-    # # # # # # # # file = client.get_object(
-    # # # # # # # #     bucket_name=BUCKET_SOURCE_REFINED, 
-    # # # # # # # #     object_name=f'{FOLDER_SOURCE_REFINED}/{ano}/{mes}/{dia}/SPC_PF.xlsx'
-    # # # # # # # # )
-
-    # # # # # # # # #file = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/SPC_PF.xlsx')
-    # # # # # # # # spc_pf = pd.read_excel(BytesIO(file.data), dtype=dados_texto_pf)
-
-    # # # # # # # # # formatando o CPF
-    # # # # # # # # spc_pf['CPF'] = spc_pf['CPF'].astype(str).str.zfill(11)
-    # # # # # # # # spc_pf['cnpj_raiz'] = spc_pf['CNPJ'].astype(str).str.slice(0, 8)
-
-    # # # # # # # # spc_pf = spc_pf.drop(columns=['CPF.1'])
-
-    # # # # # # # # # Criando um novo df com as principais colunas pj e pf
-
-    # # # # # # # # # unificando os dados pj MODELO e BVS
-    # # # # # # # # base_modelo_bvs = pd.merge(seguem_analise_com_hp,
-    # # # # # # # #     bvs_pj[['cnpj_raiz','CNPJ','Razao Social','CPF do Principal Socio','Data de Fundacao','Faixa Faturamento Presumido Positivo','Capital Social','Score Positivo PJ','Indicativo de Restritivo']],
-    # # # # # # # #     left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
-    # # # # # # # # base_modelo_bvs = base_modelo_bvs.drop(columns = ['CNPJ'])
-
-    # # # # # # # # # unificando os dados pj MODELO + BVS com SPC
-    # # # # # # # # base_modelo_bvs_spc = pd.merge(base_modelo_bvs,
-    # # # # # # # #     spc_pj[['cnpj_raiz','CNPJ','TOTAL RESTRITIVOS','QTD RESTRITIVOS','QTD CHEQUE']],
-    # # # # # # # #     left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
-
-    # # # # # # # # #Trazendo os dados PF
-    # # # # # # # # spc_pf_reduzida = spc_pf[['CNPJ','CPF','RESTRITIVOS','CHEQUE']]
-    # # # # # # # # spc_pf_reduzida['cnpj_raiz'] = spc_pf_reduzida['CNPJ'].str.slice(0,8)
-
-
-    # # # # # # # # base_modelo_bureau = pd.merge(base_modelo_bvs_spc, spc_pf_reduzida,
-    # # # # # # # #     left_on = 'cnpj_raiz',
-    # # # # # # # #     right_on ='cnpj_raiz',
-    # # # # # # # #     how='left')
-
-    # # # # # # # # base_modelo_bureau = base_modelo_bureau.drop(columns = ['CNPJ_x','CNPJ_y'])
-    # # # # # # # # base_modelo_bureau = base_modelo_bureau.rename(columns={'RESTRITIVOS':'RESTRITIVOS PF'})
-    # # # # # # # # base_modelo_bureau = base_modelo_bureau.rename(columns={'CHEQUE':'CHEQUE PF'})
-
-
-    # # # # # # # # print(f'Base modelo + bvs \n',base_modelo_bvs['CLASSIFICACAO'].value_counts())
-    # # # # # # # # print(f'Base modelo + bvs + spc \n',base_modelo_bvs_spc['CLASSIFICACAO'].value_counts())
-    # # # # # # # # print(f'Base modelo + bvs \n',base_modelo_bureau['CLASSIFICACAO'].value_counts())
 
     # Função com a árvore de decisão
     def politica_com_hp(linha):
@@ -472,9 +392,8 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] > 710 #and
-            #pd.isnull(linha['CPF do Principal Socio']
-                      ):
+            linha['Score Positivo PJ'] > 710 and
+            pd.isnull(linha['CPF do Principal Socio'])):
                 return 'A - A3'    
         elif(linha['CLASSIFICACAO'] == 'A' and
             linha['QTD CHEQUE'] == 0 and
@@ -500,44 +419,11 @@ def execucao_politica(access_params=None):
 
     seguem_analise_com_hp['resposta_motor'] = None
 
-    # REPROVADO
-    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2' 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8']), 'resposta_motor'] = 'REPROVADO'
-    
-    # MESA
-    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1']), 'resposta_motor'] = 'MESA'
-    
-    # APROVADO
-    #base_modelo_bureau.loc[base_modelo_bureau['DECISAO_POLITICA'].isin(['A - A1']), 'resposta_motor'] = 'APROVADO'
-
-    # Separando as linhas que não possuem HP para rodar a politica
+      # Separando as linhas que não possuem HP para rodar a politica
 
     segue_analise_sem_hp = saida_modelo[saida_modelo['possui_hp'] == 'NAO']
 
     segue_analise_sem_hp = segue_analise_sem_hp.merge(base_retorno_serasa, on = ['cnpj_raiz'], how = 'left')
-
-    # Criando um novo df com as principais colunas pj e pf somente de bureau, para a politica sem HP
-
-    # # # # # # # # # # unificando base sem HP com BVS
-    # # # # # # # # # base_bvs_pj = pd.merge(segue_analise_sem_hp,
-    # # # # # # # # #     bvs_pj[['cnpj_raiz','CNPJ','Razao Social','CPF do Principal Socio','Data de Fundacao','Faixa Faturamento Presumido Positivo','Capital Social','Score Positivo PJ','Indicativo de Restritivo']],
-    # # # # # # # # #     left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
-
-    # # # # # # # # # base_bvs_pj.head()
-
-    # # # # # # # # # base_bvs_spc_pj = pd.merge(base_bvs_pj,
-    # # # # # # # # #     spc_pj[['cnpj_raiz','TOTAL RESTRITIVOS','QTD RESTRITIVOS','QTD CHEQUE']],
-    # # # # # # # # #     left_on='cnpj_raiz', right_on='cnpj_raiz', how='left')
-
-    # # # # # # # # # #Trazendo os dados PF
-    # # # # # # # # # base_sem_hp = pd.merge(base_bvs_spc_pj,spc_pf_reduzida,
-    # # # # # # # # #     left_on='cnpj_raiz',
-    # # # # # # # # #     right_on='cnpj_raiz',
-    # # # # # # # # #     how='left')
-
-    # # # # # # # # # base_sem_hp = base_sem_hp.drop(columns=['CNPJ_y'])
-    # # # # # # # # # base_sem_hp = base_sem_hp.rename(columns={'RESTRITIVOS':'RESTRITIVOS PF'})
-    # # # # # # # # # base_sem_hp = base_sem_hp.rename(columns={'CHEQUE':'CHEQUE PF'})
-    # # # # # # # # # base_sem_hp = base_sem_hp.rename(columns={'CNPJ_x':'CNPJ'})
 
     # Função com a árvore de decisão sem HP
     def politica_sem_hp(linha):
@@ -586,9 +472,8 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 #and
-            #pd.isnull(linha['CPF do Principal Socio'])
-            ):
+            linha['Score Positivo PJ'] > 900 and
+            pd.isnull(linha['CPF do Principal Socio'])):
                 return "B - 4"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and

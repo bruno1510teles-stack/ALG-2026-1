@@ -46,16 +46,6 @@ def execucao_modelo(access_params=None):
 
     print(ids_query)
     
-    # # Configura a conexão com o Trino
-    # conn = connect(
-    #     host='trino.alpe.com.br',
-    #     port='443',
-    #     user='trinodados',
-    #     auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-    #     http_scheme="https",
-    # )
-
-
     conn = connect(
         host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
@@ -111,28 +101,8 @@ def execucao_modelo(access_params=None):
     
     print('rodou a query')
 
-    #dtype_hp = {'cnpj_raiz':str,
-    #    'DOCUMENTO':str,    
-    #    'PRAZO_MEDIO_GERAL':float,
-    #    'PRAZO_MEDIO_3M':float,
-    #    'ALAVANCAGEM_DATA_ANALISE':float,
-    #    'ALAVANCAGEM_MEDIA_HISTORICA':float,
-    #    'MEDIA_DIFERENCA_DIAS_PEDIDOS':float,
-    #    'MEDIA_DIFERENCA_DIAS_PEDIDOS_3M':float,
-    #    'MAIOR_ATRASO_EM_DIAS':float,
-    #    'MAIOR_ATRASO_EM_DIAS_3M':float,
-    #    'PERCENTUAL_PAGO_EM_DIA':float,
-    #    'PERCENTUAL_PAGO_EM_DIA_3M':float,
-    #    'PCTO_COMPRA_SAFRA_GERAL':float,
-    #    'PCTO_COMPRA_SAFRA_GERAL_2SEM':float
-    #}
-    # BAIXANDO ARQUIVO COM AS VARIÁVEIS CALCULADAS MANUALMENTE
-    #file_2 = client.get_object(bucket_name=BUCKET_SOURCE_REFINED, object_name=f'{FOLDER_SOURCE_REFINED}/VARIAVEIS_HP.xlsx')
-    #Variaveis_hp_manual = pd.read_excel(BytesIO(file_2.data), dtype=dtype)
-
     
     df = df.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
-    #df = Variaveis_hp_manual.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
 
     print('puxando modelo')
     # PUXANDO ARQUIVO COM O MODELO
@@ -149,7 +119,6 @@ def execucao_modelo(access_params=None):
 
     # Remova a coluna 'CNPJ' do DataFrame de entrada
     nova_base = df.drop(columns=['cnpj_raiz','fornecedor','over_5','ever_10','vop_6_meses'], axis=1)
-    #nova_base = df.drop(columns=['cnpj_raiz','FORNECEDOR','DOCUMENTO'], axis=1)
       
 
     #ALTERANDO NOME DAS COLUNAS PARA SEREM DE ACORDO COM O MODELO
