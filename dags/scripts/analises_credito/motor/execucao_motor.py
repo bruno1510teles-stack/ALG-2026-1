@@ -107,12 +107,13 @@ with DAG(
         task_id="envio_kafka_task",
         python_callable=envio_kafka,
         op_kwargs={'access_params': access_params},
+        provide_context=True,  # Para habilitar o ti (task instance)
         executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
     
     wait_1_minute = PythonOperator(
         task_id="wait_1_minute",
-        python_callable=lambda: sleep(2400),  # Espera por 60 segundos
+        python_callable=lambda: sleep(900),  # Espera por 15 minutos
     )
 
     # Ordem

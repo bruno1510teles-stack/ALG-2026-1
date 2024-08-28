@@ -5,7 +5,7 @@ from minio import Minio
 from confluent_kafka import Producer
 import pytz
 
-def envio_kafka(access_params):
+def envio_kafka(access_params, ti):
     # Variáveis de Data
     fuso_horario = pytz.timezone('America/Sao_Paulo')
     agora = datetime.now(fuso_horario)
@@ -26,8 +26,14 @@ def envio_kafka(access_params):
     )
 
     # Listando todos os arquivos no diretório especificado
-    objects = client.list_objects(BUCKET_SOURCE_REFINED, prefix=FOLDER_DESTINATION_REFINED, recursive=True)
+    #objects = client.list_objects(BUCKET_SOURCE_REFINED, prefix=FOLDER_DESTINATION_REFINED, recursive=True)
 
+
+    # Pega o df_resumido do XCom
+    df_resumido_records = ti.xcom_pull(task_ids='politica_task')
+    
+    # Converte de volta para DataFrame
+    df_resumido = pd.DataFrame(df_resumido_records)
 
     # Configurações do Kafka
     kafka_config = {
@@ -45,19 +51,19 @@ def envio_kafka(access_params):
         else:
             print(f"Mensagem enviada para {msg.topic()} [{msg.partition()}]")
 
- # Iterar sobre cada objeto listado e processar o envio para o Kafka
-    for obj in objects:
-        # Obtendo o arquivo CSV do MinIO
-        file = client.get_object(
-            bucket_name=BUCKET_SOURCE_REFINED, 
-            object_name=obj.object_name
-        )
+#  # Iterar sobre cada objeto listado e processar o envio para o Kafka
+#     for obj in objects:
+#         # Obtendo o arquivo CSV do MinIO
+#         file = client.get_object(
+#             bucket_name=BUCKET_SOURCE_REFINED, 
+#             object_name=obj.object_name
+#         )
         
-        # Carregando o arquivo CSV em um DataFrame
-        saida_politica = pd.read_csv(BytesIO(file.data), sep=';', dtype=str)
+#         # Carregando o arquivo CSV em um DataFrame
+#         saida_politica = pd.read_csv(BytesIO(file.data), sep=';', dtype=str)
         
         # Iterar sobre as linhas do DataFrame e enviar para o Kafka
-        for index, row in saida_politica.iterrows():
+        for index, row in df_resumido.iterrows():
             key = row['cnpj_ec']
             value = row.to_json()
             producer.produce(topic, key=str(key), value=value, callback=delivery_report)
