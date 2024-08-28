@@ -67,7 +67,7 @@ def consulta_relato():
             data = json.loads(response.content)
             content = data['content']
 
-            if content is not None and content.len() > 0:
+            if content is not None and len(content) > 0:
                 created_date_str = content[0]['createdDate']
 
                 # Convertendo a string de data para um objeto datetime
