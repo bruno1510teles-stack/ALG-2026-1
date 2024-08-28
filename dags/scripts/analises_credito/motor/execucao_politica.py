@@ -205,7 +205,7 @@ def execucao_politica(access_params=None):
         RankedSocios rs ON trp.id = rs.id
     where 
         trp.cnpj_raiz in {ids_query}
-        and and rs.rn = 1
+        and rs.rn = 1
 
         """)
 
