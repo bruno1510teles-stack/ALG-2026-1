@@ -65,20 +65,23 @@ def consulta_relato():
         try:
             # Convertendo a string JSON em um dicionário Python
             data = json.loads(response.content)
+            content = data['content']
 
-            # Acessando o campo 'createdDate' do primeiro item da lista dentro de 'content'
-            created_date_str = data['content'][0]['createdDate']
+            if content is not None and content.len() > 0:
+                created_date_str = content[0]['createdDate']
 
-            # Convertendo a string de data para um objeto datetime
-            created_date = parser.parse(created_date_str)
+                # Convertendo a string de data para um objeto datetime
+                created_date = parser.parse(created_date_str)
 
-            created_date = created_date.replace(tzinfo=timezone.utc)
+                created_date = created_date.replace(tzinfo=timezone.utc)
 
-            # Obtendo a data atual
-            now = datetime.now(tz=timezone.utc)
+                # Obtendo a data atual
+                now = datetime.now(tz=timezone.utc)
 
-            # Verificando se faz mais de 60 dias
-            return now - created_date > timedelta(days=60)
+                # Verificando se faz mais de 60 dias
+                return now - created_date > timedelta(days=60)
+            else:
+                return True
         except json.JSONDecodeError as e:
             print(f"Erro ao decodificar JSON: {e}")
             raise
