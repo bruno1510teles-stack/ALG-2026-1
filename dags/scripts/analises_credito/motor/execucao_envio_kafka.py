@@ -73,5 +73,5 @@ def envio_kafka(access_params, ti):
     # Esperar a entrega de todas as mensagens
     producer.flush()
 
-if __name__ == "__main__":
-    envio_kafka()
+# if __name__ == "__main__":
+#     envio_kafka()
