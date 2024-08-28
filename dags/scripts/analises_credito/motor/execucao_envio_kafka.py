@@ -14,6 +14,8 @@ def envio_kafka(access_params, ti):
     df_resumido = pd.DataFrame(df_resumido_records)
     print(df_resumido)
 
+    print(access_params['kafka_url'])
+
     # Configurações do Kafka
     kafka_config = {
         'bootstrap.servers': access_params['kafka_url']
