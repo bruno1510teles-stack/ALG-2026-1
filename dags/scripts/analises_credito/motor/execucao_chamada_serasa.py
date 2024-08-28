@@ -41,7 +41,7 @@ def chamando_serasa(access_params=None):
         return
 
     # Separando os casos que seguem analise
-    segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
+    segue_analise_prefiltro = base_pre_filtro[(base_pre_filtro['resposta'] == 'SEGUE') | (base_pre_filtro['resposta'] == 'MESA')]
 
     def retrieve(cnpj, token):
         ## Chamada da API do exrep para consulta do Serasa

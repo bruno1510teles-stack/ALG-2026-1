@@ -57,7 +57,7 @@ def execucao_modelo(access_params=None):
 
 
     conn = connect(
-        host=access_params['endpoint_url_trusted'],
+        host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
         user=access_params['trino_user'],
         auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
