@@ -183,7 +183,8 @@ def execucao_politica(access_params=None):
         trp."TOTAL RESTRITIVOS",
         coalesce(cpj."QTD CHEQUE", 0) as "QTD CHEQUE",
         coalesce(cpf."CHEQUE PF", 0) as "CHEQUE PF",
-        coalesce(trs."RESTRITIVOS PF", 0) as "RESTRITIVOS PF"
+        coalesce(trs."RESTRITIVOS PF", 0) as "RESTRITIVOS PF",
+        rs.documento_socio as "CPF do Principal Socio"
     from 
         total_restritivos_pj trp
     left join 
@@ -206,7 +207,6 @@ def execucao_politica(access_params=None):
     where 
         trp.cnpj_raiz in {ids_query}
         and rs.rn = 1
-
         """)
 
     print(query)
