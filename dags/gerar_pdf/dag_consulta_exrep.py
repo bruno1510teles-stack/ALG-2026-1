@@ -66,8 +66,8 @@ def consulta_relato():
             # Convertendo a string JSON em um dicionário Python
             data = json.loads(response.content)
             content = data['content']
-            # Acessando o campo 'createdDate' do primeiro item da lista dentro de 'content'
-            if content is not None or content.len() > 0:
+
+            if content is not None and content.len() > 0:
                 created_date_str = content[0]['createdDate']
 
                 # Convertendo a string de data para um objeto datetime
