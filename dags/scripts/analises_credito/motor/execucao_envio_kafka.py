@@ -14,10 +14,6 @@ def envio_kafka(access_params, ti):
     df_resumido = pd.DataFrame(df_resumido_records)
     print(df_resumido)
 
-    # Remove o índice do DataFrame antes de processar
-    df_resumido.reset_index(drop=True, inplace=True)
-    print(df_resumido)
-
     # Configurações do Kafka
     kafka_config = {
         'bootstrap.servers': access_params['kafka_url']

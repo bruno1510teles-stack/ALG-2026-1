@@ -749,4 +749,4 @@ def execucao_politica(access_params=None):
             length=len(csv_bytes_detalhado)
         )
 
-    return df_resumido.to_dict(orient='records')
+    return resposta_motor_resumida.to_dict(orient='records')
