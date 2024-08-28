@@ -12,6 +12,7 @@ def envio_kafka(access_params, ti):
     
     # Converte de volta para DataFrame
     df_resumido = pd.DataFrame(df_resumido_records)
+    df_resumido['cnpj_ec'] = df_resumido['cnpj_ec'].astype(str).str.zfill(14) 
     print(df_resumido)
 
     print(access_params['kafka_url'])
