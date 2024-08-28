@@ -586,8 +586,9 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and
-            pd.isnull(linha['CPF do Principal Socio'])):
+            linha['Score Positivo PJ'] > 900 #and
+            #pd.isnull(linha['CPF do Principal Socio'])
+            ):
                 return "B - 4"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
