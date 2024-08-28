@@ -35,6 +35,8 @@ def envio_kafka(access_params, ti):
     # Converte de volta para DataFrame
     df_resumido = pd.DataFrame(df_resumido_records)
 
+    print(df_resumido)
+
     # Configurações do Kafka
     kafka_config = {
         'bootstrap.servers': access_params['kafka_url']

@@ -721,6 +721,11 @@ def execucao_politica(access_params=None):
         # Filtra o DataFrame resumido e detalhado para o CNPJ específico
         df_resumido = resposta_motor_resumida[resposta_motor_resumida['cnpj_ec'] == cnpj]
         df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
+
+        # Adiciona mensagens de log para depuração
+        print(f"Processando CNPJ: {cnpj_tratado}")
+        print(f"Resumido DF: {df_resumido.shape}")
+        print(f"Detalhado DF: {df_detalhado.shape}")
         
         # Salva a análise resumida
         file_out_resumido = f'RESPOSTA_MOTOR_RESUMIDA_{file_base_name}.csv'
