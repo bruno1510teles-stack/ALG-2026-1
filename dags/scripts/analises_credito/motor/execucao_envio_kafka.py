@@ -33,11 +33,11 @@ def envio_kafka(access_params, ti):
             print(f"CNPJ {msg.key()} enviado com sucesso para {msg.topic()} [{msg.partition()}]")
 
         
-        # Iterar sobre as linhas do DataFrame e enviar para o Kafka
-        for index, row in df_resumido.iterrows():
-            key = row['cnpj_ec']
-            value = row.to_json()
-            producer.produce(topic, key=str(key), value=value, callback=delivery_report)
+    # Iterar sobre as linhas do DataFrame e enviar para o Kafka
+    for index, row in df_resumido.iterrows():
+        key = row['cnpj_ec']
+        value = row.to_json()
+        producer.produce(topic, key=str(key), value=value, callback=delivery_report)
 
     # Esperar a entrega de todas as mensagens
     producer.flush()
