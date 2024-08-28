@@ -47,7 +47,7 @@ def base_analisar(access_params=None):
         # Extraindo os valores dos campos
         data = []
         for ticket in tickets:
-            issue_jira = ticket['fields'].get('key')  
+            issue_jira = ticket.get('key') 
             cnpj = ticket['fields'].get('customfield_13729')  
             limite_alpe = ticket['fields'].get('customfield_13732')  
             inad_alpe = ticket['fields'].get('customfield_13808')  
@@ -67,6 +67,7 @@ def base_analisar(access_params=None):
         df = pd.DataFrame(data)
         print(f"Quantidade de CNPJs na fila política v2: {df.shape[0]}")
         print(f"Quantidade de CNPJs na fila aberto por fornecedor: {df.groupby('nome_pgid')['CNPJ'].size()}")
+        print(df)
     else:
         print(f"Failed to fetch data from Jira: {response.status_code}")
 
