@@ -19,10 +19,10 @@ class MinioWriteFile:
         return "{}/{}".format(path, file_name)
         
     def extract_bucket_name(self, bucket):
-        print(bucket.split('/')[0])
+        return bucket.split('/')[0]
     
     def extract_path(self, bucket):
-        print('/'.join(bucket.split('/')[1:]))
+        return '/'.join(bucket.split('/')[1:])
 
     def write_file(self, file, file_name, bucket, path=None):  
         print("init...")
@@ -36,8 +36,8 @@ class MinioWriteFile:
             )
 
             if '/' in bucket:
-                bucket_name = self.extract_bucket_name(self, bucket=bucket)
-                path = self.extract_path(self, bucket=bucket)
+                bucket_name = self.extract_bucket_name(bucket=bucket)
+                path = self.extract_path(bucket=bucket)
                 bucket = bucket_name
 
             print("Uploading: {}".format(file_name))    
