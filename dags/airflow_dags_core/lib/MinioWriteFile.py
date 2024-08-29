@@ -17,6 +17,12 @@ class MinioWriteFile:
     def make_path_name_file(self, path, file_name):
         path = "" if path == None else "/{}".format(path)
         return "{}/{}".format(path, file_name)
+        
+    def extract_bucket_name(self, bucket):
+        print(bucket.split('/')[0])
+    
+    def extract_path(self, bucket):
+        print('/'.join(bucket.split('/')[1:]))
 
     def write_file(self, file, file_name, bucket, path=None):  
         print("init...")
@@ -29,7 +35,12 @@ class MinioWriteFile:
                 secret_key = self.access_params["aws_secret_access_key_raw"],
             )
 
-            print("Uploading: {}".format(file_name))
+            if '/' in bucket:
+                bucket_name = self.extract_bucket_name(self, bucket=bucket)
+                path = self.extract_path(self, bucket=bucket)
+                bucket = bucket_name
+
+            print("Uploading: {}".format(file_name))    
 
             path = self.make_path_name_file(path, file_name)
 
