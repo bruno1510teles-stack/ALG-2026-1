@@ -57,7 +57,7 @@ def consulta_relato():
             # Obter a data e hora atual
             current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
 
-            MinioWriteFile().write_file(file=pdf_content, file_name=f'{tipo_relato}_{cnpj}_{current_time}.pdf', bucket=bucket, path='/serasa-relato-pdf')
+            MinioWriteFile().write_file(file=pdf_content, file_name=f'{tipo_relato}_{cnpj}_{current_time}.pdf', bucket=bucket)
         else:
             print(f'Erro na requisição: {response.status_code}')
     
