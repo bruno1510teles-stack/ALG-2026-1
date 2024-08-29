@@ -113,7 +113,7 @@ with DAG(
     
     wait_1_minute = PythonOperator(
         task_id="wait_1_minute",
-        python_callable=lambda: sleep(900),  # Espera por 15 minutos
+        python_callable=lambda: sleep(1020),  # Espera por 15 minutos
     )
 
     # Ordem
