@@ -40,13 +40,15 @@ def anexa_grupo_economico():
             password=trino_password,
         )
 
-        data = retorno[0][1]
+        file_name = retorno[0][1]
 
-        arquivo = baixa_arquivo_minio(file_name=data, bucket=bucket)
+        arquivo = baixa_arquivo_minio(file_name=file_name, bucket=bucket)
+        if arquivo is not None:
+            pdf_content = BytesIO(arquivo.read())
 
-        pdf_content = BytesIO(arquivo.read())
-
-        MinioWriteFile().write_file(file=pdf_content, file_name=data, bucket=bucket)
+            MinioWriteFile().write_file(file=pdf_content, file_name=file_name, bucket=bucket)
+        else:
+            print(f"Não foi encontrado o arquivo {file_name} para download")    
 
     def baixa_arquivo_minio(file_name, bucket):
         try:
