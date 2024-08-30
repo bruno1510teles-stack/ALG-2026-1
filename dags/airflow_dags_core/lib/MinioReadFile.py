@@ -36,9 +36,7 @@ class MinioReadFile:
             )
 
             if '/' in bucket:
-                bucket_name = self.extract_bucket_name(bucket=bucket)
-                path = self.extract_path(bucket=bucket)
-                bucket = bucket_name
+                bucket = self.extract_bucket_name(bucket=bucket)
 
             print("Downloading: {}".format(file_name))
 
