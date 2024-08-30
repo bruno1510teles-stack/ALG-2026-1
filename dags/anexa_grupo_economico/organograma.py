@@ -1,12 +1,9 @@
 import pendulum
+import trino
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-import requests
-import time
-import json
 from io import BytesIO
 from airflow.models import Variable
-from airflow_dags_core.lib.auth_trino import get_acess_token
 from minio.error import S3Error
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioReadFile import MinioReadFile
@@ -26,66 +23,62 @@ def anexa_grupo_economico():
 
     @task
     def consulta_trino_e_anexa_arquivo(**kwargs):
-        cnpjRaiz = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
-        bucket = kwargs['dag_run'].conf.get('minio_url', 'default_value')
+            cnpjRaiz = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
+            bucket = kwargs['dag_run'].conf.get('minio_url', 'default_value')
+            
+            trino_endpoint = Variable.get("TRINO_ENDPOINT")
+            trino_port = Variable.get("TRINO_PORT")
+            trino_username = Variable.get("TRINO_USER")
+            trino_password = Variable.get("TRINO_PASSWORD") 
+
+            query = f"select cnpj_raiz, 'catalogo/'||arquivo arquivo from minioraw.credito_grupos.indice where cnpj_raiz = '{cnpjRaiz}'"
+
+            retorno = consulta_trino(query=query, host=trino_endpoint, port=trino_port, user=trino_username, password=trino_password)
+
+            data = retorno[0][1]
+
+            arquivo = baixa_arquivo_minio(file_name=data, bucket=bucket)
+
+            pdf_content = BytesIO(arquivo.read())
+
+            MinioWriteFile().write_file(file=pdf_content, 
+                                    file_name=data, 
+                                    bucket=bucket)
+
+    def baixa_arquivo_minio(file_name, bucket):
+            try:
+                return MinioReadFile().read_file(file_name=file_name,
+                                        bucket=bucket)    
+            except S3Error as e:
+                print(f"Erro ao interagir com o MinIO: {e}")
+                raise
+            except Exception as e:
+                print(f"Erro inesperado: {e}") 
+                raise
         
-        trino_endpoint = Variable.get("TRINO_ENDPOINT")
-        trino_port = Variable.get("TRINO_PORT")
-        url = f"https://{trino_endpoint}:{trino_port}/v1/statement"
-
-        body = f"select cnpj_raiz, 'catalogo/'||arquivo arquivo from minioraw.credito_grupos.indice where cnpj_raiz = '{cnpjRaiz}'"
-
-        body_bytes = body.encode('utf-8')
-
-        auth = get_acess_token()
-
-        headers = {
-            "Content-Type": "text/plain",
-        }
-
-        response = requests.post(url, auth=auth, data=body_bytes, headers=headers)
-
-        status_requisicao = ''
-
-        content_trino = json.loads(response.content)
-
-        while status_requisicao != 'FINISHED' and status_requisicao != 'FAILED' and status_requisicao != 'RUNNING':
-            time.sleep(1)
-            response_next_uri = requests.get(content_trino['nextUri'], auth=auth)
-            print(response_next_uri.text)
-            content_trino = json.loads(response_next_uri.content)
-            status_requisicao = content_trino["stats"]["state"]
-
-        data = json.loads(response_next_uri.content)
-
-        catalogos = monta_objeto_arquivo_para_salvar(data['data'])
-
-        arquivo = baixa_arquivo_minio(catalogos=catalogos, bucket=bucket)
-
-        pdf_content = BytesIO(arquivo.read())
-
-        MinioWriteFile().write_file(file=pdf_content, 
-                                  file_name=catalogos[1]['arquivo'], 
-                                  bucket=bucket)
-
-    def monta_objeto_arquivo_para_salvar(data):
-        catalogos = []
-
-        for dado in data[0]:
-            catalogos.append({'arquivo': dado})
-
-        return catalogos
-
-    def baixa_arquivo_minio(catalogos, bucket):
+    def consulta_trino(query, host, port, user, password):
         try:
-            return MinioReadFile().read_file(file_name=catalogos[1]['arquivo'],
-                                    bucket=bucket)    
-        except S3Error as e:
-            print(f"Erro ao interagir com o MinIO: {e}")
+            conn = trino.dbapi.connect(
+                host=host,
+                port=port,
+                user=user,
+                catalog='minioraw',
+                http_scheme='https',
+                auth=trino.auth.BasicAuthentication(
+                    user, 
+                    password),
+            )
+
+            cursor = conn.cursor()
+            cursor.execute(query)
+            result = cursor.fetchall()
+
+            return result
+        except trino.exceptions.TrinoQueryError as e:
+            print(f"Erro ao executar a consulta: {e}")
             raise
-        except Exception as e:
-            print(f"Erro inesperado: {e}") 
-            raise
+        finally:
+            conn.close()    
 
     start = EmptyOperator(task_id="start")
     relato = consulta_trino_e_anexa_arquivo()
