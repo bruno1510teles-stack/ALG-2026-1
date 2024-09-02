@@ -558,9 +558,44 @@ def execucao_politica(access_params=None):
     resposta_motor = resposta_motor.rename(columns={'idade_x':'idade'})
     resposta_motor = resposta_motor.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
 
-    #DEFININDO O PARECER DO MOTOR, PARA OS CASOS NEGADOS
+    #DEFININDO O PARECER DO MOTOR
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
+
+
+    # # Criação do mapeamento de pareceres
+    # parecer_map = {
+    #     "PF 1": "Motor - Recusado, dados analisados fora da politica atual. CNPJ não é ativo",
+    #     "PF 2": "Motor - Recusado, dados analisados fora da politica atual. CNPJ em RJ",
+    #     "PF 3": "Motor - Recusado, dados analisados fora da politica atual. CNPJ MEI",
+    #     "PF 4": "Motor - Recusado, dados analisados fora da politica atual. CNAE não aceito",
+    #     "PF 5": "Motor - Recusado, dados analisados fora da politica atual. Natureza jurídica não aceita",
+    #     "PF 7": "Motor - Recusado, dados analisados fora da politica atual. Vínculo PEP",
+    #     "PF 9": "Motor - Recusado, dados analisados fora da politica atual. Empresa com menos de 2 anos",
+    #     "PF 10": "Motor - Recusado, dados analisados fora da politica atual. Possui inadimplência na ALPE",
+    #     "A - A11": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
+    #     "A - A9": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
+    #     "A - A8": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
+    #     "A - B7": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
+    #     "A - B5": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
+    #     "A - B4": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
+    #     "A - E1": "Motor - Recusado, dados analisados fora da politica atual. Alto risco de PD",
+    #     "A - C7": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
+    #     "A - C5": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
+    #     "A - C4": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
+    #     "A - C2": "Motor - Recusado, dados analisados fora da politica atual. Score baixo",
+    #     "B - 11": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
+    #     "B - 9": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
+    #     "B - 8": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo"
+    # }
+
+    # # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
+    # def get_parecer_personalizado(parecer):
+    #     return parecer_map.get(parecer, parecer)
+
+    # # Aplica a função ao DataFrame para criar a nova coluna
+    # resposta_motor['parecer'] = resposta_motor['parecer'].apply(get_parecer_personalizado)
+
 
 
     resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor']].rename(columns={
@@ -569,7 +604,13 @@ def execucao_politica(access_params=None):
     'ramificacao_motor': 'ramificacao'
     })
 
-    resposta_motor_resumida['path_arquivos_minio'] = ''
+    # Gerando Path
+    def gerando_path(row):
+           current_date = datetime.now().strftime('%Y-%m-%d')
+           return f"{row['raiz_cnpj']}/{current_date}-{row['pgid']}-{row['issueKey']}/arquivos"
+    # Aplicando o Path
+    resposta_motor_resumida['path_arquivos_minio'] = resposta_motor_resumida.apply(gerando_path, axis = 1)
+
     resposta_motor_resumida['valor_aprovado'] = 0
 
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
@@ -582,56 +623,105 @@ def execucao_politica(access_params=None):
 
     print(resposta_motor_resumida)
 
-    # Tratando para Salvar Arquivos
+# # # #     # Tratando para Salvar Arquivos
 
-    def tratando_coluna(value):
-        if not isinstance(value, str):
-            value = str(value)  # Converte para string, se não for
+# # # #     def tratando_coluna(value):
+# # # #         if not isinstance(value, str):
+# # # #             value = str(value)  # Converte para string, se não for
         
-        # Remove qualquer caractere que não seja alfanumérico
-        return re.sub(r'\W+', '', value)
+# # # #         # Remove qualquer caractere que não seja alfanumérico
+# # # #         return re.sub(r'\W+', '', value)
+
+# # # # # Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame
+# # # #     for _, row in resposta_motor.iterrows():
+# # # #         issue_jira = row['issue_jira']
+# # # #         cnpj = row['cnpj_ec']
+        
+# # # #         # Sanitize os valores de 'issue_jira' e 'CNPJ'
+# # # #         issue_jira_tratado = tratando_coluna(issue_jira)
+# # # #         cnpj_tratado = tratando_coluna(cnpj)
+        
+# # # #         # Gera o nome base do arquivo combinando 'issue_jira' e 'CNPJ'
+# # # #         file_base_name = f'{issue_jira_tratado}_{cnpj_tratado}'
+
+# # # #         # Filtra o DataFrame resumido e detalhado para o CNPJ específico
+# # # #         df_resumido = resposta_motor_resumida[resposta_motor_resumida['cnpj_ec'] == cnpj]
+# # # #         df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
+
+# # # #         # Adiciona mensagens de log para depuração
+# # # #         print(f"Processando CNPJ: {cnpj_tratado}")
+# # # #         print(f"Resumido DF: {df_resumido.shape}")
+# # # #         print(f"Detalhado DF: {df_detalhado.shape}")
+        
+# # # #         # Salva a análise resumida
+# # # #         file_out_resumido = f'RESPOSTA_MOTOR_RESUMIDA_{file_base_name}.csv'
+# # # #         csv_bytes_resumido = df_resumido.to_csv(index=False, sep=';').encode('utf-8')
+# # # #         csv_buffer_resumido = BytesIO(csv_bytes_resumido)
+# # # #         client.put_object(
+# # # #             f'{BUCKET_SOURCE_REFINED}',
+# # # #             f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/resumida/{file_out_resumido}',
+# # # #             data=csv_buffer_resumido,
+# # # #             length=len(csv_bytes_resumido)
+# # # #         )
+        
+# # # #         # Salva a análise detalhada
+# # # #         file_out_detalhado = f'RESPOSTA_MOTOR_DETALHADA_{file_base_name}.csv'
+# # # #         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
+# # # #         csv_buffer_detalhado = BytesIO(csv_bytes_detalhado)
+# # # #         client.put_object(
+# # # #             f'{BUCKET_SOURCE_REFINED}',
+# # # #             f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/detalhada/{file_out_detalhado}',
+# # # #             data=csv_buffer_detalhado,
+# # # #             length=len(csv_bytes_detalhado)
+# # # #         )
+
+
+
+
+
+
 
 # Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame
     for _, row in resposta_motor.iterrows():
         issue_jira = row['issue_jira']
         cnpj = row['cnpj_ec']
-        
-        # Sanitize os valores de 'issue_jira' e 'CNPJ'
-        issue_jira_tratado = tratando_coluna(issue_jira)
-        cnpj_tratado = tratando_coluna(cnpj)
-        
+             
         # Gera o nome base do arquivo combinando 'issue_jira' e 'CNPJ'
-        file_base_name = f'{issue_jira_tratado}_{cnpj_tratado}'
+        file_base_name = 'Resposta_Motor'
 
         # Filtra o DataFrame resumido e detalhado para o CNPJ específico
-        df_resumido = resposta_motor_resumida[resposta_motor_resumida['cnpj_ec'] == cnpj]
         df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
 
         # Adiciona mensagens de log para depuração
-        print(f"Processando CNPJ: {cnpj_tratado}")
-        print(f"Resumido DF: {df_resumido.shape}")
+        print(f"Processando CNPJ: {cnpj}")
         print(f"Detalhado DF: {df_detalhado.shape}")
-        
-        # Salva a análise resumida
-        file_out_resumido = f'RESPOSTA_MOTOR_RESUMIDA_{file_base_name}.csv'
-        csv_bytes_resumido = df_resumido.to_csv(index=False, sep=';').encode('utf-8')
-        csv_buffer_resumido = BytesIO(csv_bytes_resumido)
-        client.put_object(
-            f'{BUCKET_SOURCE_REFINED}',
-            f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/resumida/{file_out_resumido}',
-            data=csv_buffer_resumido,
-            length=len(csv_bytes_resumido)
-        )
-        
+
+        # Gera o caminho de saída usando a coluna 'path'
+        file_out_detalhado = f'{row["path"]}/{file_base_name}.csv'
+              
         # Salva a análise detalhada
-        file_out_detalhado = f'RESPOSTA_MOTOR_DETALHADA_{file_base_name}.csv'
         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
         csv_buffer_detalhado = BytesIO(csv_bytes_detalhado)
-        client.put_object(
-            f'{BUCKET_SOURCE_REFINED}',
-            f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/detalhada/{file_out_detalhado}',
+
+        # Salva o arquivo no bucket MinIO usando o caminho gerado
+        # # Conectando na refined
+        minio_raw = Minio(
+            access_params['endpoint_url_raw'],
+            access_key=access_params['aws_access_key_id_raw'],
+            secret_key=access_params['aws_secret_access_key_raw'],
+        )
+
+        BUCKET_SOURCE_RAW = "analise-credito"
+
+        minio_raw.put_object(
+            BUCKET_SOURCE_RAW,
+            file_out_detalhado,
             data=csv_buffer_detalhado,
             length=len(csv_bytes_detalhado)
-        )
+    )
+
+
+
+
 
     return resposta_motor_resumida.to_dict(orient='records')
