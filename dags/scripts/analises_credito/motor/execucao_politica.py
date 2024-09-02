@@ -606,7 +606,8 @@ def execucao_politica(access_params=None):
     resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
     'resposta_motor': 'resolucao',
-    'ramificacao_motor': 'ramificacao'
+    'ramificacao_motor': 'ramificacao',
+    'path_arquivos_minio' : 'path_arquivos_minio'
     })
     #antes do path
     print(resposta_motor_resumida)
