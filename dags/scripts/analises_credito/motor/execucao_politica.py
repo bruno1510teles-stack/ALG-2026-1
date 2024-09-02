@@ -599,9 +599,11 @@ def execucao_politica(access_params=None):
     # Gerando Path
     def gerando_path(row):
            current_date = datetime.now().strftime('%Y-%m-%d')
-           return f"https://minio-datalake.alpe.com.br/raw/browser/{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos/"
+           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos/"
     # Aplicando o Path
     resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
+    resposta_motor['path_arquivos_minio'] = 'https://minio-datalake.alpe.com.br/raw/browser/' + resposta_motor['path_arquivos_minio']
+
 
     print(resposta_motor)
 
@@ -703,7 +705,7 @@ def execucao_politica(access_params=None):
         print(f"Detalhado DF: {df_detalhado.shape}")
 
         # Gera o caminho de saída usando a coluna 'path'
-        file_out_detalhado = f'{row["path_arquivos_minio"]}{file_base_name}.csv'
+        file_out_detalhado = f'{row["path_arquivos_minio"]}/{file_base_name}.csv'
               
         # Salva a análise detalhada
         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
@@ -725,6 +727,8 @@ def execucao_politica(access_params=None):
             data=csv_buffer_detalhado,
             length=len(csv_bytes_detalhado)
     )
+
+
 
 
 
