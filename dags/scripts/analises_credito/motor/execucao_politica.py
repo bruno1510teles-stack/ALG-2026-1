@@ -603,7 +603,7 @@ def execucao_politica(access_params=None):
     # Aplicando o Path
     resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
 
-    print(resposta_motor_resumida)
+    print(resposta_motor)
 
     resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor', 'path_arquivos_minio']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
