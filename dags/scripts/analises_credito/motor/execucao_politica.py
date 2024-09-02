@@ -596,26 +596,27 @@ def execucao_politica(access_params=None):
     # # Aplica a função ao DataFrame para criar a nova coluna
     # resposta_motor['parecer'] = resposta_motor['parecer'].apply(get_parecer_personalizado)
 
-
+    # Gerando Path
+    def gerando_path(row):
+           current_date = datetime.now().strftime('%Y-%m-%d')
+           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
+    # Aplicando o Path
+    resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
 
     resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
     'resposta_motor': 'resolucao',
     'ramificacao_motor': 'ramificacao'
     })
-
+    #antes do path
     print(resposta_motor_resumida)
-
-    # Gerando Path
-    def gerando_path(row):
-           current_date = datetime.now().strftime('%Y-%m-%d')
-           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
-    # Aplicando o Path
-    resposta_motor_resumida['path_arquivos_minio'] = resposta_motor_resumida.apply(gerando_path, axis = 1)
 
     resposta_motor_resumida['valor_aprovado'] = 0
 
+    #depois do path
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
+
+    print(resposta_motor_resumida)
 
     print("Quantidade de CNPJs por ramificação:")
     print(resposta_motor_resumida.groupby('ramificacao')['cnpj_ec'].size())
