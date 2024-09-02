@@ -602,16 +602,16 @@ def execucao_politica(access_params=None):
            return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
     # Aplicando o Path
     resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
-    resposta_motor['path_arquivos_minio'] = 'https://minio-datalake.alpe.com.br/raw/browser/' + resposta_motor['path_arquivos_minio'] + '/'
+    resposta_motor['url'] = 'https://minio-datalake.alpe.com.br/raw/browser/' + resposta_motor['path_arquivos_minio'] + '/'
 
 
     print(resposta_motor)
 
-    resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor', 'path_arquivos_minio']].rename(columns={
+    resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor', 'url']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
     'resposta_motor': 'resolucao',
     'ramificacao_motor': 'ramificacao',
-    'path_arquivos_minio' : 'path_arquivos_minio'
+    'url' : 'path_arquivos_minio'
     })
     #antes do path
     print(resposta_motor_resumida)
