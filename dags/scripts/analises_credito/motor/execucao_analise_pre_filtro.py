@@ -176,7 +176,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'limite_alpe']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'limite_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão de cnae e natureza juridica
     df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
