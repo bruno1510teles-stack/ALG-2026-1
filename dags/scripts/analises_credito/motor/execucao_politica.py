@@ -604,10 +604,12 @@ def execucao_politica(access_params=None):
     'ramificacao_motor': 'ramificacao'
     })
 
+    print(resposta_motor_resumida)
+
     # Gerando Path
     def gerando_path(row):
            current_date = datetime.now().strftime('%Y-%m-%d')
-           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issueKey']}/arquivos"
+           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
     # Aplicando o Path
     resposta_motor_resumida['path_arquivos_minio'] = resposta_motor_resumida.apply(gerando_path, axis = 1)
 
