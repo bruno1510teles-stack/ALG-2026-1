@@ -607,7 +607,7 @@ def execucao_politica(access_params=None):
     # Gerando Path
     def gerando_path(row):
            current_date = datetime.now().strftime('%Y-%m-%d')
-           return f"{row['raiz_cnpj']}/{current_date}-{row['pgid']}-{row['issueKey']}/arquivos"
+           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issueKey']}/arquivos"
     # Aplicando o Path
     resposta_motor_resumida['path_arquivos_minio'] = resposta_motor_resumida.apply(gerando_path, axis = 1)
 
