@@ -703,7 +703,7 @@ def execucao_politica(access_params=None):
         print(f"Detalhado DF: {df_detalhado.shape}")
 
         # Gera o caminho de saída usando a coluna 'path'
-        file_out_detalhado = f'{row["path_arquivos_minio"]}/{file_base_name}.csv'
+        file_out_detalhado = f'{row["path_arquivos_minio"]}{file_base_name}.csv'
               
         # Salva a análise detalhada
         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
@@ -725,8 +725,6 @@ def execucao_politica(access_params=None):
             data=csv_buffer_detalhado,
             length=len(csv_bytes_detalhado)
     )
-
-
 
 
 
