@@ -1,5 +1,6 @@
 import pendulum
 import trino
+import os
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
 from io import BytesIO
@@ -43,12 +44,15 @@ def anexa_grupo_economico():
         file_name = retorno[0][1]
 
         arquivo = baixa_arquivo_minio(file_name=file_name, bucket=bucket)
+
         if arquivo is not None:
             pdf_content = BytesIO(arquivo.read())
-
-            MinioWriteFile().write_file(file=pdf_content, file_name=file_name, bucket=bucket)
+            file_name_without_path = os.path.basename(file_name)
+            MinioWriteFile().write_file(
+                file=pdf_content, file_name=file_name_without_path, bucket=bucket
+            )
         else:
-            print(f"Não foi encontrado o arquivo {file_name} para download")    
+            print(f"Não foi encontrado o arquivo {file_name} para download")
 
     def baixa_arquivo_minio(file_name, bucket):
         try:
