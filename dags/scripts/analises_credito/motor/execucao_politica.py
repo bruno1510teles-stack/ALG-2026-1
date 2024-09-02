@@ -599,7 +599,7 @@ def execucao_politica(access_params=None):
     # Gerando Path
     def gerando_path(row):
            current_date = datetime.now().strftime('%Y-%m-%d')
-           return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
+           return f"https://minio-datalake.alpe.com.br/raw/browser/{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos/"
     # Aplicando o Path
     resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
 
