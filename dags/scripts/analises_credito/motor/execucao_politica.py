@@ -602,7 +602,7 @@ def execucao_politica(access_params=None):
            return f"{row['cnpj_raiz']}/{current_date}-{row['pgid']}-{row['issue_jira']}/arquivos"
     # Aplicando o Path
     resposta_motor['path_arquivos_minio'] = resposta_motor.apply(gerando_path, axis = 1)
-    resposta_motor['url'] = 'https://minio-datalake.alpe.com.br/raw/browser/' + resposta_motor['path_arquivos_minio'] + '/'
+    resposta_motor['url'] = 'https://minio-datalake.alpe.com.br/raw/browser/analise-credito/' + resposta_motor['path_arquivos_minio'] + '/'
 
 
     print(resposta_motor)
