@@ -213,7 +213,7 @@ def execucao_politica(access_params=None):
     left join 
         RankedSocios rs ON trp.id = rs.id
     where 
-        and rs.rn = 1
+        rs.rn = 1
         """)
 
     print(query)
