@@ -43,6 +43,10 @@ def execucao_modelo(access_params=None):
 
     ids_query = ', '.join(f"'{cnpj_raiz}'" for cnpj_raiz in cnpj_segue_analise)
     ids_query = f"({ids_query})"
+    
+    # Caso não retorne nenhum CNPJ como segue ele corrige para não dar erro na query. A partir disso a query retornará com as colunas mas com nenhum registro e o fluxo seguirá normalmente
+    if ids_query == "()":
+        ids_query = "('')"
 
     print(ids_query)
     
