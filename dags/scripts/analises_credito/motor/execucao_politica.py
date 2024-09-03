@@ -97,6 +97,8 @@ def execucao_politica(access_params=None):
         remp.id = org.id
         and remp.titular_pendencia = CONCAT('0',
         org.cnpj_raiz)
+    where 
+        org.cnpj_raiz in {ids_query}
     group by 
         org.id,
         org.data_hora_consulta,
@@ -116,6 +118,7 @@ def execucao_politica(access_params=None):
         and remp.titular_pendencia = CONCAT('0', org.cnpj_raiz)
     where
         remp.grupo_ocorrencia = 'CHEQUE'
+        and org.cnpj_raiz in {ids_query}
     group by 
         org.id,
         org.cnpj_raiz
@@ -162,6 +165,8 @@ def execucao_politica(access_params=None):
         MAX(date(split_part(org.data_hora_consulta, ' ', 1))) AS consulta_mais_recente
     from 
         deltalaketrusted.serasa.organizacoes org 
+    where 
+        org.cnpj_raiz in {ids_query}
     group by
         org.cnpj_raiz
     ),
@@ -173,6 +178,8 @@ def execucao_politica(access_params=None):
             ROW_NUMBER() OVER (PARTITION BY org.id ORDER BY so.percentual_capital DESC, so.documento_socio) AS rn
         FROM 
             deltalaketrusted.serasa.organizacoes org
+        where 
+            org.cnpj_raiz in {ids_query}
         LEFT JOIN deltalaketrusted.serasa.socios so ON org.id = so.id
     )
     select 
@@ -205,7 +212,6 @@ def execucao_politica(access_params=None):
     left join 
         RankedSocios rs ON trp.id = rs.id
     where 
-        trp.cnpj_raiz in {ids_query}
         and rs.rn = 1
         """)
 
