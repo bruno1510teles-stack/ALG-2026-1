@@ -178,9 +178,10 @@ def execucao_politica(access_params=None):
             ROW_NUMBER() OVER (PARTITION BY org.id ORDER BY so.percentual_capital DESC, so.documento_socio) AS rn
         FROM 
             deltalaketrusted.serasa.organizacoes org
+        LEFT JOIN 
+            deltalaketrusted.serasa.socios so ON org.id = so.id
         where 
             org.cnpj_raiz in {ids_query}
-        LEFT JOIN deltalaketrusted.serasa.socios so ON org.id = so.id
     )
     select 
         trp.id,
