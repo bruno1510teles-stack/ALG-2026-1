@@ -1,4 +1,5 @@
 import pendulum
+from scripts.utils import extract_path_from_url
 import trino
 import os
 from airflow.decorators import dag, task
@@ -24,7 +25,7 @@ def anexa_grupo_economico():
     @task
     def consulta_trino_e_anexa_arquivo(**kwargs):
         cnpjRaiz = kwargs["dag_run"].conf.get("payer_identification", "default_value")
-        bucket = kwargs["dag_run"].conf.get("minio_url", "default_value")
+        bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
 
         trino_endpoint = Variable.get("TRINO_ENDPOINT")
         trino_port = Variable.get("TRINO_PORT")
