@@ -8,6 +8,7 @@ from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from gerar_pdf.auth import get_access_token
+from scripts.utils import extract_path_from_url
 from dateutil import parser
 
 default_args = {
@@ -27,9 +28,11 @@ def consulta_relato():
     @task
     def busca_relato(**kwargs):
         cnpj = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
-        bucket = kwargs['dag_run'].conf.get('minio_url', 'default_value')
+        bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
         access_token = get_access_token()
         base_url = Variable.get('EXREP_BASE_URL')
+        
+        print(bucket)
 
         url_completo = f"{base_url}api/v1/report-executions?$sort=createdDate desc,lastModifiedDate desc&$expand=content&$filter=involved.party.identifications.value='{cnpj}' and definition.type=SERASA_RELATO and resolution=DONE&$audit=true"
         url_quadro_social = f"{base_url}api/v1/report-executions?$sort=createdDate desc,lastModifiedDate desc&$expand=content&$filter=involved.party.identifications.value='{cnpj}' and definition.type=SERASA_RELATO_QUADRO_SOCIAL and resolution=DONE&$audit=true"
