@@ -233,6 +233,9 @@ def analise_pre_filtro(access_params=None):
 
     # SEGUE
     df.loc[df['ramificacao_pre_filtro'].isin(['PF 12']), 'resposta'] = 'SEGUE'
+
+    df['politica'] = 'Arcelor Mittal'
+    df['versao_motor'] = '1.1'
     
     # Nome do arquivo CSV que você deseja criar
     file_out = f'LANDING_PRE_FILTRO.csv'
