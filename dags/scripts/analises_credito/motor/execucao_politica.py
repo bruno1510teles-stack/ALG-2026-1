@@ -376,7 +376,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'A - A6'
         elif(linha['CLASSIFICACAO'] == 'A' and
             linha['QTD CHEQUE'] == 0 and
@@ -466,7 +466,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and 
             linha['Capital Social'] <= 100000000 and    
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'B - 6'
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
@@ -637,62 +637,6 @@ def execucao_politica(access_params=None):
     print(resposta_motor_resumida.groupby('parecer')['cnpj_ec'].size())
 
     print(resposta_motor_resumida)
-
-# # # #     # Tratando para Salvar Arquivos
-
-# # # #     def tratando_coluna(value):
-# # # #         if not isinstance(value, str):
-# # # #             value = str(value)  # Converte para string, se não for
-        
-# # # #         # Remove qualquer caractere que não seja alfanumérico
-# # # #         return re.sub(r'\W+', '', value)
-
-# # # # # Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame
-# # # #     for _, row in resposta_motor.iterrows():
-# # # #         issue_jira = row['issue_jira']
-# # # #         cnpj = row['cnpj_ec']
-        
-# # # #         # Sanitize os valores de 'issue_jira' e 'CNPJ'
-# # # #         issue_jira_tratado = tratando_coluna(issue_jira)
-# # # #         cnpj_tratado = tratando_coluna(cnpj)
-        
-# # # #         # Gera o nome base do arquivo combinando 'issue_jira' e 'CNPJ'
-# # # #         file_base_name = f'{issue_jira_tratado}_{cnpj_tratado}'
-
-# # # #         # Filtra o DataFrame resumido e detalhado para o CNPJ específico
-# # # #         df_resumido = resposta_motor_resumida[resposta_motor_resumida['cnpj_ec'] == cnpj]
-# # # #         df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
-
-# # # #         # Adiciona mensagens de log para depuração
-# # # #         print(f"Processando CNPJ: {cnpj_tratado}")
-# # # #         print(f"Resumido DF: {df_resumido.shape}")
-# # # #         print(f"Detalhado DF: {df_detalhado.shape}")
-        
-# # # #         # Salva a análise resumida
-# # # #         file_out_resumido = f'RESPOSTA_MOTOR_RESUMIDA_{file_base_name}.csv'
-# # # #         csv_bytes_resumido = df_resumido.to_csv(index=False, sep=';').encode('utf-8')
-# # # #         csv_buffer_resumido = BytesIO(csv_bytes_resumido)
-# # # #         client.put_object(
-# # # #             f'{BUCKET_SOURCE_REFINED}',
-# # # #             f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/resumida/{file_out_resumido}',
-# # # #             data=csv_buffer_resumido,
-# # # #             length=len(csv_bytes_resumido)
-# # # #         )
-        
-# # # #         # Salva a análise detalhada
-# # # #         file_out_detalhado = f'RESPOSTA_MOTOR_DETALHADA_{file_base_name}.csv'
-# # # #         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
-# # # #         csv_buffer_detalhado = BytesIO(csv_bytes_detalhado)
-# # # #         client.put_object(
-# # # #             f'{BUCKET_SOURCE_REFINED}',
-# # # #             f'{FOLDER_DESTINATION_REFINED}/{ano}/{mes}/{dia}/{hora}/detalhada/{file_out_detalhado}',
-# # # #             data=csv_buffer_detalhado,
-# # # #             length=len(csv_bytes_detalhado)
-# # # #         )
-
-
-
-
 
 
 
