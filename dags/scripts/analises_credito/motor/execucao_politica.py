@@ -270,21 +270,21 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] >= 646): 
+            linha['Score Positivo PJ'] >= 316): 
                 return 'A - C3'
         elif(linha['CLASSIFICACAO'] == 'C' and
             linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] < 646): 
+            linha['Score Positivo PJ'] < 316): 
                 return 'A - C2'
         elif(linha['CLASSIFICACAO'] == 'C' and
             linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] >= 646): 
+            linha['Score Positivo PJ'] >= 316): 
                 return 'A - C1'
         elif (linha['CLASSIFICACAO'] == 'B' and
         pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any()):
@@ -319,21 +319,21 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] >= 646):
+            linha['Score Positivo PJ'] >= 316):
                 return 'A - B3'
         elif(linha['CLASSIFICACAO'] == 'B' and
             linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] < 646): 
+            linha['Score Positivo PJ'] < 316): 
                 return 'A - B2'
         elif(linha['CLASSIFICACAO'] == 'B' and
             linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] >= 646): 
+            linha['Score Positivo PJ'] >= 316): 
                 return 'A - B1'
         elif (linha['CLASSIFICACAO'] == 'A' and
         pd.isnull(linha[['Score Positivo PJ','TOTAL RESTRITIVOS','QTD CHEQUE','RESTRITIVOS PF','CHEQUE PF']]).values.any()):
@@ -369,7 +369,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] >= 646):
+            linha['Score Positivo PJ'] >= 316):
                 return 'A - A7'
         elif(linha['CLASSIFICACAO'] == 'A' and
             linha['QTD CHEQUE'] == 0 and
@@ -383,15 +383,15 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] >= 646 and 
-            linha['Score Positivo PJ'] <= 711):
+            linha['Score Positivo PJ'] >= 316 and 
+            linha['Score Positivo PJ'] <= 830):
                 return 'A - A5'
         elif(linha['CLASSIFICACAO'] == 'A' and
             linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] > 710 and
+            linha['Score Positivo PJ'] > 830 and
             linha['RESTRITIVOS PF'] > 500):
                 return 'A - A4'
         elif(linha['CLASSIFICACAO'] == 'A' and
@@ -399,7 +399,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] > 710 and
+            linha['Score Positivo PJ'] > 830 and
             pd.isnull(linha['CPF do Principal Socio'])):
                 return 'A - A3'    
         elif(linha['CLASSIFICACAO'] == 'A' and
@@ -407,7 +407,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] > 710 and
+            linha['Score Positivo PJ'] > 830 and
             linha['RESTRITIVOS PF'] <= 500 and
             linha['idade_socio'] < 2) :
                 return 'A - A2'
@@ -416,7 +416,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and      
-            linha['Score Positivo PJ'] > 710 and
+            linha['Score Positivo PJ'] > 830 and
             linha['RESTRITIVOS PF'] <= 500 and
             linha['idade_socio'] >= 2) :
                 return 'A - A1'  
@@ -460,7 +460,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] >= 646): 
+            linha['Score Positivo PJ'] >= 316): 
                 return 'B - 7'
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and 
@@ -472,35 +472,35 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and    
             linha['TOTAL RESTRITIVOS'] <= 1000 and
-            linha['Score Positivo PJ'] >= 646 and
-            linha['Score Positivo PJ'] <= 900):
+            linha['Score Positivo PJ'] >= 316 and
+            linha['Score Positivo PJ'] <= 830):
                 return "B - 5"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and
+            linha['Score Positivo PJ'] > 830 and
             pd.isnull(linha['CPF do Principal Socio'])):
                 return "B - 4"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and
+            linha['Score Positivo PJ'] > 830 and
             pd.isnull(linha['idade_socio'])):
                 return "B - 4"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and
+            linha['Score Positivo PJ'] > 830 and
             linha['RESTRITIVOS PF'] > 500):
                 return "B - 3"
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and   
+            linha['Score Positivo PJ'] > 830 and   
             linha['RESTRITIVOS PF'] <= 500 and
             linha['idade_socio'] < 2):
                 return "B - 2"
@@ -508,7 +508,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             linha['TOTAL RESTRITIVOS'] <= 1000 and        
-            linha['Score Positivo PJ'] > 900 and   
+            linha['Score Positivo PJ'] > 830 and   
             linha['RESTRITIVOS PF'] <= 500 and
             linha['idade_socio'] >= 2):
                 return "B - 1"
