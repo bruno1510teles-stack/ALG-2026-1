@@ -263,7 +263,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'A - C4'
         elif(linha['CLASSIFICACAO'] == 'C' and
             linha['QTD CHEQUE'] == 0 and
@@ -312,7 +312,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'A - B4'
         elif(linha['CLASSIFICACAO'] == 'B' and
             linha['QTD CHEQUE'] == 0 and
@@ -362,7 +362,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and     
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'A - A8'
         elif(linha['CLASSIFICACAO'] == 'A' and    
             linha['QTD CHEQUE'] == 0 and
@@ -454,7 +454,7 @@ def execucao_politica(access_params=None):
             linha['Score Positivo PJ'] != 2 and
             linha['Capital Social'] <= 100000000 and
             1000 < linha['TOTAL RESTRITIVOS'] <= 500000 and
-            linha['Score Positivo PJ'] < 646):
+            linha['Score Positivo PJ'] < 316):
                 return 'B - 8'
         elif(linha['QTD CHEQUE'] == 0 and
             linha['Score Positivo PJ'] != 2 and
@@ -540,10 +540,10 @@ def execucao_politica(access_params=None):
     resposta_motor['resposta_motor'] = None    
     
     # REPROVADO
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2', 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'B - 11', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2', 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'A - A6', 'B - 11', 'B - 6', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A6', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 6', 'B - 5', 'B - 4', 'B - 3', 'B - 2','B - 12', 'A - A12', 'A - B8', 'A - C8']), 'resposta_motor'] = 'MESA'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 5', 'B - 4', 'B - 3', 'B - 2','B - 12', 'A - A12', 'A - B8', 'A - C8']), 'resposta_motor'] = 'MESA'
     
     # APROVADO
     resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'B - 1']), 'resposta_motor'] = 'MESA'
