@@ -576,38 +576,40 @@ def execucao_politica(access_params=None):
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
 
 
-    # # Criação do mapeamento de pareceres
-    # parecer_map = {
-    #     "PF 1": "Motor - Recusado, dados analisados fora da politica atual. CNPJ não é ativo",
-    #     "PF 2": "Motor - Recusado, dados analisados fora da politica atual. CNPJ em RJ",
-    #     "PF 3": "Motor - Recusado, dados analisados fora da politica atual. CNPJ MEI",
-    #     "PF 4": "Motor - Recusado, dados analisados fora da politica atual. CNAE não aceito",
-    #     "PF 5": "Motor - Recusado, dados analisados fora da politica atual. Natureza jurídica não aceita",
-    #     "PF 7": "Motor - Recusado, dados analisados fora da politica atual. Vínculo PEP",
-    #     "PF 9": "Motor - Recusado, dados analisados fora da politica atual. Empresa com menos de 2 anos",
-    #     "PF 10": "Motor - Recusado, dados analisados fora da politica atual. Possui inadimplência na ALPE",
-    #     "A - A11": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
-    #     "A - A9": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
-    #     "A - A8": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
-    #     "A - B7": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
-    #     "A - B5": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
-    #     "A - B4": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
-    #     "A - E1": "Motor - Recusado, dados analisados fora da politica atual. Alto risco de PD",
-    #     "A - C7": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
-    #     "A - C5": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
-    #     "A - C4": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo",
-    #     "A - C2": "Motor - Recusado, dados analisados fora da politica atual. Score baixo",
-    #     "B - 11": "Motor - Recusado, dados analisados fora da politica atual. Tem cheque devolvido",
-    #     "B - 9": "Motor - Recusado, dados analisados fora da politica atual. Alto valor de restritivo",
-    #     "B - 8": "Motor - Recusado, dados analisados fora da politica atual. Score baixo e restritivo"
-    # }
+    # Criação do mapeamento de pareceres
+    parecer_map = {
+        "PF 1":"Motor - Recusado, impedido de operar",
+        "PF 2":"Motor - Recusado, impedido de operar",
+        "PF 3":"Motor - Recusado, MEI",
+        "PF 4":"Motor - Recusado, CNAE",
+        "PF 5":"Motor - Recusado, CNAE",
+        "PF 7":"Motor - Recusado, impedido de operar",
+        "PF 9":"Motor - Recusado, impedido de operar",
+        "PF 10":"Motor - Recusado, impedido de operar",
+        "A - A11":"Motor - Recusado, apontamento/score",
+        "A - A9":"Motor - Recusado, apontamento/score",
+        "A - A8":"Motor - Recusado, apontamento/score",
+        "A - A6":"Motor - Recusado, apontamento/score",
+        "A - B7":"Motor - Recusado, apontamento/score",
+        "A - B5":"Motor - Recusado, apontamento/score",
+        "A - B4":"Motor - Recusado, apontamento/score",
+        "A - E1":"Motor - Recusado, PD",
+        "A - C7":"Motor - Recusado, apontamento/score",
+        "A - C5":"Motor - Recusado, apontamento/score",
+        "A - C4":"Motor - Recusado, apontamento/score",
+        "A - C2":"Motor - Recusado, apontamento/score",
+        "B - 11":"Motor - Recusado, apontamento/score",
+        "B - 9":"Motor - Recusado, apontamento/score",
+        "B - 8":"Motor - Recusado, apontamento/score",
+        "B - 6":"Motor - Recusado, apontamento/score"
+    }
 
-    # # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
-    # def get_parecer_personalizado(parecer):
-    #     return parecer_map.get(parecer, parecer)
+    # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
+    def get_parecer_personalizado(parecer):
+        return parecer_map.get(parecer, parecer)
 
-    # # Aplica a função ao DataFrame para criar a nova coluna
-    # resposta_motor['parecer'] = resposta_motor['parecer'].apply(get_parecer_personalizado)
+    # Aplica a função ao DataFrame para criar a nova coluna
+    resposta_motor['parecer'] = resposta_motor['parecer'].apply(get_parecer_personalizado)
 
     # Gerando Path
     def gerando_path(row):
