@@ -605,11 +605,14 @@ def execucao_politica(access_params=None):
     }
 
     # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
-    def get_parecer_personalizado(parecer):
-        return parecer_map.get(parecer, parecer)
+    def get_parecer_personalizado(row):
+        ramificacao = row['ramificacao_motor']
+        parecer_atual = row['parecer']
+        # Tenta obter o parecer com base na 'ramificacao_motor'
+        return parecer_map.get(ramificacao, parecer_atual)
 
-    # Aplica a função ao DataFrame para criar a nova coluna
-    resposta_motor['parecer'] = resposta_motor['parecer'].apply(get_parecer_personalizado)
+    # Aplica a função ao DataFrame
+    resposta_motor['parecer'] = resposta_motor.apply(get_parecer_personalizado, axis=1)
 
     # Gerando Path
     def gerando_path(row):
