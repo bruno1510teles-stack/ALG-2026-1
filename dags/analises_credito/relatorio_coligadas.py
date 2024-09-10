@@ -13,7 +13,6 @@ default_args = {
     'owner': 'Rafael Leite',
     'retries': 1,
 }
-
 def get_trino_connection():
     return connect(
         host='trino.alpe.com.br',
@@ -22,39 +21,9 @@ def get_trino_connection():
         auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https"
     )
-def execute_query(conn, cnpj):
-    query = f"""
-        SELECT 
-            cpf_cnpj_sacado,
-            nome_sacado,
-            CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_atribuido) ELSE limite_atribuido END AS limite_atribuido,
-            CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_disponivel) ELSE limite_disponivel END AS limite_disponivel
-        FROM (
-            SELECT 
-                cpf_cnpj_sacado,
-                nome_sacado,
-                limite_atribuido,
-                limite_disponivel,
-                categoria,
-                pgid
-            FROM 
-                postgres.ccred_schema_prd_default.vw_limite_sacado_v3
-            WHERE 
-                cnpj_raiz = '{cnpj}'
-                AND cedente_principal = true
-            GROUP BY cpf_cnpj_sacado,
-                     nome_sacado,
-                     limite_atribuido,
-                     limite_disponivel,
-                     categoria,
-                     pgid  
-        ) t1
-        GROUP BY cpf_cnpj_sacado,
-                 nome_sacado,
-                 limite_atribuido,
-                 limite_disponivel,
-                 categoria
-    """
+
+def execute_query(conn, query):
+
     cur = conn.cursor()
     cur.execute(query)
     return cur.fetchall()
@@ -108,6 +77,33 @@ def upload_to_minio(file, cnpj, bucket):
     current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
     MinioWriteFile().write_file(file=file, file_name=f'coligadas_{cnpj}_{current_time}.xlsx', bucket=bucket, path='/coligadas')
 
+def consulta_coligadas(cnpj, conn):
+    sacados = None
+
+    queryColigadas = f"""
+        SELECT
+            substring(documento, 2, length(documento)) AS cnpj_raiz
+        FROM
+            deltalaketrusted.serasa.coligada c
+        WHERE
+            id = (
+            SELECT
+                max(id)
+            FROM
+                deltalaketrusted.serasa.organizacoes o
+            WHERE
+                o.cnpj_raiz = '{cnpj}')
+            AND c.identificacao_pessoa = 'J'
+        """
+    result = execute_query(conn, queryColigadas)
+
+    if result:
+        sacados = [row[0] for row in result]
+    else:
+        print(f"NÃO HÁ COLIGADAS PARA O SACADO {cnpj}")
+
+    return sacados
+
 @dag(
     default_args=default_args,
     start_date=days_ago(1),
@@ -115,43 +111,85 @@ def upload_to_minio(file, cnpj, bucket):
     description='DAG consulta o limite das empresas coligadas e envia o arquivo retornado para o MinIO',
     catchup=False,
 )
-def consulta_coligadas():
-
+def relatorio_coligadas():
     @task()
     def start_task():
         print("Operação iniciada")
 
     @task()
-    def consultar_limites(sacados, **kwargs):
+    def consulta_limites(**kwargs):
         conn = get_trino_connection()
-        
-        all_rows = []
-        for cnpj in sacados:
-            rows = execute_query(conn, cnpj)
-            if rows:
-                all_rows.extend(rows)
-            else:
-                print(f"NENHUM REGISTRO ENCONTRADO PARA CNPJ: {cnpj}")
-        
-        if not all_rows:
-            print("NENHUM REGISTRO ENCONTRADO PARA QUALQUER CNPJ")
-            return []
-        
-        xlsx_file = create_xlsx(all_rows)
-        
-        cnpj = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
-        bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
-        
-        upload_to_minio(xlsx_file, cnpj, bucket)
-        
+        try:
+            cnpjSacado = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
+            if not cnpjSacado:
+                raise ValueError("CNPJ não fornecido na execução da DAG.")
+
+            sacados = consulta_coligadas(cnpjSacado, conn)
+
+            if not sacados:
+                return
+            
+            all_rows = []
+            for cnpj in sacados:
+                
+                queryLimite = f"""
+                    SELECT 
+                        cpf_cnpj_sacado,
+                        nome_sacado,
+                        CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_atribuido) ELSE limite_atribuido END AS limite_atribuido,
+                        CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_disponivel) ELSE limite_disponivel END AS limite_disponivel
+                    FROM (
+                        SELECT 
+                            cpf_cnpj_sacado,
+                            nome_sacado,
+                            limite_atribuido,
+                            limite_disponivel,
+                            categoria,
+                            pgid
+                        FROM 
+                            postgres.ccred_schema_prd_default.vw_limite_sacado_v3
+                        WHERE 
+                            cnpj_raiz = '{cnpj}'
+                            AND cedente_principal = true
+                        GROUP BY cpf_cnpj_sacado,
+                                nome_sacado,
+                                limite_atribuido,
+                                limite_disponivel,
+                                categoria,
+                                pgid  
+                    ) t1
+                    GROUP BY cpf_cnpj_sacado,
+                            nome_sacado,
+                            limite_atribuido,
+                            limite_disponivel,
+                            categoria
+                """
+                
+                rows = execute_query(conn, queryLimite)
+                if rows:
+                    all_rows.extend(rows)
+                else:
+                    print(f"Não há registro de limite para o CNPJ {cnpj}")
+            
+            if not all_rows:
+                return print("Não há qualquer registro de limite dentre as empresas coligadas")
+            
+            xlsx_file = create_xlsx(all_rows)
+            
+            bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
+            
+            upload_to_minio(xlsx_file, cnpj, bucket)
+        finally:
+            conn.close()
+
     @task()
     def end_task():
         print("Operação finalizada")
-    
+
     start = start_task()
-    limites = consultar_limites(['18250236', "07380277", "01543674", "06244374", "09106047"])
+    limites = consulta_limites()
     end = end_task()
 
     start >> limites >> end 
 
-coligadas_dag = consulta_coligadas()
+coligadas_dag = relatorio_coligadas()
