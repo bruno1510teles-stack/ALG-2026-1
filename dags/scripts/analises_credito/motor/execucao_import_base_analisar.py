@@ -30,7 +30,7 @@ def base_analisar(access_params=None):
         "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
         "fields": ["key", # ISSUE_JIRA
                 "customfield_13729", # CNPJ
-                "customfield_13732", # LIMITE ALPE
+                #"customfield_13732", # LIMITE ALPE
                 "customfield_13808", # INAD ALPE 
                 "customfield_13739", # PGID FN
                 "customfield_13719" # NOME PGID FN
@@ -49,7 +49,7 @@ def base_analisar(access_params=None):
         for ticket in tickets:
             issue_jira = ticket.get('key') 
             cnpj = ticket['fields'].get('customfield_13729')  
-            limite_alpe = ticket['fields'].get('customfield_13732')  
+            #limite_alpe = ticket['fields'].get('customfield_13732')  
             inad_alpe = ticket['fields'].get('customfield_13808')  
             pgid = ticket['fields'].get('customfield_13739')  
             nome_pgid = ticket['fields'].get('customfield_13719')
@@ -57,7 +57,7 @@ def base_analisar(access_params=None):
             data.append({
                 'issue_jira': issue_jira,
                 'CNPJ': cnpj,
-                'limite_alpe': limite_alpe,
+             #   'limite_alpe': limite_alpe,
                 'inad_alpe': inad_alpe,
                 'pgid' : pgid,
                 'nome_pgid': pgid
@@ -71,25 +71,27 @@ def base_analisar(access_params=None):
     else:
         print(f"Failed to fetch data from Jira: {response.status_code}")
 
-    # Passo 1: Remover a máscara de valor e converter para numérico
-    if df['limite_alpe'].notna().any():
-        df['limite_alpe'] = df['limite_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
-        df['limite_alpe'] = pd.to_numeric(df['limite_alpe'], errors='coerce')  
+    # # Passo 1: Remover a máscara de valor e converter para numérico
+    # if df['limite_alpe'].notna().any():
+    #     df['limite_alpe'] = df['limite_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
+    #     df['limite_alpe'] = pd.to_numeric(df['limite_alpe'], errors='coerce')  
 
     if df['inad_alpe'].notna().any():
         df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
         df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
 
     # Passo 3: Criar as colunas de flag com base na lógica fornecida
-    df['limite_alpe_flag'] = df['limite_alpe'].apply(lambda x: x > 0 if pd.notna(x) else False)
+    # df['limite_alpe_flag'] = df['limite_alpe'].apply(lambda x: x > 0 if pd.notna(x) else False)
     df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
 
     # Passo 4: Deixar o nome padrão
     # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
-    df.drop(columns=['limite_alpe', 'inad_alpe'], inplace=True)
+    #df.drop(columns=['limite_alpe', 'inad_alpe'], inplace=True)
+    df.drop(columns=['inad_alpe'], inplace=True)
 
     # Renomear as colunas de flag para os nomes originais
-    df.rename(columns={'limite_alpe_flag': 'limite_alpe', 'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+    #df.rename(columns={'limite_alpe_flag': 'limite_alpe', 'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+    df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
 
     # Exibir o DataFrame resultante
     print(df.head(10))

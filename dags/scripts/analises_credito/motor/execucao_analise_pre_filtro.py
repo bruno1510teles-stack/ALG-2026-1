@@ -135,6 +135,12 @@ def analise_pre_filtro(access_params=None):
     cnpjs = base_analisar_raiz['documento_sem_formatacao'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     ids_query = f"({ids_query})"
+    aux = base_analisar
+    aux['cnpj_raiz'] = base_analisar['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
+    cnpj_raiz_limite = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
+    cnpj_raiz_limite = f"({cnpj_raiz_limite})"
+
+
     
     # Cria um cursor e executa a query
     cur = conn.cursor()
@@ -155,11 +161,22 @@ def analise_pre_filtro(access_params=None):
             pre.is_mei,
             pre.tem_pep,
             pre.situacao_especial,
-            pre.data_ref_receita
+            pre.data_ref_receita,
+            (select 
+            cnpj_raiz, case when sum(limite_atribuido) > 0 
+            then true 
+            else false  
+            end as limite_alpe 
+            from 
+                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
+            where 
+                cnpj_raiz in {cnpj_raiz_limite}
+                and cedente_principal
+            group by 
+                cnpj_raiz) as limite_alpe
         from 
             deltalakerefined.motor.pre_filtro pre
         left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
-
         where pre.documento_sem_formatacao in {ids_query}
 
         """)
@@ -176,7 +193,7 @@ def analise_pre_filtro(access_params=None):
     # Para pegar o nome das colunas, você pode usar cur.description
     columns = [desc[0] for desc in cur.description]
     df = pd.DataFrame(rows, columns=columns)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'limite_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão de cnae e natureza juridica
     df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
