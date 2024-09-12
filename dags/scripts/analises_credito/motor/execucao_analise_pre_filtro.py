@@ -145,6 +145,19 @@ def analise_pre_filtro(access_params=None):
 
         query = (f"""
 
+            with limite as (select 
+            cnpj_raiz, case when sum(limite_atribuido) > 0 
+            then true 
+            else false  
+            end as limite_alpe 
+            from 
+                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
+            where 
+                cnpj_raiz = '{cnpj_raiz}'
+                and cedente_principal
+            group by 
+                cnpj_raiz
+                            )
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
@@ -161,21 +174,11 @@ def analise_pre_filtro(access_params=None):
                 pre.tem_pep,
                 pre.situacao_especial,
                 pre.data_ref_receita,
-                (select 
-                cnpj_raiz, case when sum(limite_atribuido) > 0 
-                then true 
-                else false  
-                end as limite_alpe 
-                from 
-                    postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
-                where 
-                    cnpj_raiz = '{cnpj_raiz}'
-                    and cedente_principal
-                group by 
-                    cnpj_raiz) as limite_alpe
+                lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
             left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
+            left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
