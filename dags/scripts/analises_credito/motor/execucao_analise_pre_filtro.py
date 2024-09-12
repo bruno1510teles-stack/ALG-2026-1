@@ -135,8 +135,8 @@ def analise_pre_filtro(access_params=None):
     cnpjs = base_analisar_raiz['documento_sem_formatacao'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     ids_query = f"({ids_query})"
-    aux = base_analisar
-    aux['cnpj_raiz'] = base_analisar['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
+    aux = base_analisar_raiz
+    aux['cnpj_raiz'] = aux['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
     cnpj_raiz_limite = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     cnpj_raiz_limite = f"({cnpj_raiz_limite})"
 
