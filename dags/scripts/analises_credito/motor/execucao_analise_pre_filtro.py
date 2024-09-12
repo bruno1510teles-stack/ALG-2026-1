@@ -147,8 +147,8 @@ def analise_pre_filtro(access_params=None):
 
             with limite as (select 
             cnpj_raiz, case when sum(limite_atribuido) > 0 
-            then true 
-            else false  
+            then True 
+            else False  
             end as limite_alpe 
             from 
                 postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
