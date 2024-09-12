@@ -248,7 +248,7 @@ group by
         trp.cnpj_raiz,
         score."Score Positivo PJ",
         score.grande_empresa,
-        trp."TOTAL RESTRITIVOS",
+        coalesce(trp."TOTAL RESTRITIVOS", 0) as "TOTAL RESTRITIVOS"
         coalesce(cpj."QTD CHEQUE", 0) as "QTD CHEQUE",
         coalesce(cpf."CHEQUE PF", 0) as "CHEQUE PF",
         coalesce(trs."RESTRITIVOS PF", 0) as "RESTRITIVOS PF",
