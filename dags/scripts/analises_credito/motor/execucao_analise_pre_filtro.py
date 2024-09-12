@@ -132,67 +132,76 @@ def analise_pre_filtro(access_params=None):
     print(f"Quantidade de CNPJs que retornou da estabelecimentos: {base_analisar_raiz.shape[0]}")
 
     ## Criar uma string formatada para a cláusula IN
-    cnpjs = base_analisar_raiz['documento_sem_formatacao'].unique()
-    ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
-    ids_query = f"({ids_query})"
-    aux = base_analisar_raiz
-    aux['cnpj_raiz'] = aux['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
-    cnpj_raiz_limite = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
-    cnpj_raiz_limite = f"({cnpj_raiz_limite})"
+    base_analisar_raiz['cnpj_raiz'] = base_analisar_raiz['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
 
+    df = pd.DataFrame()
 
-    
     # Cria um cursor e executa a query
     cur = conn.cursor()
-    query = (f"""
 
-        select 
-            pre.cnpj_raiz cnpj_raiz,
-            pre.documento_sem_formatacao,
-            pre.razao_social,
-            pre.cod_cnae,
-            pre.cod_natureza_juridica,
-            CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
-            emp.capital_social_empresa as "Capital Social",
-            pre.idade,
-            pre.situacao_cadastral situacao_cadastral,
-            pre.idade_socio,
-            pre.tem_socio_pj,
-            pre.is_mei,
-            pre.tem_pep,
-            pre.situacao_especial,
-            pre.data_ref_receita,
-            (select 
-            cnpj_raiz, case when sum(limite_atribuido) > 0 
-            then true 
-            else false  
-            end as limite_alpe 
+    for index, row in base_analisar_raiz.iterrows():
+        cnpj_completo = row['documento_sem_formatacao']
+        cnpj_raiz = row['cnpj_raiz'] 
+
+        query = (f"""
+
+            select 
+                pre.cnpj_raiz cnpj_raiz,
+                pre.documento_sem_formatacao,
+                pre.razao_social,
+                pre.cod_cnae,
+                pre.cod_natureza_juridica,
+                CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
+                emp.capital_social_empresa as "Capital Social",
+                pre.idade,
+                pre.situacao_cadastral situacao_cadastral,
+                pre.idade_socio,
+                pre.tem_socio_pj,
+                pre.is_mei,
+                pre.tem_pep,
+                pre.situacao_especial,
+                pre.data_ref_receita,
+                (select 
+                cnpj_raiz, case when sum(limite_atribuido) > 0 
+                then true 
+                else false  
+                end as limite_alpe 
+                from 
+                    postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
+                where 
+                    cnpj_raiz = '{cnpj_raiz}'
+                    and cedente_principal
+                group by 
+                    cnpj_raiz) as limite_alpe
             from 
-                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
-            where 
-                cnpj_raiz in {cnpj_raiz_limite}
-                and cedente_principal
-            group by 
-                cnpj_raiz) as limite_alpe
-        from 
-            deltalakerefined.motor.pre_filtro pre
-        left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
-        where pre.documento_sem_formatacao in {ids_query}
+                deltalakerefined.motor.pre_filtro pre
+            left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
+            where pre.documento_sem_formatacao = '{cnpj_completo}'
 
-        """)
+            """)
 
-    cur.execute(query)
+        # Executa a query
+        cur.execute(query)
 
-    # Obtém os resultados
-    rows = cur.fetchall()
+        # Obtém os resultados
+        rows = cur.fetchall()
+
+        # Para pegar o nome das colunas
+        columns = [desc[0] for desc in cur.description]
+
+        # Converte os resultados em um DataFrame temporário
+        df_temp = pd.DataFrame(rows, columns=columns)
+
+        # Concatenar os resultados temporários no DataFrame final
+        df = pd.concat([df, df_temp], ignore_index=True)
 
     # Fecha o cursor e a conexão
     cur.close()
     conn.close()
 
-    # Para pegar o nome das colunas, você pode usar cur.description
-    columns = [desc[0] for desc in cur.description]
-    df = pd.DataFrame(rows, columns=columns)
+    # Exibe o DataFrame final com os resultados acumulados
+    print(df)
+
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão de cnae e natureza juridica
