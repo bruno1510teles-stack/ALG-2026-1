@@ -85,72 +85,130 @@ def execucao_politica(access_params=None):
     query = (f"""
             with 
         total_restritivos_pj as (
-    select 
-        org.id,
+select 
+    t1.org_id as id,
+    t1.data_consulta,
+    t1.cnpj_raiz,
+    sum(valor_total) as "TOTAL RESTRITIVOS"
+from (
+	select distinct
+        org.id org_id,
         date(split_part(org.data_hora_consulta, ' ', 1)) AS data_consulta,
         org.cnpj_raiz,
-        sum(coalesce(remp.valor_total, 0)) as "TOTAL RESTRITIVOS"
-    from 
+        remp.id,
+        remp.grupo_ocorrencia,
+        remp.quantidade_ocorrencia,
+        remp.ano_mes_primeiro,
+        remp.ano_mes_ultimo,
+        remp.moeda,
+        remp.codigo_natureza,
+        remp.fonte,
+        remp.titular_pendencia,
+        coalesce(remp.valor_total, 0) as valor_total
+    from
         deltalaketrusted.serasa.organizacoes org
     left join deltalaketrusted.serasa.resumo_restritivo remp
         on
         remp.id = org.id
         and remp.titular_pendencia = CONCAT('0',
         org.cnpj_raiz)
-    where 
+    where
         org.cnpj_raiz in {ids_query}
-    group by 
-        org.id,
-        org.data_hora_consulta,
-        org.cnpj_raiz
+)t1
+group by
+    t1.org_id,
+    t1.data_consulta,
+    t1.cnpj_raiz
     )
     ,
         qtde_cheque_pj as (
-    select 
-        org.id,
+select 
+    t1.org_id as id,
+    sum(t1."QTD CHEQUE") as "QTD CHEQUE"
+from (
+	select distinct
+        org.id org_id,
         org.cnpj_raiz,
-        sum(coalesce(remp.quantidade_ocorrencia, 0)) as "QTD CHEQUE"
-    from 
+        remp.id,
+        remp.grupo_ocorrencia,
+        remp.quantidade_ocorrencia,
+        remp.ano_mes_primeiro,
+        remp.ano_mes_ultimo,
+        remp.moeda,
+        remp.codigo_natureza,
+        remp.fonte,
+        remp.titular_pendencia,
+        coalesce(remp.quantidade_ocorrencia, 0) as "QTD CHEQUE"
+    from
         deltalaketrusted.serasa.organizacoes org
     left join deltalaketrusted.serasa.resumo_restritivo remp
         on
         remp.id = org.id
-        and remp.titular_pendencia = CONCAT('0', org.cnpj_raiz)
+        and remp.titular_pendencia = CONCAT('0',
+        org.cnpj_raiz)
     where
-        remp.grupo_ocorrencia = 'CHEQUE'
-        and org.cnpj_raiz in {ids_query}
-    group by 
-        org.id,
-        org.cnpj_raiz
+        org.cnpj_raiz in {ids_query}
+        and remp.grupo_ocorrencia = 'CHEQUE'
+    ) t1
+group by
+    t1.org_id
     )
     ,
         qtde_cheque_pf as (
-    select 
+select 
+    t1.org_id as id,
+    sum(t1."CHEQUE PF") as "CHEQUE PF"
+from (
+	select distinct
+        socios.id org_id,
         rsocio.id,
-        sum(coalesce(rsocio.quantidade_ocorrencia, 0)) as "CHEQUE PF"
-    from 
+        rsocio.grupo_ocorrencia,
+        rsocio.quantidade_ocorrencia,
+        rsocio.ano_mes_primeiro,
+        rsocio.ano_mes_ultimo,
+        rsocio.moeda,
+        rsocio.codigo_natureza,
+        rsocio.fonte,
+        rsocio.titular_pendencia,
+        coalesce(rsocio.quantidade_ocorrencia, 0) as "CHEQUE PF"
+    from
         deltalaketrusted.serasa.socios socios
     left join deltalaketrusted.serasa.resumo_restritivo rsocio
         on
         rsocio.id = socios.id
-        and rsocio.titular_pendencia = socios.documento_socio 
+        and rsocio.titular_pendencia = socios.documento_socio
     where
-        rsocio.grupo_ocorrencia = 'CHEQUE'
-    group by 
-        rsocio.id
+        rsocio.grupo_ocorrencia = 'CHEQUE') t1
+group by
+    t1.org_id
     )
     ,
         total_restritivos_socio as (
-    select 
-        rsocio.id, sum(coalesce(rsocio.valor_total, 0)) as "RESTRITIVOS PF"
-    from 
+select 
+    t1.org_id as id,
+    sum(valor_total) as "RESTRITIVOS PF"
+from (
+	select distinct
+        socios.id org_id,
+        rsocio.id,
+        rsocio.grupo_ocorrencia,
+        rsocio.quantidade_ocorrencia,
+        rsocio.ano_mes_primeiro,
+        rsocio.ano_mes_ultimo,
+        rsocio.moeda,
+        rsocio.codigo_natureza,
+        rsocio.fonte,
+        rsocio.titular_pendencia,
+        coalesce(rsocio.valor_total, 0) as valor_total
+    from
         deltalaketrusted.serasa.socios socios
     left join deltalaketrusted.serasa.resumo_restritivo rsocio
         on
         rsocio.id = socios.id
-        and rsocio.titular_pendencia = socios.documento_socio 
-    group by 
-        rsocio.id
+        and rsocio.titular_pendencia = socios.documento_socio
+)t1
+group by
+    t1.org_id
     )
     ,
         score_pj as (
