@@ -85,7 +85,7 @@ def execucao_modelo(access_params=None):
                 ROW_NUMBER() OVER (PARTITION BY documento_raiz, fornecedor ORDER BY dataprocessamento DESC) AS row_num
             FROM miniorefined.payments.book_variaveis
         ) t
-        WHERE row_num = 1 and documento_raiz in {ids_query}
+        WHERE row_num = 1 and documento_raiz in {ids_query} and fornecedor = 'ARCELOR'
         """)
 
     print(query)
