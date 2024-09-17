@@ -24,10 +24,12 @@ class MinioWriteFile:
     def extract_path(self, bucket):
         return '/'.join(bucket.split('/')[1:])
 
-    def write_file(self, file, file_name, bucket, path=None):  
+    def write_file(self, file, file_name, bucket, path=None, type ="application/octet-stream"):  
         print("init...")
         try:
             parsed_url = urlparse(f"https://{self.access_params['endpoint_url_raw']}")
+            
+            print(f"incoming content type: {type}")
             
             minio_client = Minio(
                 parsed_url.netloc,
@@ -45,7 +47,7 @@ class MinioWriteFile:
             path = self.make_path_name_file(path, file_name)
 
             if minio_client.bucket_exists(bucket):
-                minio_client.put_object(bucket_name=bucket, object_name=path, data=file, length=file.getbuffer().nbytes)
+                minio_client.put_object(bucket_name=bucket, object_name=path, data=file, length=file.getbuffer().nbytes, content_type = type)
             else :
                 print("Bucket '{}' does not exist".format(bucket))
 
