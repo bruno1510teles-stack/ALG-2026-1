@@ -209,7 +209,7 @@ def analise_pre_filtro(access_params=None):
 
     ### Olhando para os CNAE's secundários também
     # Passo 1: Criar uma coluna com todos os CNAEs (principal + secundários)
-    df['todos_cnaes'] = df.apply(lambda row: [row['cod_cnae']] + row['cnae_secundaria'].split(','), axis=1)
+    df['todos_cnaes'] = df.apply(lambda row: [row['cod_cnae']] + (row['cnae_secundaria'].split(',') if pd.notna(row['cnae_secundaria']) else []), axis=1)
     # Passo 2: Explodir o DataFrame para que cada CNAE fique em uma linha separada
     df_exploded = df.explode('todos_cnaes')
     # Passo 3: Fazer o merge para validar os CNAEs
