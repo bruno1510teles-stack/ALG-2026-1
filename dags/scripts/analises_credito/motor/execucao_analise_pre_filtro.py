@@ -216,10 +216,24 @@ def analise_pre_filtro(access_params=None):
     df_validado = df_exploded.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
     # Passo 4: Consolidar o resultado para manter uma linha por CNPJ e verificar se ao menos um CNAE foi aceito
     df = df_validado.groupby('documento_sem_formatacao').agg({
+        'cnpj_raiz': 'first',  # Mantém o primeiro valor da coluna cnpj_raiz (assumindo que seja o mesmo para cada grupo)
         'cod_cnae': 'first',  # Mantém o CNAE principal
         'todos_cnaes': lambda x: ','.join(x),  # Junta os CNAEs novamente
         'cnae_aceito': lambda x: 'SIM' if 'SIM' in x.values else 'NAO',  # Se qualquer um for 'SIM', aceita
-    })
+        'razao_social': 'first',  # Mantém o primeiro valor da coluna razao_social
+        'cod_natureza_juridica': 'first',  # Mantém o primeiro valor da coluna cod_natureza_juridica
+        'codigo_porte_empresa': 'first',  # Mantém o primeiro valor da coluna codigo_porte_empresa
+        'Capital Social': 'first',  # Mantém o primeiro valor da coluna Capital Social
+        'idade': 'first',  # Mantém o primeiro valor da coluna idade
+        'situacao_cadastral': 'first',  # Mantém o primeiro valor da coluna situacao_cadastral
+        'idade_socio': 'first',  # Mantém o primeiro valor da coluna idade_socio
+        'tem_socio_pj': 'first',  # Mantém o primeiro valor da coluna tem_socio_pj
+        'is_mei': 'first',  # Mantém o primeiro valor da coluna is_mei
+        'tem_pep': 'first',  # Mantém o primeiro valor da coluna tem_pep
+        'situacao_especial': 'first',  # Mantém o primeiro valor da coluna situacao_especial
+        'data_ref_receita': 'first',  # Mantém o primeiro valor da coluna data_ref_receita
+        'limite_alpe': 'first'  # Mantém o primeiro valor da coluna limite_alpe
+    }).reset_index()  # Reseta o índice para retornar um DataFrame regular
     
 
     print(f"DF pós tratamento cnaes secundário: {df}")
