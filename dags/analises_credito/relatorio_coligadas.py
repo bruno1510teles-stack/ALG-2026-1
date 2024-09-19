@@ -7,6 +7,7 @@ from airflow.utils.dates import days_ago
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
+from airflow.models import Variable
 
 default_args = {
     'owner': 'Rafael Leite',
@@ -131,7 +132,7 @@ def relatorio_coligadas():
                             categoria,
                             pgid
                         FROM 
-                            postgres.ccred_schema_prd_default.vw_limite_sacado_v3
+                            postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_limite_sacado_v3
                         WHERE 
                             cnpj_raiz = '{cnpj}'
                             AND cedente_principal = true

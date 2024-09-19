@@ -17,7 +17,7 @@ class MinioSaveIndex:
             connection = get_trino_connection()
 
             insert_query = f"""
-                INSERT INTO minioraw.solicitacao_limite_jira."index"
+                INSERT INTO minioraw.analise_credito_pcc."index"
                 ("issue_key", "documento", "path", "arquivo", "tipo_arquivo")
                 VALUES (\'{issueKey}\', \'{cnpj}\', \'{path}\', \'{base64file}\', \'{type}\')"""
 
