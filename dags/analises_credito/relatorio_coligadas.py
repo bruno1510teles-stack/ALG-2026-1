@@ -1,8 +1,7 @@
 from datetime import datetime
 import io
-from scripts.utils import extract_path_from_url
-from trino.dbapi import connect
-from trino.auth import BasicAuthentication
+from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
+from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
@@ -13,20 +12,6 @@ default_args = {
     'owner': 'Rafael Leite',
     'retries': 1,
 }
-def get_trino_connection():
-    return connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-        http_scheme="https"
-    )
-
-def execute_query(conn, query):
-
-    cur = conn.cursor()
-    cur.execute(query)
-    return cur.fetchall()
 
 def create_xlsx(rows):
     wb = Workbook()
@@ -73,10 +58,6 @@ def create_xlsx(rows):
     output.seek(0)
     return output
 
-def upload_to_minio(file, cnpj, bucket):
-    current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-    MinioWriteFile().write_file(file=file, file_name=f'coligadas_{cnpj}_{current_time}.xlsx', bucket=bucket, path='/coligadas')
-
 def consulta_coligadas(cnpj, conn):
     sacados = None
 
@@ -92,9 +73,10 @@ def consulta_coligadas(cnpj, conn):
             FROM
                 deltalaketrusted.serasa.organizacoes o
             WHERE
-                o.cnpj_raiz = '{cnpj}')
+                o.cnpj_raiz = '{cnpj[:8]}')
             AND c.identificacao_pessoa = 'J'
         """
+
     result = execute_query(conn, queryColigadas)
 
     if result:
@@ -119,7 +101,9 @@ def relatorio_coligadas():
     @task()
     def consulta_limites(**kwargs):
         conn = get_trino_connection()
+        MinioIndex = MinioSaveIndex()
         try:
+            issueKey = kwargs['dag_run'].conf.get('issue_key', 'default_value')
             cnpjSacado = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
             if not cnpjSacado:
                 raise ValueError("CNPJ não fornecido na execução da DAG.")
@@ -178,7 +162,12 @@ def relatorio_coligadas():
             
             bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
             
-            upload_to_minio(xlsx_file, cnpj, bucket)
+            current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
+            
+            fileName = f"coligadas_{cnpj}_{current_time}.xlsx"
+
+            MinioWriteFile().write_file(file=xlsx_file, file_name= fileName, bucket=bucket)
+            MinioIndex.save(key= issueKey, identification=cnpjSacado, path= bucket + f"/{fileName}", fileType= "COLIGADAS")
         finally:
             conn.close()
 
