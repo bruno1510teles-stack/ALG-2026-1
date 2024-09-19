@@ -163,6 +163,7 @@ def analise_pre_filtro(access_params=None):
                 pre.documento_sem_formatacao,
                 pre.razao_social,
                 pre.cod_cnae,
+                est.cnae_secundaria, 
                 pre.cod_natureza_juridica,
                 CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
                 emp.capital_social_empresa as "Capital Social",
@@ -179,6 +180,7 @@ def analise_pre_filtro(access_params=None):
                 deltalakerefined.motor.pre_filtro pre
             left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
+            left join deltalaketrusted.receita_federal.estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
@@ -205,10 +207,27 @@ def analise_pre_filtro(access_params=None):
     # Exibe o DataFrame final com os resultados acumulados
     print(df)
 
+    ### Olhando para os CNAE's secundários também
+    # Passo 1: Criar uma coluna com todos os CNAEs (principal + secundários)
+    df['todos_cnaes'] = df.apply(lambda row: [row['cod_cnae']] + row['cnae_secundaria'].split(','), axis=1)
+    # Passo 2: Explodir o DataFrame para que cada CNAE fique em uma linha separada
+    df_exploded = df.explode('todos_cnaes')
+    # Passo 3: Fazer o merge para validar os CNAEs
+    df_validado = df_exploded.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
+    # Passo 4: Consolidar o resultado para manter uma linha por CNPJ e verificar se ao menos um CNAE foi aceito
+    df = df_validado.groupby('documento_sem_formatacao').agg({
+        'cod_cnae': 'first',  # Mantém o CNAE principal
+        'todos_cnaes': lambda x: ','.join(x),  # Junta os CNAEs novamente
+        'cnae_aceito': lambda x: 'SIM' if 'SIM' in x.values else 'NAO',  # Se qualquer um for 'SIM', aceita
+    })
+    
+
+    print(f"DF pós tratamento cnaes secundário: {df}")
+
+    ### Concatenando base principal(import)
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
     
-    # Concatenando dimensão de cnae e natureza juridica
-    df = df.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
+    # Concatenando dimensão natureza juridica
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
     
     # criando função para verificar se é SPE, Consorcio ou Construtora
