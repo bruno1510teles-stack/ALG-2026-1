@@ -72,7 +72,7 @@ def anexa_grupo_economico():
                                   file_name=catalogos[1]['arquivo'], 
                                   bucket=bucket, 
                                   type = "application/pdf")
-        MinioIndex.save(key= issueKey, identification= sacado, path= bucket + f"/{catalogos[1]['arquivo']}", fileType= "ORGANOGRAMA")
+        MinioIndex.save(key= issueKey, identification= sacado, path= bucket + f"{catalogos[1]['arquivo']}", fileType= "ORGANOGRAMA")
 
     def monta_objeto_arquivo_para_salvar(data):
         catalogos = []
