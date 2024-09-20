@@ -116,4 +116,5 @@ with DAG(
     )
 
     # Ordem
-    init_data_load >> base >> pre_filtro >> serasa >> wait_1_minute >> modelo >> politica >> enviar_kafka >> finish_data_load
+    #init_data_load >> base >> pre_filtro >> serasa >> wait_1_minute >> modelo >> politica >> enviar_kafka >> finish_data_load
+    init_data_load >> base >> pre_filtro >> serasa >> wait_1_minute >> modelo >> politica >> finish_data_load

@@ -709,45 +709,75 @@ group by
 
 
 
-# Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame
-    for _, row in resposta_motor.iterrows():
-        issue_jira = row['issue_jira']
-        cnpj = row['cnpj_ec']
+# # Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame
+#     for _, row in resposta_motor.iterrows():
+#         issue_jira = row['issue_jira']
+#         cnpj = row['cnpj_ec']
              
-        # Gera o nome base do arquivo combinando 'issue_jira' e 'CNPJ'
-        file_base_name = 'Resposta_Motor'
+#         # Gera o nome base do arquivo combinando 'issue_jira' e 'CNPJ'
+#         file_base_name = 'Resposta_Motor'
 
-        # Filtra o DataFrame resumido e detalhado para o CNPJ específico
-        df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
+#         # Filtra o DataFrame resumido e detalhado para o CNPJ específico
+#         df_detalhado = resposta_motor[resposta_motor['cnpj_ec'] == cnpj]
 
-        # Adiciona mensagens de log para depuração
-        print(f"Processando CNPJ: {cnpj}")
-        print(f"Detalhado DF: {df_detalhado.shape}")
+#         # Adiciona mensagens de log para depuração
+#         print(f"Processando CNPJ: {cnpj}")
+#         print(f"Detalhado DF: {df_detalhado.shape}")
 
-        # Gera o caminho de saída usando a coluna 'path'
-        file_out_detalhado = f'{row["path_arquivos_minio"]}/{file_base_name}.csv'
+#         # Gera o caminho de saída usando a coluna 'path'
+#         file_out_detalhado = f'{row["path_arquivos_minio"]}/{file_base_name}.csv'
               
-        # Salva a análise detalhada
-        csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
-        csv_buffer_detalhado = BytesIO(csv_bytes_detalhado)
+#         # Salva a análise detalhada
+#         csv_bytes_detalhado = df_detalhado.to_csv(index=False, sep=';').encode('utf-8')
+#         csv_buffer_detalhado = BytesIO(csv_bytes_detalhado)
 
-        # Salva o arquivo no bucket MinIO usando o caminho gerado
-        # # Conectando na refined
-        minio_raw = Minio(
-            access_params['endpoint_url_raw'],
-            access_key=access_params['aws_access_key_id_raw'],
-            secret_key=access_params['aws_secret_access_key_raw'],
-        )
+#         # Salva o arquivo no bucket MinIO usando o caminho gerado
+#         # # Conectando na refined
+#         minio_raw = Minio(
+#             access_params['endpoint_url_raw'],
+#             access_key=access_params['aws_access_key_id_raw'],
+#             secret_key=access_params['aws_secret_access_key_raw'],
+#         )
 
-        BUCKET_SOURCE_RAW = "analise-credito"
+#         BUCKET_SOURCE_RAW = "analise-credito"
 
-        minio_raw.put_object(
-            BUCKET_SOURCE_RAW,
-            file_out_detalhado,
-            data=csv_buffer_detalhado,
-            length=len(csv_bytes_detalhado)
+#         minio_raw.put_object(
+#             BUCKET_SOURCE_RAW,
+#             file_out_detalhado,
+#             data=csv_buffer_detalhado,
+#             length=len(csv_bytes_detalhado)
+#     )
+
+
+
+    # Salva o arquivo no bucket MinIO usando o caminho gerado
+    # # Conectando na refined
+    minio_raw = Minio(
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
+    # Nome do bucket e chave do arquivo
+    bucket_name = "analise-credito"
+    object_name = "lote/resposta_motor.csv"  # Caminho dentro do bucket
+
+    # Converter o DataFrame para CSV em memória
+    csv_buffer = BytesIO()
+    resposta_motor.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)  # Voltar ao início do buffer para leitura
+
+    # Fazer o upload do CSV para o MinIO
+    minio_raw.put_object(
+        bucket_name,
+        object_name,
+        data=csv_buffer,
+        length=len(csv_buffer.getvalue()),
+        content_type='application/csv'
+    )
+
+    print(f"Arquivo {object_name} enviado com sucesso para o bucket {bucket_name}")
+    
 
 
 
