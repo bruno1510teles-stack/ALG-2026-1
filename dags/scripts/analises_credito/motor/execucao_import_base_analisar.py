@@ -29,6 +29,7 @@ def base_analisar(access_params=None):
     query = {
         "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
         "fields": ["key", # ISSUE_JIRA
+                   "summary", #nome_issue
                 "customfield_13729", # CNPJ
                 #"customfield_13732", # LIMITE ALPE
                 "customfield_13808", # INAD ALPE 
@@ -48,11 +49,12 @@ def base_analisar(access_params=None):
         data = []
         for ticket in tickets:
             issue_jira = ticket.get('key') 
+            summary = ticket['fields'].get('summary')
             cnpj = ticket['fields'].get('customfield_13729')  
             #limite_alpe = ticket['fields'].get('customfield_13732')  
             inad_alpe = ticket['fields'].get('customfield_13808')  
             pgid = ticket['fields'].get('customfield_13739')  
-            nome_pgid = ticket['fields'].get('customfield_13719')
+            
             
             data.append({
                 'issue_jira': issue_jira,
@@ -60,7 +62,8 @@ def base_analisar(access_params=None):
              #   'limite_alpe': limite_alpe,
                 'inad_alpe': inad_alpe,
                 'pgid' : pgid,
-                'nome_pgid': pgid
+                'nome_pgid': pgid,
+                'nome_issue': summary
             })
         
         # Criando um DataFrame com os CNPJs
@@ -70,6 +73,8 @@ def base_analisar(access_params=None):
         print(df)
     else:
         print(f"Failed to fetch data from Jira: {response.status_code}")
+
+
 
     # # Passo 1: Remover a máscara de valor e converter para numérico
     # if df['limite_alpe'].notna().any():
@@ -92,6 +97,9 @@ def base_analisar(access_params=None):
     # Renomear as colunas de flag para os nomes originais
     #df.rename(columns={'limite_alpe_flag': 'limite_alpe', 'inad_alpe_flag': 'inad_alpe'}, inplace=True)
     df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+
+    # Filtrando somente lote
+    df = df[df['nome_issue'].str.contains('LOTE', case=False, na=False)]
 
     # Exibir o DataFrame resultante
     print(df.head(10))

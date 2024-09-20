@@ -56,13 +56,15 @@ def processar_proposta(**kwargs):
     CNPJ = conf.get('payer_identification')
     inad_alpe = conf.get('inad')
     pgid = conf.get('payee_pgid')
+    nome_issue = conf.get('summary')
 
     # Criando um dicionário com os dados recebidos para simular o DataFrame
     dados = {
         'issue_jira' : [issue_jira],
         'CNPJ': [CNPJ],
         'inad_alpe': [inad_alpe],
-        'pgid': [pgid]
+        'pgid': [pgid],
+        'nome_issue': [nome_issue]
     }
 
     # Convertendo o dicionário em DataFrame para aplicar as transformações
@@ -82,6 +84,10 @@ def processar_proposta(**kwargs):
 
     # Renomear as colunas de flag para os nomes originais
     df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+
+    # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
+    df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+
 
     # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
     print(df)

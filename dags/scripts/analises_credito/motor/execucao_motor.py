@@ -54,10 +54,9 @@ default_args = {
 
 # DEFINE DAG
 with DAG(
-    dag_id="execucao_motor",
+    dag_id="execucao_motor_lote",
     start_date=datetime(2024, 3, 1),
     max_active_runs=1,
-    schedule_interval='*/30 * * * *',
     default_args=default_args,
     catchup=False,
     tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
