@@ -46,7 +46,7 @@ access_params = {
 
 # DEFINE DEFAULT ARGS
 default_args = {
-    "owner": "João Leite",
+    "owner": "Felipe Ferraz",
     "retries": 0,
     "retry_delay": timedelta(minutes=1),
     "execution_timeout": timedelta(hours=4),
@@ -59,7 +59,7 @@ with DAG(
     max_active_runs=1,
     default_args=default_args,
     catchup=False,
-    tags=['etl', 'minio', 'mesa', 'variaveis', 'motor']
+    tags=['politica_lote']
 ) as dag:
     
     # init & finish task
