@@ -19,7 +19,8 @@ def chamando_serasa(access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    base_pre_filtro = ti.xcom_pull(task_ids='pre_filtro_task')
+    base_pre_filtro_dict = ti.xcom_pull(task_ids='pre_filtro_task')
+    base_pre_filtro = pd.DataFrame(base_pre_filtro_dict)
 
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[(base_pre_filtro['resposta'] == 'SEGUE') | (base_pre_filtro['resposta'] == 'MESA')]

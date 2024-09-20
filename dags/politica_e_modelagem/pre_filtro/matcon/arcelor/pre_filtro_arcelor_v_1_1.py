@@ -1,5 +1,6 @@
 # Carregando libs
 import pandas as pd
+import numpy as np
 from datetime import datetime, timezone, timedelta
 from minio import Minio
 from io import BytesIO
@@ -23,7 +24,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    base_analisar = ti.xcom_pull(task_ids='captura_proposta')
+    base_analisar_dict  = ti.xcom_pull(task_ids='captura_proposta')
+    base_analisar = pd.DataFrame(base_analisar_dict)
 
     ### Tratando base
     base_analisar['CNPJ'] = base_analisar['CNPJ'].str.zfill(14)
@@ -42,11 +44,12 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
 
     def execute_query(conn, query):
-        with conn.cursor() as cur:
-            cur.execute(query)
-            rows = cur.fetchall()
-            columns = [desc[0] for desc in cur.description]
-            return pd.DataFrame(rows, columns=columns)
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+        return pd.DataFrame(rows, columns=columns)
 
     # Base auxiliar CNAE
     query_cnae = """
@@ -90,7 +93,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             else False  
             end as limite_alpe 
             from 
-                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
+                postgres.ccred_schema_dev_default.vw_limite_sacado_v3 
             where 
                 cnpj_raiz = '{cnpj_raiz}'
                 and cedente_principal
@@ -102,6 +105,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 pre.documento_sem_formatacao,
                 pre.razao_social,
                 pre.cod_cnae,
+                est.cnae_secundaria, 
                 pre.cod_natureza_juridica,
                 CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
                 emp.capital_social_empresa as "Capital Social",
@@ -116,8 +120,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
-            left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
+            left join deltalaketrusted.teste_joao.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
+            left join deltalaketrusted.teste_joao.estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
@@ -199,6 +204,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Aplicando Função
     df['is_spe_consorcio_construtora'] = spe_consorcio_construtora(df)
     
+    df['ramificacao_pre_filtro'] = np.nan
 
     # Dicionário para mapear condições a valores de 'ramificacao_pre_filtro'
     conditions = [
@@ -236,7 +242,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     df['versao_motor'] = '1.1'
 
     # Printando resultado
-    print(f"Demonstrativo relação pré-filtro: {df.groupby('issue_jira', 'documento_sem_formatacao','ramificacao_pre_filtro')['documento_sem_formatacao'].size()}")
+    print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
 
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
