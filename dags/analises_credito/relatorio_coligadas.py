@@ -168,7 +168,7 @@ def relatorio_coligadas():
             fileName = f"coligadas_{cnpj}_{current_time}.xlsx"
 
             MinioWriteFile().write_file(file=xlsx_file, file_name= fileName, bucket=bucket)
-            MinioIndex.save(key= issueKey, identification=cnpjSacado, path= bucket + f"/{fileName}", fileType= "COLIGADAS")
+            MinioIndex.save(key= issueKey, identification=cnpjSacado, path= bucket + f"{fileName}", fileType= "COLIGADAS")
         finally:
             conn.close()
 

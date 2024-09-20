@@ -62,7 +62,7 @@ def consulta_relato():
             fileName = f"{tipo_relato}_{cnpj}_{current_time}.pdf"
 
             MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
-            minioIndex.save(key= issueKey, identification=cnpj, path= bucket + f"/{fileName}", file=pdf_content, fileType= tipo_relato)
+            minioIndex.save(key= issueKey, identification=cnpj, path= bucket + f"{fileName}", file=pdf_content, fileType= tipo_relato)
         else:
             print(f'Erro na requisição: {response.status_code}')
     
