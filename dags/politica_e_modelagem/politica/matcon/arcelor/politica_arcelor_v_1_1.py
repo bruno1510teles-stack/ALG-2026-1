@@ -18,7 +18,8 @@ def execucao_politica(access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    saida_modelo = ti.xcom_pull(task_ids='modelo_task')
+    saida_modelo_dict = ti.xcom_pull(task_ids='modelo_task')
+    saida_modelo = pd.DataFrame(saida_modelo_dict)
 
     cnpjs = saida_modelo['cnpj_raiz'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
@@ -674,10 +675,10 @@ group by
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
 
     print("Quantidade de CNPJs por ramificação:")
-    print(resposta_motor_resumida.groupby('issue_jira','cnpj_ec','ramificacao')['cnpj_ec'].size())
+    print(resposta_motor_resumida.groupby(['issue_jira','cnpj_ec','ramificacao'])['cnpj_ec'].size())
 
     print("Quantidade de CNPJs por parecer:")
-    print(resposta_motor_resumida.groupby('issue_jira','cnpj_ec','parecer')['cnpj_ec'].size())
+    print(resposta_motor_resumida.groupby(['issue_jira','cnpj_ec','parecer'])['cnpj_ec'].size())
 
 
 # Itera sobre cada combinação de 'issue_jira' e 'CNPJ' no DataFrame

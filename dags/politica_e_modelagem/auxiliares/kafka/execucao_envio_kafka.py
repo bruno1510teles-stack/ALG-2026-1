@@ -8,10 +8,10 @@ import pytz
 def envio_kafka(access_params, ti):
 
     # Pega o df_resumido do XCom
-    df_resumido_records = ti.xcom_pull(task_ids='politica_task')
+    df_resumido_dict = ti.xcom_pull(task_ids='politica_task')
     
     # Converte de volta para DataFrame
-    df_resumido = pd.DataFrame(df_resumido_records)
+    df_resumido = pd.DataFrame(df_resumido_dict)
     df_resumido['cnpj_ec'] = df_resumido['cnpj_ec'].astype(str).str.zfill(14) 
     print(df_resumido)
 

@@ -8,11 +8,11 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from tech.alpe.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
-from tech.alpe.auxiliares.serasa import execucao_chamada_serasa
-from tech.alpe.modelo.matcon.arcelor import execucao_modelo_arcelor_v_1_0
-from tech.alpe.politica.matcon.arcelor import politica_arcelor_v_1_1
-from tech.alpe.auxiliares.kafka import execucao_envio_kafka
+from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
+from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
+from politica_e_modelagem.modelo.matcon.arcelor import execucao_modelo_arcelor_v_1_0
+from politica_e_modelagem.politica.matcon.arcelor import politica_arcelor_v_1_1
+from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
 
 
 ### Parâmetros de acesso
@@ -52,19 +52,17 @@ default_args = {
 def processar_proposta(**kwargs):
     # Capturando os parâmetros enviados via conf
     conf = kwargs.get('dag_run').conf
-    issue_jira = conf.get('issue_jira')
-    CNPJ = conf.get('CNPJ')
-    inad_alpe = conf.get('inad_alpe')
-    pgid = conf.get('pgid')
-    nome_pgid = conf.get('nome_pgid')
+    issue_jira = conf.get('issue_key')
+    CNPJ = conf.get('payer_identification')
+    inad_alpe = conf.get('inad')
+    pgid = conf.get('payee_pgid')
 
     # Criando um dicionário com os dados recebidos para simular o DataFrame
     dados = {
         'issue_jira' : [issue_jira],
         'CNPJ': [CNPJ],
         'inad_alpe': [inad_alpe],
-        'pgid': [pgid],
-        'nome_pgid': [nome_pgid]
+        'pgid': [pgid]
     }
 
     # Convertendo o dicionário em DataFrame para aplicar as transformações
@@ -108,40 +106,40 @@ with DAG(
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
-        python_callable=pre_filtro_arcelor_v_1_1,
-        op_kwargs={'access_params': 'access_params_value'},
+        python_callable=pre_filtro_arcelor_v_1_1.analise_pre_filtro,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Definindo o task que faz a chamada do serasa
     serasa = PythonOperator(
         task_id="serasa_task",
-        python_callable=execucao_chamada_serasa,
-        op_kwargs={'access_params': 'access_params_value'},
+        python_callable=execucao_chamada_serasa.chamando_serasa,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Execução do modelo
     modelo = PythonOperator(
         task_id="modelo_task",
-        python_callable=execucao_modelo_arcelor_v_1_0,
-        op_kwargs={'access_params': 'access_params_value'},
+        python_callable=execucao_modelo_arcelor_v_1_0.execucao_modelo,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Execução da política
     politica = PythonOperator(
         task_id="politica_task",
-        python_callable=politica_arcelor_v_1_1,
-        op_kwargs={'access_params': 'access_params_value'},
+        python_callable=politica_arcelor_v_1_1.execucao_politica,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Enviando dados para o Kafka
     enviar_kafka = PythonOperator(
         task_id="envio_kafka_task",
-        python_callable=execucao_envio_kafka,
-        op_kwargs={'access_params': 'access_params_value'},
+        python_callable=execucao_envio_kafka.envio_kafka,
+        op_kwargs={'access_params': access_params},
         provide_context=True,
     )
 

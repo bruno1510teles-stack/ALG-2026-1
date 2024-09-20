@@ -7,7 +7,7 @@ from minio import Minio
 from io import BytesIO
 import os
 import base64, requests, sys, json
-from tech.alpe.modelo.matcon.arcelor.modelo_machine_learning import modelo_arcelor_v_1_0
+import joblib
 
 
 def execucao_modelo(access_params=None,  **kwargs):
@@ -23,7 +23,8 @@ def execucao_modelo(access_params=None,  **kwargs):
     )
     # Pegando DF tarefa anterior
     ti = kwargs['ti']
-    base_pre_filtro = ti.xcom_pull(task_ids='pre_filtro_task')
+    base_pre_filtro_dict = ti.xcom_pull(task_ids='pre_filtro_task')
+    base_pre_filtro = pd.DataFrame(base_pre_filtro_dict)
     
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_pre_filtro[base_pre_filtro['resposta'] == 'SEGUE']
@@ -43,7 +44,6 @@ def execucao_modelo(access_params=None,  **kwargs):
     query = (f"""
         select
             documento_raiz cnpj_raiz,
-            fornecedor,
             prazo_medio_geral,
             prazo_medio_3_meses,
             alavancagem_data_analise,
@@ -54,9 +54,6 @@ def execucao_modelo(access_params=None,  **kwargs):
             maior_atraso_em_dias_3_meses,
             percentual_pago_em_dia,
             percentual_pago_em_dia_3_meses,
-            over_5,
-            ever_10,
-            vop_6_meses,
             percentual_compra_recorrente_geral,
             percentual_compra_recorrente_3_meses
         FROM (
@@ -65,7 +62,7 @@ def execucao_modelo(access_params=None,  **kwargs):
                 ROW_NUMBER() OVER (PARTITION BY documento_raiz, fornecedor ORDER BY dataprocessamento DESC) AS row_num
             FROM miniorefined.payments.book_variaveis
         ) t
-        WHERE row_num = 1 and documento_raiz in {ids_query} and and fornecedor = 'ARCELOR'
+        WHERE row_num = 1 and documento_raiz in {ids_query} and fornecedor = 'ARCELOR'
         """)   
     cur.execute(query)
     rows = cur.fetchall()
@@ -79,16 +76,17 @@ def execucao_modelo(access_params=None,  **kwargs):
     # Cruzando base
     df = df.merge(base_pre_filtro[['cnpj_raiz', 'idade', 'codigo_porte_empresa']], on='cnpj_raiz', how='left')
 
-
     # Pegando modelo Arcelor
-    model = joblib.load(modelo_arcelor_v_1_0)
-
+    # Caminho absoluto ao arquivo .pkl
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_dir, 'modelo_machine_learning', 'modelo_arcelor_v_1_0.pkl')
+    model = joblib.load(model_path)
 
     # Fazer uma cópia do DataFrame original
     base_final = df
 
     # Remova a coluna 'CNPJ' do DataFrame de entrada
-    nova_base = df.drop(columns=['cnpj_raiz','fornecedor','over_5','ever_10','vop_6_meses'], axis=1)
+    nova_base = df.drop(columns=['cnpj_raiz'], axis=1)
       
 
     #ALTERANDO NOME DAS COLUNAS PARA SEREM DE ACORDO COM O MODELO
@@ -131,7 +129,6 @@ def execucao_modelo(access_params=None,  **kwargs):
     # Faça as previsões com base nos dados de entrada
     score = model.predict_proba(nova_base)[:, 1]
 
-
     # Adicione as colunas de scores ao DataFrame base_final
     base_final['Score_Model_Geral'] = score
     # Criar uma função para categorizar os valores (faixa)
@@ -150,8 +147,10 @@ def execucao_modelo(access_params=None,  **kwargs):
     # Aplicar a função para criar a classificação
     base_final['CLASSIFICACAO'] = base_final['Score_Model_Geral'].apply(categorizar_faixa)
 
+    print('gerou a classificação do modelo')
 
     saida_modelo = base_pre_filtro.merge(base_final, on='cnpj_raiz', how='left')
+
     
     ### Salvando DF para utilizar na próxima tarefa da DAG
     return saida_modelo.to_dict(orient='records')
