@@ -93,7 +93,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             else False  
             end as limite_alpe 
             from 
-                postgres.ccred_schema_dev_default.vw_limite_sacado_v3 
+                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
             where 
                 cnpj_raiz = '{cnpj_raiz}'
                 and cedente_principal
