@@ -120,9 +120,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
-            left join deltalaketrusted.teste_joao.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
+            left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
-            left join deltalaketrusted.teste_joao.estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
+            left join deltalaketrusted.receita_federal.estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
