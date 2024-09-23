@@ -7,6 +7,7 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import os, pytz
 from datetime import datetime
+import time
 
 
 def analise_pre_filtro(access_params=None):
@@ -143,6 +144,10 @@ def analise_pre_filtro(access_params=None):
         cnpj_completo = row['documento_sem_formatacao']
         cnpj_raiz = row['cnpj_raiz'] 
 
+        # Marca o tempo de início
+        start_time = time.time()
+
+
         query = (f"""
 
             with limite as (select 
@@ -199,6 +204,15 @@ def analise_pre_filtro(access_params=None):
 
         # Concatenar os resultados temporários no DataFrame final
         df = pd.concat([df, df_temp], ignore_index=True)
+
+        # Marca o tempo de fim e calcula a duração
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        # Exibe o tempo de execução para cada CNPJ
+        print(f"Tempo de execução para CNPJ {cnpj_completo}: {elapsed_time:.2f} segundos")
+
+
 
     # Fecha o cursor e a conexão
     cur.close()
