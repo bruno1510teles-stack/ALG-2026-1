@@ -24,56 +24,69 @@ def base_analisar(access_params=None):
         "Authorization": f"Basic {auth}",
         "Content-Type": "application/json"
     }
+    max_results = 100  # Defina o número máximo de resultados por página (até 1000 conforme a configuração do Jira)
+    start_at = 0       # Inicie na primeira página de resultados
+    all_tickets = []   # Lista para armazenar todos os tickets
 
-    # Query para buscar os tickets da fila desejada
-    query = {
-        "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
-        "fields": ["key", # ISSUE_JIRA
-                   "summary", #nome_issue
-                "customfield_13729", # CNPJ
-                #"customfield_13732", # LIMITE ALPE
-                "customfield_13808", # INAD ALPE 
-                "customfield_13739", # PGID FN
-                "customfield_13719" # NOME PGID FN
-                ]  # Substitua pelo campo que contém o CNPJ
-    }
+    while True:
+        # Query para buscar os tickets da fila desejada
+        query = {
+            "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
+            "fields": ["key",  # ISSUE_JIRA
+                    "summary",
+                    "customfield_13729",  # CNPJ
+                    "customfield_13732",  # LIMITE ALPE
+                    "customfield_13808",  # INAD ALPE 
+                    "customfield_13739",  # PGID FN
+                    "customfield_13719"],  # NOME PGID FN
+            "maxResults": max_results,
+            "startAt": start_at
+        }
 
-    # Fazendo a requisição para o Jira
-    response = requests.get(jira_url, headers=headers, params=query)
+        # Fazendo a requisição para o Jira
+        response = requests.get(jira_url, headers=headers, params=query)
 
-    if response.status_code == 200:
-        # Processando a resposta
-        tickets = response.json()['issues']
-
-        # Extraindo os valores dos campos
-        data = []
-        for ticket in tickets:
-            issue_jira = ticket.get('key') 
-            summary = ticket['fields'].get('summary')
-            cnpj = ticket['fields'].get('customfield_13729')  
-            #limite_alpe = ticket['fields'].get('customfield_13732')  
-            inad_alpe = ticket['fields'].get('customfield_13808')  
-            pgid = ticket['fields'].get('customfield_13739')  
+        if response.status_code == 200:
+            # Processando a resposta
+            tickets = response.json()['issues']
             
+            if not tickets:
+                # Se não houver mais tickets, parar a paginação
+                break
+
+            all_tickets.extend(tickets)  # Adiciona os tickets retornados à lista geral
             
-            data.append({
-                'issue_jira': issue_jira,
-                'CNPJ': cnpj,
-             #   'limite_alpe': limite_alpe,
-                'inad_alpe': inad_alpe,
-                'pgid' : pgid,
-                'nome_pgid': pgid,
-                'nome_issue': summary
-            })
+            # Atualiza o ponto inicial para a próxima página
+            start_at += max_results
+        else:
+            print(f"Failed to fetch data from Jira: {response.status_code}")
+            break
+
+    # Extraindo os valores dos campos
+    data = []
+    for ticket in all_tickets:
+        issue_jira = ticket.get('key')  
+        summary = ticket['fields'].get('summary')
+        cnpj = ticket['fields'].get('customfield_13729')  
+        limite_alpe = ticket['fields'].get('customfield_13732')  
+        inad_alpe = ticket['fields'].get('customfield_13808')  
+        pgid = ticket['fields'].get('customfield_13739')  
+        nome_pgid = ticket['fields'].get('customfield_13719')
         
-        # Criando um DataFrame com os CNPJs
-        df = pd.DataFrame(data)
-        print(f"Quantidade de CNPJs na fila política v2: {df.shape[0]}")
-        print(f"Quantidade de CNPJs na fila aberto por fornecedor: {df.groupby('nome_pgid')['CNPJ'].size()}")
-        print(df)
-    else:
-        print(f"Failed to fetch data from Jira: {response.status_code}")
+        data.append({
+            'issue_jira': issue_jira,
+            'CNPJ': cnpj,
+            'limite_alpe': limite_alpe,
+            'inad_alpe': inad_alpe,
+            'pgid' : pgid,
+            'nome_pgid': nome_pgid,
+            'nome_issue': summary
+        })
 
+    # Criando um DataFrame com os CNPJs
+    df = pd.DataFrame(data)
+    print(f"Quantidade de CNPJs na fila política v2: {df.shape[0]}")
+    print(f"Quantidade de CNPJs na fila aberto por fornecedor: {df.groupby('nome_pgid')['CNPJ'].size()}")
 
 
     # # Passo 1: Remover a máscara de valor e converter para numérico
