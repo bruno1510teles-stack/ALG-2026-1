@@ -71,44 +71,44 @@ with DAG(
         task_id="base_analisar_task",
         python_callable=base_analisar,
         op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+        #executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
 
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
         python_callable=analise_pre_filtro,
         op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+        #executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
 
     serasa = PythonOperator(
         task_id="serasa_task",
         python_callable=chamando_serasa,
         op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+        #executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
     
     modelo = PythonOperator(
         task_id="modelo_task",
         python_callable=execucao_modelo,
         op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+        #executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
         
     politica = PythonOperator(
         task_id="politica_task",
         python_callable=execucao_politica,
         op_kwargs={'access_params': access_params},
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+        #executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
     )
 
-    enviar_kafka = PythonOperator(
-        task_id="envio_kafka_task",
-        python_callable=envio_kafka,
-        op_kwargs={'access_params': access_params},
-        provide_context=True,  # Para habilitar o ti (task instance)
-        executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
-    )
+    # enviar_kafka = PythonOperator(
+    #     task_id="envio_kafka_task",
+    #     python_callable=envio_kafka,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True,  # Para habilitar o ti (task instance)
+    #     executor_config={"KubernetesExecutor": {"request_memory": "4000Mi"}},
+    # )
     
     wait_1_minute = PythonOperator(
         task_id="wait_1_minute",
