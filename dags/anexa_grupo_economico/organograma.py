@@ -5,9 +5,7 @@ import requests
 import time
 import json
 from io import BytesIO
-from airflow.models import Variable
-from airflow_dags_core.lib.auth_trino import get_acess_token
-from scripts.utils import extract_path_from_url
+from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
 from minio.error import S3Error
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
@@ -32,60 +30,41 @@ def anexa_grupo_economico():
         bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
         issueKey = kwargs['dag_run'].conf.get('issue_key', 'default_value')
         MinioIndex = MinioSaveIndex()
-        
-        trino_endpoint = Variable.get("TRINO_ENDPOINT")
-        trino_port = Variable.get("TRINO_PORT")
-        url = f"https://{trino_endpoint}:{trino_port}/v1/statement"
 
-        body = f"select cnpj_raiz, 'catalogo/'||arquivo arquivo from minioraw.credito_grupos.indice where cnpj_raiz = '{sacado[:8]}'"
+        connection = get_trino_connection()
 
-        body_bytes = body.encode('utf-8')
 
-        auth = get_acess_token()
+        query = f"select cnpj_raiz, arquivo from minioraw.credito_grupos.indice where cnpj_raiz = '{sacado[:8]}'"
 
-        headers = {
-            "Content-Type": "text/plain",
-        }
+        rows = execute_query(connection, query)
 
-        response = requests.post(url, auth=auth, data=body_bytes, headers=headers)
+        if not rows:
+            raise ValueError(f"Nehum arquivo encontrado para o sacado: {sacado[:8]}")
 
-        status_requisicao = ''
+        catalogos = get_catalogos(rows)
 
-        content_trino = json.loads(response.content)
+        for catalogo in catalogos:
+            arquivo = baixa_arquivo_minio(catalogo)
 
-        while status_requisicao != 'FINISHED' and status_requisicao != 'FAILED' and status_requisicao != 'RUNNING':
-            time.sleep(1)
-            response_next_uri = requests.get(content_trino['nextUri'], auth=auth)
-            print(response_next_uri.text)
-            content_trino = json.loads(response_next_uri.content)
-            status_requisicao = content_trino["stats"]["state"]
+            pdf_content = BytesIO(arquivo.read())
 
-        data = json.loads(response_next_uri.content)
+            MinioWriteFile().write_file(file=pdf_content, 
+                                    file_name=catalogo, 
+                                    bucket=bucket)
+            MinioIndex.save(key= issueKey, identification= sacado, path= bucket + f"{catalogo}", fileType= "ORGANOGRAMA")
 
-        catalogos = monta_objeto_arquivo_para_salvar(data['data'])
-
-        arquivo = baixa_arquivo_minio(catalogos=catalogos, bucket=bucket)
-
-        pdf_content = BytesIO(arquivo.read())
-
-        MinioWriteFile().write_file(file=pdf_content, 
-                                  file_name=catalogos[1]['arquivo'], 
-                                  bucket=bucket, 
-                                  type = "application/pdf")
-        MinioIndex.save(key= issueKey, identification= sacado, path= bucket + f"{catalogos[1]['arquivo']}", fileType= "ORGANOGRAMA")
-
-    def monta_objeto_arquivo_para_salvar(data):
+    def get_catalogos(data):
         catalogos = []
 
-        for dado in data[0]:
-            catalogos.append({'arquivo': dado})
+        for dado in data:
+            catalogos.append(dado[1])
 
         return catalogos
 
-    def baixa_arquivo_minio(catalogos, bucket):
+    def baixa_arquivo_minio(catalogo):
         try:
-            return MinioReadFile().read_file(file_name=catalogos[1]['arquivo'],
-                                    bucket=bucket)    
+            return MinioReadFile().read_file(file_name="catalogo/" + catalogo,
+                                    bucket="credito-grupos/")    
         except S3Error as e:
             print(f"Erro ao interagir com o MinIO: {e}")
             raise
