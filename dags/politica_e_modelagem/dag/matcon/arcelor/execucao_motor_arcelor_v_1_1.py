@@ -118,7 +118,8 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='*/30 * * * *',
     default_args=default_args,
-    tags=['politica_arcelor_v.1.1'] 
+    tags=['politica_arcelor_v.1.1'],
+    max_active_runs=1  # Apenas uma execução ativa
 ) as dag:
 
     # Definindo o task que processa a proposta
