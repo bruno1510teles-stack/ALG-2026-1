@@ -8,6 +8,7 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import os, pytz
 from datetime import datetime
+import time
 
 
 def analise_pre_filtro(access_params=None,  **kwargs):
@@ -85,21 +86,23 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         cnpj_completo = row['documento_sem_formatacao']
         cnpj_raiz = row['cnpj_raiz'] 
 
+        # Marca o tempo de início
+        start_time = time.time()
+
         query = (f"""
 
-            with limite as (select 
-            cnpj_raiz, case when sum(limite_atribuido) > 0 
-            then True 
-            else False  
-            end as limite_alpe 
-            from 
-                postgres.ccred_schema_prd_default.vw_limite_sacado_v3 
-            where 
-                cnpj_raiz = '{cnpj_raiz}'
-                and cedente_principal
-            group by 
-                cnpj_raiz
-                            )
+            with limite as (
+                 select 
+                    pc.chave as cnpj_raiz
+                    ,lc.id is not null as limite_alpe
+                from postgres.ccred_schema_prd_default.participante_chave pc
+                inner join postgres.ccred_schema_prd_default.limite_config lc on lc.participante_chave_sacado_id = pc.id 
+                           and lc.categoria_limite = 'ATRIBUIDO'
+                where
+                    pc.chave = '{cnpj_raiz}'
+                            ),
+            empresas as (select emp.cnpj_raiz, emp.codigo_porte_empresa, emp.capital_social_empresa  from deltalaketrusted.receita_federal.empresas emp where cnpj_raiz = '{cnpj_raiz}'),
+            estabelecimentos as (select est.documento_sem_formatacao, est.cnae_secundaria  from deltalaketrusted.receita_federal.estabelecimentos est where est.documento_sem_formatacao = '{cnpj_completo}')
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
@@ -120,9 +123,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
-            left join deltalaketrusted.receita_federal.empresas emp on emp.cnpj_raiz = pre.cnpj_raiz --and pre.data_ref_receita = emp.data_ref
+            left join empresas emp on emp.cnpj_raiz = pre.cnpj_raiz 
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
-            left join deltalaketrusted.receita_federal.estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
+            left join estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
@@ -141,6 +144,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
         # Concatenar os resultados temporários no DataFrame final
         df = pd.concat([df, df_temp], ignore_index=True)
+
+        # Marca o tempo de fim e calcula a duração
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        # Exibe o tempo de execução para cada CNPJ
+        print(f"Tempo de execução para CNPJ {cnpj_completo}: {elapsed_time:.2f} segundos")
 
     # Fecha o cursor e a conexão
     cur.close()
