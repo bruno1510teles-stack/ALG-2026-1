@@ -8,6 +8,7 @@ from time import sleep
 
 
 ### Importando scripts necessários
+from politica_e_modelagem.auxiliares.jira import import_base_jira_agendado
 from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.modelo.matcon.arcelor import execucao_modelo_arcelor_v_1_0
@@ -48,67 +49,84 @@ default_args = {
 }
 
 
-# Função para processar as propostas recebidas
-def processar_proposta(**kwargs):
-    # Capturando os parâmetros enviados via conf
-    conf = kwargs.get('dag_run').conf
-    issue_jira = conf.get('issue_key')
-    CNPJ = conf.get('payer_identification')
-    inad_alpe = conf.get('inad')
-    pgid = conf.get('payee_pgid')
-    nome_issue = conf.get('summary')
+# # Função para processar as propostas recebidas
+# def processar_proposta(**kwargs):
+#     # Capturando os parâmetros enviados via conf
+#     conf = kwargs.get('dag_run').conf
+#     issue_jira = conf.get('issue_key')
+#     CNPJ = conf.get('payer_identification')
+#     inad_alpe = conf.get('inad')
+#     pgid = conf.get('payee_pgid')
+#     nome_issue = conf.get('summary')
 
-    # Criando um dicionário com os dados recebidos para simular o DataFrame
-    dados = {
-        'issue_jira' : [issue_jira],
-        'CNPJ': [CNPJ],
-        'inad_alpe': [inad_alpe],
-        'pgid': [pgid],
-        'nome_issue': [nome_issue]
-    }
+    # # Criando um dicionário com os dados recebidos para simular o DataFrame
+    # dados = {
+    #     'issue_jira' : [issue_jira],
+    #     'CNPJ': [CNPJ],
+    #     'inad_alpe': [inad_alpe],
+    #     'pgid': [pgid],
+    #     'nome_issue': [nome_issue]
+    # }
 
-    # Convertendo o dicionário em DataFrame para aplicar as transformações
-    df = pd.DataFrame(dados)
+    # # Convertendo o dicionário em DataFrame para aplicar as transformações
+    # df = pd.DataFrame(dados)
 
-    # Passo 1: Remover a máscara de valor e converter para numérico
-    if df['inad_alpe'].notna().any():
-        df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
-        df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
+    # # Passo 1: Remover a máscara de valor e converter para numérico
+    # if df['inad_alpe'].notna().any():
+    #     df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
+    #     df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
 
-    # Passo 3: Criar as colunas de flag com base na lógica fornecida
-    df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
+    # # Passo 3: Criar as colunas de flag com base na lógica fornecida
+    # df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
 
-    # Passo 4: Deixar o nome padrão
-    # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
-    df.drop(columns=['inad_alpe'], inplace=True)
+    # # Passo 4: Deixar o nome padrão
+    # # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
+    # df.drop(columns=['inad_alpe'], inplace=True)
 
-    # Renomear as colunas de flag para os nomes originais
-    df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+    # # Renomear as colunas de flag para os nomes originais
+    # df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
 
-    # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
-    df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+    # # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
+    # df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
 
 
-    # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
-    print(df)
+    # # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
+    # print(df)
 
-    return df.to_dict()
+    # return df.to_dict()
+
+# # Definindo a DAG
+# with DAG(
+#     dag_id='politica_credito_arcelor_v.1.1',
+#     start_date=days_ago(1),
+#     schedule_interval=None,
+#     default_args=default_args,
+#     tags=['politica_arcelor_v.1.1']  # DAG só será acionada manualmente pela API
+# ) as dag:
+
+#     # Definindo o task que processa a proposta
+#     captura_proposta = PythonOperator(
+#         task_id='captura_proposta',
+#         python_callable=processar_proposta,
+#         provide_context=True  # Habilita o envio do contexto (incluindo conf)
+#     )
+
 
 # Definindo a DAG
 with DAG(
     dag_id='politica_credito_arcelor_v.1.1',
     start_date=days_ago(1),
-    schedule_interval=None,
+    schedule_interval='*/30 * * * *',
     default_args=default_args,
-    tags=['politica_arcelor_v.1.1']  # DAG só será acionada manualmente pela API
+    tags=['politica_arcelor_v.1.1'] 
 ) as dag:
 
     # Definindo o task que processa a proposta
     captura_proposta = PythonOperator(
         task_id='captura_proposta',
-        python_callable=processar_proposta,
+        python_callable=import_base_jira_agendado.base_analisar,
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
+    )    
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
