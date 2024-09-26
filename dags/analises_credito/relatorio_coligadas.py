@@ -1,12 +1,7 @@
-from datetime import datetime
-import io
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
-from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
+from scripts.utils import get_trino_connection, execute_query
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
-from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
-from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Font, Alignment
 from airflow.models import Variable
 
 default_args = {
@@ -14,78 +9,31 @@ default_args = {
     'retries': 1,
 }
 
-def create_xlsx(rows):
-    wb = Workbook()
-    ws = wb.active
+def insert(rows, cnpj_sacado, issue_key, conn):
 
-    header_fill = PatternFill(start_color="782170", end_color="782170", fill_type="solid")
-    header_font = Font(color="FFFFFF", bold=True)
-    header_alignment = Alignment(horizontal="center", vertical="center")
-
-    row_fill_odd = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
-    row_fill_even = PatternFill(start_color="F6DEF4", end_color="F6DEF4", fill_type="solid")
-    row_font = Font(color="000000")
-
-    headers = ["CPF/CNPJ Sacado", "Nome Sacado", "Limite Atribuido", "Limite Utilizado", "Limite Disponivel"]
-    ws.append(headers)
-
-    for cell in ws[1]:
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = header_alignment
-
-    for idx, row in enumerate(rows, start=2):
-        limite_utilizado = row[2] - row[3]
-        ws.append([row[0], row[1], row[2], limite_utilizado, row[3]])
-
-        for cell in ws[idx]:
-            cell.font = row_font
-            cell.fill = row_fill_odd if idx % 2 == 0 else row_fill_even
-
-    for column in ws.columns:
-        max_length = 0
-        column = list(column)
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(cell.value)
-            except TypeError:
-                pass
-        adjusted_width = max_length + 2
-        ws.column_dimensions[column[0].column_letter].width = adjusted_width
-
-    output = io.BytesIO()
-    wb.save(output)
-    output.seek(0)
-    return output
-
-def consulta_coligadas(cnpj, conn):
-    sacados = None
-
-    queryColigadas = f"""
-        SELECT
-            substring(documento, 2, length(documento)) AS cnpj_raiz
-        FROM
-            deltalaketrusted.serasa.coligada c
-        WHERE
-            id = (
-            SELECT
-                max(id)
-            FROM
-                deltalaketrusted.serasa.organizacoes o
-            WHERE
-                o.cnpj_raiz = '{cnpj[:8]}')
-            AND c.identificacao_pessoa = 'J'
-        """
-
-    result = execute_query(conn, queryColigadas)
-
-    if result:
-        sacados = [row[0] for row in result]
-    else:
-        print(f"NÃO HÁ COLIGADAS PARA O SACADO {cnpj}")
-
-    return sacados
+    for row in rows:
+        insert_query = f"""
+                INSERT INTO minioraw.analise_credito_pcc.limite
+                (limite, tipo, documento, nome, restritivo, atribuido, disponivel, vencido, status, categoria, pgid, documento_sacado, issue_key)
+                VALUES 
+                (
+                    {f"'{row[0]}'" if row[0] is not None else 'NULL'}, 
+                    {f"'{row[1]}'" if row[1] is not None else 'NULL'}, 
+                    {f"'{row[2]}'" if row[2] is not None else 'NULL'}, 
+                    {f"'{row[3]}'" if row[3] is not None else 'NULL'}, 
+                    {f"'{row[4]}'" if row[4] is not None else 'NULL'}, 
+                    {row[5] if row[5] is not None else 'NULL'}, 
+                    {row[6] if row[6] is not None else 'NULL'}, 
+                    {row[7] if row[7] is not None else 'NULL'}, 
+                    {f"'{row[8]}'" if row[8] is not None else 'NULL'}, 
+                    {f"'{row[9]}'" if row[9] is not None else 'NULL'}, 
+                    {f"'{row[10]}'" if row[10] is not None else 'NULL'}, 
+                    {f"'{cnpj_sacado}'" if cnpj_sacado is not None else 'NULL'}, 
+                    {f"'{issue_key}'" if issue_key is not None else 'NULL'}
+                )
+                """
+        print(insert_query)
+        execute_query(conn, insert_query)
 
 @dag(
     default_args=default_args,
@@ -102,73 +50,72 @@ def relatorio_coligadas():
     @task()
     def consulta_limites(**kwargs):
         conn = get_trino_connection()
-        MinioIndex = MinioSaveIndex()
         try:
             issueKey = kwargs['dag_run'].conf.get('issue_key', 'default_value')
             cnpjSacado = kwargs['dag_run'].conf.get('payer_identification', 'default_value')
             if not cnpjSacado:
                 raise ValueError("CNPJ não fornecido na execução da DAG.")
+            
+            queryLimite = f"""
+            with org_id as (
+                select max(o.id) id, o.cnpj_raiz, trim(o.razao_social) razao_social, 
+                case when rr.id is not null then 'S' else 'N' end indicador_restricao
+                from deltalaketrusted.serasa.organizacoes o 
+                    left join deltalaketrusted.serasa.resumo_restritivo rr on rr.id = o.id and rr.titular_pendencia= o.cnpj_raiz
+                where o.cnpj_raiz = '{cnpjSacado[:8]}'
+                group by o.cnpj_raiz, trim(o.razao_social), case when rr.id is not null then 'S' else 'N' end
+            )
+            ,coligadas as (
+                select c.id, substring(c.documento,2 , 9) cnpj_raiz, c.nome, c.indicador_restricao
+                from deltalaketrusted.serasa.coligada c 
+                where c.identificacao_pessoa = 'J' and c.id = (select id from org_id)
+            )
+            ,socios as (
+                select id, substring(s.documento_socio,2 , 9) cnpj_raiz, s.nome_socio, s.indicador_restricao
+                from deltalaketrusted.serasa.socios s 
+                where s.identificacao_pessoa = 'J' and s.id = (select id from org_id)
+            )
+            ,empresas as (
+                select 1 ordem, 'Sacado' tipo, * from org_id
+                union all
+                select 3, 'Coligada', * from coligadas
+                union all
+                select 2, 'Sócio', * from socios
+            )
+            ,configs as ( 
+                select 
+                    e.tipo, e.cnpj_raiz, e.razao_social, e.indicador_restricao, e.ordem
+                    ,pc.chave 
+                    ,coalesce(lc_s.id, lc_a.id) id
+                    ,coalesce(lc_s.categoria_limite, lc_a.categoria_limite) categoria_limite
+                    ,lc_s.participante_chave_cedente_id
+                from empresas e 
+                    left join postgres.ccred_schema_{Variable.get('STAGE')}_default.participante_chave pc on pc.chave = e.cnpj_raiz 
+                    left join postgres.ccred_schema_{Variable.get('STAGE')}_default.limite_config lc_s on lc_s.participante_chave_sacado_id = pc.id and lc_s.categoria_limite = 'SEGREGADO'
+                    left join postgres.ccred_schema_{Variable.get('STAGE')}_default.limite_config lc_a on lc_a.participante_chave_sacado_id = pc.id 
+                        and lc_a.categoria_limite = 'ATRIBUIDO' and lc_s.id is null
+            )
+            select 
+                case 
+                    when pl.limite_atribuido is not null then 'S'
+                    else 'N'
+                end as "has_limit",
+                c.tipo, c.cnpj_raiz, c.razao_social,
+                c.indicador_restricao,  
+                cast(pl.limite_atribuido as double) as "limite_atribuido", cast(pl.limite_disponivel as double) as "limite_disponivel", cast(pl.total_vencido as double) as "total_vencido", pl.status,  c.categoria_limite, pc2.chave "fn"
+            from configs c
+                left join postgres.ccred_schema_{Variable.get('STAGE')}_default.participante_limite pl on pl.limite_config_id = c.id
+                left join postgres.ccred_schema_{Variable.get('STAGE')}_default.participante_chave pc2 on pc2.id = c.participante_chave_cedente_id
+            order by c.ordem, c.cnpj_raiz
+            """
+            
+            rows = execute_query(conn, queryLimite)
 
-            sacados = consulta_coligadas(cnpjSacado, conn)
-
-            if not sacados:
-                return
+            if not rows:
+                return print(f"Não houve retorno para o sacado {cnpjSacado}")
             
-            all_rows = []
-            for cnpj in sacados:
-                
-                queryLimite = f"""
-                    SELECT 
-                        cpf_cnpj_sacado,
-                        nome_sacado,
-                        CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_atribuido) ELSE limite_atribuido END AS limite_atribuido,
-                        CASE WHEN categoria = 'SEGREGADO' THEN SUM(limite_disponivel) ELSE limite_disponivel END AS limite_disponivel
-                    FROM (
-                        SELECT 
-                            cpf_cnpj_sacado,
-                            nome_sacado,
-                            limite_atribuido,
-                            limite_disponivel,
-                            categoria,
-                            pgid
-                        FROM 
-                            postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_limite_sacado_v3
-                        WHERE 
-                            cnpj_raiz = '{cnpj}'
-                            AND cedente_principal = true
-                        GROUP BY cpf_cnpj_sacado,
-                                nome_sacado,
-                                limite_atribuido,
-                                limite_disponivel,
-                                categoria,
-                                pgid  
-                    ) t1
-                    GROUP BY cpf_cnpj_sacado,
-                            nome_sacado,
-                            limite_atribuido,
-                            limite_disponivel,
-                            categoria
-                """
-                
-                rows = execute_query(conn, queryLimite)
-                if rows:
-                    all_rows.extend(rows)
-                else:
-                    print(f"Não há registro de limite para o CNPJ {cnpj}")
+            insert(rows, cnpjSacado, issueKey, conn)
             
-            if not all_rows:
-                return print("Não há qualquer registro de limite dentre as empresas coligadas")
-            
-            xlsx_file = create_xlsx(all_rows)
-            
-            bucket = extract_path_from_url(kwargs['dag_run'].conf.get('minio_url', 'default_value'))
-            
-            current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-            
-            fileName = f"coligadas_{cnpj}_{current_time}.xlsx"
-
-            MinioWriteFile().write_file(file=xlsx_file, file_name= fileName, bucket=bucket)
-            MinioIndex.save(key= issueKey, identification=cnpjSacado, path= bucket + f"{fileName}", fileType= "COLIGADAS")
         finally:
             conn.close()
 
