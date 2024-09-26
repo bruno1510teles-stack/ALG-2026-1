@@ -760,7 +760,7 @@ group by
 
     # Nome do bucket e chave do arquivo
     bucket_name = "analise-credito"
-    object_name = "lote/resposta_motor.csv"  # Caminho dentro do bucket
+    object_name = "lote/resposta_motor_lote_curitia_20240925.csv"  # Caminho dentro do bucket
 
     # Converter o DataFrame para CSV em memória
     csv_buffer = BytesIO()
