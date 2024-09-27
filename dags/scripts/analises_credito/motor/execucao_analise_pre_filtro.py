@@ -304,7 +304,7 @@ def analise_pre_filtro(access_params=None):
     df.loc[df['ramificacao_pre_filtro'].isin(['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 7', 'PF 9', 'PF 10']), 'resposta'] = 'REPROVADO'
 
     # MESA
-    df.loc[df['ramificacao_pre_filtro'].isin(['PF 6', 'PF 8', 'PF 11']), 'resposta'] = 'MESA'
+    df.loc[df['ramificacao_pre_filtro'].isin(['PF 6', 'PF 8', 'PF 11']), 'resposta'] = 'inelegivel'
 
     # SEGUE
     df.loc[df['ramificacao_pre_filtro'].isin(['PF 12']), 'resposta'] = 'SEGUE'
