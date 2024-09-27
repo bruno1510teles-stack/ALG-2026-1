@@ -108,10 +108,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 pre.documento_sem_formatacao,
                 pre.razao_social,
                 pre.cod_cnae,
-                est.cnae_secundaria, 
+                pre.cnae_secundaria, 
                 pre.cod_natureza_juridica,
-                CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
-                emp.capital_social_empresa as "Capital Social",
+                CAST(pre.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
+                pre.capital_social_empresa as "Capital Social",
                 pre.idade,
                 pre.situacao_cadastral situacao_cadastral,
                 pre.idade_socio,
@@ -123,10 +123,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
-            left join empresas emp on emp.cnpj_raiz = pre.cnpj_raiz 
-            left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
-            left join estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
+            left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz
             where pre.documento_sem_formatacao = '{cnpj_completo}'
+
 
             """)
 
