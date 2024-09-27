@@ -642,6 +642,8 @@ group by
     #DEFININDO O PARECER DO MOTOR
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'APROVADO', 'parecer'] = 'Motor - Aprovado, base lote curitiba 25.09.2024'
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'inelegivel', 'parecer'] = 'Motor - Cliente não apto para análise no momento'
 
 
     # Criação do mapeamento de pareceres
