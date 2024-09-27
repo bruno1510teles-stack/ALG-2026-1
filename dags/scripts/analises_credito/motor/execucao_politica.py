@@ -8,6 +8,7 @@ import os, re, pytz
 from confluent_kafka import Producer
 import json
 from datetime import datetime
+import numpy as np
 
 
 def execucao_politica(access_params=None):
@@ -607,11 +608,20 @@ group by
     resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - E1','A - C7', 'A - C5', 'A - C4','A - C2', 'A - B7', 'A - B5', 'A - B4', 'A - A11','A - A9', 'A - A8', 'A - A6', 'B - 11', 'B - 6', 'B - 9', 'B - 8']), 'resposta_motor'] = 'REPROVADO'
     
     # MESA
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 5', 'B - 4', 'B - 3', 'B - 2','B - 12', 'A - A12', 'A - B8', 'A - C8']), 'resposta_motor'] = 'MESA'
+    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'A - A2', 'A - A3', 'A - A4', 'A - A5', 'A - A7','A - A10', 'A - B1', 'A - B2','A - B3','A - B6', 'A - C1','A - C3','A - C6','A - D1', 'B - 10', 'B - 7', 'B - 5', 'B - 4', 'B - 3', 'B - 2','B - 12', 'A - A12', 'A - B8', 'A - C8']), 'resposta_motor'] = 'inelegivel'
     
-    # APROVADO
-    resposta_motor.loc[resposta_motor['DECISAO_POLITICA'].isin(['A - A1', 'B - 1']), 'resposta_motor'] = 'MESA'
+    # APROVADO B - 1
+    # LIMITE < 50K
+    resposta_motor.loc[
+        (resposta_motor['DECISAO_POLITICA'] == 'B - 1') & (resposta_motor['limite_solicitado'] <= 50000), 
+        'resposta_motor'
+    ] = 'APROVADO'
 
+    # LIMITE > 50K
+    resposta_motor.loc[
+        (resposta_motor['DECISAO_POLITICA'] == 'B - 1') & (resposta_motor['limite_solicitado'] > 50000), 
+        'resposta_motor'
+    ] = 'inelegivel'
 
     
     filtro_na = resposta_motor['resposta_motor'].isnull()
@@ -681,31 +691,29 @@ group by
     resposta_motor['url'] = 'https://minio-datalake.alpe.com.br/raw/browser/analise-credito/' + resposta_motor['path_arquivos_minio'] + '/'
 
 
-    print(resposta_motor)
 
-    resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor', 'url']].rename(columns={
+    # Regra para valor_aprovado
+    resposta_motor['valor_aprovado'] = np.where(
+        resposta_motor['resposta_motor'] == 'APROVADO',  # Condição: se 'resposta_motor' for 'APROVADO'
+        resposta_motor['limite_solicitado'],             # Valor quando a condição for verdadeira
+        0                                               # Valor quando a condição for falsa
+    )
+
+    resposta_motor_resumida = resposta_motor[['issue_jira', 'resposta_motor', 'cnpj_ec', 'parecer', 'ramificacao_motor', 'url', 'valor_aprovado']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
     'resposta_motor': 'resolucao',
     'ramificacao_motor': 'ramificacao',
     'url' : 'path_arquivos_minio'
     })
-    #antes do path
-    print(resposta_motor_resumida)
-
-    resposta_motor_resumida['valor_aprovado'] = 0
 
     #depois do path
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
-
-    print(resposta_motor_resumida)
 
     print("Quantidade de CNPJs por ramificação:")
     print(resposta_motor_resumida.groupby('ramificacao')['cnpj_ec'].size())
 
     print("Quantidade de CNPJs por parecer:")
     print(resposta_motor_resumida.groupby('parecer')['cnpj_ec'].size())
-
-    print(resposta_motor_resumida)
 
 
 

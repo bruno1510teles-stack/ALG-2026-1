@@ -38,7 +38,8 @@ def base_analisar(access_params=None):
                     "customfield_13732",  # LIMITE ALPE
                     "customfield_13808",  # INAD ALPE 
                     "customfield_13739",  # PGID FN
-                    "customfield_13719"],  # NOME PGID FN
+                    "customfield_13719", # NOME PGID FN
+                    "customfield_13737"],  # LIMITE SOLICITADO
             "maxResults": max_results,
             "startAt": start_at
         }
@@ -72,6 +73,7 @@ def base_analisar(access_params=None):
         inad_alpe = ticket['fields'].get('customfield_13808')  
         pgid = ticket['fields'].get('customfield_13739')  
         nome_pgid = ticket['fields'].get('customfield_13719')
+        limite_solicitado = ticket['fields'].get('customfield_13737')
         
         data.append({
             'issue_jira': issue_jira,
@@ -80,7 +82,8 @@ def base_analisar(access_params=None):
             'inad_alpe': inad_alpe,
             'pgid' : pgid,
             'nome_pgid': nome_pgid,
-            'nome_issue': summary
+            'nome_issue': summary,
+            'limite_solicitado' : limite_solicitado
         })
 
     # Criando um DataFrame com os CNPJs
