@@ -159,7 +159,7 @@ def analise_pre_filtro(access_params=None):
                            and lc.categoria_limite = 'ATRIBUIDO'
                 where
                     pc.chave = '{cnpj_raiz}'
-                            ),
+                            )
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
