@@ -118,7 +118,8 @@ def base_analisar(access_params=None):
     df = df[df['nome_issue'].str.contains('LOTE', case=False, na=False)]
 
     # Exibir o DataFrame resultante
-    print(df.head(10))
+    print(f"Quantidade de CNPJs na fila política v2: {df.shape[0]}")
+    print(f"Quantidade de CNPJs na fila aberto por fornecedor: {df.groupby('nome_pgid')['CNPJ'].size()}")
 
     # Salvando Output
 
