@@ -160,8 +160,6 @@ def analise_pre_filtro(access_params=None):
                 where
                     pc.chave = '{cnpj_raiz}'
                             ),
-            empresas as (select emp.cnpj_raiz, emp.codigo_porte_empresa, emp.capital_social_empresa  from deltalaketrusted.receita_federal.empresas emp where cnpj_raiz = '{cnpj_raiz}'),
-            estabelecimentos as (select est.documento_sem_formatacao, est.cnae_secundaria  from deltalaketrusted.receita_federal.estabelecimentos est where est.documento_sem_formatacao = '{cnpj_completo}')
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
