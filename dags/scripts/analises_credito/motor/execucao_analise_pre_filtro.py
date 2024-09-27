@@ -252,7 +252,7 @@ def analise_pre_filtro(access_params=None):
     print(f"DF pós tratamento cnaes secundário: {df}")
 
     ### Concatenando base principal(import)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão natureza juridica
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
