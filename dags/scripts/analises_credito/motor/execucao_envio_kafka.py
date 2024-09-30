@@ -4,8 +4,9 @@ from io import BytesIO
 from minio import Minio
 from confluent_kafka import Producer
 import pytz
+import time 
 
-def envio_kafka(access_params, ti):
+def envio_kafka(access_params, ti, intervalo=1):
 
     # Pega o df_resumido do XCom
     df_resumido_records = ti.xcom_pull(task_ids='politica_task')
@@ -39,6 +40,9 @@ def envio_kafka(access_params, ti):
         key = row['cnpj_ec']
         value = row.to_json()
         producer.produce(topic, key=str(key), value=value, callback=delivery_report)
+
+    # Adiciona o intervalo entre as mensagens
+        time.sleep(intervalo)
 
     # Esperar a entrega de todas as mensagens
     producer.flush()

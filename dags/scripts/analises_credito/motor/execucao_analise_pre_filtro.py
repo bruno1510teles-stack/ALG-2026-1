@@ -159,18 +159,16 @@ def analise_pre_filtro(access_params=None):
                            and lc.categoria_limite = 'ATRIBUIDO'
                 where
                     pc.chave = '{cnpj_raiz}'
-                            ),
-            empresas as (select emp.cnpj_raiz, emp.codigo_porte_empresa, emp.capital_social_empresa  from deltalaketrusted.receita_federal.empresas emp where cnpj_raiz = '{cnpj_raiz}'),
-            estabelecimentos as (select est.documento_sem_formatacao, est.cnae_secundaria  from deltalaketrusted.receita_federal.estabelecimentos est where est.documento_sem_formatacao = '{cnpj_completo}')
+                            )
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
                 pre.razao_social,
                 pre.cod_cnae,
-                est.cnae_secundaria, 
+                pre.cnae_secundaria, 
                 pre.cod_natureza_juridica,
-                CAST(emp.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
-                emp.capital_social_empresa as "Capital Social",
+                CAST(pre.codigo_porte_empresa AS DECIMAL) AS codigo_porte_empresa,
+                pre.capital_social_empresa as "Capital Social",
                 pre.idade,
                 pre.situacao_cadastral situacao_cadastral,
                 pre.idade_socio,
@@ -182,9 +180,7 @@ def analise_pre_filtro(access_params=None):
                 lim.limite_alpe
             from 
                 deltalakerefined.motor.pre_filtro pre
-            left join empresas emp on emp.cnpj_raiz = pre.cnpj_raiz 
-            left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz 
-            left join estabelecimentos est on est.documento_sem_formatacao = pre.documento_sem_formatacao
+            left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz
             where pre.documento_sem_formatacao = '{cnpj_completo}'
 
             """)
@@ -252,7 +248,7 @@ def analise_pre_filtro(access_params=None):
     print(f"DF pós tratamento cnaes secundário: {df}")
 
     ### Concatenando base principal(import)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'left')
     
     # Concatenando dimensão natureza juridica
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
@@ -304,7 +300,7 @@ def analise_pre_filtro(access_params=None):
     df.loc[df['ramificacao_pre_filtro'].isin(['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 7', 'PF 9', 'PF 10']), 'resposta'] = 'REPROVADO'
 
     # MESA
-    df.loc[df['ramificacao_pre_filtro'].isin(['PF 6', 'PF 8', 'PF 11']), 'resposta'] = 'MESA'
+    df.loc[df['ramificacao_pre_filtro'].isin(['PF 6', 'PF 8', 'PF 11']), 'resposta'] = 'inelegivel'
 
     # SEGUE
     df.loc[df['ramificacao_pre_filtro'].isin(['PF 12']), 'resposta'] = 'SEGUE'

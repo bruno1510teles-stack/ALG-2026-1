@@ -38,7 +38,7 @@ def base_analisar(access_params=None):
                     "customfield_13732",  # LIMITE ALPE
                     "customfield_13808",  # INAD ALPE 
                     "customfield_13739",  # PGID FN
-                    "customfield_13719",  # NOME PGID FN
+                    "customfield_13719", # NOME PGID FN
                     "customfield_13737"],  # LIMITE SOLICITADO
             "maxResults": max_results,
             "startAt": start_at
@@ -118,29 +118,7 @@ def base_analisar(access_params=None):
     df = df[df['nome_issue'].str.contains('LOTE', case=False, na=False)]
 
     # Exibir o DataFrame resultante
-    print(f"Quantidade de CNPJs na fila política v2: {df.shape[0]}")
-    print(f"Quantidade de CNPJs na fila aberto por fornecedor: {df.groupby('nome_pgid')['CNPJ'].size()}")
+    print(df.head(10))
 
-    # Salvando Output
-
-    BUCKET_SOURCE_REFINED = "motor"
-    FOLDER_DESTINATION_REFINED = 'analise_credito/auxiliar'
-
-    # Conectando na refined
-    client = Minio(
-        access_params['endpoint_url_refined'],
-        access_key=access_params['aws_access_key_id_refined'],
-        secret_key=access_params['aws_secret_access_key_refined'],
-    )
-
-
-    # Nome do arquivo CSV que você deseja criar
-    file_out = f'LANDING_BASE_ANALISAR.csv'
-
-    csv_bytes = df.to_csv(index=False, sep=';').encode('utf-8')
-    csv_buffer = BytesIO(csv_bytes)
-
-    client.put_object(f'{BUCKET_SOURCE_REFINED}',
-                        f'{FOLDER_DESTINATION_REFINED}/{file_out}',
-                            data=csv_buffer,
-                            length=len(csv_bytes))
+    ### Salvando DF para utilizar na próxima tarefa da DAG
+    return df.to_dict(orient='records')

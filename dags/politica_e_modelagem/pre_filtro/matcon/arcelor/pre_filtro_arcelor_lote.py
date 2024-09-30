@@ -237,7 +237,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Criando Resposta
     response_map = {
         'REPROVADO': ['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 7', 'PF 9', 'PF 10'],
-        'MESA': ['PF 6', 'PF 8', 'PF 11'],
+        'inelegivel': ['PF 6', 'PF 8', 'PF 11'],
         'SEGUE': ['PF 12']
     }
     # Aplicar as respostas
