@@ -10,7 +10,7 @@ from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
 from gerar_pdf.auth import get_access_token
 from dateutil import parser
-from scripts.utils import extract_path_from_url
+from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
 
 default_args = {
     'owner': 'Matheus Barbosa',
@@ -56,13 +56,38 @@ def consulta_relato():
         if response.status_code == 200:
             # Capturar o conteúdo do PDF em um objeto BytesIO
             pdf_content = BytesIO(response.content)
+            connection = get_trino_connection()
+            try:
+                queryContentId = f'''
+                        select 
+                            rd.type ||'_'|| pi2.value || '_'||rc.json_content || '.pdf'
+                        FROM 
+                            postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                        inner join 
+                            postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id
+                        left join 
+                            postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                        left join 
+                            postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+                        left join 
+                            postgres.exrp_{Variable.get('STAGE')}_default.party p on p.id = ri.party_id
+                        left join 
+                            postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = p.id
+                        where 
+                            pi2.value like '{cnpj}%' and rd.type in ('SERASA_RELATO', 'SERASA_RELATO_COMPLETO') and re.resolution='DONE'
+                        order by 
+                            coalesce(re.last_modified_date, re.created_date) desc
+                        limit 1'''
+                
+                result = execute_query(conn=connection, query=queryContentId)
 
-            # Obter a data e hora atual
-            current_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')
-            fileName = f"{tipo_relato}_{cnpj}_{current_time}.pdf"
+            finally:
+                connection.close()
+
+            fileName = result[0][0]
 
             MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
-            minioIndex.save(key= issueKey, identification=cnpj, path= bucket + f"{fileName}", file=pdf_content, fileType= tipo_relato)
+            minioIndex.save(key= issueKey, identification=cnpj, path= bucket + f"/{fileName}", file=pdf_content, fileType= tipo_relato)
         else:
             print(f'Erro na requisição: {response.status_code}')
     
