@@ -89,6 +89,7 @@ def processar_proposta(**kwargs):
 # Definindo a DAG
 with DAG(
     dag_id='politica_v_1',
+    start_date=days_ago(1),
     schedule_interval=None,
     default_args=default_args,
     tags=['politica_v_1']  # DAG só será acionada manualmente pela API
