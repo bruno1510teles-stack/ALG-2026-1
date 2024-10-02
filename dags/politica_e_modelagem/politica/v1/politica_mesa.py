@@ -30,9 +30,6 @@ def execucao_politica(access_params=None,  **kwargs):
     
     resposta_motor['ramificacao_motor'] = 'MESA'
 
-    resposta_motor = resposta_motor.drop(columns=['idade_y', 'codigo_porte_empresa_y'])
-    resposta_motor = resposta_motor.rename(columns={'codigo_porte_empresa_x':'codigo_porte_empresa'})
-    resposta_motor = resposta_motor.rename(columns={'idade_x':'idade'})
     resposta_motor = resposta_motor.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
 
     #DEFININDO O PARECER DO MOTOR
