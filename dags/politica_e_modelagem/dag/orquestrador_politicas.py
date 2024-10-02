@@ -11,7 +11,7 @@ def identify_policy(**kwargs):
     if proposal_id in [1]:
         return 'politica_v_1'
     elif proposal_id in [2]:
-        return 'policy_2_dag'
+        return 'politica_v_2'
     else:
         return 'policy_default_dag'
 
