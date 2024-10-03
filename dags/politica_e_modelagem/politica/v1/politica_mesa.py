@@ -22,7 +22,7 @@ def execucao_politica(access_params=None,  **kwargs):
     saida_modelo = pd.DataFrame(saida_modelo_dict)
 
     #Ajustando a formatação do CNPJ para 14 digitos
-    saida_modelo['cnpj_raiz'] = saida_modelo['cnpj_raiz'].astype(str).str.zfill(8)
+    saida_modelo['cnpj_raiz'] = saida_modelo['CNPJ'].astype(str).str.zfill(8)
 
     resposta_motor = saida_modelo
 
