@@ -97,7 +97,11 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 for ticket in tickets:
                     # Acessando o assignee corretamente dentro de fields
                     assignee = ticket['fields'].get('assignee', {}).get('displayName', 'Não atribuído')
-                    decisao = ticket['fields'].get('resolution', {}).get('name', 'NF')
+                    resolucao = ticket['fields'].get('resolution', {})
+                    if resolucao is None:
+                        decisao = 'NF'
+                    else:
+                        decisao = resolucao.get('name', 'NF')
 
                     # Adiciona ticket à lista all_tickets
                     all_tickets.append(ticket)
