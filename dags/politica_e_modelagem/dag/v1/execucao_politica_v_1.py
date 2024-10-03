@@ -8,8 +8,7 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
-from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
+from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa_v1
 from politica_e_modelagem.politica.v1 import politica_mesa
 from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
 
@@ -106,7 +105,7 @@ with DAG(
     # Definindo o task que faz a chamada do serasa
     serasa = PythonOperator(
         task_id="serasa_task",
-        python_callable=execucao_chamada_serasa.chamando_serasa,
+        python_callable=execucao_chamada_serasa_v1.chamando_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
