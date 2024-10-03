@@ -103,14 +103,6 @@ with DAG(
     )
 
 
-    # Definindo o task de pre filtro
-    pre_filtro = PythonOperator(
-        task_id="pre_filtro_task",
-        python_callable=pre_filtro_arcelor_v_1_1.analise_pre_filtro,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
-
     # Definindo o task que faz a chamada do serasa
     serasa = PythonOperator(
         task_id="serasa_task",
@@ -137,4 +129,4 @@ with DAG(
 
 
     # Definindo a ordem de execução das tasks
-    captura_proposta >> pre_filtro >> serasa >> politica >> enviar_kafka
+    captura_proposta >> serasa >> politica >> enviar_kafka

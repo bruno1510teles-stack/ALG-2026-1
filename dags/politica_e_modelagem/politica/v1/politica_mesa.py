@@ -18,7 +18,7 @@ def execucao_politica(access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    saida_modelo_dict = ti.xcom_pull(task_ids='pre_filtro_task')
+    saida_modelo_dict = ti.xcom_pull(task_ids='captura_proposta')
     saida_modelo = pd.DataFrame(saida_modelo_dict)
 
     #Ajustando a formatação do CNPJ para 14 digitos

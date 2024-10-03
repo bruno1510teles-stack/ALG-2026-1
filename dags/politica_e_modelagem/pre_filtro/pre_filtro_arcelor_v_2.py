@@ -326,8 +326,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         # Filtro Operacional
         (df['situacao_sacado'] != 'ATIVO', 'PF BLOQUEIO ALPE'),
         ((df['analise_menor_60_dias'] == True) & (df['decisao'] == 'Reproved'), 'PF REPROVA < 60 DIAS'),
-        ((df['analise_menor_60_dias'] == True) & (df['decisao'] == 'Approved') & ((df['limite_solicitado']*1.2)  <= df['limite_atribuido']), 'PF LIMITE SOLICITADO <= ATUAL')
-        ((df['analise_menor_60_dias'] == True) & (df['decisao'] == 'Approved') & ((df['limite_solicitado']*1.2)  > df['limite_atribuido']) & (df['pcto_limite_utilizado']) < 0.7, 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA')
+        ((df['analise_menor_60_dias'] == True) & (df['decisao'] == 'Approved') & ((df['limite_solicitado']*1.2)  <= df['limite_atribuido']), 
+         'PF LIMITE SOLICITADO <= ATUAL'),
+        ((df['analise_menor_60_dias'] == True) & (df['decisao'] == 'Approved') & (df['limite_solicitado'] * 1.2 > df['limite_atribuido']) & (df['pcto_limite_utilizado'] < 0.7) & pd.notna(df['pcto_limite_utilizado']),
+        'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'),
 
         # Filtro de Política
         (df['situacao_especial'] == 'RECUPERACAO JUDICIAL', 'PF RJ'),
@@ -349,8 +351,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': ['PF 1', 'PF 2', 'PF 3', 'PF 4', 'PF 5', 'PF 7', 'PF 9', 'PF 10'],
-        'MESA': ['PF 6', 'PF 8', 'PF 11'],
+        'REPROVADO': ['PF CNPJ IRREGULAR', 'PF BLOQUEIO ALPE', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
+        'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
+        'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS'],
         'SEGUE': ['PF SEGUE']
     }
     # Aplicar as respostas
