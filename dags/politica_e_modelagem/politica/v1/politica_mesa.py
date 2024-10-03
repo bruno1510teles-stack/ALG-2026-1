@@ -30,7 +30,7 @@ def execucao_politica(access_params=None,  **kwargs):
     
     resposta_motor['ramificacao_motor'] = 'MESA'
 
-    resposta_motor = resposta_motor.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
+    resposta_motor = resposta_motor.rename(columns={'CNPJ':'cnpj_ec'})
 
     #DEFININDO O PARECER DO MOTOR
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
