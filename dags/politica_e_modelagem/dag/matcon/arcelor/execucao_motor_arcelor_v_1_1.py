@@ -114,11 +114,11 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='politica_credito_arcelor_v.1.1',
+    dag_id='politica_v_2',
     start_date=days_ago(1),
     schedule_interval='*/30 * * * *',
     default_args=default_args,
-    tags=['politica_arcelor_v.1.1'],
+    tags=['politica_arcelor'],
     max_active_runs=1  # Apenas uma execução ativa
 ) as dag:
 
