@@ -222,7 +222,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 lim.limite_alpe,
                 lim.situacao_sacado,
                 lim.pcto_limite_utilizado,
-                limite_atribuido
+                coalesce(lim.limite_atribuido, 0) as limite_atribuido
             from 
                 deltalakerefined.motor.pre_filtro pre
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz
