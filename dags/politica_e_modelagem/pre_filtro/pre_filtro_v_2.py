@@ -202,7 +202,6 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 	                group by
 	                	pc.chave, lc.id is not null, pl.status)
                             )                    
-                            )
             select 
                 pre.cnpj_raiz cnpj_raiz,
                 pre.documento_sem_formatacao,
