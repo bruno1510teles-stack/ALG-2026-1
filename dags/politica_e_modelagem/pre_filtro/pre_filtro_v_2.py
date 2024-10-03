@@ -219,8 +219,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 pre.tem_pep,
                 pre.situacao_especial,
                 pre.data_ref_receita,
-                lim.limite_alpe,
-                lim.situacao_sacado,
+                coalesce(lim.limite_alpe, false) as limite_alpe,
+                coalesce(lim.situacao_sacado, 'ATIVO') as situacao_sacado,
                 lim.pcto_limite_utilizado,
                 coalesce(lim.limite_atribuido, 0) as limite_atribuido
             from 
