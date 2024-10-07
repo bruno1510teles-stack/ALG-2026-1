@@ -9,8 +9,8 @@ from time import sleep
 
 ### Importando scripts necessários
 from politica_e_modelagem.auxiliares.jira import import_base_jira_agendado
-from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
-#from politica_e_modelagem.pre_filtro import pre_filtro_v_2
+#from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
+from politica_e_modelagem.pre_filtro import pre_filtro_v_2
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.modelo.matcon.arcelor import execucao_modelo_arcelor_v_1_0
 from politica_e_modelagem.politica.matcon.arcelor import politica_arcelor_v_1_1
@@ -132,7 +132,7 @@ with DAG(
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
-        python_callable=pre_filtro_arcelor_v_1_1.analise_pre_filtro,
+        python_callable=pre_filtro_v_2.analise_pre_filtro,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
