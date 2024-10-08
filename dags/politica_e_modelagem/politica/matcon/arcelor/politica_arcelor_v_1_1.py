@@ -627,6 +627,7 @@ group by
         "PF 7":"Motor - Recusado, impedido de operar",
         "PF 9":"Motor - Recusado, impedido de operar",
         "PF 10":"Motor - Recusado, impedido de operar",
+        "PF CNPJ IRREGULAR":"Motor - Recusado, impedido de operar",
         "A - A11":"Motor - Recusado, apontamento/score",
         "A - A9":"Motor - Recusado, apontamento/score",
         "A - A8":"Motor - Recusado, apontamento/score",
