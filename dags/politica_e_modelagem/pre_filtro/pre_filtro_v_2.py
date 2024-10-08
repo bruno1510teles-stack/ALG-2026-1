@@ -111,7 +111,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                     data.append({
                         'cnpj_raiz': cnpj,
                         'analise_menor_60_dias': True,
-                        'decisor': assignee,
+                        'decisor': assignee_name,
                         'decisao': decisao
                     })
                 
