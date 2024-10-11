@@ -621,6 +621,7 @@ group by
         "PF 1":"Motor - Recusado, impedido de operar",
         "PF 2":"Motor - Recusado, impedido de operar",
         "PF 3":"Motor - Recusado, MEI",
+        "PF MEI":"Motor - Recusado, MEI",
         "PF 4":"Motor - Recusado, CNAE",
         "PF 5":"Motor - Recusado, CNAE",
         "PF CNAE":"Motor - Recusado, CNAE",
