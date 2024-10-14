@@ -115,7 +115,7 @@ def base_analisar(access_params=None):
     df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
 
     # Filtrando somente lote
-    df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+    df = df[df['nome_issue'].str.contains('LOTE', case=False, na=False)]
 
     # Exibir o DataFrame resultante
     print(df.head(10))
