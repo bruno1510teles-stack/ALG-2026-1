@@ -187,7 +187,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
             with limite as (
 				select 
-					cnpj_raiz, case when limite_atribuido > 0 then true else false end as limite_alpe,, NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, situacao_sacado, limite_atribuido
+					cnpj_raiz, case when limite_atribuido > 0 then true else false end as limite_alpe, NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, situacao_sacado, limite_atribuido
 				from (
 	                 select 
 	                    pc.chave as cnpj_raiz,
