@@ -121,4 +121,4 @@ def base_analisar(access_params=None):
     print(df.head(10))
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
-    return df.to_dict(orient='records')
+    #return df.to_dict(orient='records')
