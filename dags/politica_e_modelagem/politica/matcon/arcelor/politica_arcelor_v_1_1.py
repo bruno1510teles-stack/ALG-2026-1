@@ -613,6 +613,7 @@ group by
     #DEFININDO O PARECER DO MOTOR
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
     resposta_motor.loc[resposta_motor['resposta_motor'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
 
 
     # Criação do mapeamento de pareceres
@@ -620,11 +621,14 @@ group by
         "PF 1":"Motor - Recusado, impedido de operar",
         "PF 2":"Motor - Recusado, impedido de operar",
         "PF 3":"Motor - Recusado, MEI",
+        "PF MEI":"Motor - Recusado, MEI",
         "PF 4":"Motor - Recusado, CNAE",
         "PF 5":"Motor - Recusado, CNAE",
+        "PF CNAE":"Motor - Recusado, CNAE",
         "PF 7":"Motor - Recusado, impedido de operar",
         "PF 9":"Motor - Recusado, impedido de operar",
         "PF 10":"Motor - Recusado, impedido de operar",
+        "PF CNPJ IRREGULAR":"Motor - Recusado, impedido de operar",
         "A - A11":"Motor - Recusado, apontamento/score",
         "A - A9":"Motor - Recusado, apontamento/score",
         "A - A8":"Motor - Recusado, apontamento/score",

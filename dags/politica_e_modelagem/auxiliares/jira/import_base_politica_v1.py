@@ -31,7 +31,7 @@ def base_analisar(access_params=None):
     while True:
         # Query para buscar os tickets da fila desejada
         query = {
-            "jql": "project = cmgt AND Política = 'Política 2' AND status = 'Analyzing Credit Score'",
+            "jql": "project = cmgt AND Política = 'Política 1' AND status = 'Analyzing Credit Score'",  
             "fields": ["key",  # ISSUE_JIRA
                     "summary",
                     "customfield_13729",  # CNPJ
@@ -114,11 +114,8 @@ def base_analisar(access_params=None):
     #df.rename(columns={'limite_alpe_flag': 'limite_alpe', 'inad_alpe_flag': 'inad_alpe'}, inplace=True)
     df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
 
-    # Filtrando somente lote
-    df = df[df['nome_issue'].str.contains('LOTE', case=False, na=False)]
-
     # Exibir o DataFrame resultante
     print(df.head(10))
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
-    #return df.to_dict(orient='records')
+    return df.to_dict(orient='records')
