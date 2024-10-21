@@ -1,8 +1,6 @@
 from scripts.utils import get_trino_connection, execute_query
 import base64
 
-from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
-
 class MinioSaveIndex:
 
     def toBase64(self, file):
@@ -17,11 +15,30 @@ class MinioSaveIndex:
             connection = get_trino_connection()
 
             insert_query = f"""
-                INSERT INTO minioraw.analise_credito_pcc."index"
-                ("issue_key", "documento", "path", "arquivo", "tipo_arquivo")
-                VALUES (\'{issueKey}\', \'{cnpj}\', \'{path}\', \'{base64file}\', \'{type}\')"""
-
-            execute_query(conn= connection, query= insert_query)
+                INSERT INTO minioraw.analise_credito_pcc."index"(
+                    "issue_key", 
+                    "documento", 
+                    "path", 
+                    "arquivo", 
+                    "tipo_arquivo")
+                VALUES (
+                    {f"'{issueKey}'" if issueKey is not None else 'NULL'}, 
+                    {f"'{cnpj}'" if cnpj is not None else 'NULL'}, 
+                    {f"'{path}'" if path is not None else 'NULL'}, 
+                    {f"'{base64file}'" if base64file is not None else 'NULL'}, 
+                    {f"'{type}'" if type is not None else 'NULL'})
+                """
+            queryCheckIndex = f"""
+                    SELECT 
+                        1 
+                    FROM 
+                        minioraw.analise_credito_pcc."index" 
+                    WHERE 
+                        documento = '{cnpj}' AND issue_key = '{issueKey}'
+                    """
+            primeiraConsulta = execute_query(conn=connection, query=queryCheckIndex)
+            if not primeiraConsulta:
+                execute_query(conn= connection, query= insert_query)
         finally:
             connection.close()
 

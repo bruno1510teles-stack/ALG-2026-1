@@ -8,6 +8,7 @@ from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
+from scripts.analises_credito.pcc.get_coordenadas import get_coordenadas
 from gerar_pdf.auth import get_access_token
 from dateutil import parser
 from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
@@ -25,7 +26,6 @@ default_args = {
     catchup=False,
 )
 def consulta_relato():
-    minioIndex = MinioSaveIndex()
 
     @task
     def busca_relato(**kwargs):
@@ -52,15 +52,13 @@ def consulta_relato():
 
     
     def envia_pdf(response, bucket, cnpj, tipo_relato,issueKey):
-        # Verificar o status da resposta
         if response.status_code == 200:
-            # Capturar o conteúdo do PDF em um objeto BytesIO
             pdf_content = BytesIO(response.content)
             connection = get_trino_connection()
             try:
                 queryContentId = f'''
                         select 
-                            rd.type ||'_'|| pi2.value || '_'||rc.json_content || '.pdf'
+                            rd.type ||'_'|| pi2.value || '_'|| rc.json_content || '.pdf', rc.json_content 
                         FROM 
                             postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
                         inner join 
@@ -79,32 +77,30 @@ def consulta_relato():
                             coalesce(re.last_modified_date, re.created_date) desc
                         limit 1'''
                 
-                result = execute_query(conn=connection, query=queryContentId)
+                result = execute_query(conn=connection, query=queryContentId)[0]
+                print(result)
+                print(Variable.get('TRINO_PASSWORD'))
 
+                fileName = result[0]
+                MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
+                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= bucket + f"/{fileName}", file=pdf_content, fileType= tipo_relato)
+                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= get_coordenadas(result[1],connection), file=None, fileType= "COORDENADA")
+            except Exception as e:
+                raise Exception(e)
             finally:
                 connection.close()
-
-            fileName = result[0][0]
-
-            MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
-            minioIndex.save(key= issueKey, identification=cnpj, path= bucket + f"/{fileName}", file=pdf_content, fileType= tipo_relato)
         else:
             print(f'Erro na requisição: {response.status_code}')
     
     def is_relato_mais_antigo_que_60_dias(data):
         try:
-            # Acessando o campo 'createdDate' do primeiro item da lista dentro de 'content'
             created_date_str = data['content'][0]['createdDate']
 
-            # Convertendo a string de data para um objeto datetime
             created_date = parser.parse(created_date_str)
 
             created_date = created_date.replace(tzinfo=timezone.utc)
 
-            # Obtendo a data atual
             now = datetime.now(tz=timezone.utc)
-
-            # Verificando se faz mais de 60 dias
             return now - created_date > timedelta(days=60)
         except json.JSONDecodeError as e:
             print(f"Erro ao decodificar JSON: {e}")
