@@ -293,7 +293,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     }).reset_index()  # Reseta o índice para retornar um DataFrame regular
 
     ### Concatenando base principal(import)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
     ### Cruzando DF
@@ -325,6 +325,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Dicionário para mapear condições a valores de 'ramificacao_pre_filtro'
     conditions = [
         # Impedidos de Operar
+        (df['idade'].isna() , 'PF FUNDACAO < 2 ANOS'),
         (df['situacao_cadastral'] != 'ATIVA', 'PF CNPJ IRREGULAR'),
 
         # Filtro Operacional
