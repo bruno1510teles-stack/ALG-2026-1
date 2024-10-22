@@ -267,11 +267,11 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Passo 2: Explodir o DataFrame para que cada CNAE fique em uma linha separada
     df_exploded = df.explode('todos_cnaes')
     # Passo 3: Fazer o merge para validar os CNAEs
-    df_validado = df_exploded.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
+    df_validado = df_exploded.merge(aux_cnae, left_on='todos_cnaes', right_on='cod_cnae', how='inner')
     # Passo 4: Consolidar o resultado para manter uma linha por CNPJ e verificar se ao menos um CNAE foi aceito
     df = df_validado.groupby('documento_sem_formatacao').agg({
         'cnpj_raiz': 'first',  # Mantém o primeiro valor da coluna cnpj_raiz (assumindo que seja o mesmo para cada grupo)
-        'cod_cnae': 'first',  # Mantém o CNAE principal
+        'cod_cnae_x': 'first',  # Mantém o CNAE principal
         'todos_cnaes': lambda x: ','.join(x),  # Junta os CNAEs novamente
         'cnae_aceito': lambda x: 'SIM' if 'SIM' in x.values else 'NAO',  # Se qualquer um for 'SIM', aceita
         'razao_social': 'first',  # Mantém o primeiro valor da coluna razao_social
