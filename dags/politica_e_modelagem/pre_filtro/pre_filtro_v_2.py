@@ -292,6 +292,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         'limite_atribuido' : 'first'
     }).reset_index()  # Reseta o índice para retornar um DataFrame regular
 
+    df.rename(columns={'cod_cnae_x': 'cod_cnae'}, inplace=True)
+
     ### Concatenando base principal(import)
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
