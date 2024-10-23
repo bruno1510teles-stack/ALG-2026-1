@@ -267,11 +267,11 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Passo 2: Explodir o DataFrame para que cada CNAE fique em uma linha separada
     df_exploded = df.explode('todos_cnaes')
     # Passo 3: Fazer o merge para validar os CNAEs
-    df_validado = df_exploded.merge(aux_cnae, on = ['cod_cnae'], how = 'inner')
+    df_validado = df_exploded.merge(aux_cnae, left_on='todos_cnaes', right_on='cod_cnae', how='inner')
     # Passo 4: Consolidar o resultado para manter uma linha por CNPJ e verificar se ao menos um CNAE foi aceito
     df = df_validado.groupby('documento_sem_formatacao').agg({
         'cnpj_raiz': 'first',  # Mantém o primeiro valor da coluna cnpj_raiz (assumindo que seja o mesmo para cada grupo)
-        'cod_cnae': 'first',  # Mantém o CNAE principal
+        'cod_cnae_x': 'first',  # Mantém o CNAE principal
         'todos_cnaes': lambda x: ','.join(x),  # Junta os CNAEs novamente
         'cnae_aceito': lambda x: 'SIM' if 'SIM' in x.values else 'NAO',  # Se qualquer um for 'SIM', aceita
         'razao_social': 'first',  # Mantém o primeiro valor da coluna razao_social
@@ -292,8 +292,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         'limite_atribuido' : 'first'
     }).reset_index()  # Reseta o índice para retornar um DataFrame regular
 
+    df.rename(columns={'cod_cnae_x': 'cod_cnae'}, inplace=True)
+
     ### Concatenando base principal(import)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
     ### Cruzando DF
@@ -325,6 +327,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Dicionário para mapear condições a valores de 'ramificacao_pre_filtro'
     conditions = [
         # Impedidos de Operar
+        (df['idade'].isna() , 'PF FUNDACAO < 2 ANOS'),
         (df['situacao_cadastral'] != 'ATIVA', 'PF CNPJ IRREGULAR'),
 
         # Filtro Operacional
