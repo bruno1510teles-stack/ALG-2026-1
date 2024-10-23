@@ -141,7 +141,7 @@ def relatorio_coligadas():
         
 
         print("csv gerado")
-        MinioSaveIndex().save(key= issueKey, identification=cnpjSacado, path= f"analise-credito/pcc/limite/csv/documento={cnpjSacado}/{issueKey}.csv", file=None, fileType= "COLIGADAS")
+        MinioSaveIndex().save(key= issueKey, identification=cnpjSacado, path= f"analise-credito/pcc/limite/v2/documento={cnpjSacado}/{issueKey}.csv", file=None, fileType= "COLIGADAS")
         print("minio save index")
 
     @task()
