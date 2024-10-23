@@ -1,3 +1,7 @@
+import csv
+from datetime import datetime
+import io
+from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
 from scripts.utils import get_trino_connection, execute_query
 from airflow.decorators import dag, task
@@ -8,32 +12,46 @@ default_args = {
     'owner': 'Rafael Leite',
     'retries': 1,
 }
+def createPartition(conn, cnpjSacado):
+                
+    getPartition = f"select 1 from minioraw.analise_credito_pcc.limite_csv where documento_sacado = '{cnpjSacado}' limit 1"
 
-def insert(rows, cnpj_sacado, issue_key, conn):
+    partition = execute_query(conn=conn, query= getPartition)
 
+    if not partition:
+        
+        print(f"Partição não encontrada, criando diretório para {cnpjSacado}")
+        
+        prepareQuery = f"""prepare cria_particao from CALL minioraw.system.create_empty_partition(schema_name => 'analise_credito_pcc', table_name => 'limite_csv', partition_columns => ARRAY['documento_sacado'], partition_values => ARRAY['{cnpjSacado}'])"""
+
+        execute_query(conn=conn, query=prepareQuery)
+
+        execute_query(conn=conn, query="execute cria_particao")
+
+        print(f"Partição criada para cnpj {cnpjSacado}")
+
+    else:
+        print(f"Partição para {cnpjSacado} já existe.")
+
+def generate_csv(rows, cnpj_sacado, issue_key):
+    output = io.BytesIO()
+    text_wrapper = io.TextIOWrapper(output, encoding='utf-8', newline='')
+
+    writer = csv.writer(text_wrapper, delimiter=";")
+    
     for row in rows:
-        insert_query = f"""
-                INSERT INTO minioraw.analise_credito_pcc.limite
-                (limite, tipo, documento, nome, restritivo, atribuido, disponivel, vencido, status, categoria, pgid, documento_sacado, issue_key)
-                VALUES 
-                (
-                    {f"'{row[0]}'" if row[0] is not None else 'NULL'}, 
-                    {f"'{row[1]}'" if row[1] is not None else 'NULL'}, 
-                    {f"'{row[2]}'" if row[2] is not None else 'NULL'}, 
-                    {f"'{row[3]}'" if row[3] is not None else 'NULL'}, 
-                    {f"'{row[4]}'" if row[4] is not None else 'NULL'}, 
-                    {row[5] if row[5] is not None else 'NULL'}, 
-                    {row[6] if row[6] is not None else 'NULL'}, 
-                    {row[7] if row[7] is not None else 'NULL'}, 
-                    {f"'{row[8]}'" if row[8] is not None else 'NULL'}, 
-                    {f"'{row[9]}'" if row[9] is not None else 'NULL'}, 
-                    {f"'{row[10]}'" if row[10] is not None else 'NULL'}, 
-                    {f"'{cnpj_sacado}'" if cnpj_sacado is not None else 'NULL'}, 
-                    {f"'{issue_key}'" if issue_key is not None else 'NULL'}
-                )
-                """
-        print(insert_query)
-        execute_query(conn, insert_query)
+        writer.writerow([
+            row[0], row[1], row[2], row[3], row[4], row[5],
+            row[6], row[7], row[8], row[9], row[10], issue_key, str(datetime.now()).replace(' ', 'T')[:-3], cnpj_sacado
+        ])
+    
+    text_wrapper.flush()
+    text_wrapper.detach()
+
+    output.seek(0)
+    MinioWriteFile().write_file(file=output, file_name= f"{issue_key}.csv", bucket=f"analise-credito/pcc/limite/csv/documento_sacado={cnpj_sacado}/", type = "text/csv")
+    print("minio write file csv")
+    output.close()
 
 @dag(
     default_args=default_args,
@@ -114,10 +132,17 @@ def relatorio_coligadas():
             if not rows:
                 return print(f"Não houve retorno para o sacado {cnpjSacado}")
             
-            insert(rows, cnpjSacado, issueKey, conn)
             
+            createPartition(conn, cnpjSacado)
+            generate_csv(rows=rows, cnpj_sacado=cnpjSacado, issue_key=issueKey)
+
         finally:
             conn.close()
+        
+
+        print("csv gerado")
+        MinioSaveIndex().save(key= issueKey, identification=cnpjSacado, path= f"analise-credito/pcc/limite/csv/documento={cnpjSacado}/{issueKey}.csv", file=None, fileType= "COLIGADAS")
+        print("minio save index")
 
     @task()
     def end_task():

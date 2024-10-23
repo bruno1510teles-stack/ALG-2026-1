@@ -83,8 +83,8 @@ def consulta_relato():
 
                 fileName = result[0]
                 MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
-                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= bucket + f"/{fileName}", file=pdf_content, fileType= tipo_relato)
-                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= get_coordenadas(result[1],connection), file=None, fileType= "COORDENADA")
+                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= bucket + f"{fileName}", file=pdf_content, fileType= tipo_relato, contentId=result[1])
+                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= get_coordenadas(result[1],connection), fileType= "COORDENADA")
             except Exception as e:
                 raise Exception(e)
             finally:
