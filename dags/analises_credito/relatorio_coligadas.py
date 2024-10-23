@@ -49,7 +49,7 @@ def generate_csv(rows, cnpj_sacado, issue_key):
     text_wrapper.detach()
 
     output.seek(0)
-    MinioWriteFile().write_file(file=output, file_name= f"{issue_key}.csv", bucket=f"analise-credito/pcc/limite/csv/documento_sacado={cnpj_sacado}/", type = "text/csv")
+    MinioWriteFile().write_file(file=output, file_name= f"{issue_key}.csv", bucket=f"analise-credito/pcc/limite/v2/documento_sacado={cnpj_sacado}/", type = "text/csv")
     print("minio write file csv")
     output.close()
 
