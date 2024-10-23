@@ -14,7 +14,7 @@ default_args = {
 }
 def createPartition(conn, cnpjSacado):
                 
-    getPartition = f"select 1 from minioraw.analise_credito_pcc.limite_csv where documento_sacado = '{cnpjSacado}' limit 1"
+    getPartition = f"select 1 from minioraw.analise_credito_pcc.limite where documento_sacado = '{cnpjSacado}' limit 1"
 
     partition = execute_query(conn=conn, query= getPartition)
 
@@ -22,7 +22,7 @@ def createPartition(conn, cnpjSacado):
         
         print(f"Partição não encontrada, criando diretório para {cnpjSacado}")
         
-        prepareQuery = f"""prepare cria_particao from CALL minioraw.system.create_empty_partition(schema_name => 'analise_credito_pcc', table_name => 'limite_csv', partition_columns => ARRAY['documento_sacado'], partition_values => ARRAY['{cnpjSacado}'])"""
+        prepareQuery = f"""prepare cria_particao from CALL minioraw.system.create_empty_partition(schema_name => 'analise_credito_pcc', table_name => 'limite', partition_columns => ARRAY['documento_sacado'], partition_values => ARRAY['{cnpjSacado}'])"""
 
         execute_query(conn=conn, query=prepareQuery)
 

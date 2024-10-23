@@ -39,7 +39,8 @@ def anexa_grupo_economico():
         rows = execute_query(connection, query)
 
         if not rows:
-            raise ValueError(f"Nehum arquivo encontrado para o sacado: {sacado[:8]}")
+            print(f"Nehum arquivo encontrado para o sacado: {sacado[:8]}")
+            return
 
         catalogos = get_catalogos(rows)
 

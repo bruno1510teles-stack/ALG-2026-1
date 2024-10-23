@@ -6,12 +6,13 @@ def get_coordenadas(contentId, connection):
 
     getEndereco = f"SELECT logradouro || ' - ' || bairro || ', ' || municipio || ' - ' || uf || ', ' || cep FROM deltalaketrusted.serasa.endereco where id = '{contentId}'"
     
-    endereco = execute_query(conn=connection, query=getEndereco)[0][0]
+    endereco = execute_query(conn=connection, query=getEndereco)
 
     if not endereco:
-        raise ValueError("Endereço não fornecido")
+        print("Endereço não fornecido")
+        return None
     
-    google_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={endereco}&key={Variable.get('GOOGLE_API_KEY')}"
+    google_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={endereco[0][0]}&key={Variable.get('GOOGLE_API_KEY')}"
         
     result = json.loads(requests.post(url=google_url).content)
 
