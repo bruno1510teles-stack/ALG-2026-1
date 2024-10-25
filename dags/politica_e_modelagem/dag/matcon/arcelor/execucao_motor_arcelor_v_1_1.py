@@ -49,8 +49,8 @@ def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
 
     # Verifica se a task_id é 'captura_proposta' e, se for, não envia notificação
-    if task_id == "captura_proposta":
-        return  # Não envia notificação para 'captura_proposta'
+    # if task_id == "captura_proposta":
+    #     return  # Não envia notificação para 'captura_proposta'
 
     mensagem = {
         "title": "Falha na DAG - politica_v_2",
