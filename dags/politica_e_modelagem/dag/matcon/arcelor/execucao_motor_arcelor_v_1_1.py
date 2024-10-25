@@ -5,6 +5,8 @@ from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
 from time import sleep
+from datetime import timedelta
+import requests
 
 
 ### Importando scripts necessários
@@ -41,12 +43,20 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-
+def notificar_falha_teams(context):
+    url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
+    mensagem = {
+        "title": "Falha na DAG - politica_v_2",
+        "text": f"Falha na DAG - politica_v_2: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} verificar URGENTE!!"
+    }
+    requests.post(url, json=mensagem)
 
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "retries": 0,
+    "retries": 3,
+    "retry_delay": timedelta(minutes=1),
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -127,14 +137,16 @@ with DAG(
     captura_proposta = PythonOperator(
         task_id='captura_proposta',
         python_callable=import_base_jira_agendado.base_analisar,
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True,  # Habilita o envio do contexto (incluindo conf)
+        execution_timeout=timedelta(minutes=3)
     )    
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
         python_callable=pre_filtro_v_2.analise_pre_filtro,
         op_kwargs={'access_params': access_params},
-        provide_context=True
+        provide_context=True,
+        execution_timeout=timedelta(minutes=3)
     )
 
     # Definindo o task que faz a chamada do serasa
@@ -142,7 +154,8 @@ with DAG(
         task_id="serasa_task",
         python_callable=execucao_chamada_serasa.chamando_serasa,
         op_kwargs={'access_params': access_params},
-        provide_context=True
+        provide_context=True,
+        execution_timeout=timedelta(minutes=3)
     )
 
     # Execução do modelo
@@ -150,7 +163,8 @@ with DAG(
         task_id="modelo_task",
         python_callable=execucao_modelo_arcelor_v_1_0.execucao_modelo,
         op_kwargs={'access_params': access_params},
-        provide_context=True
+        provide_context=True,
+        execution_timeout=timedelta(minutes=3)
     )
 
     # Execução da política
@@ -158,7 +172,8 @@ with DAG(
         task_id="politica_task",
         python_callable=politica_arcelor_v_1_1.execucao_politica,
         op_kwargs={'access_params': access_params},
-        provide_context=True
+        provide_context=True,
+        execution_timeout=timedelta(minutes=3)
     )
 
     # Enviando dados para o Kafka
@@ -167,6 +182,7 @@ with DAG(
         python_callable=execucao_envio_kafka.envio_kafka,
         op_kwargs={'access_params': access_params},
         provide_context=True,
+        execution_timeout=timedelta(minutes=3)
     )
 
     # Definindo o sleep para processo de dados no data lake
