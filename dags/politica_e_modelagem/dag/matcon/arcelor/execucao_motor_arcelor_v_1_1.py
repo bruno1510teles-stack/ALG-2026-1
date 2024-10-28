@@ -50,13 +50,15 @@ def notificar_falha_teams(context):
 
     # Verifica se a task_id é 'captura_proposta' e, se for, não envia notificação
     if task_id == "captura_proposta":
-        return  # Não envia notificação para 'captura_proposta'
+        print("Notificação não enviada para 'captura_proposta'")
+    else:
+          
 
-    mensagem = {
-        "title": "Falha na DAG - politica_v_2",
-        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
-    }
-    requests.post(url, json=mensagem)
+        mensagem = {
+            "title": "Falha na DAG - politica_v_2",
+            "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+        }
+        requests.post(url, json=mensagem)
 
 ### Definindo defaults
 default_args = {
