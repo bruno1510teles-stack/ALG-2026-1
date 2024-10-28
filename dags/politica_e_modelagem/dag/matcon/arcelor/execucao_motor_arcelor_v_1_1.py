@@ -44,36 +44,24 @@ access_params = {
     }
 
 def notificar_falha_teams(context):
+    task_id = context['task_instance'].task_id
+
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
-    
-    # Extraindo informações do contexto para criar a mensagem
-    dag_id = context.get('task_instance').dag_id
-    task_id = context.get('task_instance').task_id
+
+    # Verifica se a task_id é 'captura_proposta' e, se for, não envia notificação
+    if task_id == "captura_proposta":
+        return  # Não envia notificação para 'captura_proposta'
+
     mensagem = {
         "title": "Falha na DAG - politica_v_2",
-        "text": f"Falha na DAG - politica_v_2: {dag_id} na task: {task_id}. Verificar URGENTE!!"
+        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
-    
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    try:
-        response = requests.post(url, json=mensagem, headers=headers)
-        
-        # Verifique o status do envio e registre o status
-        if response.status_code == 200:
-            print("Notificação enviada com sucesso para o Teams.")
-        else:
-            print(f"Falha ao enviar notificação para o Teams. Status: {response.status_code}, Resposta: {response.text}")
-    
-    except Exception as e:
-        print(f"Erro ao enviar notificação para o Teams: {e}")
+    requests.post(url, json=mensagem)
 
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "retries": 3,
+    "retries": 1,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
