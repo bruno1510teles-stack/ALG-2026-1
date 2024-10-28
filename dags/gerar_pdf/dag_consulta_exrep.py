@@ -79,12 +79,19 @@ def consulta_relato():
                 
                 result = execute_query(conn=connection, query=queryContentId)[0]
                 print(result)
-                print(Variable.get('TRINO_PASSWORD'))
 
                 fileName = result[0]
+
                 MinioWriteFile().write_file(file=pdf_content, file_name= fileName, bucket=bucket, type = "application/pdf")
                 MinioSaveIndex().save(key= issueKey, identification=cnpj, path= bucket + f"{fileName}", file=pdf_content, fileType= tipo_relato, contentId=result[1])
-                MinioSaveIndex().save(key= issueKey, identification=cnpj, path= get_coordenadas(result[1],connection), fileType= "COORDENADA")
+
+                coordenadas = get_coordenadas(result[1],connection)
+                
+                if coordenadas:
+                    MinioSaveIndex().save(key= issueKey, identification=cnpj, path= coordenadas, fileType= "COORDENADA")
+                else:
+                    print(f"Não foi encontrado endereço para o sacado {cnpj} e issue key {issueKey}")
+
             except Exception as e:
                 raise Exception(e)
             finally:
