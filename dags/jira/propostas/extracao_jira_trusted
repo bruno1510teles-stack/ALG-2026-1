@@ -13,9 +13,9 @@ from datetime import datetime, timezone, timedelta
 def base_details_trusted(access_params=None):
     # Conectando na Raw para Leitura
     client = Minio(
-        "api-raw.internal.alpe.tech",
-        access_key="ijq0S5O8Od7RrUl4Q8pd",
-        secret_key="dLjmQCS4txGFgIibG8tt5L4jYoPTdkCt1m4KgCXf"
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw']
     )
     
     # Definindo bucket e caminho do arquivo
@@ -194,7 +194,7 @@ def base_details_trusted(access_params=None):
 
     # Selecionando as colunas relevantes
     jira_tratado = filtro[[
-        'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',  # Removido 'valida_limite_pedido'
+        'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
         'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor', 
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
         'data_criado', 'hora_criado', 
@@ -212,11 +212,11 @@ def base_details_trusted(access_params=None):
 
         
     storage_options = {
-        "AWS_ACCESS_KEY_ID": "INuIpwabFQlHfsq6y1U9",
-        "AWS_SECRET_ACCESS_KEY": "mdUCxEKuHh9MXSFmzYGbVMsuZrfCc69rrLCDhTOy",
-        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.tech",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
 
 
