@@ -65,7 +65,8 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='0 8,17 * * *',
     default_args=default_args,
-    tags=['etl', 'jira','raw','trusted']
+    tags=['etl', 'jira','raw','trusted'],
+    max_active_runs=1
 ) as dag:
 
     # Definindo o task que processa a proposta
