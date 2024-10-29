@@ -5,6 +5,7 @@ from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
 import requests
+import pendulum
 from datetime import timedelta
 from time import sleep
 
@@ -55,12 +56,14 @@ default_args = {
     "on_failure_callback": notificar_falha_teams
 }
 
+local_tz = pendulum.timezone("America/Sao_Paulo")
+
 
 # Definindo a DAG
 with DAG(
     dag_id='processo_jira_propostas',
     start_date=days_ago(1),
-    schedule_interval=None,
+    schedule_interval='0 8,17 * * *',
     default_args=default_args,
     tags=['etl', 'jira','raw','trusted']
 ) as dag:
