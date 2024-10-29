@@ -73,6 +73,7 @@ with DAG(
     extracao_jira_to_raw = PythonOperator(
         task_id='extracao_jira_raw',
         python_callable=extracao_jira_raw.base_details_raw,
+        op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
     
@@ -80,6 +81,7 @@ with DAG(
     extracao_jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_trusted',
         python_callable=extracao_jira_trusted.base_details_trusted,
+        op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 

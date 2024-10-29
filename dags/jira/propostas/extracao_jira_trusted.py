@@ -10,7 +10,7 @@ import json
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 
-def base_details_trusted(access_params=None):
+def base_details_trusted(access_params=None, **kwargs):
     # Conectando na Raw para Leitura
     client = Minio(
         access_params['endpoint_url_raw'],

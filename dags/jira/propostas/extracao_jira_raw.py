@@ -10,7 +10,7 @@ import json
 
 
 
-def base_details_raw(access_params=None):
+def base_details_raw(access_params=None, **kwargs):
            
     # Configurações da API do Jira
     jira_url = "https://alpe.atlassian.net/rest/api/2/search"
