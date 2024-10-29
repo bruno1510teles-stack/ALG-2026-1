@@ -229,6 +229,6 @@ def base_details_trusted(access_params=None):
         jira_tratado, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
-        mode="overwrite",
-        overwrite_schema=True
+        mode="overwrite"
+        #overwrite_schema=True
     )
