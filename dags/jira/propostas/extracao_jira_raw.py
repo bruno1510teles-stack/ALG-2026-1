@@ -10,7 +10,7 @@ import json
 
 
 
-def base_details(access_params=None):
+def base_details_raw(access_params=None):
            
     # Configurações da API do Jira
     jira_url = "https://alpe.atlassian.net/rest/api/2/search"
@@ -44,7 +44,7 @@ def base_details(access_params=None):
             "startAt": start_at,
             "maxResults": max_results,
             "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743",
-                    "customfield_13798", "customfield_13793", "customfield_13742", "customfield_13753"]  # Campos que deseja extrair
+                    "customfield_13798", "customfield_13793", "customfield_13742", "customfield_13753", "customfield_13721"]  # Campos que deseja extrair
         }
         
         # Requisição para a API do Jira
@@ -74,10 +74,20 @@ def base_details(access_params=None):
 
     # Converter a lista de issues para um DataFrame pandas
     issues_data = []
-    for issue in issues_list:
-        #criado = pd.to_datetime(issue['fields']['created']).date() if issue['fields'].get('created') else None
-        #resolvido = pd.to_datetime(issue['fields']['created']).date() if issue['fields'].get('created') else None
 
+    # Função para trazer epochMillis
+    def get_epoch_millis(issue):
+        completed_cycles = issue['fields'].get('customfield_13721', {}).get('completedCycles', [])
+        
+        # Verifica se existe pelo menos um ciclo completo
+        if completed_cycles and 'startTime' in completed_cycles[0]:
+            return completed_cycles[0]['startTime'].get('epochMillis', None)
+        
+        return None
+            
+    for issue in issues_list:
+                
+        
         issues_data.append({
             'issue_key': issue['key'],
             'politica': issue['fields'].get('customfield_13793', {}).get('value') if issue['fields'].get('customfield_13793') else None,
@@ -95,14 +105,16 @@ def base_details(access_params=None):
             'parecer': issue['fields']['customfield_13753'],
             'ramificacao_motor': issue['fields']['customfield_13807'],
             'criado': issue['fields']['created'],
-            'resolvido': issue['fields']['resolutiondate']
+            'resolvido': issue['fields']['resolutiondate'],
+            'dataatribuido': get_epoch_millis(issue)
         })
 
     # Criar o DataFrame
     df = pd.DataFrame(issues_data)
 
-    # Exibir as primeiras linhas do DataFrame
-    print(df.head())
+        # Exibir DataFrame
+    print(df)
+
 
 
     # Salvando Output
@@ -110,21 +122,29 @@ def base_details(access_params=None):
     BUCKET_SOURCE_RAW = "jira"
     FOLDER_DESTINATION_RAW = 'propostas'
 
-        # Conectando na raw
+    # Conectando na raw
     client = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw'],
+        #access_params['endpoint_url_raw'],
+        "api-raw.internal.alpe.tech",
+        #access_key=access_params['aws_access_key_id_raw'],
+        access_key="ijq0S5O8Od7RrUl4Q8pd",
+        #secret_key=access_params['aws_secret_access_key_raw'],
+        secret_key="dLjmQCS4txGFgIibG8tt5L4jYoPTdkCt1m4KgCXf"
+        #secure=True
         )
 
 
-        # Nome do arquivo CSV que você deseja criar
-    file_out = f'BASE_JIRA_TESTE.csv'
+    # Nome do arquivo Parquet que você deseja criar
+    file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
 
-    csv_bytes = df.to_csv(index=False, sep=';').encode('utf-8')
-    csv_buffer = BytesIO(csv_bytes)
+    # Convertendo o DataFrame para Parquet e armazenando em BytesIO
+    parquet_bytes = df.to_parquet(index=False)
+    parquet_buffer = BytesIO(parquet_bytes)
 
-    client.put_object(f'{BUCKET_SOURCE_RAW}',
-                            f'{FOLDER_DESTINATION_RAW}/{file_out}',
-                                data=csv_buffer,
-                                length=len(csv_bytes))
+    # Upload para o MinIO
+    client.put_object(
+        f'{BUCKET_SOURCE_RAW}',
+        f'{FOLDER_DESTINATION_RAW}/{file_out}',
+        data=parquet_buffer,
+        length=len(parquet_bytes)
+    )
