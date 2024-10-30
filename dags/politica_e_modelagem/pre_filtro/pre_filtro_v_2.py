@@ -173,6 +173,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     ## Criar uma string formatada para a cláusula IN
     base_analisar_raiz['cnpj_raiz'] = base_analisar_raiz['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
 
+    if base_analisar_raiz['cnpj_raiz'].isnull().all() or base_analisar_raiz['cnpj_raiz'].empty:
+    # Se estiver vazio, usa cnpj_raiz da base inicial
+        base_analisar_raiz['cnpj_raiz'] = base_analisar['cnpj_raiz'].str.slice(0, 8).str.zfill(8)
+
     df = pd.DataFrame()
 
     # Cria um cursor e executa a query
@@ -181,14 +185,6 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     for index, row in base_analisar_raiz.iterrows():
         cnpj_completo = row['documento_sem_formatacao']
         cnpj_raiz = row['cnpj_raiz'] 
-
-        # # Verifica se o CNPJ completo está vazio ou nulo
-        # if pd.isna(cnpj_completo) or cnpj_completo == "":
-        #     cnpj_completo = "('')"  # Atribui um valor padrão se estiver vazio
-
-        # # O mesmo para o CNPJ raiz, caso necessário
-        # if pd.isna(cnpj_raiz) or cnpj_raiz == "":
-        #     cnpj_raiz = "('')"
 
         # Marca o tempo de início
         start_time = time.time()
