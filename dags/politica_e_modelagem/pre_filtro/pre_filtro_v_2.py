@@ -314,7 +314,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     print(df)
 
     ### Cruzando DF
-    df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
+    df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'left')
     
     # Criando função para verificar se é SPE, Consorcio ou Construtora
     def spe_consorcio_construtora(data_frame):
