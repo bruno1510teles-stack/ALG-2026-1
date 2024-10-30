@@ -78,6 +78,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 "fields": ["key",  # ISSUE_JIRA
                         "customfield_13808",  # LIMITE ALPE
                         "assignee",
+                        "customfield_13729"
                         "resolution"],  # Adicionando o assignee corretamente
                 "maxResults": max_results,
                 "startAt": start_at
@@ -99,6 +100,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 for ticket in tickets:
                     # Acessando o assignee corretamente dentro de fields
                     assignee = ticket['fields'].get('assignee')
+                    cpnj_jira = ticket['fields'].get('customfield_13729')
                     assignee_name = assignee['displayName'] if assignee else 'Não atribuído'
                     resolucao = ticket['fields'].get('resolution', {})
                     if resolucao is None:
@@ -112,6 +114,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                     # Adiciona dados ao DataFrame
                     data.append({
                         'cnpj_raiz': cnpj,
+                        'cnpj_jira': cpnj_jira,
                         'analise_menor_60_dias': True,
                         'decisor': assignee_name,
                         'decisao': decisao
@@ -127,6 +130,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         if not has_tickets:
             data.append({
                 'cnpj_raiz': cnpj,
+                'cnpj_jira': cpnj_jira,
                 'analise_menor_60_dias': False,
                 'decisor': None,  # Nenhum decisor para esse CNPJ
                 'decisao': None  # Nenhum limite encontrado
@@ -302,7 +306,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     ### Concatenando base principal(import)
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
-    df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
+    df = df.merge(df_jira[['cnpj_raiz', 'cnpj_jira', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
+
+    df = df.drop(columns=['documento_sem_formatacao'])
+    df.rename(columns={'cnpj_jira': 'documento_sem_formatacao'}, inplace=True)
 
 
     pd.set_option('display.max_rows', None)  # Mostra todas as linhas
