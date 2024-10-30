@@ -364,6 +364,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Atribuir 'PF 12' para os que não se encaixam em nenhuma das condições anteriores
     df.loc[df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = 'PF SEGUE'
 
+    print(df)
+
     # Criando Resposta
     response_map = {
         'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
