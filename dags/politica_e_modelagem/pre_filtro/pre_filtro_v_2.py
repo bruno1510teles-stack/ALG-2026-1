@@ -182,13 +182,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         cnpj_completo = row['documento_sem_formatacao']
         cnpj_raiz = row['cnpj_raiz'] 
 
-        # Verifica se o CNPJ completo está vazio ou nulo
-        if pd.isna(cnpj_completo) or cnpj_completo == "":
-            cnpj_completo = "('')"  # Atribui um valor padrão se estiver vazio
+        # # Verifica se o CNPJ completo está vazio ou nulo
+        # if pd.isna(cnpj_completo) or cnpj_completo == "":
+        #     cnpj_completo = "('')"  # Atribui um valor padrão se estiver vazio
 
-        # O mesmo para o CNPJ raiz, caso necessário
-        if pd.isna(cnpj_raiz) or cnpj_raiz == "":
-            cnpj_raiz = "('')"
+        # # O mesmo para o CNPJ raiz, caso necessário
+        # if pd.isna(cnpj_raiz) or cnpj_raiz == "":
+        #     cnpj_raiz = "('')"
 
         # Marca o tempo de início
         start_time = time.time()
@@ -209,7 +209,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 	                inner join postgres.ccred_schema_prd_default.limite_config lc on lc.participante_chave_sacado_id = pc.id
 	                inner join postgres.ccred_schema_prd_default.participante_limite pl on pl.limite_config_id = lc.id	    
                     where
-                    pc.chave = '{cnpj_raiz}'
+                    pc.chave = COALESCE('{cnpj_raiz}', '')
 	                group by
 	                	pc.chave, lc.id is not null, pl.status)
                             )                    
@@ -237,7 +237,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             from 
                 deltalakerefined.motor.pre_filtro pre
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz
-            where pre.documento_sem_formatacao = '{cnpj_completo}'
+            where pre.documento_sem_formatacao =  COALESCE('{cnpj_completo}', '')
 
 
             """)
