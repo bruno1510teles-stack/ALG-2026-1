@@ -304,6 +304,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
+
+    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
+    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
+    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
+    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
+
+
     print(df)
 
     ### Cruzando DF
@@ -383,6 +390,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Printando resultado
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
+
+
+
+    pd.reset_option('display.max_rows')
+    pd.reset_option('display.max_columns')
+    pd.reset_option('display.width')
+    pd.reset_option('display.max_colwidth')
 
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
