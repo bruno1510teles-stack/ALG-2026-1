@@ -182,6 +182,14 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         cnpj_completo = row['documento_sem_formatacao']
         cnpj_raiz = row['cnpj_raiz'] 
 
+        # Verifica se o CNPJ completo está vazio ou nulo
+        if pd.isna(cnpj_completo) or cnpj_completo == "":
+            cnpj_completo = "('')"  # Atribui um valor padrão se estiver vazio
+
+        # O mesmo para o CNPJ raiz, caso necessário
+        if pd.isna(cnpj_raiz) or cnpj_raiz == "":
+            cnpj_raiz = "('')"
+
         # Marca o tempo de início
         start_time = time.time()
 
