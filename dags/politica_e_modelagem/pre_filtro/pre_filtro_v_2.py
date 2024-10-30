@@ -43,6 +43,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     print(ids_query)
     ids_query = f"({ids_query})"
     
+    if ids_query == "()":
+        ids_query = "('')"
 
     ### Validando se a raiz do CNPJ foi analisada a menos de 60 DIAS
     # Configurações da API do Jira
@@ -297,6 +299,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     ### Concatenando base principal(import)
     df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
+
+    print(df)
 
     ### Cruzando DF
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
