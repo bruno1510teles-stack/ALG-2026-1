@@ -174,12 +174,9 @@ select
         logger.info("Iniciando salvamento das informações")
         
         storage_options = {
-            #"AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-            "AWS_ACCESS_KEY_ID": 'lNnSZTxxctdMGbufCRrG',
-            #"AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-            "AWS_SECRET_ACCESS_KEY": "L9gF8wFmvzBl2vSKYvHpkqMTPDPSpvJly504mTF9",
-            #"AWS_ENDPOINT_URL": access_params['endpoint_url_trusted'],
-            "AWS_ENDPOINT_URL": "https://api-trusted.alpe.tech",
+            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+            "AWS_ENDPOINT_URL": access_params['endpoint_url_trusted'],
             "AWS_REGION": "us-east-1",
             "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
         }
