@@ -171,8 +171,9 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         # - Data de vencimento é após o fechamento
         # - E o título não foi pago antes do fechamento (data_baixa nula ou posterior ao fechamento)
         titulos_a_vencer = df_titulos[
-            (df_titulos['data_vencimento'] > fechamento) & 
-            ((df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento))
+            (df_titulos['data_vencimento'] >= fechamento) & 
+            ((df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)) &
+            (df_titulos['data_efetivacao'] <= fechamento)
         ]
         
         # Agrupando títulos a vencer por cliente e cedente
