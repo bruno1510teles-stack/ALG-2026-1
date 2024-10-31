@@ -158,6 +158,9 @@ select
     colunas_para_converter_datetime = ['safra_concessao', 'safra_vencimento', 'safra_baixa']
     df = converter_para_datetime(df, colunas_para_converter_datetime)
 
+    # Tratando casos de baixa parcial
+    df.loc[df['status_titulo'] == 'VENCIDO', 'data_baixa'] = pd.NaT
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
