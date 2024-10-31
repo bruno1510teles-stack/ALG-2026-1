@@ -61,7 +61,7 @@ default_args = {
 with DAG(
     dag_id='tratamento_boletos',
     start_date=days_ago(1),
-    schedule_interval='0 5,14 * * *',
+    schedule_interval='0 11,20 * * *',
     default_args=default_args,
     tags=['etl', 'boletos', 'internos', 'raw','trusted'],
     max_active_runs=1
