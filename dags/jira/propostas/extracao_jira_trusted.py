@@ -122,6 +122,18 @@ def base_details_trusted(access_params=None, **kwargs):
         else:
             return "Decisão não atribuida"
         
+    def formata_priority(priority):
+        if priority == 'High':
+            return "Alto"
+        elif priority == 'Highest':
+            return "Muito Alto"
+        elif priority == 'Low':
+            return "Baixo"
+        elif priority == 'Unknown':
+            return "Desconhecida/ Não atribuida"
+        else:
+            return "Prioridade não atribuida"
+        
 
 
     # Função para classificar o tipo de proposta
@@ -167,6 +179,7 @@ def base_details_trusted(access_params=None, **kwargs):
     df['ramificacao_motor_desc'] = df['ramificacao_motor'].apply(verifica_ramificacao_motor)
     df['status_decisao'] = df['decisao'].apply(formata_decisao)
     df['parecer_desc'] = df['parecer'].apply(verifica_parecer)
+    df['status_prioridade'] = df['prioridade'].apply(formata_priority)
 
 
     # Convertendo colunas de data e hora
@@ -195,7 +208,7 @@ def base_details_trusted(access_params=None, **kwargs):
     # Selecionando as colunas relevantes
     jira_tratado = filtro[[
         'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor', 
+        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor', 'status_prioridade' 
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
         'data_criado', 'hora_criado', 
         'data_resolvido', 'hora_resolvido',
