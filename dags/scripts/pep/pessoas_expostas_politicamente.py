@@ -89,5 +89,5 @@ def transform_pep_to_trusted(files_list_pep, access_params):
                     df, 
                     partition_by=["year", "month", "day"],
                     storage_options=storage_options,
-                    mode="append",
+                    mode="overwrite",
                     )

@@ -43,6 +43,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     print(ids_query)
     ids_query = f"({ids_query})"
     
+    if ids_query == "()":
+        ids_query = "('')"
 
     ### Validando se a raiz do CNPJ foi analisada a menos de 60 DIAS
     # Configurações da API do Jira
@@ -76,6 +78,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 "fields": ["key",  # ISSUE_JIRA
                         "customfield_13808",  # LIMITE ALPE
                         "assignee",
+                        "customfield_13729"
                         "resolution"],  # Adicionando o assignee corretamente
                 "maxResults": max_results,
                 "startAt": start_at
@@ -97,6 +100,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 for ticket in tickets:
                     # Acessando o assignee corretamente dentro de fields
                     assignee = ticket['fields'].get('assignee')
+                    cpnj_jira = ticket['fields'].get('customfield_13729')
                     assignee_name = assignee['displayName'] if assignee else 'Não atribuído'
                     resolucao = ticket['fields'].get('resolution', {})
                     if resolucao is None:
@@ -110,6 +114,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                     # Adiciona dados ao DataFrame
                     data.append({
                         'cnpj_raiz': cnpj,
+                        'cnpj_jira': cpnj_jira,
                         'analise_menor_60_dias': True,
                         'decisor': assignee_name,
                         'decisao': decisao
@@ -125,6 +130,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         if not has_tickets:
             data.append({
                 'cnpj_raiz': cnpj,
+                'cnpj_jira': cpnj_jira,
                 'analise_menor_60_dias': False,
                 'decisor': None,  # Nenhum decisor para esse CNPJ
                 'decisao': None  # Nenhum limite encontrado
@@ -171,6 +177,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     ## Criar uma string formatada para a cláusula IN
     base_analisar_raiz['cnpj_raiz'] = base_analisar_raiz['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
 
+    if base_analisar_raiz['cnpj_raiz'].isnull().all() or base_analisar_raiz['cnpj_raiz'].empty:
+    # Se estiver vazio, usa cnpj_raiz da base inicial
+        base_analisar_raiz['cnpj_raiz'] = base_analisar['cnpj_raiz'].str.slice(0, 8).str.zfill(8)
+
     df = pd.DataFrame()
 
     # Cria um cursor e executa a query
@@ -199,7 +209,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 	                inner join postgres.ccred_schema_prd_default.limite_config lc on lc.participante_chave_sacado_id = pc.id
 	                inner join postgres.ccred_schema_prd_default.participante_limite pl on pl.limite_config_id = lc.id	    
                     where
-                    pc.chave = '{cnpj_raiz}'
+                    pc.chave = COALESCE('{cnpj_raiz}', '')
 	                group by
 	                	pc.chave, lc.id is not null, pl.status)
                             )                    
@@ -227,7 +237,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             from 
                 deltalakerefined.motor.pre_filtro pre
             left join limite lim on lim.cnpj_raiz = pre.cnpj_raiz
-            where pre.documento_sem_formatacao = '{cnpj_completo}'
+            where pre.documento_sem_formatacao =  COALESCE('{cnpj_completo}', '')
 
 
             """)
@@ -267,7 +277,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Passo 2: Explodir o DataFrame para que cada CNAE fique em uma linha separada
     df_exploded = df.explode('todos_cnaes')
     # Passo 3: Fazer o merge para validar os CNAEs
-    df_validado = df_exploded.merge(aux_cnae, left_on='todos_cnaes', right_on='cod_cnae', how='inner')
+    df_validado = df_exploded.merge(aux_cnae, left_on='todos_cnaes', right_on='cod_cnae', how='left')
     # Passo 4: Consolidar o resultado para manter uma linha por CNPJ e verificar se ao menos um CNAE foi aceito
     df = df_validado.groupby('documento_sem_formatacao').agg({
         'cnpj_raiz': 'first',  # Mantém o primeiro valor da coluna cnpj_raiz (assumindo que seja o mesmo para cada grupo)
@@ -295,11 +305,23 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     df.rename(columns={'cod_cnae_x': 'cod_cnae'}, inplace=True)
 
     ### Concatenando base principal(import)
-    df = df.merge(base_analisar[['cnpj_raiz', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
+    df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
+    df = df.drop(columns=['documento_sem_formatacao'])
+    df.rename(columns={'CNPJ': 'documento_sem_formatacao'}, inplace=True)
+
+
+    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
+    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
+    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
+    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
+
+
+    print(df)
+
     ### Cruzando DF
-    df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'inner')
+    df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'left')
     
     # Criando função para verificar se é SPE, Consorcio ou Construtora
     def spe_consorcio_construtora(data_frame):
@@ -356,6 +378,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Atribuir 'PF 12' para os que não se encaixam em nenhuma das condições anteriores
     df.loc[df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = 'PF SEGUE'
 
+    print(df)
+
     # Criando Resposta
     response_map = {
         'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
@@ -373,6 +397,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Printando resultado
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
+
+
+
+    pd.reset_option('display.max_rows')
+    pd.reset_option('display.max_columns')
+    pd.reset_option('display.width')
+    pd.reset_option('display.max_colwidth')
 
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
