@@ -9,7 +9,7 @@ from trino.auth import BasicAuthentication
 import numpy as np
 
 
-def tratamento_pagamento_externo(access_params=None):
+def tratamento_pagamento_externo(access_params=None, **kwargs):
 
     # Conectando no Trino e validando
 
