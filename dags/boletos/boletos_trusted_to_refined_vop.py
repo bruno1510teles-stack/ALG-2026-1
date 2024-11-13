@@ -122,6 +122,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
     # Criando datas dos MOBs para calculo dos indicadores
     df['prazo_medio'] = df['data_vencimento'] - df['data_emissao']
+    df['prazo_medio'] = df['prazo_medio'].dt.total_seconds()
 
     df['M01'] = (df['safra_concessao'] + pd.DateOffset(months=2)) - pd.Timedelta(days=1)
     df['M02'] = (df['safra_concessao'] + pd.DateOffset(months=3)) - pd.Timedelta(days=1)
