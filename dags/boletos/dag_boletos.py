@@ -12,6 +12,7 @@ from datetime import timedelta
 ### Importando scripts necessários
 from boletos import boletos_raw_to_trusted
 from boletos import boletos_trusted_to_refined_carteira
+from boletos import boletos_trusted_to_refined_vop
 
 
 ### Parâmetros de acesso
@@ -83,5 +84,13 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
+
+    # Definindo o task que processa boletos trusted_to_refined_vop
+    trusted_to_refined_vop = PythonOperator(
+        task_id='trusted_to_refined_vop',
+        python_callable=boletos_trusted_to_refined_vop.boletos_raw_to_refined_vop,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira
+    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop
