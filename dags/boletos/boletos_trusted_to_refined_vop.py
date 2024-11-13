@@ -234,7 +234,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
                 'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3', 'vop_over30_mob4',
                 'vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3', 'vop_over60_mob4',
                 'vop_over60_mob5', 'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3', 'vop_over90_mob4',
-                'vop_over90_mob5', 'vop_over90_mob6']]
+                'vop_over90_mob5', 'vop_over90_mob6']].copy()
     
 
     # Atribuindo data
