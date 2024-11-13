@@ -268,7 +268,8 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
             df_final, 
             partition_by=["year", "month", "day"],
             storage_options=storage_options,
-            mode="overwrite"
+            mode="overwrite",
+            overwrite_schema=True
         )
         logger.info("Salvamento concluído com sucesso.")
 
