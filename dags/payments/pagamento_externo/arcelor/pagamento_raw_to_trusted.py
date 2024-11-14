@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 
 
-def extracao_pagamento(access_params = None, **kwargs):
+def extracao_pagamento(access_params=None, **kwargs):
 
     #---------------------------------------------------------------------------------------#
     # Conectando na Raw e carregando base

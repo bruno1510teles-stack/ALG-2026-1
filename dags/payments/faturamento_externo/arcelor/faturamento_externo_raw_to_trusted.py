@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 
 
-def extracao_faturamento_externo(access_params = None, **kwargs):
+def extracao_faturamento_externo(access_params=None, **kwargs):
 
     minio_raw = Minio(
         access_params['endpoint_url_raw'],
