@@ -13,6 +13,7 @@ from time import sleep
 ### Importando scripts necessários
 from jira.propostas import extracao_jira_raw
 from jira.propostas import extracao_jira_trusted
+from jira.propostas import extracao_jira_refined
 
 
 
@@ -85,5 +86,13 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
+# Definindo o task que refina a base propostas
+    extracao_jira_to_refined = PythonOperator(
+        task_id='extracao_jira_refined',
+        python_callable=extracao_jira_refined.base_details_refined,  # Garantir que a função base_details_refined existe em extracao_jira_refined
+        provide_context=True
+    )
+
+
     # Definindo a ordem de execução das tasks
-    extracao_jira_to_raw >> extracao_jira_raw_to_trusted
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined
