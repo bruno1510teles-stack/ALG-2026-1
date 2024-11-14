@@ -16,7 +16,8 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 
 def base_details_refined(access_params=None,  **kwargs):
 
-# Conectando ao Trino para Leitura
+    # Conectando ao Trino para Leitura
+    conn = None  # Inicializa a variável conn
     try:
         conn = connect(
             host=access_params['trino_endpoint'],
@@ -31,6 +32,9 @@ def base_details_refined(access_params=None,  **kwargs):
 
     # Função para executar consultas
     def execute_query(conn, query):
+        if conn is None:
+            print("A conexão com o Trino não foi estabelecida. Não é possível executar a consulta.")
+            return None
         try:
             cur = conn.cursor()  # Abre o cursor
             cur.execute(query)
@@ -49,9 +53,14 @@ def base_details_refined(access_params=None,  **kwargs):
         FROM deltalaketrusted.jira.propostas
     """
 
-    # Executa a consulta e carrega o DataFrame
-    df = execute_query(conn, query_jira_trusted)
+    # Verifica se a conexão foi bem-sucedida antes de executar a consulta
+    if conn is not None:
+        df = execute_query(conn, query_jira_trusted)
+    else:
+        df = None
+        print("A consulta não foi executada porque a conexão com o Trino falhou.")
 
+        return df
     
 
     # Inspecionando colunas do DataFrame
