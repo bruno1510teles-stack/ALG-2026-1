@@ -21,7 +21,7 @@ def base_details_refined(access_params=None,  **kwargs):
         host='trino.alpe.com.br',
         port=443
         user='trinodados',
-        auth=BasicAuthentication(access_params['trinodados'], access_params['hosgzPvuhyXkP<j}RyT+']),
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
 
