@@ -19,7 +19,7 @@ def base_details_refined(access_params=None,  **kwargs):
     # Conectando ao Trino para Leitura
     conn = connect(
         host='trino.alpe.com.br',
-        port=443
+        port=443,
         user='trinodados',
         auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
