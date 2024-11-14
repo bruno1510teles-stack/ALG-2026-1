@@ -12,26 +12,38 @@ from requests.auth import HTTPBasicAuth
 import json
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
+from airflow.utils.log.logging_mixin import LoggingMixin
 
 def base_details_refined(access_params=None,  **kwargs):
-    # Conectando ao Trino para Leitura
-    conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-        http_scheme="https",
-    )
+
+# Conectando ao Trino para Leitura
+    try:
+        conn = connect(
+            host=access_params['trino_endpoint'],
+            port=access_params['trino_port'],
+            user=access_params['trino_user'],
+            auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+            http_scheme="https",
+        )
+        print("Conexão ao Trino estabelecida com sucesso!")
+    except Exception as e:
+        print("Erro ao conectar ao Trino:", e)
 
     # Função para executar consultas
     def execute_query(conn, query):
-        cur = conn.cursor()  # Abre o cursor
-        cur.execute(query)
-        rows = cur.fetchall()
-        columns = [desc[0] for desc in cur.description]
-        cur.close()  # Fecha o cursor após a execução
-        return pd.DataFrame(rows, columns=columns)
-    
+        try:
+            cur = conn.cursor()  # Abre o cursor
+            cur.execute(query)
+            rows = cur.fetchall()
+            columns = [desc[0] for desc in cur.description]
+            cur.close()  # Fecha o cursor após a execução
+            print("Consulta executada com sucesso!")
+            return pd.DataFrame(rows, columns=columns)
+        except Exception as e:
+            print("Erro ao executar a consulta:", e)
+            return None
+
+    # Definindo a consulta
     query_jira_trusted = """
         SELECT *
         FROM deltalaketrusted.jira.propostas
@@ -39,13 +51,17 @@ def base_details_refined(access_params=None,  **kwargs):
 
     # Executa a consulta e carrega o DataFrame
     df = execute_query(conn, query_jira_trusted)
+
     
 
     # Inspecionando colunas do DataFrame
     print("Colunas carregadas e disponíveis no DataFrame:")
     print(df.columns.tolist())
-
-
+    
+    
+    
+    # Criando Funções para formatar DataFrame
+    print("Criando funções para tratamento de colunas no DataFrame...")
 
     def format_faixa_valor_solicitado(vlr):
         if vlr <= 30000:
@@ -127,10 +143,11 @@ def base_details_refined(access_params=None,  **kwargs):
         }
         
         # Retornar o tipo correspondente ou "Outros" se não estiver no mapeamento
-        return tipo_mapping.get(nome_decisor, "Outros")    
+        return tipo_mapping.get(nome_decisor, "Outros")
         
+    print("Criação de funções finalizadas com sucesso!")
         
-
+    print("Tratando colunas no DataFrame conforme as funções criadas...")
     # Adicionando colunas de data e hora
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
@@ -165,6 +182,7 @@ def base_details_refined(access_params=None,  **kwargs):
     )
     df['tipo_analista'] = df['nome_decisor'].apply(format_tipo_analista)
 
+    print("Tratamento de DataFrame realizado com sucesso!")
 
 
     # Selecionando as colunas relevantes
@@ -188,30 +206,37 @@ def base_details_refined(access_params=None,  **kwargs):
 
     # Exibindo o DataFrame tratado
     print(f"{len(jira_tratado_refined)} propostas válidas.")
-    print(jira_tratado_refined)
+    print(jira_tratado_refined.head())
 
 
     # Configurações para acesso ao MinIO
-
+    logger = LoggingMixin().log 
+    
+    try:
+        logger.info("Iniciando salvamento das informações")
         
-    storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
-        "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-    }
+        storage_options = {
+            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+            "AWS_REGION": "us-east-1",
+            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        }
 
 
-    # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_REFINED = "jira"
-    FOLDER_DESTINATION_REFINED = "propostas"
+        # Definindo o caminho e salvando no MinIO
+        BUCKET_SOURCE_REFINED = "jira"
+        FOLDER_DESTINATION_REFINED = "propostas"
 
-    write_deltalake(
-        f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-        jira_tratado_refined, 
-        partition_by=["year", "month", "day"],
-        storage_options=storage_options,
-        mode="overwrite"
-        # overwrite_schema=True
+        write_deltalake(
+            f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
+            jira_tratado_refined, 
+            partition_by=["year", "month", "day"],
+            storage_options=storage_options,
+            mode="overwrite"
+            # overwrite_schema=True
     )
+        logger.info("Salvamento concluído com sucesso.")
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar as informações: {str(e)}")
