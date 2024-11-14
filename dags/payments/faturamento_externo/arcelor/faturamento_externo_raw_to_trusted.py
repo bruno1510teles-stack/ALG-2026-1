@@ -143,7 +143,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     storage_options = {
         "AWS_ACCESS_KEY_ID": 'nr0qPLaAcdCtt7lAV4oa',
         "AWS_SECRET_ACCESS_KEY": 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch',
-        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.com.br",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
     }
