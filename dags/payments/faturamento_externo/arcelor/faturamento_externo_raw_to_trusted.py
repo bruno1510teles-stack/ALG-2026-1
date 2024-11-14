@@ -9,9 +9,9 @@ from deltalake import write_deltalake
 def extracao_faturamento_externo(access_params=None, **kwargs):
 
     minio_raw = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw']
+        "api-raw.alpe.tech",
+        access_key = 'vUXngpcSXbR21DVaqiFn',
+        secret_key = 'uwE7qzfhoYodtf56bDRg4BAoxzOGJp9O4rRRMDn2'
     )
     
 

@@ -14,9 +14,9 @@ def extracao_pagamento(access_params=None, **kwargs):
     # Vale lembrar que o pagamento e o faturamento externo estao no mesmo arquivo, porem em planilhas diferentes.
 
     minio_raw = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw']
+        "api-raw.alpe.tech",
+        access_key = 'vUXngpcSXbR21DVaqiFn',
+        secret_key = 'uwE7qzfhoYodtf56bDRg4BAoxzOGJp9O4rRRMDn2'
     )
 
         # Connection validation
