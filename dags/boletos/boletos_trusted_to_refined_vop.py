@@ -10,6 +10,7 @@ import re
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
 from io import BytesIO
+import re
 
 
 def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
@@ -122,7 +123,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
     # Criando datas dos MOBs para calculo dos indicadores
     df['prazo_medio'] = df['data_vencimento'] - df['data_emissao']
-    df['prazo_medio'] = df['prazo_medio'].dt.total_seconds()
+    df['prazo_medio'] = df['prazo_medio'].dt.total_seconds() / 86400
 
     df['M01'] = (df['safra_concessao'] + pd.DateOffset(months=2)) - pd.Timedelta(days=1)
     df['M02'] = (df['safra_concessao'] + pd.DateOffset(months=3)) - pd.Timedelta(days=1)
@@ -225,17 +226,53 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
     df['vop_over90_mob5'] = df.apply(lambda row: over90_mob(row, mob_num='M05'), axis=1)
     df['vop_over90_mob6'] = df.apply(lambda row: over90_mob(row, mob_num='M06'), axis=1)
 
+
     print('Parte 5')
+
+    def tratar_cnpj(cnpj):
+        cnpj_numerico = re.sub(r'\D', '', cnpj)
+    
+        cnpj_formatado = cnpj_numerico.zfill(14)
+    
+        return cnpj_formatado
+
+    df['cnpj_cedente'] = df['cnpj_cedente'].apply(tratar_cnpj)
+    df['cnpj_sacado'] = df['cnpj_sacado'].apply(tratar_cnpj)
+
+
+
+    # Definindo os tipos das colunas para inserção final
+
+    colunas_string  =  ['nome_cedente', 'cnpj_cedente', 'codigo_cedente', 'cedente_id',
+                        'nome_sacado', 'cnpj_sacado', 'codigo_sacado', 'sacado_id', 'uf_sacado',
+                        'status_liquidez']
+
+    colunas_float   =  ['valor_desagio', 'vop', 'vop_a_vencer', 'vop_performado', 'vencido',
+                        'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90','vop_over15_mob2', 
+                        'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3', 
+                        'vop_over30_mob4', 'vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1',
+                        'vop_over60_mob2', 'vop_over60_mob3', 'vop_over60_mob4', 'vop_over60_mob5', 
+                        'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3', 
+                        'vop_over90_mob4','vop_over90_mob5', 'vop_over90_mob6']
+
+
+    df[colunas_string] = df[colunas_string].astype(str)
+    df[colunas_float] = df[colunas_float].astype(float)
+
+    df['safra_concessao'] = pd.to_datetime(df['safra_concessao'].dt.date)
+    df['safra_vencimento'] = pd.to_datetime(df['safra_vencimento'].dt.date)
+    df['safra_baixa'] = pd.to_datetime(df['safra_baixa'].dt.date)
+
+    print('Parte 6')
 
     # Filtrando apenas colunas para a Refined
     df_final = df[[ 'nome_cedente', 'cnpj_cedente', 'codigo_cedente', 'cedente_id', 'nome_sacado', 'cnpj_sacado', 'codigo_sacado', 
-                'sacado_id', 'uf_sacado', 'data_emissao', 'data_efetivacao', 'data_vencimento', 'data_baixa', 'status_titulo', 
-                'status_liquidez', 'safra_concessao', 'safra_vencimento', 'safra_baixa','valor_desagio', 'vop', 'vop_a_vencer', 
-                'vop_performado', 'vencido', 'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90', 'prazo_medio',
-                'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3', 'vop_over30_mob4',
-                'vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3', 'vop_over60_mob4',
-                'vop_over60_mob5', 'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3', 'vop_over90_mob4',
-                'vop_over90_mob5', 'vop_over90_mob6']].copy()
+                'sacado_id', 'uf_sacado', 'status_liquidez', 'safra_concessao', 'safra_vencimento', 'safra_baixa','valor_desagio',
+                'vop', 'vop_a_vencer','vop_performado', 'vencido', 'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90',
+                'prazo_medio', 'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3',
+                'vop_over30_mob4','vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3',
+                'vop_over60_mob4', 'vop_over60_mob5', 'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3',
+                'vop_over90_mob4', 'vop_over90_mob5', 'vop_over90_mob6']].copy()
     
 
     # Atribuindo data
