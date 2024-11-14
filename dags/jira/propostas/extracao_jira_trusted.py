@@ -7,6 +7,7 @@ from minio import Minio
 from io import BytesIO
 from requests.auth import HTTPBasicAuth
 import json
+from airflow.utils.log.logging_mixin import LoggingMixin
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 
@@ -34,7 +35,11 @@ def base_details_trusted(access_params=None, **kwargs):
     # Inspecionando colunas do DataFrame
     print("Colunas carregadas e disponíveis no DataFrame:")
     print(df.columns.tolist())
-
+    
+    
+    
+    
+    print("Criando funções para tratamento de colunas no DataFrame...")
     def verifica_politica(politica_desc):
         if pd.isnull(politica_desc):
             return "Politica não atribuída"
@@ -150,7 +155,11 @@ def base_details_trusted(access_params=None, **kwargs):
             elif 'Baixa de Overlimit' in proposta or 'Baixa de Over' in proposta or 'Reduzir Over' in proposta or 'Overlimite' in proposta:
                 return "Baixa de Overlimit"
             return "Outros"
-
+    print("Criação de funções finalizadas com sucesso!")
+    
+    
+    
+    print("Tratando colunas no DataFrame conforme as funções criadas...")
     # Adicionando colunas de data e hora
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
@@ -191,6 +200,8 @@ def base_details_trusted(access_params=None, **kwargs):
         (df['limite_pedido'] >= 0) & 
         (df['limite_pedido'] <= 500000000)
     ]
+    
+    print("Tratamento de DataFrame realizado com sucesso!")
 
     # Selecionando as colunas relevantes
     jira_tratado = filtro[[
@@ -205,30 +216,37 @@ def base_details_trusted(access_params=None, **kwargs):
 
     # Exibindo o DataFrame tratado
     print(f"{len(jira_tratado)} propostas válidas.")
-    print(jira_tratado)
+    print(jira_tratado.head())
 
 
     # Configurações para acesso ao MinIO
+    logger = LoggingMixin().log 
+    
+    try:
+        logger.info("Iniciando salvamento das informações")
+            
+        storage_options = {
+            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+            "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
+            "AWS_REGION": "us-east-1",
+            "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+        }
 
-        
-    storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-        "AWS_ENDPOINT_URL":f"https://{access_params['endpoint_url_trusted']}",
-        "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
-    }
 
+        # Definindo o caminho e salvando no MinIO
+        BUCKET_SOURCE_TRUSTED = "jira"
+        FOLDER_DESTINATION_TRUSTED = "propostas"
 
-    # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_TRUSTED = "jira"
-    FOLDER_DESTINATION_TRUSTED = "propostas"
-
-    write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        jira_tratado, 
-        partition_by=["year", "month", "day"],
-        storage_options=storage_options,
-        mode="overwrite"
-        #overwrite_schema=True
+        write_deltalake(
+            f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
+            jira_tratado, 
+            partition_by=["year", "month", "day"],
+            storage_options=storage_options,
+            mode="overwrite"
+            #overwrite_schema=True
     )
+        logger.info("Salvamento concluído com sucesso.")
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar as informações: {str(e)}")
