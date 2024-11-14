@@ -15,11 +15,22 @@ def tratamento_pagamento_externo(access_params=None, **kwargs):
 
     # Coletando dados da camada Trusted
     # Conectando com o banco
+    
+    '''
     conn = connect(
         host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
         user=access_params['trino_user'],
         auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        http_scheme="https",
+    )
+    '''
+
+    conn = connect(
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
 
