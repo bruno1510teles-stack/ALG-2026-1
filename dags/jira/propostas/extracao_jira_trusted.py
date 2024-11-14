@@ -207,7 +207,8 @@ def base_details_trusted(access_params=None, **kwargs):
     jira_tratado = filtro[[
         'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
         'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor',
-        'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
+        'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc',
+        'resolvido_tratado', 'criado_tratado', 'atribuido_tratado',
         'data_criado', 'hora_criado', 
         'data_resolvido', 'hora_resolvido',
         'data_atribuido', 'hora_atribuido', 'atualizado_em',
