@@ -7,7 +7,7 @@ from io import BytesIO
 import numpy as np
 from requests.auth import HTTPBasicAuth
 import json
-
+from airflow.utils.log.logging_mixin import LoggingMixin
 
 
 def base_details_raw(access_params=None, **kwargs):
@@ -27,7 +27,21 @@ def base_details_raw(access_params=None, **kwargs):
         'Accept': 'application/json'
         }
 
+
+    # Tentativa de conexão com a API
+    try:
+        response = requests.get(jira_url, headers=headers)
+        response.raise_for_status()  # Verifica se a resposta é um erro HTTP
+        print("Conexão concluída com sucesso!")
+        # Aqui você pode trabalhar com os dados de resposta, por exemplo:
+        # dados = response.json()
+    except requests.exceptions.RequestException as e:
+        print("Erro ao conectar à API do Jira:", e)
+    
+    
     # Query JQL
+    print("Listando paginas na API para consolidar em uma lista...")
+    
     jql_query = 'project = cmgt'
 
     # Parâmetros de paginação
@@ -71,7 +85,7 @@ def base_details_raw(access_params=None, **kwargs):
             print(f"Erro: {response.status_code}")
             print(response.text)
             break
-
+    print("Carregamento finalizado com sucesso!")
     # Converter a lista de issues para um DataFrame pandas
     issues_data = []
 
@@ -113,34 +127,41 @@ def base_details_raw(access_params=None, **kwargs):
     df = pd.DataFrame(issues_data)
 
         # Exibir DataFrame
-    print(df)
+    print(df.head())
 
 
 
     # Salvando Output
+    
+    logger = LoggingMixin().log 
+    
+    try:
+        logger.info("Iniciando salvamento das informações")
 
-    BUCKET_SOURCE_RAW = "jira"
-    FOLDER_DESTINATION_RAW = 'propostas'
+        BUCKET_SOURCE_RAW = "jira"
+        FOLDER_DESTINATION_RAW = 'propostas'
 
-    # Conectando na raw
-    client = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw']
+        # Conectando na raw
+        client = Minio(
+            access_params['endpoint_url_raw'],
+            access_key=access_params['aws_access_key_id_raw'],
+            secret_key=access_params['aws_secret_access_key_raw']
+            )
+
+
+        # Nome do arquivo Parquet que você deseja criar
+        file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
+
+        # Convertendo o DataFrame para Parquet e armazenando em BytesIO
+        parquet_bytes = df.to_parquet(index=False)
+        parquet_buffer = BytesIO(parquet_bytes)
+
+        # Upload para o MinIO
+        client.put_object(
+            f'{BUCKET_SOURCE_RAW}',
+            f'{FOLDER_DESTINATION_RAW}/{file_out}',
+            data=parquet_buffer,
+            length=len(parquet_bytes)
         )
-
-
-    # Nome do arquivo Parquet que você deseja criar
-    file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
-
-    # Convertendo o DataFrame para Parquet e armazenando em BytesIO
-    parquet_bytes = df.to_parquet(index=False)
-    parquet_buffer = BytesIO(parquet_bytes)
-
-    # Upload para o MinIO
-    client.put_object(
-        f'{BUCKET_SOURCE_RAW}',
-        f'{FOLDER_DESTINATION_RAW}/{file_out}',
-        data=parquet_buffer,
-        length=len(parquet_bytes)
-    )
+    except Exception as e:
+        logger.error(f"Erro ao salvar as informações: {str(e)}")
