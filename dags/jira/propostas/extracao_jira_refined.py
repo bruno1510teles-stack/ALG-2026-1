@@ -17,35 +17,21 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 def base_details_refined(access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
-    conn = None  # Inicializa a variável conn
-    try:
-        conn = connect(
-            host=access_params['trino_endpoint'],
-            port=access_params['trino_port'],
-            user=access_params['trino_user'],
-            auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-            http_scheme="https",
-        )
-        print("Conexão ao Trino estabelecida com sucesso!")
-    except Exception as e:
-        print("Erro ao conectar ao Trino:", e)
+    conn = connect(
+        host='trino.alpe.com.br',
+        port=443,
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
+    )
 
-    # Função para executar consultas
     def execute_query(conn, query):
-        if conn is None:
-            print("A conexão com o Trino não foi estabelecida. Não é possível executar a consulta.")
-            return None
-        try:
-            cur = conn.cursor()  # Abre o cursor
-            cur.execute(query)
-            rows = cur.fetchall()
-            columns = [desc[0] for desc in cur.description]
-            cur.close()  # Fecha o cursor após a execução
-            print("Consulta executada com sucesso!")
-            return pd.DataFrame(rows, columns=columns)
-        except Exception as e:
-            print("Erro ao executar a consulta:", e)
-            return None
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+        return pd.DataFrame(rows, columns=columns)
 
     # Definindo a consulta
     query_jira_trusted = """
@@ -225,9 +211,9 @@ def base_details_refined(access_params=None,  **kwargs):
         logger.info("Iniciando salvamento das informações")
         
         storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+            "AWS_ACCESS_KEY_ID": "d8jOuN46ckGNsr6zzpyw",
+            "AWS_SECRET_ACCESS_KEY": "gnyBdrsoDrRcM9ln0QO83Nw8I4TlOFDOI4J9QDKc",
+            "AWS_ENDPOINT_URL": "https://api-refined.alpe.com.br",
             "AWS_REGION": "us-east-1",
             "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
         }
