@@ -96,9 +96,9 @@ def tratamento_pagamento_externo(access_params=None, **kwargs):
     # Exportando dados para a camada Refined
     # # Conectando na Refined
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_ACCESS_KEY_ID": "fAI0FfaXtvj9oSyFBrZ7",
+        "AWS_SECRET_ACCESS_KEY": "GE2NyDWjrLIPo9WkmdIFBuPzJ2HZr1hEc63PEE4O",
+        "AWS_ENDPOINT_URL":"https://api-refined.alpe.com.br",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
