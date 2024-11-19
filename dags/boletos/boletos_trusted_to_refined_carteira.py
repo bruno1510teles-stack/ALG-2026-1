@@ -70,7 +70,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         titulos_validos = titulos_validos[titulos_validos['data_efetivacao'] <= fechamento]
         
         # Agrupando por cedente/cliente
-        carteira_cliente = titulos_validos.groupby(['nome_sacado', 'nome_cedente'])['valor_face'].sum().reset_index()
+        carteira_cliente = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
         
         # Adicionar a data de fechamento na coluna para identificar
         carteira_cliente['fechamento'] = fechamento
@@ -109,10 +109,10 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
                                                     'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses')
 
         # Agrupando por sacado/cedente/faixa
-        agrupado = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'faixa_vencido'])['valor_face'].sum().reset_index()
+        agrupado = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido'])['valor_face'].sum().reset_index()
 
         # Usando pivot_table para transformar faixas em colunas
-        carteira_vencida_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente'], 
+        carteira_vencida_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], 
                                                         columns='faixa_vencido', 
                                                         values='valor_face', 
                                                         aggfunc='sum', 
@@ -177,7 +177,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         ]
         
         # Agrupando títulos a vencer por cliente e cedente
-        carteira_a_vencer = titulos_a_vencer.groupby(['nome_sacado', 'nome_cedente'])['valor_face'].sum().reset_index()
+        carteira_a_vencer = titulos_a_vencer.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
         carteira_a_vencer.rename(columns={'valor_face': 'Total a Vencer'}, inplace=True)
         
         
@@ -203,21 +203,14 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         
     # Realizar o merge da carteira histórica e carteira vencida
     df_intermediario = pd.merge(carteira_historica, carteira_vencida, 
-                                on=['nome_sacado', 'nome_cedente', 'fechamento'], 
+                                on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
                                 how='outer')
 
     # Realizar o merge do DataFrame intermediário com a carteira a vencer
     df_final = pd.merge(df_intermediario, carteira_a_vencer, 
-                        on=['nome_sacado', 'nome_cedente', 'fechamento'], 
+                        on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
                         how='outer')
     
-    # Pegando cnpj cedente e sacado
-    df_cnpj = df_titulos[['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente']].drop_duplicates()
-
-    # df_final = pd.merge(df_final, df_cnpj,
-    #                     on = ['nome_sacado', 'nome_cedente'],
-    #                     how='inner')
-
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
     df_final['Total Vencido'] = df_final['Total Vencido'].astype(float)
@@ -290,7 +283,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     ### Selecionando as colunas relevantes
     df_final = df_final[[
-        'fechamento', 'nome_sacado', 'nome_cedente',  'valor_face', 'Total a Vencer', 
+        'fechamento', 'nome_sacado', 'cnpj_sacado', 'nome_cedente', 'cnpj_cedente', 'valor_face', 'Total a Vencer', 
         'Total Vencido', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
         'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
