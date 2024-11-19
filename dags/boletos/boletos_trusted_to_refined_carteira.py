@@ -43,7 +43,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
 
     ### Definindo fechamentos de safra
-    fechamentos = pd.date_range(start='2022-06-30', end=pd.Timestamp.now(), freq='M')
+    fechamentos = pd.date_range(start='2022-06-30', end=pd.Timestamp.now().replace(day=1) + pd.offsets.MonthEnd(1), freq='M')
     print(f"Quantidade de fechamento: {fechamentos.shape[0]}")
 
 
@@ -214,9 +214,9 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     # Pegando cnpj cedente e sacado
     df_cnpj = df_titulos[['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente']].drop_duplicates()
 
-    df_final = pd.merge(df_final, df_cnpj,
-                        on = ['nome_sacado', 'nome_cedente'],
-                        how='inner')
+    # df_final = pd.merge(df_final, df_cnpj,
+    #                     on = ['nome_sacado', 'nome_cedente'],
+    #                     how='inner')
 
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
@@ -290,7 +290,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     ### Selecionando as colunas relevantes
     df_final = df_final[[
-        'fechamento', 'nome_sacado', 'cnpj_sacado', 'nome_cedente', 'cnpj_cedente', 'valor_face', 'Total a Vencer', 
+        'fechamento', 'nome_sacado', 'nome_cedente',  'valor_face', 'Total a Vencer', 
         'Total Vencido', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
         'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
