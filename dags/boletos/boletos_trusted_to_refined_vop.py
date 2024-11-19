@@ -15,13 +15,15 @@ import re
 
 def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
-    ### Coletando dados da camada Raw
+    # Conectando no Trino e validando
+
+    # Coletando dados da camada Trusted
     # Conectando com o banco
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
 
@@ -32,7 +34,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
         columns = [desc[0] for desc in cur.description]
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
-    
+
     print('Importação da base...')
 
     query_boletos_trusted =  f"""
@@ -40,6 +42,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
                                     "year",
                                     "month",
                                     "day",
+                                    "numero_nfe",
                                     "data_emissao",
                                     "data_efetivacao",
                                     "data_vencimento",
@@ -122,8 +125,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
 
     # Criando datas dos MOBs para calculo dos indicadores
-    df['prazo_medio'] = df['data_vencimento'] - df['data_emissao']
-    df['prazo_medio'] = df['prazo_medio'].dt.total_seconds() / 86400
+    df["prazo_medio"] = (df['data_vencimento'] - df['data_emissao']).dt.days
 
     df['M01'] = (df['safra_concessao'] + pd.DateOffset(months=2)) - pd.Timedelta(days=1)
     df['M02'] = (df['safra_concessao'] + pd.DateOffset(months=3)) - pd.Timedelta(days=1)
@@ -140,7 +142,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
     # Calculando os MOBs 1, 2, 3, 4, 5 e 6 para cada Over
     def over15_mob(row, mob_num):
-    
+
         if row[mob_num] > data_hoje or row['vencimento_mais_15'] > data_hoje:
             return 0
 
@@ -231,9 +233,9 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
     def tratar_cnpj(cnpj):
         cnpj_numerico = re.sub(r'\D', '', cnpj)
-    
+
         cnpj_formatado = cnpj_numerico.zfill(14)
-    
+
         return cnpj_formatado
 
     df['cnpj_cedente'] = df['cnpj_cedente'].apply(tratar_cnpj)
@@ -259,26 +261,59 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
     df[colunas_string] = df[colunas_string].astype(str)
     df[colunas_float] = df[colunas_float].astype(float)
 
-    df['safra_concessao'] = pd.to_datetime(df['safra_concessao'].dt.date)
-    df['safra_vencimento'] = pd.to_datetime(df['safra_vencimento'].dt.date)
-    df['safra_baixa'] = pd.to_datetime(df['safra_baixa'].dt.date)
-
     print('Parte 6')
+
+    # Duration
+    df['vop_x_prazo_medio'] = df['vop'] * df['prazo_medio']
+    df["soma_valor_safra"] = df.groupby("safra_concessao")["vop"].transform("sum")
+    df["duration"] = (df["vop_x_prazo_medio"] / df["soma_valor_safra"] / 30)
+
+
+    # Maturity
+
+    datas_maturity = df.groupby("numero_nfe").agg(
+        data_emissao_min=("data_emissao", "min"),
+        data_vencimento_max=("data_vencimento", "max")
+    ).reset_index()
+
+    df = df.merge(datas_maturity, on="numero_nfe", how="left")
+
+    valor_total_face_nota = df.groupby("numero_nfe").agg(
+        valor_face_nota_total=("vop", "sum")
+    ).reset_index()
+
+    df = df.merge(valor_total_face_nota, on="numero_nfe", how="left")
+
+    df['prazo_medio_nota'] = (df['data_vencimento_max'] - df['data_emissao_min']).dt.days
+
+    df['vop_x_pm_nota'] = df['valor_face_nota_total'] * df['prazo_medio_nota']
+
+    df["maturity"] = (df["vop_x_pm_nota"] / df["soma_valor_safra"] / 30)
+
+    df["maturity"] = df.groupby("numero_nfe")["maturity"].transform(lambda x: [x.iloc[0]] + [0] * (len(x) - 1)) #Mantem o valor de maturity apenas para uma linha por nota fiscal, para nao duplicar
+
+    print('Parte 7')
+
+    df["safra_concessao"] = df["safra_concessao"].dt.date
+    df["safra_vencimento"] = df["safra_vencimento"].dt.date
+    df["safra_baixa"] = df["safra_baixa"].dt.date
 
     # Filtrando apenas colunas para a Refined
     df_final = df[[ 'nome_cedente', 'cnpj_cedente', 'codigo_cedente', 'cedente_id', 'nome_sacado', 'cnpj_sacado', 'codigo_sacado', 
-                'sacado_id', 'uf_sacado', 'status_liquidez', 'safra_concessao', 'safra_vencimento', 'safra_baixa','valor_desagio',
-                'vop', 'vop_a_vencer','vop_performado', 'vencido', 'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90',
+                'sacado_id', 'uf_sacado', 'safra_concessao', 'safra_vencimento', 'safra_baixa','valor_desagio', 'vop', 
+                'vop_a_vencer','vop_performado', 'vencido', 'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90',
                 'prazo_medio', 'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3',
                 'vop_over30_mob4','vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3',
                 'vop_over60_mob4', 'vop_over60_mob5', 'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3',
-                'vop_over90_mob4', 'vop_over90_mob5', 'vop_over90_mob6']].copy()
-    
+                'vop_over90_mob4', 'vop_over90_mob5', 'vop_over90_mob6', 'duration', 'maturity']].copy()
+
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
+
+    df_final = df_final.reset_index(drop=True)
 
     print('Exportando base para Refined...')
 
