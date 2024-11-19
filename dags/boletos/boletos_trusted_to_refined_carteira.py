@@ -282,7 +282,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     ### Selecionando as colunas relevantes
     df_final = df_final[[
-        'fechamento', 'nome_sacado', 'nome_cedente', 'valor_face', 'Total a Vencer', 
+        'fechamento', 'nome_sacado', 'cnpj_sacado', 'nome_cedente', 'cnpj_cedente', 'valor_face', 'Total a Vencer', 
         'Total Vencido', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
         'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
