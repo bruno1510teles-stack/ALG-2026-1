@@ -212,11 +212,11 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
                         how='outer')
     
     # Pegando cnpj cedente e sacado
-    df_cnpj = df_titulos[['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente']]
+    df_cnpj = df_titulos[['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente']].drop_duplicates()
 
     df_final = pd.merge(df_final, df_cnpj,
                         on = ['nome_sacado', 'nome_cedente'],
-                        how='outer')
+                        how='inner')
 
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
