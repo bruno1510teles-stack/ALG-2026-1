@@ -107,7 +107,7 @@ def base_details_refined(access_params=None,  **kwargs):
         elif status_aprovacao == "03 - 75-100%":
             return "Aprovado com Redução"
         elif status_aprovacao == "04 - 100%":
-            return "05 - Aprovado 100%"
+            return "Aprovado"
         elif status_decisao == "Aprovado":
             return "Aprovado"
         else:
