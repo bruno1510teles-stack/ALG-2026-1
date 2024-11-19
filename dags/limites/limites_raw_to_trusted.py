@@ -29,13 +29,14 @@ def limites_raw_to_trusted(access_params=None, **kwargs):
     df = delta_table.to_pandas()
 
     # Filtrando colunas
-    colunas_desejadas = ['id_cedente', 'codigo_cedente', 'cpf_cnpj_cedente', 'nome_cedente',
-                        'id_sacado', 'codigo_sacado', 'cpf_cnpj_sacado', 'cnpj_raiz',
-                        'nome_sacado', 'limite_atribuido', 'limite_disponivel',
-                        'data_atualizacao', 'data_atribuido', 'pgid']
+    colunas_desejadas = ['cnpj_sacado', 'limite_atribuido', 'limite_utilizado', 'limite_disponivel', 'cedente']
 
     # Filtrando no DataFrame
     df = df[colunas_desejadas]
+
+    # Tratando cnpj_sacado
+    df['cnpj_sacado'] = df['cnpj_sacado'].astype(str)
+    df['cnpj_sacado'] = df['cnpj_sacado'].str.zfill(14)
 
     # Puxando base de UF SACADO
     conn = connect(
@@ -54,14 +55,14 @@ def limites_raw_to_trusted(access_params=None, **kwargs):
         return pd.DataFrame(rows, columns=columns)
     
     # Extraindo os CNPJs do DataFrame 'df' e convertendo-os para uma lista
-    cnpjs = df['cpf_cnpj_sacado'].unique().tolist()
+    cnpjs = df['cnpj_sacado'].unique().tolist()
 
     # Convertendo a lista para uma string no formato adequado para o SQL
     cnpjs_str = ', '.join([f"'{cnpj}'" for cnpj in cnpjs])
 
     query_sacado = f"""
         select 
-            est.documento_sem_formatacao, est.uf, mun.descricao as nome_cidade 
+            est.documento_sem_formatacao as cnpj_sacado, est.nome_fantasia as nome_sacado, est.uf, mun.descricao as nome_cidade
         from 
             deltalaketrusted.receita_federal.estabelecimentos est
             left join deltalaketrusted.receita_federal.municipios mun on est.municipio = mun.codigo 
@@ -72,7 +73,7 @@ def limites_raw_to_trusted(access_params=None, **kwargs):
     print(f"Quantidade de linhas no DataFrame 'sacado': {sacado.shape[0]}")
 
     # Cruzando Bases
-    df_final = pd.merge(df, sacado, left_on='cpf_cnpj_sacado', right_on='documento_sem_formatacao', how='inner')
+    df_final = pd.merge(df, sacado, on='cnpj_sacado', how='left')
     df_final.reset_index(drop=True, inplace=True)
 
 
