@@ -210,6 +210,14 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     df_final = pd.merge(df_intermediario, carteira_a_vencer, 
                         on=['nome_sacado', 'nome_cedente', 'fechamento'], 
                         how='outer')
+    
+    # Pegando cnpj cedente e sacado
+    df_cnpj = df_titulos[['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente']]
+
+    df_final = pd.merge(df_final, df_cnpj,
+                        on = ['nome_sacado', 'nome_cedente'],
+                        how='outer')
+
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
     df_final['Total Vencido'] = df_final['Total Vencido'].astype(float)
