@@ -60,8 +60,8 @@ def generate_parquet(dados, append):
     ]
 
     if append:
-        file_name = f"{dados[0][16]}.parquet"
-        bucket = f"analise-credito/pcc/ata-particionada/raiz_sacado={dados[0][16]}/"
+        file_name = f"pcc/ata-particionada/raiz_sacado={dados[0][16]}/{dados[0][16]}.parquet"
+        bucket = f"analise-credito/"
         existing_file_content = MinioReadFile().read_file(file_name=file_name, bucket=bucket)
         existing_df = pd.read_parquet(io.BytesIO(existing_file_content.read()))
         new_df = pd.DataFrame(dados, columns=colunas)
@@ -83,8 +83,8 @@ def generate_parquet(dados, append):
 
     # append consolidado
     try:
-        file_name = f"{datetime.now().strftime('%Y-%m-%d')}.parquet"
-        bucket = f"analise-credito/pcc/ata-consolidada/"
+        file_name = f"pcc/ata-consolidada/{datetime.now().strftime('%Y-%m-%d')}.parquet"
+        bucket = f"analise-credito/"
         existing_file_content = MinioReadFile().read_file(file_name=file_name, bucket=bucket)
 
         if existing_file_content:
