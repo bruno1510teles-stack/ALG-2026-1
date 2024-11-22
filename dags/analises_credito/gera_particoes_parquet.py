@@ -16,7 +16,7 @@ default_args = {
 def createPartition(conn, cnpjSacado):
     prepareQuery = f"""prepare cria_particao_ata from CALL minioraw.system.create_empty_partition(
         schema_name => 'analise_credito_pcc',
-        table_name => 'ata-particionada', 
+        table_name => 'ata_particionada', 
         partition_columns => ARRAY['raiz_sacado'], 
         partition_values => ARRAY['{cnpjSacado}'])"""
     execute_query(conn=conn, query=prepareQuery)
