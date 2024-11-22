@@ -200,7 +200,8 @@ def ata_parquet():
                 documento_sacado,
                 raiz_sacado]
 
-            dados = [parecer_final, parecer_comercial]
+            dados_bruto = [parecer_final, parecer_comercial]
+            dados = [dado for dado in dados_bruto if dado[8]]
 
             for parecer in dados:
                 for i in range(len(parecer)):
