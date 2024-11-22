@@ -36,7 +36,7 @@ def gera_particoes_parquet():
         erro_list = []  # Lista para armazenar os erros
         try:
             conn = get_trino_connection()
-            file = MinioReadFile().read_file(file_name="cnpjs_unicos.txt", bucket="analise-credito/pcc/input/")
+            file = MinioReadFile().read_file(file_name="pcc/input/cnpjs_unicos.txt", bucket="analise-credito/")
 
             lista = file.read().decode('UTF-8').split(";")
             count = 0
