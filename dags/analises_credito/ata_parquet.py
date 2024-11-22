@@ -22,7 +22,7 @@ def createPartition(conn, raizSacado):
             print(f"Partição não encontrada, criando diretório para {raizSacado}")
             prepareQuery = f"""prepare cria_particao_ata from CALL minioraw.system.create_empty_partition(
                 schema_name => 'analise_credito_pcc', 
-                table_name => 'ata-particionada', 
+                table_name => 'ata_particionada', 
                 partition_columns => ARRAY['raiz_sacado'], 
                 partition_values => ARRAY['{raizSacado}'])"""
             execute_query(conn=conn, query=prepareQuery)
@@ -104,7 +104,7 @@ def generate_parquet(dados, append):
             f = io.BytesIO()
             df.to_parquet(f)
             f.seek(0)
-            MinioWriteFile().write_file(file=f, file_name=f"{datetime.now().strftime('%Y-%m-%d')}.parquet", bucket=f"analise-credito/pcc/ata-consolidada")
+            MinioWriteFile().write_file(file=f, file_name=f"{datetime.now().strftime('%Y-%m-%d')}.parquet", bucket=f"analise-credito/pcc/ata-consolidada/")
             f.close()
 
     except Exception as e:
