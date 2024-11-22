@@ -18,10 +18,10 @@ def base_details_refined(access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host='trino.alpe.com.br',
+        port=443,
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
 
@@ -211,9 +211,9 @@ def base_details_refined(access_params=None,  **kwargs):
         logger.info("Iniciando salvamento das informações")
         
         storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+            "AWS_ACCESS_KEY_ID": "d8jOuN46ckGNsr6zzpyw",
+            "AWS_SECRET_ACCESS_KEY": "gnyBdrsoDrRcM9ln0QO83Nw8I4TlOFDOI4J9QDKc",
+            "AWS_ENDPOINT_URL": "https://api-refined.alpe.com.br",
             "AWS_REGION": "us-east-1",
             "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
         }
