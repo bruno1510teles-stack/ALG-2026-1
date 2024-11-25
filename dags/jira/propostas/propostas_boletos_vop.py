@@ -125,6 +125,12 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Merge das duas bases finais
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
+    
+    # Atribuindo data
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
+
 
     base_final.loc[
         base_final["flag_decisor"] != 1, 
