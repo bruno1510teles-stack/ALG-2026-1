@@ -126,17 +126,6 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Merge das duas bases finais
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
     
-    # Atribuindo data
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    current_time_str = now.strftime('%Y-%m-%d %X')
-
-    # Garantir que a coluna existe e redefinir se necessário
-    if 'atualizado_em' in base_final.columns:
-        # Remove valores antigos e redefine o tipo da coluna para strings
-        base_final = base_final.drop(columns=['atualizado_em'])
-
-    # Criar ou redefinir a coluna com o valor correto
-    base_final['atualizado_em'] = current_time_str
     
     
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
@@ -147,6 +136,12 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])
     ] = 0
 
+    
+    # Atribuindo data
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
+    
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
 
