@@ -128,7 +128,16 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    current_time_str = now.strftime('%Y-%m-%d %X')
+    
+    # Verifique se a coluna existe e ajuste o tipo para string, se necessário
+    if 'atualizado_em' not in base_final.columns:
+        base_final['atualizado_em'] = None  # Cria a coluna se não existir
+
+    base_final['atualizado_em'] = base_final['atualizado_em'].astype(str)  # Garante que é string
+    base_final['atualizado_em'] = current_time_str  # Atribui o timestamp formatado
+    
+    
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
 
