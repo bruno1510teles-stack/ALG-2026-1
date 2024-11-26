@@ -37,45 +37,45 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     query_jira_propostas = f""" select * from deltalakerefined.jira.propostas """
 
     query_vop_vendermais = f""" select 	
-                                cnpj_sacado,
+                                    cnpj_sacado,
 
-                        		round(sum(vop), 2) as vop,
-                        		round(sum(valor_desagio), 2) as valor_desagio,
-                        		round(sum(vop_a_vencer), 2) as vop_a_vencer,
-                        		round(sum(vop_performado), 2) as vop_performado,
-                        		round(sum(vencido), 2) as vencido,
-                        		
-                        		round(sum(vop_over_15), 2) as vop_over_15,
-                        		round(sum(vop_over_30), 2) as vop_over_30,
-                        		round(sum(vop_over_60), 2) as vop_over_60,
-                        		round(sum(vop_over_90), 2) as vop_over_90,		
-                        		round(avg(prazo_medio), 2) as prazo_medio,
-                        		
-                        		round(sum(vop_over15_mob2), 2) as vop_over15_mob2,
-                        		round(sum(vop_over15_mob3), 2) as vop_over15_mob3,
-                        		round(sum(vop_over30_mob1), 2) as vop_over30_mob1,
-                        		round(sum(vop_over30_mob2), 2) as vop_over30_mob2,
-                        		round(sum(vop_over30_mob3), 2) as vop_over30_mob3,
-                        		round(sum(vop_over30_mob4), 2) as vop_over30_mob4,
-                        		round(sum(vop_over30_mob5), 2) as vop_over30_mob5,
-                        		round(sum(vop_over30_mob6), 2) as vop_over30_mob6,
-                        		
-                        		round(sum(vop_over60_mob1), 2) as vop_over60_mob1,
-                        		round(sum(vop_over60_mob2), 2) as vop_over60_mob2,
-                        		round(sum(vop_over60_mob3), 2) as vop_over60_mob3,
-                        		round(sum(vop_over60_mob4), 2) as vop_over60_mob4,
-                        		round(sum(vop_over60_mob5), 2) as vop_over60_mob5,
-                        		round(sum(vop_over60_mob6), 2) as vop_over60_mob6,
-                        		
-                        		round(sum(vop_over90_mob1), 2) as vop_over90_mob1,
-                        		round(sum(vop_over90_mob2), 2) as vop_over90_mob2,
-                        		round(sum(vop_over90_mob3), 2) as vop_over90_mob3,
-                        		round(sum(vop_over90_mob4), 2) as vop_over90_mob4,
-                        		round(sum(vop_over90_mob5), 2) as vop_over90_mob5,
-                        		round(sum(vop_over90_mob6), 2) as vop_over90_mob6			
-                        from deltalakerefined.payments.vop_vendermais
-                        group by cnpj_sacado 
-                    """
+                                    round(sum(vop), 2) as vop,
+                                    round(sum(valor_desagio), 2) as valor_desagio,
+                                    round(sum(vop_a_vencer), 2) as vop_a_vencer,
+                                    round(sum(vop_performado), 2) as vop_performado,
+                                    round(sum(vencido), 2) as vencido,
+                                    
+                                    round(sum(vop_over_15), 2) as vop_over_15,
+                                    round(sum(vop_over_30), 2) as vop_over_30,
+                                    round(sum(vop_over_60), 2) as vop_over_60,
+                                    round(sum(vop_over_90), 2) as vop_over_90,		
+                                    round(avg(prazo_medio), 2) as prazo_medio,
+                                    
+                                    round(sum(vop_over15_mob2), 2) as vop_over15_mob2,
+                                    round(sum(vop_over15_mob3), 2) as vop_over15_mob3,
+                                    round(sum(vop_over30_mob1), 2) as vop_over30_mob1,
+                                    round(sum(vop_over30_mob2), 2) as vop_over30_mob2,
+                                    round(sum(vop_over30_mob3), 2) as vop_over30_mob3,
+                                    round(sum(vop_over30_mob4), 2) as vop_over30_mob4,
+                                    round(sum(vop_over30_mob5), 2) as vop_over30_mob5,
+                                    round(sum(vop_over30_mob6), 2) as vop_over30_mob6,
+                                    
+                                    round(sum(vop_over60_mob1), 2) as vop_over60_mob1,
+                                    round(sum(vop_over60_mob2), 2) as vop_over60_mob2,
+                                    round(sum(vop_over60_mob3), 2) as vop_over60_mob3,
+                                    round(sum(vop_over60_mob4), 2) as vop_over60_mob4,
+                                    round(sum(vop_over60_mob5), 2) as vop_over60_mob5,
+                                    round(sum(vop_over60_mob6), 2) as vop_over60_mob6,
+                                    
+                                    round(sum(vop_over90_mob1), 2) as vop_over90_mob1,
+                                    round(sum(vop_over90_mob2), 2) as vop_over90_mob2,
+                                    round(sum(vop_over90_mob3), 2) as vop_over90_mob3,
+                                    round(sum(vop_over90_mob4), 2) as vop_over90_mob4,
+                                    round(sum(vop_over90_mob5), 2) as vop_over90_mob5,
+                                    round(sum(vop_over90_mob6), 2) as vop_over90_mob6			
+                            from deltalakerefined.payments.vop_vendermais
+                            group by cnpj_sacado 
+                        """
 
     df_propostas = execute_query(conn, query_jira_propostas)
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
@@ -91,12 +91,21 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     vop_vendermais.head()
     
-    
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
+
+    cnpjs_para_filtrar_vop = vop_vendermais["cnpj_sacado_raiz"].unique()
+
+    propostas = df_propostas[df_propostas["cnpj_sacado_raiz"].isin(cnpjs_para_filtrar_vop)]
 
     # Filtrando os dados da tabela de propostas, queremos apenas dados com limite_aprovado > 0 e status_decisao = 'Aprovado'
     # Dessa tabela apenas queremos obter a relacao de propostas aprovadas por cada decisor e setar o responsavel por aquela proposta
-    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','data_criado', 'hora_criado']].reset_index(drop=True)
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','data_criado', 'hora_criado']].reset_index(drop=True)
+
+    print(propostas['cnpj_sacado_raiz'].nunique())
+    print(vop_vendermais['cnpj_sacado_raiz'].nunique())
+
+    # Excluindo linhas duplicadas
+    propostas.drop_duplicates(inplace=True)
 
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
 
@@ -112,29 +121,23 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
     # Removendo coluna auxiliar
-    propostas.drop(columns=["nome_decisor_min", "data_hora_decisao"], inplace=True)
-
-    # Excluindo linhas duplicadas
-    propostas.drop_duplicates(inplace=True)
-
-    propostas.head()
+    propostas.drop(columns=["nome_decisor_min"], inplace=True)
     
+    propostas.head()
     
         # Merge das duas bases finais
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
 
-    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])] = 0
+    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])] = 0
 
-    base_final.fillna(0, inplace=True)
-    
-    base_final.head()
-
+    #base_final.to_excel('base_final.xlsx')
     
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
-
+    
+    base_final.head()
     
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
