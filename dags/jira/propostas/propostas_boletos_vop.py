@@ -107,7 +107,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
-    propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
+    propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"], errors='coerce')
 
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
