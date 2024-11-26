@@ -77,41 +77,46 @@ def merge_propostas_boletos(access_params=None, **kwargs):
                             group by cnpj_sacado 
                         """
 
-    df_propostas = execute_query(conn, query_jira_propostas)
+    df_propostas = execute_query(conn, query_jira_propostas) 
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
-    
+
     vop_vendermais = df_vop_vendermais.copy()
 
+    # Garantindo que a coluna 'cnpj_sacado' seja tratada corretamente como string
     vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8].astype("object")
 
-    # Removendo coluna auxiliar
+    # Removendo a coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
+    # Agregando por cnpj_sacado_raiz
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum().reset_index()
 
-    vop_vendermais.head()
-    
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
+    # Filtrando cnpjs presentes em vop_vendermais
     cnpjs_para_filtrar_vop = vop_vendermais["cnpj_sacado_raiz"].unique()
 
+    # Filtrando propostas
     propostas = df_propostas[df_propostas["cnpj_sacado_raiz"].isin(cnpjs_para_filtrar_vop)]
 
-    # Filtrando os dados da tabela de propostas, queremos apenas dados com limite_aprovado > 0 e status_decisao = 'Aprovado'
-    # Dessa tabela apenas queremos obter a relacao de propostas aprovadas por cada decisor e setar o responsavel por aquela proposta
-    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','politica_desc','tipo_proposta','ramificacao_motor_desc','data_criado', 'hora_criado']].reset_index(drop=True)
+    # Garantindo que as colunas de descrição sejam tratadas como strings
+    propostas['politica_desc'] = propostas['politica_desc'].astype(str)
+    propostas['tipo_proposta'] = propostas['tipo_proposta'].astype(str)
+    propostas['ramificacao_motor_desc'] = propostas['ramificacao_motor_desc'].astype(str)
 
-    print(propostas['cnpj_sacado_raiz'].nunique())
-    print(vop_vendermais['cnpj_sacado_raiz'].nunique())
+    # Filtrando as propostas com limite_aprovado > 0 e status_decisao = 'Aprovado'
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','politica_desc','tipo_proposta','ramificacao_motor_desc','data_criado', 'hora_criado']].reset_index(drop=True)
 
     # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
+    # Convertendo as colunas de data e hora para o formato datetime
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"], errors='coerce')
 
+    # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Pegando o responsavel pela proposta (Flag 1)
+    # Pegando o responsável pela proposta (Flag 1)
     min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop= True)
 
     # Fazendo o merge com o DataFrame original
@@ -122,21 +127,19 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Removendo coluna auxiliar
     propostas.drop(columns=["nome_decisor_min"], inplace=True)
-    
-    propostas.head()
-    
-        # Merge das duas bases finais
+
+    # Merge das duas bases finais
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
 
+    # Atualizando as colunas para aqueles casos onde flag_decisor não é 1
     base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])] = 0
 
-    #base_final.to_excel('base_final.xlsx')
-    
-    # Atribuindo data
+    # Atribuindo a data de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
-    
+
+    # Visualizando os primeiros registros
     base_final.head()
     
     # Configurações para acesso ao MinIO
