@@ -99,7 +99,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Filtrando os dados da tabela de propostas, queremos apenas dados com limite_aprovado > 0 e status_decisao = 'Aprovado'
     # Dessa tabela apenas queremos obter a relacao de propostas aprovadas por cada decisor e setar o responsavel por aquela proposta
-    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','data_criado', 'hora_criado']].reset_index(drop=True)
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','politica_desc','tipo_proposta','ramificacao_motor_desc','data_criado', 'hora_criado']].reset_index(drop=True)
 
     print(propostas['cnpj_sacado_raiz'].nunique())
     print(vop_vendermais['cnpj_sacado_raiz'].nunique())
@@ -128,7 +128,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         # Merge das duas bases finais
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
 
-    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])] = 0
+    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "nome_decisor", "cnpj_sacado_raiz", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])] = 0
 
     #base_final.to_excel('base_final.xlsx')
     
