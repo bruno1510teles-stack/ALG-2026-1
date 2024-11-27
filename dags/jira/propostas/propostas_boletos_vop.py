@@ -89,64 +89,65 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo a coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Verificando que todas as colunas de valores em vop_vendermais são numéricas antes de agrupar
+    # Garantindo que todas as colunas numéricas sejam tratadas corretamente antes do agrupamento
     for col in vop_vendermais.columns.difference(['cnpj_sacado_raiz']):
         vop_vendermais[col] = pd.to_numeric(vop_vendermais[col], errors='coerce')
 
-    # Agrupando por cnpj_sacado_raiz e somando os valores
+    # Agrupando e somando apenas colunas numéricas
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum(numeric_only=True).reset_index()
 
-    # Garantindo que as colunas informativas sejam tratadas como strings
+    # Garantindo que as colunas informativas sejam strings
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
     df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
-    # Criando a coluna cnpj_sacado_raiz em df_propostas
+    # Criando a coluna cnpj_sacado_raiz
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
-    # Filtrando as propostas aprovadas com limite_aprovado > 0
+    # Filtrando as propostas aprovadas
     propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
         ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']
     ].reset_index(drop=True)
 
-    # Convertendo data e hora de criação para datetime
+    # Convertendo data e hora para datetime
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
 
-    # Removendo as colunas de data e hora de criação
+    # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Pegando o responsável pela proposta (a primeira decisão por cnpj_sacado_raiz)
+    # Pegando o responsável pela proposta
     min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
 
-    # Realizando o merge para adicionar a decisão do responsável
+    # Fazendo o merge para adicionar a decisão inicial
     propostas = propostas.merge(min_data, on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min"))
 
-    # Criando a flag para indicar se o decisor foi encontrado (Flag 1)
+    # Criando a flag para indicar o decisor
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
-    # Removendo a coluna auxiliar
+    # Removendo coluna auxiliar
     propostas.drop(columns=["nome_decisor_min", "data_hora_decisao"], inplace=True)
 
-    # Excluindo duplicatas
-    propostas.drop_duplicates(inplace=True)
+    # Garantindo que nenhuma linha válida foi perdida
+    print(f"Linhas originais de propostas: {df_propostas.shape[0]}")
+    print(f"Linhas após filtro e deduplicação: {propostas.shape[0]}")
 
     # Merge final das bases
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
-    # Garantindo que colunas informativas permaneçam strings após o merge
+    # Garantindo que as colunas informativas permaneçam strings
     for col in ['politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']:
         base_final[col] = base_final[col].astype(str)
 
-    # Tratamento da flag para garantir valores corretos nos outros campos
+    # Ajuste de flag_decisor e preenchimento de valores
     base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])] = 0
-
-    # Preenchendo valores faltantes com 0
     base_final.fillna(0, inplace=True)
 
-    # Exibindo o resultado final
-    print(base_final.head())
+    # Validando a quantidade de linhas finais
+    print(f"Linhas finais na base: {base_final.shape[0]}")
 
+    # Exibindo o resultado
+    print(base_final.head())
 
 
     # Configurações para acesso ao MinIO
