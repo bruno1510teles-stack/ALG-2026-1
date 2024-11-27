@@ -90,8 +90,10 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo a coluna 'cnpj_sacado' após a transformação
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Agrupando por 'cnpj_sacado_raiz' e somando as colunas numéricas
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').agg({col: 'sum' for col in vop_vendermais.select_dtypes(include='number').columns}).reset_index()
+    # Agrupando por 'cnpj_sacado_raiz' e somando apenas as colunas numéricas
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').agg({
+        col: 'sum' for col in vop_vendermais.select_dtypes(include='number').columns
+    }).reset_index()
 
     # Garantir que as colunas informativas sejam tratadas como string
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
