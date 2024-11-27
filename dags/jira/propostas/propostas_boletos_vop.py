@@ -81,7 +81,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas = execute_query(conn, query_jira_propostas) 
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
     
-   # Criando cópia do dataframe para evitar alterações no original
+    # Criando cópia do dataframe para evitar alterações no original
     vop_vendermais = df_vop_vendermais.copy()
 
     # Convertendo a coluna 'cnpj_sacado' para 'cnpj_sacado_raiz' (8 primeiros caracteres)
@@ -106,7 +106,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
     # Filtrando os dados de propostas com 'status_decisao' = 'Aprovado' e 'limite_aprovado' > 0
-    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[
+    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[ 
         'nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
         'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc'
     ]].reset_index(drop=True)
@@ -135,8 +135,13 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Merge das duas bases finais (propostas e vop_vendermais)
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
-    # Garantindo que as colunas não numéricas, como 'pgid', 'politica_desc', etc., não sejam convertidas ou somadas
-    # Setando valores 0 nas colunas relevantes quando 'flag_decisor' não for 1
+    # Forçar as colunas de texto a serem tratadas como string
+    base_final['pgid'] = base_final['pgid'].astype(str)  # Certifique-se que 'pgid_min' seja string
+    base_final['politica_desc'] = base_final['politica_desc'].astype(str)
+    base_final['tipo_proposta'] = base_final['tipo_proposta'].astype(str)
+    base_final['ramificacao_motor_desc'] = base_final['ramificacao_motor_desc'].astype(str)
+
+    # Garantindo que as colunas não numéricas não sejam convertidas ou somadas, e setando valores 0 onde necessário
     base_final.loc[
         base_final["flag_decisor"] != 1, 
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "pgid", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])
@@ -149,13 +154,6 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
-    
-    # Forçar as colunas que são de texto a serem tratadas como string
-    base_final['pgid_min'] = base_final['pgid_min'].astype(str)
-    base_final['politica_desc'] = base_final['politica_desc'].astype(str)
-    base_final['tipo_proposta'] = base_final['tipo_proposta'].astype(str)
-    base_final['ramificacao_motor_desc'] = base_final['ramificacao_motor_desc'].astype(str)
-
 
     # Exibindo o DataFrame final
     print(base_final.head())
