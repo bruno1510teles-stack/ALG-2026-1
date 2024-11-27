@@ -142,7 +142,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Garantindo que as colunas não numéricas não sejam convertidas ou somadas, e setando valores 0 onde necessário
     base_final.loc[
         base_final["flag_decisor"] != 1, 
-        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "pgid", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_descisao", "pgid", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])
     ] = 0
 
     # Preenchendo valores nulos com 0
