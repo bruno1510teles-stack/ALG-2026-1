@@ -80,75 +80,69 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     df_propostas = execute_query(conn, query_jira_propostas) 
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
-
-    # Processamento dos dados de `vop_vendermais`
+    
+    # Criando cópia do dataframe para evitar alterações no original
     vop_vendermais = df_vop_vendermais.copy()
 
-    # Criando a coluna 'cnpj_sacado_raiz' com os 8 primeiros caracteres do CNPJ
-    vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8]
+    # Convertendo a coluna 'cnpj_sacado' para 'cnpj_sacado_raiz' (8 primeiros caracteres)
+    vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8].astype("object")
 
-    # Removendo coluna auxiliar 'cnpj_sacado'
+    # Removendo a coluna 'cnpj_sacado' após a transformação
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Agrupando os dados por 'cnpj_sacado_raiz' e somando os valores numéricos
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz', as_index=False).sum()
+    # Agrupando por 'cnpj_sacado_raiz' e somando as colunas numéricas
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').agg({col: 'sum' for col in vop_vendermais.select_dtypes(include='number').columns}).reset_index()
 
-    # Garantindo que 'cnpj_sacado_raiz' é tratada como string
-    vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais['cnpj_sacado_raiz'].astype(str)
-
-    # Processamento das colunas informativas de `df_propostas`
+    # Garantir que as colunas informativas sejam tratadas como string
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
     df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
-    # Criando a coluna 'cnpj_sacado_raiz' para propostas
-    df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype(str)
+    # Adicionando a coluna 'cnpj_sacado_raiz' para o dataframe de propostas
+    df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
-    # Filtrando os dados de propostas aprovadas
+    # Filtrando os dados de propostas com 'status_decisao' = 'Aprovado' e 'limite_aprovado' > 0
     propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
-        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado',
+        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
         'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
     ].reset_index(drop=True)
 
-    # Combinando 'data_criado' e 'hora_criado' em uma coluna de data e hora
-    propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"] + " " + propostas["hora_criado"])
+    # Criando a coluna 'data_hora_decisao' combinando as colunas 'data_criado' e 'hora_criado'
+    propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
 
-    # Removendo colunas auxiliares
+    # Removendo as colunas 'data_criado' e 'hora_criado' após a transformação
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Identificando a primeira proposta aprovada por 'cnpj_sacado_raiz'
+    # Pegando o responsável pela proposta (Flag 1), selecionando a proposta com a menor data_hora_decisao
     min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
 
-    # Fazendo merge com a tabela original
+    # Fazendo o merge com o DataFrame original de propostas
     propostas = propostas.merge(min_data, on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min"))
 
-    # Criando a flag 'flag_decisor' para identificar o responsável
+    # Criando a flag 'flag_decisor' para indicar se há um responsável pela proposta
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
-    # Removendo colunas auxiliares
+    # Removendo as colunas auxiliares 'nome_decisor_min' e 'data_hora_decisao'
     propostas.drop(columns=["nome_decisor_min", "data_hora_decisao"], inplace=True)
 
-    # Removendo duplicatas
+    # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
-    # Fazendo o merge entre propostas e vop_vendermais
+    # Merge das duas bases finais (propostas e vop_vendermais)
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
-    # Zerando valores para casos sem responsável (flag_decisor != 1)
-    colunas_zerar = base_final.columns.difference(
-                                    ["flag_decisor", "cnpj_sacado_raiz", 
-                                        "nome_decisor", "data_hora_decisao", 
-                                        "pgid", "politica_desc", 
-                                        "tipo_proposta", "ramificacao_motor_desc"]
-    )
-    base_final.loc[base_final["flag_decisor"] != 1, colunas_zerar] = 0
+    # Setando valores 0 nas colunas relevantes quando 'flag_decisor' não for 1
+    base_final.loc[
+        base_final["flag_decisor"] != 1, 
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])
+    ] = 0
 
     # Preenchendo valores nulos com 0
     base_final.fillna(0, inplace=True)
 
-    # Resultado final
-    print(base_final())
+    # Exibindo o DataFrame final
+    print(base_final.head())
 
 
     # Configurações para acesso ao MinIO
