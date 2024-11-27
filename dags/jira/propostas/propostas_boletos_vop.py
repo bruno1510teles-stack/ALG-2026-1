@@ -82,6 +82,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
     
     # Criando cópia do dataframe para evitar alterações no original
+    # Criando cópia do dataframe para evitar alterações no original
     vop_vendermais = df_vop_vendermais.copy()
 
     # Convertendo a coluna 'cnpj_sacado' para 'cnpj_sacado_raiz' (8 primeiros caracteres)
@@ -152,8 +153,12 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
+    # Removendo as colunas auxiliares 'pgid_min', 'politica_desc_min', 'ramificacao_motor_desc_min'
+    base_final.drop(columns=["pgid_min", "politica_desc_min", "ramificacao_motor_desc_min"], inplace=True)
+
     # Exibindo o DataFrame final
     print(base_final.head())
+
 
 
     # Configurações para acesso ao MinIO
