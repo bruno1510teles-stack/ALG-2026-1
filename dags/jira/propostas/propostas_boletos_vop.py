@@ -83,47 +83,42 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     vop_vendermais = df_vop_vendermais.copy()
 
-    # Garantindo que o CNPJ seja tratado corretamente
     vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8].astype("object")
 
-    # Removendo a coluna auxiliar
+    # Removendo coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Identificando colunas numéricas para o agrupamento
-    numerical_columns = vop_vendermais.select_dtypes(include=['number']).columns.tolist()
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum().reset_index()
 
-    # Agrupando apenas as colunas numéricas
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz')[numerical_columns].sum().reset_index()
+    vop_vendermais
+    
+    df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
+    df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
+    df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
+    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
-    # Garantindo que as colunas informativas sejam tratadas como strings
-    informative_columns = ['politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']
-    for col in informative_columns:
-        df_propostas[col] = df_propostas[col].astype(str)
-
-    # Tratamento adicional para pgid como UPPERCASE
-    df_propostas['pgid'] = df_propostas['pgid'].str.upper()
-
-    # Criando a coluna cnpj_sacado_raiz
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
+    
+    
 
-    # Filtrando propostas aprovadas
-    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
-        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado'] + informative_columns
+    # Filtrando os dados da tabela de propostas, queremos apenas dados com limite_aprovado > 0 e status_decisao = 'Aprovado'
+    # Dessa tabela apenas queremos obter a relacao de propostas aprovadas por cada decisor e setar o responsavel por aquela proposta
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
+        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
+        'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
     ].reset_index(drop=True)
 
-    # Convertendo data e hora para datetime
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
 
-    # Removendo colunas auxiliares de data e hora
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Pegando o responsável pela proposta
-    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
+    # Pegando o responsavel pela proposta (Flag 1)
+    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop= True)
 
-    # Fazendo o merge para adicionar a decisão inicial
+    # Fazendo o merge com o DataFrame original
     propostas = propostas.merge(min_data, on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min"))
 
-    # Criando a flag para indicar o decisor
+    # Criando a flag
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
     # Removendo coluna auxiliar
@@ -132,27 +127,22 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
-    # Validando quantidade de linhas após filtro e deduplicação
-    print(f"Linhas originais de propostas: {df_propostas.shape[0]}")
-    print(f"Linhas após filtro e deduplicação: {propostas.shape[0]}")
+    propostas
 
-    # Merge final das bases
-    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
+    # Merge das duas bases finais
+    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
 
-    # Garantindo que as colunas informativas permaneçam strings no DataFrame final
-    for col in informative_columns:
-        base_final[col] = base_final[col].astype(str)
+    base_final.loc[
+        base_final["flag_decisor"] != 1, 
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", 
+                                        "nome_decisor", "data_hora_decisao", 
+                                        "pgid", "politica_desc", 
+                                        "tipo_proposta", "ramificacao_motor_desc"])
+    ] = 0
 
-    # Ajuste de flag_decisor e preenchimento de valores
-    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])] = 0
     base_final.fillna(0, inplace=True)
-
-    # Validando número final de linhas
-    print(f"Linhas finais na base: {base_final.shape[0]}")
-
-    # Exibindo a base final
-    print(base_final.head())
-
+    
+    base_final
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
