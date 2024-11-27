@@ -142,11 +142,11 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])
     ] = 0
 
-
     # Preenchendo valores nulos com 0
     base_final.fillna(0, inplace=True)
-    
+
     # Adicionando uma coluna com a data de atualização
+    from datetime import datetime, timezone, timedelta
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
