@@ -97,7 +97,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz')[colunas_numericas].sum().reset_index()
 
     # Garantindo que 'pgid' e outras colunas de texto sejam tratadas como strings sem qualquer conversão para numérico
-    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
+    #df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
