@@ -149,6 +149,13 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
+    
+    # Forçar as colunas que são de texto a serem tratadas como string
+    base_final['pgid_min'] = base_final['pgid_min'].astype(str)
+    base_final['politica_desc'] = base_final['politica_desc'].astype(str)
+    base_final['tipo_proposta'] = base_final['tipo_proposta'].astype(str)
+    base_final['ramificacao_motor_desc'] = base_final['ramificacao_motor_desc'].astype(str)
+
 
     # Exibindo o DataFrame final
     print(base_final.head())
