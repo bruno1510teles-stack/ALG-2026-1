@@ -82,40 +82,39 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     vop_vendermais = df_vop_vendermais.copy()
 
-    # Garantindo que a coluna 'cnpj_sacado' seja tratada corretamente como string
+    # Garantindo que 'cnpj_sacado' seja tratado corretamente
     vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8].astype("object")
 
-    # Removendo a coluna auxiliar
+    # Removendo coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Agregando por cnpj_sacado_raiz (somente para colunas numéricas)
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz', as_index=False).sum(numeric_only=True)
+    # Agrupando por 'cnpj_sacado_raiz' apenas para somar as colunas numéricas
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz', as_index=False).sum()
 
-    # Ajustando as colunas em df_propostas
+    # Trabalhando com a tabela de propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
-    # Filtrando CNPJs presentes em vop_vendermais
+    # Garantindo que as colunas informativas sejam tratadas como strings
+    df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
+    df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
+    df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
+
+    # Filtrando os CNPJs presentes em 'vop_vendermais'
     cnpjs_para_filtrar_vop = vop_vendermais["cnpj_sacado_raiz"].unique()
 
-    # Filtrando propostas
+    # Filtrando propostas com os CNPJs válidos
     propostas = df_propostas[df_propostas["cnpj_sacado_raiz"].isin(cnpjs_para_filtrar_vop)]
 
-    # Garantindo que as colunas de descrição sejam tratadas como strings
-    propostas['politica_desc'] = propostas['politica_desc'].astype(str)
-    propostas['tipo_proposta'] = propostas['tipo_proposta'].astype(str)
-    propostas['ramificacao_motor_desc'] = propostas['ramificacao_motor_desc'].astype(str)
+    # Filtrando as propostas aprovadas
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
+        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
+        'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
+    ].reset_index(drop=True)
 
-    # Filtrando propostas aprovadas com limite aprovado > 0
-    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[
-        'nome_decisor', 'cnpj_sacado_raiz', 'politica_desc', 
-        'tipo_proposta', 'ramificacao_motor_desc', 
-        'data_criado', 'hora_criado'
-    ]].reset_index(drop=True)
-
-    # Excluindo duplicatas
+    # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
-    # Convertendo as colunas de data e hora para o formato datetime
+    # Criando a coluna de data e hora combinadas
     propostas["data_hora_decisao"] = pd.to_datetime(
         propostas["data_criado"].astype(str) + " " + propostas["hora_criado"], errors='coerce'
     )
@@ -123,38 +122,48 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Agregando as colunas informativas sem conversão inadequada
-    propostas_agrupadas = propostas.groupby('cnpj_sacado_raiz', as_index=False).agg({
-        'nome_decisor': 'first',                # Mantém o primeiro nome do decisor
-        'politica_desc': 'first',               # Mantém a primeira política
-        'tipo_proposta': 'first',               # Mantém o primeiro tipo de proposta
-        'ramificacao_motor_desc': 'first',     # Mantém a primeira ramificação
-        'data_hora_decisao': 'min'             # Menor data de decisão
-    })
+    # Identificando o registro com a menor data de decisão por CNPJ
+    min_data = propostas.loc[
+        propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()
+    ].reset_index(drop=True)
 
-    # Realizando o merge com vop_vendermais
-    base_final = pd.merge(
-        propostas_agrupadas, vop_vendermais, 
-        on='cnpj_sacado_raiz', how='left'
+    # Fazendo o merge para adicionar a flag
+    propostas = propostas.merge(
+        min_data[['cnpj_sacado_raiz', 'data_hora_decisao', 'nome_decisor']],
+        on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min")
     )
 
-    # Criando a flag de decisor com base na data mínima de decisão
-    base_final["flag_decisor"] = (base_final["data_hora_decisao"].notnull()).astype(int)
+    # Criando a flag para marcar os registros principais
+    propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
-    # Atualizando colunas para registros sem flag_decisor
+    # Removendo coluna auxiliar
+    propostas.drop(columns=["nome_decisor_min"], inplace=True)
+
+    # Realizando o merge com a base de VOP
+    base_final = pd.merge(
+        propostas, vop_vendermais, 
+        on='cnpj_sacado_raiz', how='left'
+    ).reset_index(drop=True)
+
+    # Zerando valores numéricos para registros onde a flag não é 1
     base_final.loc[
         base_final["flag_decisor"] != 1, 
-        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", 
+                                        "nome_decisor", "data_hora_decisao", 
+                                        "politica_desc", "tipo_proposta", 
+                                        "ramificacao_motor_desc"])
     ] = 0
 
-    # Adicionando a data de atualização
+    # Adicionando uma coluna com a data de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
+    # Verificando o total de linhas
+    print(f"Total de linhas no resultado final: {len(base_final)}")
+
     # Visualizando os primeiros registros
     print(base_final.head())
-
 
 
     # Configurações para acesso ao MinIO
