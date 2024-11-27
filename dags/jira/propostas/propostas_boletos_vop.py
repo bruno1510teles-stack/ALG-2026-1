@@ -96,20 +96,20 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Agrupando por 'cnpj_sacado_raiz' e somando apenas as colunas numéricas
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz')[colunas_numericas].sum().reset_index()
 
-    # Garantindo que 'pgid' e outras colunas de texto sejam tratadas como strings sem qualquer conversão para numérico
-    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
-    df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
-    df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
-    df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
+    # Garantindo que as colunas informativas sejam tratadas como string, sem conversão para numérico
+    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()  # Tratar como string e em maiúsculo
+    df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)  # Garantir que sejam string
+    df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)  # Garantir que sejam string
+    df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)  # Garantir que sejam string
 
     # Adicionando a coluna 'cnpj_sacado_raiz' para o dataframe de propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
     # Filtrando os dados de propostas com 'status_decisao' = 'Aprovado' e 'limite_aprovado' > 0
-    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
-        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
-         'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
-    ].reset_index(drop=True)
+    propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[
+        'nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
+        'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc'
+    ]].reset_index(drop=True)
 
     # Criando a coluna 'data_hora_decisao' combinando as colunas 'data_criado' e 'hora_criado'
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
@@ -139,7 +139,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Setando valores 0 nas colunas relevantes quando 'flag_decisor' não for 1
     base_final.loc[
         base_final["flag_decisor"] != 1, 
-        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "pgid", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])
     ] = 0
 
     # Preenchendo valores nulos com 0
@@ -152,6 +152,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Exibindo o DataFrame final
     print(base_final.head())
+
 
 
 
