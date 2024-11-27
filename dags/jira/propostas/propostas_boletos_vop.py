@@ -99,28 +99,42 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Filtrando propostas
     propostas = df_propostas[df_propostas["cnpj_sacado_raiz"].isin(cnpjs_para_filtrar_vop)]
 
-    # Garantindo que as colunas de descrição sejam tratadas como strings
+    # Garantindo que as colunas de descrição sejam tratadas como strings antes de manipulação
     propostas['politica_desc'] = propostas['politica_desc'].astype(str)
     propostas['tipo_proposta'] = propostas['tipo_proposta'].astype(str)
     propostas['ramificacao_motor_desc'] = propostas['ramificacao_motor_desc'].astype(str)
 
     # Filtrando as propostas com limite_aprovado > 0 e status_decisao = 'Aprovado'
-    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[['nome_decisor','cnpj_sacado_raiz','politica_desc','tipo_proposta','ramificacao_motor_desc','data_criado', 'hora_criado']].reset_index(drop=True)
+    propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[
+        'nome_decisor', 'cnpj_sacado_raiz', 'politica_desc', 
+        'tipo_proposta', 'ramificacao_motor_desc', 
+        'data_criado', 'hora_criado'
+    ]].reset_index(drop=True)
 
     # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
 
     # Convertendo as colunas de data e hora para o formato datetime
-    propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"], errors='coerce')
+    propostas["data_hora_decisao"] = pd.to_datetime(
+        propostas["data_criado"].astype(str) + " " + propostas["hora_criado"], errors='coerce'
+    )
 
     # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Pegando o responsável pela proposta (Flag 1)
-    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop= True)
+    # Garantir que as operações posteriores utilizem valores válidos
+    if propostas['data_hora_decisao'].isnull().any():
+        print("Aviso: Existem valores inválidos em 'data_hora_decisao'.")
 
-    # Fazendo o merge com o DataFrame original
-    propostas = propostas.merge(min_data, on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min"))
+    # Continuando as operações como no código original
+    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
+
+    propostas = propostas.merge(
+        min_data, 
+        on=["cnpj_sacado_raiz", "data_hora_decisao"], 
+        how="left", 
+        suffixes=("", "_min")
+    )
 
     # Criando a flag
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
@@ -129,10 +143,13 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     propostas.drop(columns=["nome_decisor_min"], inplace=True)
 
     # Merge das duas bases finais
-    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
+    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
     # Atualizando as colunas para aqueles casos onde flag_decisor não é 1
-    base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])] = 0
+    base_final.loc[
+        base_final["flag_decisor"] != 1, 
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])
+    ] = 0
 
     # Atribuindo a data de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -140,8 +157,8 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
     # Visualizando os primeiros registros
-    base_final.head()
-    
+    print(base_final.head())
+
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
 
