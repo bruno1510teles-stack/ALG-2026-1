@@ -137,8 +137,10 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Zerando valores para casos sem responsável (flag_decisor != 1)
     colunas_zerar = base_final.columns.difference(
-        ["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "pgid", 
-        "politica_desc", "tipo_proposta", "ramificacao_motor_desc"]
+                                    ["flag_decisor", "cnpj_sacado_raiz", 
+                                        "nome_decisor", "data_hora_decisao", 
+                                        "pgid", "politica_desc", 
+                                        "tipo_proposta", "ramificacao_motor_desc"]
     )
     base_final.loc[base_final["flag_decisor"] != 1, colunas_zerar] = 0
 
