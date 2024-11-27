@@ -97,6 +97,8 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
+
+    # Garantindo que 'pgid' seja tratado como string sem conversão para tipo numérico
     df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
     # Adicionando a coluna 'cnpj_sacado_raiz' para o dataframe de propostas
@@ -140,6 +142,11 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Preenchendo valores nulos com 0
     base_final.fillna(0, inplace=True)
+    
+    # Adicionando uma coluna com a data de atualização
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
     # Exibindo o DataFrame final
     print(base_final.head())
