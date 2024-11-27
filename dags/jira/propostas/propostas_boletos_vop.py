@@ -128,7 +128,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
     # Removendo as colunas auxiliares 'nome_decisor_min' e 'data_hora_decisao'
-    propostas.drop(columns=["nome_decisor_min", "data_hora_decisao"], inplace=True)
+    propostas.drop(columns=["nome_decisor_min"], inplace=True)
 
     # Excluindo linhas duplicadas
     propostas.drop_duplicates(inplace=True)
