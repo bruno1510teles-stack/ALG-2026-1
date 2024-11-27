@@ -83,60 +83,70 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     vop_vendermais = df_vop_vendermais.copy()
 
+    # Garantindo que o CNPJ seja tratado como string e extraindo os 8 primeiros caracteres
     vop_vendermais['cnpj_sacado_raiz'] = vop_vendermais["cnpj_sacado"].str[:8].astype("object")
 
-    # Removendo coluna auxiliar
+    # Removendo a coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum().reset_index()
+    # Verificando que todas as colunas de valores em vop_vendermais são numéricas antes de agrupar
+    for col in vop_vendermais.columns.difference(['cnpj_sacado_raiz']):
+        vop_vendermais[col] = pd.to_numeric(vop_vendermais[col], errors='coerce')
 
-    vop_vendermais
-    
-    
+    # Agrupando por cnpj_sacado_raiz e somando os valores
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum(numeric_only=True).reset_index()
+
     # Garantindo que as colunas informativas sejam tratadas como strings
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
     df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
-    
-    
+
+    # Criando a coluna cnpj_sacado_raiz em df_propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
-    
-    
+
     # Filtrando as propostas aprovadas com limite_aprovado > 0
     propostas = df_propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
-    ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']
+        ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']
     ].reset_index(drop=True)
 
+    # Convertendo data e hora de criação para datetime
     propostas["data_hora_decisao"] = pd.to_datetime(propostas["data_criado"].astype(str) + " " + propostas["hora_criado"])
 
+    # Removendo as colunas de data e hora de criação
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Pegando o responsavel pela proposta (Flag 1)
-    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop= True)
+    # Pegando o responsável pela proposta (a primeira decisão por cnpj_sacado_raiz)
+    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
 
-    # Fazendo o merge com o DataFrame original
+    # Realizando o merge para adicionar a decisão do responsável
     propostas = propostas.merge(min_data, on=["cnpj_sacado_raiz", "data_hora_decisao"], how="left", suffixes=("", "_min"))
 
-    # Criando a flag
+    # Criando a flag para indicar se o decisor foi encontrado (Flag 1)
     propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
 
-    # Removendo coluna auxiliar
+    # Removendo a coluna auxiliar
     propostas.drop(columns=["nome_decisor_min", "data_hora_decisao"], inplace=True)
 
-    # Excluindo linhas duplicadas
+    # Excluindo duplicatas
     propostas.drop_duplicates(inplace=True)
 
-    propostas
-    
-    # Merge das duas bases finais
-    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop = True)
+    # Merge final das bases
+    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
+    # Garantindo que colunas informativas permaneçam strings após o merge
+    for col in ['politica_desc', 'tipo_proposta', 'ramificacao_motor_desc', 'pgid']:
+        base_final[col] = base_final[col].astype(str)
+
+    # Tratamento da flag para garantir valores corretos nos outros campos
     base_final.loc[base_final["flag_decisor"] != 1, base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])] = 0
 
+    # Preenchendo valores faltantes com 0
     base_final.fillna(0, inplace=True)
 
+    # Exibindo o resultado final
     print(base_final.head())
+
 
 
     # Configurações para acesso ao MinIO
