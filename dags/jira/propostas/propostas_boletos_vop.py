@@ -95,7 +95,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         col: 'sum' for col in vop_vendermais.select_dtypes(include='number').columns
     }).reset_index()
 
-    # Garantir que as colunas informativas sejam tratadas como string
+    # Garantindo que as colunas informativas sejam tratadas como string, sem qualquer tentativa de conversão
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
@@ -141,6 +141,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         base_final["flag_decisor"] != 1, 
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])
     ] = 0
+
 
     # Preenchendo valores nulos com 0
     base_final.fillna(0, inplace=True)
