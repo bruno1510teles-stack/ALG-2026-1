@@ -81,7 +81,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas = execute_query(conn, query_jira_propostas) 
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
     
-    # Criando cópia do dataframe para evitar alterações no original
+   # Criando cópia do dataframe para evitar alterações no original
     vop_vendermais = df_vop_vendermais.copy()
 
     # Convertendo a coluna 'cnpj_sacado' para 'cnpj_sacado_raiz' (8 primeiros caracteres)
@@ -97,7 +97,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz')[colunas_numericas].sum().reset_index()
 
     # Garantindo que 'pgid' e outras colunas de texto sejam tratadas como strings sem qualquer conversão para numérico
-    #df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
+    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
@@ -135,10 +135,11 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Merge das duas bases finais (propostas e vop_vendermais)
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
+    # Garantindo que as colunas não numéricas, como 'pgid', 'politica_desc', etc., não sejam convertidas ou somadas
     # Setando valores 0 nas colunas relevantes quando 'flag_decisor' não for 1
     base_final.loc[
         base_final["flag_decisor"] != 1, 
-        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor"])
+        base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "pgid", "politica_desc", "tipo_proposta", "ramificacao_motor_desc"])
     ] = 0
 
     # Preenchendo valores nulos com 0
@@ -151,6 +152,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Exibindo o DataFrame final
     print(base_final.head())
+
 
 
     # Configurações para acesso ao MinIO
