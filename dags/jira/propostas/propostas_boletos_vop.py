@@ -90,18 +90,17 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo a coluna 'cnpj_sacado' após a transformação
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Agrupando por 'cnpj_sacado_raiz' e somando apenas as colunas numéricas
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').agg({
-        col: 'sum' for col in vop_vendermais.select_dtypes(include='number').columns
-    }).reset_index()
+    # Filtrando apenas as colunas numéricas para a agregação
+    colunas_numericas = vop_vendermais.select_dtypes(include='number').columns
 
-    # Garantindo que as colunas informativas sejam tratadas como string, sem qualquer tentativa de conversão
+    # Agrupando por 'cnpj_sacado_raiz' e somando apenas as colunas numéricas
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz')[colunas_numericas].sum().reset_index()
+
+    # Garantindo que 'pgid' e outras colunas de texto sejam tratadas como strings sem qualquer conversão para numérico
+    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
-
-    # Garantindo que 'pgid' seja tratado como string sem conversão para tipo numérico
-    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
     # Adicionando a coluna 'cnpj_sacado_raiz' para o dataframe de propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
@@ -146,7 +145,6 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     base_final.fillna(0, inplace=True)
 
     # Adicionando uma coluna com a data de atualização
-    from datetime import datetime, timezone, timedelta
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
