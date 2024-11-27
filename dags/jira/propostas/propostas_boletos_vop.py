@@ -91,6 +91,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Agregando por cnpj_sacado_raiz
     vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum().reset_index()
 
+    # Ajustando as colunas em df_propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
     # Filtrando cnpjs presentes em vop_vendermais
@@ -99,7 +100,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Filtrando propostas
     propostas = df_propostas[df_propostas["cnpj_sacado_raiz"].isin(cnpjs_para_filtrar_vop)]
 
-    # Garantindo que as colunas de descrição sejam tratadas como strings antes de manipulação
+    # Garantindo que as colunas de descrição sejam tratadas como strings
     propostas['politica_desc'] = propostas['politica_desc'].astype(str)
     propostas['tipo_proposta'] = propostas['tipo_proposta'].astype(str)
     propostas['ramificacao_motor_desc'] = propostas['ramificacao_motor_desc'].astype(str)
@@ -122,28 +123,33 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Garantir que as operações posteriores utilizem valores válidos
-    if propostas['data_hora_decisao'].isnull().any():
-        print("Aviso: Existem valores inválidos em 'data_hora_decisao'.")
+    # Selecionando apenas as colunas relevantes para o agrupamento
+    propostas_selecionadas = propostas[[
+        'nome_decisor', 'cnpj_sacado_raiz', 'politica_desc', 
+        'tipo_proposta', 'ramificacao_motor_desc', 
+        'data_hora_decisao'
+    ]]
 
-    # Continuando as operações como no código original
-    min_data = propostas.loc[propostas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()].reset_index(drop=True)
+    # Para o agrupamento, usar funções como 'first' para manter os valores originais
+    propostas_agrupadas = propostas_selecionadas.groupby('cnpj_sacado_raiz', as_index=False).agg({
+        'nome_decisor': 'first',  # Pega o primeiro valor (ou mais relevante)
+        'politica_desc': 'first', 
+        'tipo_proposta': 'first', 
+        'ramificacao_motor_desc': 'first', 
+        'data_hora_decisao': 'min'  # Mantém o menor timestamp como critério principal
+    })
 
-    propostas = propostas.merge(
-        min_data, 
-        on=["cnpj_sacado_raiz", "data_hora_decisao"], 
-        how="left", 
-        suffixes=("", "_min")
-    )
+    # Caso necessário, verifique o resultado
+    print(propostas_agrupadas.head())
 
-    # Criando a flag
-    propostas["flag_decisor"] = propostas["nome_decisor_min"].notnull().astype(int)
+    # Continuando com o merge para juntar as bases finais
+    base_final = pd.merge(
+        propostas_agrupadas, vop_vendermais, 
+        on='cnpj_sacado_raiz', how='left'
+    ).reset_index(drop=True)
 
-    # Removendo coluna auxiliar
-    propostas.drop(columns=["nome_decisor_min"], inplace=True)
-
-    # Merge das duas bases finais
-    base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
+    # Criando a flag de decisor com base no primeiro registro de data
+    base_final["flag_decisor"] = base_final["data_hora_decisao"].notnull().astype(int)
 
     # Atualizando as colunas para aqueles casos onde flag_decisor não é 1
     base_final.loc[
