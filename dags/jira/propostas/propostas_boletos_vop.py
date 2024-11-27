@@ -81,7 +81,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas = execute_query(conn, query_jira_propostas) 
     df_vop_vendermais = execute_query(conn, query_vop_vendermais)
     
-        # Criando cópia do dataframe para evitar alterações no original
+    # Criando cópia do dataframe para evitar alterações no original
     vop_vendermais = df_vop_vendermais.copy()
 
     # Convertendo a coluna 'cnpj_sacado' para 'cnpj_sacado_raiz' (8 primeiros caracteres)
@@ -135,11 +135,8 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Merge das duas bases finais (propostas e vop_vendermais)
     base_final = pd.merge(propostas, vop_vendermais, on='cnpj_sacado_raiz', how='left').reset_index(drop=True)
 
-    # Forçar as colunas de texto a serem tratadas como string
-    base_final['pgid_min'] = base_final['pgid_min'].astype(str)  # Certifique-se que 'pgid_min' seja string
-    base_final['politica_desc'] = base_final['politica_desc'].astype(str)
-    base_final['tipo_proposta'] = base_final['tipo_proposta'].astype(str)
-    base_final['ramificacao_motor_desc'] = base_final['ramificacao_motor_desc'].astype(str)
+    # Antes de salvar, forçar todas as colunas de texto a serem do tipo str (sem nenhuma conversão implícita)
+    base_final = base_final.applymap(str)  # Converte tudo para string (garante que não haja erro de conversão)
 
     # Garantindo que as colunas não numéricas não sejam convertidas ou somadas, e setando valores 0 onde necessário
     base_final.loc[
@@ -157,9 +154,6 @@ def merge_propostas_boletos(access_params=None, **kwargs):
 
     # Exibindo o DataFrame final
     print(base_final.head())
-
-
-
 
 
     # Configurações para acesso ao MinIO
