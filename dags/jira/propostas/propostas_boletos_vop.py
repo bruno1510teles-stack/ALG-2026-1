@@ -88,13 +88,13 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo a coluna auxiliar
     vop_vendermais.drop(columns=["cnpj_sacado"], inplace=True)
 
-    # Agregando por cnpj_sacado_raiz
-    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz').sum().reset_index()
+    # Agregando por cnpj_sacado_raiz (somente para colunas numéricas)
+    vop_vendermais = vop_vendermais.groupby('cnpj_sacado_raiz', as_index=False).sum(numeric_only=True)
 
     # Ajustando as colunas em df_propostas
     df_propostas['cnpj_sacado_raiz'] = df_propostas["cnpj"].str[:8].astype("object")
 
-    # Filtrando cnpjs presentes em vop_vendermais
+    # Filtrando CNPJs presentes em vop_vendermais
     cnpjs_para_filtrar_vop = vop_vendermais["cnpj_sacado_raiz"].unique()
 
     # Filtrando propostas
@@ -105,14 +105,14 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     propostas['tipo_proposta'] = propostas['tipo_proposta'].astype(str)
     propostas['ramificacao_motor_desc'] = propostas['ramificacao_motor_desc'].astype(str)
 
-    # Filtrando as propostas com limite_aprovado > 0 e status_decisao = 'Aprovado'
+    # Filtrando propostas aprovadas com limite aprovado > 0
     propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[[
         'nome_decisor', 'cnpj_sacado_raiz', 'politica_desc', 
         'tipo_proposta', 'ramificacao_motor_desc', 
         'data_criado', 'hora_criado'
     ]].reset_index(drop=True)
 
-    # Excluindo linhas duplicadas
+    # Excluindo duplicatas
     propostas.drop_duplicates(inplace=True)
 
     # Convertendo as colunas de data e hora para o formato datetime
@@ -123,43 +123,38 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Removendo colunas auxiliares
     propostas.drop(columns=["data_criado", "hora_criado"], inplace=True)
 
-    # Selecionando as colunas principais sem perder dados
-    propostas_selecionadas = propostas[[
-        'nome_decisor', 'cnpj_sacado_raiz', 'politica_desc', 
-        'tipo_proposta', 'ramificacao_motor_desc', 
-        'data_hora_decisao'
-    ]]
+    # Agregando as colunas informativas sem conversão inadequada
+    propostas_agrupadas = propostas.groupby('cnpj_sacado_raiz', as_index=False).agg({
+        'nome_decisor': 'first',                # Mantém o primeiro nome do decisor
+        'politica_desc': 'first',               # Mantém a primeira política
+        'tipo_proposta': 'first',               # Mantém o primeiro tipo de proposta
+        'ramificacao_motor_desc': 'first',     # Mantém a primeira ramificação
+        'data_hora_decisao': 'min'             # Menor data de decisão
+    })
 
-    # Mantendo todas as linhas, mas criando uma versão com informações agrupadas
-    # Preservar os dados originais, mas marcar o menor data/hora por CNPJ
-    min_data = propostas_selecionadas.loc[
-        propostas_selecionadas.groupby("cnpj_sacado_raiz")["data_hora_decisao"].idxmin()
-    ].reset_index(drop=True)
-
-    # Adicionando uma flag para identificar os registros principais
-    propostas_selecionadas["flag_decisor"] = propostas_selecionadas.apply(
-        lambda x: int(x["data_hora_decisao"] in min_data["data_hora_decisao"].values), axis=1
+    # Realizando o merge com vop_vendermais
+    base_final = pd.merge(
+        propostas_agrupadas, vop_vendermais, 
+        on='cnpj_sacado_raiz', how='left'
     )
 
-    # Realizar o merge com as informações do VOP
-    base_final = pd.merge(
-        propostas_selecionadas, vop_vendermais, 
-        on='cnpj_sacado_raiz', how='left'
-    ).reset_index(drop=True)
+    # Criando a flag de decisor com base na data mínima de decisão
+    base_final["flag_decisor"] = (base_final["data_hora_decisao"].notnull()).astype(int)
 
-    # Atualizando as colunas para aqueles casos onde flag_decisor não é 1
+    # Atualizando colunas para registros sem flag_decisor
     base_final.loc[
         base_final["flag_decisor"] != 1, 
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", "nome_decisor", "data_hora_decisao"])
     ] = 0
 
-    # Atribuindo a data de atualização
+    # Adicionando a data de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     base_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     base_final['year'], base_final['month'], base_final['day'] = now.year, now.month, now.day
 
     # Visualizando os primeiros registros
     print(base_final.head())
+
 
 
     # Configurações para acesso ao MinIO
