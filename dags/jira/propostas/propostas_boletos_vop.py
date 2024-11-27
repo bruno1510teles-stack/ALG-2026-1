@@ -98,6 +98,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     df_propostas['politica_desc'] = df_propostas['politica_desc'].astype(str)
     df_propostas['tipo_proposta'] = df_propostas['tipo_proposta'].astype(str)
     df_propostas['ramificacao_motor_desc'] = df_propostas['ramificacao_motor_desc'].astype(str)
+    df_propostas['pgid'] = df_propostas['pgid'].astype(str).str.upper()
 
     # Filtrando os CNPJs presentes em 'vop_vendermais'
     cnpjs_para_filtrar_vop = vop_vendermais["cnpj_sacado_raiz"].unique()
@@ -108,7 +109,7 @@ def merge_propostas_boletos(access_params=None, **kwargs):
     # Filtrando as propostas aprovadas
     propostas = propostas.query("status_decisao == 'Aprovado' and limite_aprovado > 0")[
         ['nome_decisor', 'cnpj_sacado_raiz', 'data_criado', 'hora_criado', 
-        'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
+        'pgid', 'politica_desc', 'tipo_proposta', 'ramificacao_motor_desc']
     ].reset_index(drop=True)
 
     # Excluindo linhas duplicadas
@@ -150,8 +151,8 @@ def merge_propostas_boletos(access_params=None, **kwargs):
         base_final["flag_decisor"] != 1, 
         base_final.columns.difference(["flag_decisor", "cnpj_sacado_raiz", 
                                         "nome_decisor", "data_hora_decisao", 
-                                        "politica_desc", "tipo_proposta", 
-                                        "ramificacao_motor_desc"])
+                                        "pgid", "politica_desc", 
+                                        "tipo_proposta", "ramificacao_motor_desc"])
     ] = 0
 
     # Adicionando uma coluna com a data de atualização
