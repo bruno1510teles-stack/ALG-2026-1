@@ -9,6 +9,7 @@ import os
 from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
+from decimal import Decimal
 
 def boletos_raw_to_trusted(access_params=None,  **kwargs):
 
@@ -160,6 +161,17 @@ select
 
     # Tratando casos de baixa parcial
     df.loc[df['status_titulo'] == 'VENCIDO', 'data_baixa'] = pd.NaT
+
+    # Função para ajustar o tipo decimal
+    def ajustar_decimal(valor, precision=8, scale=2):
+        if pd.isna(valor):  # Manter os valores nulos
+            return None
+        else:
+            # Formatar o valor para ter a precisão correta
+            return Decimal(valor).quantize(Decimal(10) ** -scale)
+
+    # Aplicar a função à coluna valor_titulo
+    df['valor_titulo'] = df['valor_titulo'].apply(lambda x: ajustar_decimal(x, precision=8, scale=2))
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
