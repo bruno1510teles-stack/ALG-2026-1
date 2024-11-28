@@ -14,6 +14,7 @@ from time import sleep
 from jira.propostas import extracao_jira_raw
 from jira.propostas import extracao_jira_trusted
 from jira.propostas import extracao_jira_refined
+from jira.propostas import propostas_boletos_vop
 
 
 
@@ -92,7 +93,13 @@ with DAG(
         python_callable=extracao_jira_refined.base_details_refined,  # Garantir que a função base_details_refined existe em extracao_jira_refined
         provide_context=True
     )
+    
+    propostas_boletos_vop_aux = PythonOperator(
+        task_id='merge_proposta_boletos_vop',
+        python_callable=propostas_boletos_vop.merge_propostas_boletos,  # Garantir que a função base_details_refined existe em extracao_jira_refined
+        provide_context=True
+    )
 
 
-    # Definindo a ordem de execução das tasks
-    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined
+# Definindo a ordem de execução das tasks
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux
