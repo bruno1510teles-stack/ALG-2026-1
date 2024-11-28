@@ -26,13 +26,13 @@ def erro(context):
         "dag_run_id": dag_run_id
     }
 
-    # Converte o dicionário para bytes
-    error_message = json.dumps(errorBody).encode('utf-8')
+    # Converte o dicionário para JSON string e depois para bytes
+    error_message = json.dumps(errorBody).encode('utf-8')  # Convertido para bytes
 
     # Envia mensagem para o Kafka
     Kafka.send(
         topic="prd.default.jira-connector.v1.logs.create.out",
-        key="teste",
+        key="teste",  # Certifique-se de que também seja uma string ou bytes
         value=error_message
     )
 
