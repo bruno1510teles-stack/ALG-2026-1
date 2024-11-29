@@ -31,7 +31,7 @@ def erro(context):
 
     # Envia mensagem para o Kafka
     Kafka.send(
-        topic="prd.default.jira-connector.v1.logs.create.out",
+        topic="credit-policy.v2.policy.resolution.out",
         key="teste",  # Certifique-se de que também seja uma string ou bytes
         value=error_message
     )
