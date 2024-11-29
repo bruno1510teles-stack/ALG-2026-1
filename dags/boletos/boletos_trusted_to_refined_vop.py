@@ -300,7 +300,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
 
     # Filtrando apenas colunas para a Refined
     df_final = df[[ 'nome_cedente', 'cnpj_cedente', 'codigo_cedente', 'cedente_id', 'nome_sacado', 'cnpj_sacado', 'codigo_sacado', 
-                'sacado_id', 'uf_sacado', 'safra_concessao', 'safra_vencimento', 'safra_baixa','valor_desagio', 'vop', 
+                'sacado_id', 'uf_sacado', 'safra_concessao', 'safra_vencimento', 'safra_baixa', 'status_titulo', 'valor_desagio', 'vop', 
                 'vop_a_vencer','vop_performado', 'vencido', 'vop_over_15', 'vop_over_30', 'vop_over_60', 'vop_over_90',
                 'prazo_medio', 'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3',
                 'vop_over30_mob4','vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3',

@@ -9,6 +9,7 @@ import os
 from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
+from decimal import Decimal, ROUND_DOWN
 
 def boletos_raw_to_trusted(access_params=None,  **kwargs):
 
@@ -161,6 +162,17 @@ select
     # Tratando casos de baixa parcial
     df.loc[df['status_titulo'] == 'VENCIDO', 'data_baixa'] = pd.NaT
 
+    # Função para ajustar os valores ao formato decimal(8, 2)
+    def ajustar_decimal(valor):
+        if pd.isnull(valor):
+            return None  # Mantém valores nulos como estão
+        else:
+            # Limitar para no máximo 8 dígitos, com 2 casas decimais
+            return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+
+    # Aplicar a função na coluna 'valor_titulo'
+    df['valor_titulo'] = df['valor_titulo'].apply(ajustar_decimal)
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
@@ -170,32 +182,23 @@ select
     print(f"Quantidade de linhas no DataFrame final: {df.shape[0]}")
 
     # Exportando dados para a camada Trusted
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
+    # # Conectando na Trusted        
+    storage_options = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+    }
 
-    try:
-        logger.info("Iniciando salvamento das informações")
-        
-        storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
+    # Definindo o caminho e salvando no MinIO
+    BUCKET_SOURCE_TRUSTED = "payments"
+    FOLDER_DESTINATION_TRUSTED = "boletos_internos"
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_TRUSTED = "payments"
-        FOLDER_DESTINATION_TRUSTED = "boletos_internos"
-
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-            df, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options,
-            mode="overwrite"
-        )
-        logger.info("Salvamento concluído com sucesso.")
-
-    except Exception as e:
-        logger.error(f"Erro ao salvar as informações: {str(e)}")
+    write_deltalake(
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
+        df, 
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="overwrite"
+    )
