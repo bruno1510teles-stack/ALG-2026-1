@@ -12,7 +12,7 @@ def erro(context):
 
     # Corpo da mensagem de erro
     errorBody = {
-        "@timestamp": f"{datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"}",
+        "@timestamp": f"{datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3]}Z",
         "@metadata": {
             "beat": "filebeat",
             "type": "_doc",
