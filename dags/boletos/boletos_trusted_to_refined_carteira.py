@@ -52,6 +52,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         # Substitui o último fechamento pela data atual
         fechamentos = fechamentos[:-1].append(pd.DatetimeIndex([hoje]))
     print(f"Quantidade de fechamento: {fechamentos.shape[0]}")
+    print(fechamentos)
 
 
 
