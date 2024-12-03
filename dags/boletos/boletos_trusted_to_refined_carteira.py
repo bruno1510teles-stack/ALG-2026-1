@@ -44,6 +44,13 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     ### Definindo fechamentos de safra
     fechamentos = pd.date_range(start='2022-06-30', end=pd.Timestamp.now().replace(day=1) + pd.offsets.MonthEnd(1), freq='M')
+        # Captura a data atual
+    hoje = pd.Timestamp.now()
+
+    # Verifica se o mês atual já fechou
+    if hoje.day != pd.Timestamp.now().days_in_month:
+        # Substitui o último fechamento pela data atual
+        fechamentos = fechamentos[:-1].append(pd.DatetimeIndex([hoje]))
     print(f"Quantidade de fechamento: {fechamentos.shape[0]}")
 
 
