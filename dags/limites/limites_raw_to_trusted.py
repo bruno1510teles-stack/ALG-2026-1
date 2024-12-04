@@ -86,32 +86,23 @@ def limites_raw_to_trusted(access_params=None, **kwargs):
     print(df_final)
 
     # Exportando dados para a camada Trusted
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
-
-    try:
-        logger.info("Iniciando salvamento das informações")
         
-        storage_options_trusted = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
+    storage_options_trusted = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+    }
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_TRUSTED = "limites"
-        FOLDER_DESTINATION_TRUSTED = "limite"
+    # Definindo o caminho e salvando no MinIO
+    BUCKET_SOURCE_TRUSTED = "limites"
+    FOLDER_DESTINATION_TRUSTED = "limite"
 
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-            df_final, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options_trusted,
-            mode="overwrite"
-        )
-        logger.info("Salvamento concluído com sucesso.")
-
-    except Exception as e:
-        logger.error(f"Erro ao salvar as informações: {str(e)}")
+    write_deltalake(
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+        df_final, 
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options_trusted,
+        mode="overwrite"
+    )
