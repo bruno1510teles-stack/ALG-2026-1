@@ -109,7 +109,7 @@ def enviar_notif(access_params=None, **kwargs):
     data_execucao = data_hoje if not df.empty else 'Data não disponível'
     
     # URL do Webhook do Microsoft Teams
-    webhook_url = "https://yandehbr.webhook.office.com/webhookb2/d25ed332-49c9-4cf9-9314-3a18c680afd8@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/5144cf970df44507b307d94ba6b41578/bd7b1c42-afa1-4108-9114-508dccf195b1/V2h8s62OxtgIsUmlvAr6G6yrrxUGkuyCI-4aCDr5t1tZg1"
+    webhook_url = "https://yandehbr.webhook.office.com/webhookb2/0c94e931-a331-49d4-a0cf-bc72233bc19b@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/8499bebcbc6e4395a83a9ae3f6050a8e/bd7b1c42-afa1-4108-9114-508dccf195b1/V2lgMG2h_UjUIkOx3zXiC_sEWuYXIa9ef4sKJUJM5ES-Y1"
 
 
     # Criando a mensagem para o Teams
