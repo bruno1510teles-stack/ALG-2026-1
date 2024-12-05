@@ -54,9 +54,9 @@ def enviar_notif(access_params=None, **kwargs):
     # Converter a coluna 'data_criado' para date
     df['data_criado'] = pd.to_datetime(df['data_criado'], errors='coerce').dt.date
     # Obtendo a data de hoje
-    #data_hoje = pd.to_datetime('today').date()
+    data_hoje = pd.to_datetime('today').date()
     
-    data_hoje = pd.to_datetime('today').date() - pd.Timedelta(days=1)
+    #data_hoje = pd.to_datetime('today').date() - pd.Timedelta(days=1)
 
     # Filtro de data específico (2024-11-14)
     df_filtrado = df[df['data_criado'] == data_hoje]
