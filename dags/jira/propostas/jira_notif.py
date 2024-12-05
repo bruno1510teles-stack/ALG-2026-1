@@ -200,7 +200,6 @@ def enviar_notif(access_params=None, **kwargs):
                         f"({(grupo['status_decisao'] == 'Aprovado').sum()} aprovadas, "
                         f"{(grupo['status_decisao'] == 'Reprovado').sum()} reprovadas, "
                         f"{(grupo['status_decisao'] == 'Decisão não atribuida').sum()} não atribuídos)<br>"
-                        # Calculando as médias diárias consolidadas por grupo (política)
                         f"  - <strong>Valor Aprovado:</strong> R$ {grupo['limite_aprovado'].sum():,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') + "<br>"
                         for politica, grupo in df_filtrado.groupby('politica_desc')
                     ]) + "<br><br>" +
@@ -210,7 +209,6 @@ def enviar_notif(access_params=None, **kwargs):
                         f"({(grupo['status_decisao'] == 'Aprovado').sum()} aprovadas, "
                         f"{(grupo['status_decisao'] == 'Reprovado').sum()} reprovadas, "
                         f"{(grupo['status_decisao'] == 'Decisão não atribuida').sum()} não atribuídos)<br>"
-                        # Calculando as médias diárias consolidadas por grupo (ramificação)
                         f"  - <strong>Valor Aprovado:</strong> R$ {grupo['limite_aprovado'].sum():,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') + "<br>"
                         for ramificacao, grupo in df_filtrado.groupby('ramificacao_motor_desc')
                     ]) + "<br><br>"
