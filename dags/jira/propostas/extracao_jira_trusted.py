@@ -155,6 +155,24 @@ def base_details_trusted(access_params=None, **kwargs):
             elif 'Baixa de Overlimit' in proposta or 'Baixa de Over' in proposta or 'Reduzir Over' in proposta or 'Overlimite' in proposta:
                 return "Baixa de Overlimit"
             return "Outros"
+        
+    def formata_prioridade(nivel):
+        if nivel == 'Low':
+            return "Baixo"
+        elif nivel == 'Medium':
+            return "Médio"
+        elif nivel == 'High':
+            return "Alto"
+        elif nivel == 'Lowest':
+            return "Muito Baixo"
+        elif nivel == 'Highest':
+            return "Muito Alto"
+        elif nivel == 'Unknown':
+            return "Prioridade não definida"
+        else:
+            return "Prioridade não atribuida"
+        
+        
     print("Criação de funções finalizadas com sucesso!")
     
     
@@ -176,6 +194,7 @@ def base_details_trusted(access_params=None, **kwargs):
     df['ramificacao_motor_desc'] = df['ramificacao_motor'].apply(verifica_ramificacao_motor)
     df['status_decisao'] = df['decisao'].apply(formata_decisao)
     df['parecer_desc'] = df['parecer'].apply(verifica_parecer)
+    df['prioridade_desc'] = df['prioridade'].apply(formata_prioridade)
 
 
     # Convertendo colunas de data e hora
@@ -206,7 +225,7 @@ def base_details_trusted(access_params=None, **kwargs):
     # Selecionando as colunas relevantes
     jira_tratado = filtro[[
         'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor',
+        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor','prioridade_desc'
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc',
         'resolvido_tratado', 'criado_tratado', 'atribuido_tratado',
         'data_criado', 'hora_criado', 
