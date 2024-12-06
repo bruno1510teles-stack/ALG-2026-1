@@ -233,17 +233,17 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     # Lógica para calcular 'VAGAO OVER 30' 
     df_final['VAGAO OVER 30'] = np.where(df_final['Over 30'].fillna(0) > 0, 
-                                        df_final['Over 30'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 30'].fillna(0))
 
     # Lógica para calcular 'VAGAO OVER 60' 
     df_final['VAGAO OVER 60'] = np.where(df_final['Over 60'].fillna(0) > 0, 
-                                        df_final['Over 60'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 60'].fillna(0))
 
     # Lógica para calcular 'VAGAO OVER 90'
     df_final['VAGAO OVER 90'] = np.where(df_final['Over 90'].fillna(0) > 0, 
-                                        df_final['Over 90'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 90'].fillna(0))
     
 
