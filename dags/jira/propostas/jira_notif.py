@@ -103,6 +103,7 @@ def enviar_notif(access_params=None, **kwargs):
     print(result_rami.head())
 
 
+
     # Exportando para Excel
     # result_rami.to_excel(r'C:\Users\kevin.cardoso\Downloads\jira_result.xlsx', index=False, sheet_name='teste')
 
