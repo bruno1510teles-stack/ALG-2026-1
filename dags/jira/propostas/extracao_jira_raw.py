@@ -113,6 +113,7 @@ def base_details_raw(access_params=None, **kwargs):
             'nome_vendedor_alpe': issue['fields']['customfield_13743'],
             'nome_vendedor_fn': issue['fields']['customfield_13742'],
             'filial_fn': issue['fields']['customfield_13798'],
+            'prioridade': issue['fields'].get('priority', {}).get('name') if issue['fields'].get('priority') else None,
             'status': issue['fields']['status']['name'],
             'decisor': issue['fields']['assignee']['displayName'] if issue['fields']['assignee'] else None,
             'decisao': issue['fields']['resolution']['name'] if issue['fields']['resolution'] else None,
