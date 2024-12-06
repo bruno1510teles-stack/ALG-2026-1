@@ -348,32 +348,23 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
 
     # Exportando dados para a camada Refined
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
+     
+    storage_options = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+    }
 
-    try:
-        logger.info("Iniciando salvamento das informações")
-        
-        storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
+    # Definindo o caminho e salvando no MinIO
+    BUCKET_SOURCE_REFINED = "payments"
+    FOLDER_DESTINATION_REFINED = "carteira_vendermais"
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_REFINED = "payments"
-        FOLDER_DESTINATION_REFINED = "carteira_vendermais"
-
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-            df_final, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options,
-            mode="overwrite"
-        )
-        logger.info("Salvamento concluído com sucesso.")
-
-    except Exception as e:
-        logger.error(f"Erro ao salvar as informações: {str(e)}")
+    write_deltalake(
+        f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
+        df_final, 
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="overwrite"
+    )
