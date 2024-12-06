@@ -51,23 +51,25 @@ def enviar_notif(access_params=None, **kwargs):
     print("Colunas carregadas e disponíveis no DataFrame:")
     print(len(df.columns))  # Isso exibe o número de colunas
 
-
     # Converter a coluna 'data_criado' para datetime e extrair apenas a data
     df['data_criado'] = pd.to_datetime(df['data_criado'], errors='coerce').dt.date
 
-    # Calcular a data de ontem
+    # Filtrando apenas as linhas onde 'tipo_analista' é igual a "Motor"
+    df_motor = df[df['tipo_analista'] == "Motor"]
+
+    # Calcular a data de hoje
     data_hoje = pd.to_datetime('today').date()
 
     result_rami = []
-    
-    # Filtrando as propostas do dia
-    propostas_dia = df[df['data_criado'] == data_hoje]
 
-    # Contagem total de propostas no DataFrame
-    propostas_total = len(df)
+    # Filtrando as propostas do dia no DataFrame filtrado (apenas com 'Motor')
+    propostas_dia = df_motor[df_motor['data_criado'] == data_hoje]
+
+    # Contagem total de propostas no DataFrame filtrado
+    propostas_total = len(df_motor)
 
     # Contagem de propostas por 'ramificacao_motor_desc' no DataFrame todo
-    ramificacao_count_total = df.groupby('ramificacao_motor_desc').size()
+    ramificacao_count_total = df_motor.groupby('ramificacao_motor_desc').size()
 
     # Contagem de propostas por 'ramificacao_motor_desc' no dia filtrado
     ramificacao_count_dia = propostas_dia.groupby('ramificacao_motor_desc').size()
@@ -77,7 +79,7 @@ def enviar_notif(access_params=None, **kwargs):
 
     # Calculando o percentual diário por 'ramificacao_motor_desc' (percentual de propostas do dia sobre o total de propostas do dia)
     total_dia = ramificacao_count_dia.sum()  # Soma total das propostas no dia
-    
+
     # Calculando o percentual diário (percentual de propostas no dia sobre o total diário)
     percent_dia = (ramificacao_count_dia / total_dia) * 100 if total_dia > 0 else 0
 
@@ -99,6 +101,7 @@ def enviar_notif(access_params=None, **kwargs):
 
     # Exibindo o resultado final
     print(result_rami.head())
+
 
     # Exportando para Excel
     # result_rami.to_excel(r'C:\Users\kevin.cardoso\Downloads\jira_result.xlsx', index=False, sheet_name='teste')
