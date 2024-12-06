@@ -58,7 +58,7 @@ def base_details_raw(access_params=None, **kwargs):
             "startAt": start_at,
             "maxResults": max_results,
             "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743",
-                    "customfield_13798", "customfield_13793", "customfield_13742", "customfield_13753", "customfield_13721"]  # Campos que deseja extrair
+                    "customfield_13798", "customfield_13793", "customfield_13742", "customfield_13753", "customfield_13721", "priority"]  # Campos que deseja extrair
         }
         
         # Requisição para a API do Jira
