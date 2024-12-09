@@ -8,6 +8,7 @@ from airflow.models import Variable
 import pandas as pd
 import requests
 import pendulum
+import pytz
 from datetime import timedelta
 from time import sleep
 
@@ -64,15 +65,15 @@ default_args = {
 # Definindo o fuso horário de São Paulo
 local_tz = pendulum.timezone("America/Sao_Paulo")
 
-# Função para verificar se o horário de execução é 18:00 em São Paulo
+# Função para verificar se o horário de execução esta correto
 def check_time_to_run(execution_date, **kwargs):
-    # Converte a execução para o fuso horário de São Paulo
-    execution_time = pendulum.parse(execution_date).in_timezone(local_tz)
-    
-    # Verifica se é 18:00 São Paulo
-    if execution_time.hour >= 18:
-        return 'enviar_notif_daily'  # Executa a task se for 18:00
-    return 'skip_task'  # Caso contrário, pula a execução
+    # Converte o 'execution_date' para o formato datetime (UTC)
+    execution_time = execution_date  # O Airflow já fornece 'execution_date' como datetime no formato UTC
+
+    # Verifica se a execução foi às 21:00 UTC
+    if execution_time.hour >= 21:
+        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
+    return 'skip_task'  # Caso contrário, pula a execuç
 
 # Definindo a DAG
 with DAG(
