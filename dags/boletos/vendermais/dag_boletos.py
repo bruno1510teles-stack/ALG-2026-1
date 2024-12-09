@@ -13,6 +13,7 @@ from datetime import timedelta
 from boletos.vendermais import boletos_raw_to_trusted
 from boletos.vendermais import boletos_trusted_to_refined_carteira
 from boletos.vendermais import boletos_trusted_to_refined_vop
+from boletos.tradicional import boletos_tradicional_raw_to_trusted
 
 
 ### Parâmetros de acesso
@@ -92,5 +93,13 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
+
+    # Definindo o task que processa boletos tradicional raw to trusted
+    raw_to_trusted_tradicional = PythonOperator(
+        task_id = 'raw_to_trusted_tradicional',
+        python_callable = boletos_tradicional_raw_to_trusted.boletos_tradicional_raw_to_trusted,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop
+    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional
