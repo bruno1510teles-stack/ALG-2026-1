@@ -114,7 +114,11 @@ def base_details_refined(access_params=None,  **kwargs):
             return "Decisão não atribuída"
         
     def classificar_sla_horas(diferenca_horas):
+        if pd.isna(diferenca_horas):  # Verifica se o valor é NaN
+            return "SLA não definido"
+    
         diferenca_horas = round(diferenca_horas, 2)  # Arredondar para 2 casas decimais
+        
         if diferenca_horas <= 2:
             return "Até 2 horas"
         elif diferenca_horas <= 4:
@@ -127,8 +131,7 @@ def base_details_refined(access_params=None,  **kwargs):
             return "D + 1"
         elif diferenca_horas <= 72:
             return "D + 2"
-        else:
-            return "D + 3"
+        return "D + 3"
         
         
     def classificar_sla_dias(dias):
