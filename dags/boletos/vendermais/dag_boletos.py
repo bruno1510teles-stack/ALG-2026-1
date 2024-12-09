@@ -1,6 +1,6 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
@@ -10,9 +10,9 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from boletos import boletos_raw_to_trusted
-from boletos import boletos_trusted_to_refined_carteira
-from boletos import boletos_trusted_to_refined_vop
+from boletos.vendermais import boletos_raw_to_trusted
+from boletos.vendermais import boletos_trusted_to_refined_carteira
+from boletos.vendermais import boletos_trusted_to_refined_vop
 
 
 ### Parâmetros de acesso
