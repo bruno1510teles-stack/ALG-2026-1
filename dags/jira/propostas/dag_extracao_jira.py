@@ -70,7 +70,7 @@ def check_time_to_run(execution_date, **kwargs):
     execution_time = pendulum.parse(execution_date).in_timezone(local_tz)
     
     # Verifica se é 18:00 São Paulo
-    if execution_time.hour == 18:
+    if execution_time.hour >= 18:
         return 'enviar_notif_daily'  # Executa a task se for 18:00
     return 'skip_task'  # Caso contrário, pula a execução
 

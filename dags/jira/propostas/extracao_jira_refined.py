@@ -112,6 +112,40 @@ def base_details_refined(access_params=None,  **kwargs):
             return "Aprovado"
         else:
             return "Decisão não atribuída"
+        
+    def classificar_sla_horas(diferenca_horas):
+        diferenca_horas = round(diferenca_horas, 2)  # Arredondar para 2 casas decimais
+        if diferenca_horas <= 2:
+            return "Até 2 horas"
+        elif diferenca_horas <= 4:
+            return "Até 2-4 horas"
+        elif diferenca_horas <= 8:
+            return "Até 4-8 horas"
+        elif diferenca_horas <= 24:
+            return "Até 8-24 horas"
+        elif diferenca_horas <= 48:
+            return "D + 1"
+        elif diferenca_horas <= 72:
+            return "D + 2"
+        else:
+            return "D + 3"
+        
+        
+    def classificar_sla_dias(dias):
+        if pd.isna(dias):  # Verifica se o valor é NaN
+            return "SLA não definido"
+        elif dias == 0:
+            return "D = 0"
+        elif dias == 1:
+            return "D + 1"
+        elif dias == 2:
+            return "D + 2"
+        elif dias >= 3:
+            return ">= D + 3"
+
+
+
+
 
     def format_tipo_analista(nome_decisor):
         # Mapeamento de nomes para tipos
@@ -160,6 +194,11 @@ def base_details_refined(access_params=None,  **kwargs):
     # Criando df para verificar a diferença de horas e minutos - Atribuido/ Resolvido
     df['diferença_horas_atribuido_resolvido'] = (df['atribuido_tratado'] - df['resolvido_tratado']).dt.total_seconds() / 3600
     df['diferença_minutos_atribuido_resolvido'] = (df['atribuido_tratado'] - df['resolvido_tratado']).dt.total_seconds() / 60
+    
+    #SLA Tempo Dias e Horas
+    
+    df['sla_hora_atribuido_resolvido'] = df["diferença_horas_atribuido_resolvido"].apply(classificar_sla_horas)
+    df['sla_dias_atribuido_resolvido'] = df["diferença_dias_atribuido_resolvido"].apply(classificar_sla_dias)
 
     # Aplicando funções para criar colunas com informações formatadas
     df['faixa_valor_solicitado'] = df['limite_pedido'].apply(format_faixa_valor_solicitado)
@@ -193,6 +232,7 @@ def base_details_refined(access_params=None,  **kwargs):
         'diferença_dias_criado_resolvido', 'diferença_dias_atribuido_resolvido', 
         'diferença_minutos_criado_resolvido', 'diferença_horas_criado_resolvido',
         'diferença_horas_atribuido_resolvido', 'diferença_minutos_atribuido_resolvido',
+        'sla_hora_atribuido_resolvido', 'sla_dias_atribuido_resolvido',
         'aprovacao_percent', 'status_aprovacao_percent',
         'status_relacional','tipo_analista',
         'atualizado_em', 'year', 'month', 'day'
