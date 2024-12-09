@@ -187,12 +187,12 @@ def base_details_refined(access_params=None,  **kwargs):
 
 
     # Criando df para verificar a diferença de dias
-    df['diferença_dias_criado_resolvido'] = (df['resolvido_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
-    df['diferença_dias_atribuido_resolvido'] = (df['atribuido_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
+    df['diferença_dias_criado_resolvido'] = (df['criado_tratado'] - df['resolvido_tratado']).dt.days.astype('Int64')
+    df['diferença_dias_atribuido_resolvido'] = (df['atribuido_tratado'] - df['resolvido_tratado']).dt.days.astype('Int64')
 
     # Criando df para verificar a diferença de horas e minutos - Criado/ Resolvido
-    df['diferença_horas_criado_resolvido'] = (df['resolvido_tratado'] - df['criado_tratado']).dt.total_seconds() / 3600
-    df['diferença_minutos_criado_resolvido'] = (df['resolvido_tratado'] - df['criado_tratado']).dt.total_seconds() / 60
+    df['diferença_horas_criado_resolvido'] = (df['criado_tratado'] - df['resolvido_tratado']).dt.total_seconds() / 3600
+    df['diferença_minutos_criado_resolvido'] = (df['criado_tratado'] - df['resolvido_tratado']).dt.total_seconds() / 60
 
     # Criando df para verificar a diferença de horas e minutos - Atribuido/ Resolvido
     df['diferença_horas_atribuido_resolvido'] = (df['atribuido_tratado'] - df['resolvido_tratado']).dt.total_seconds() / 3600
