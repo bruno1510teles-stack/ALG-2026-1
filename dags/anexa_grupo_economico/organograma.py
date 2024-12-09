@@ -5,6 +5,7 @@ import requests
 import time
 import json
 from io import BytesIO
+from scripts.analises_credito.error_warning import erro
 from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
 from minio.error import S3Error
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
@@ -21,6 +22,7 @@ default_args = {
     schedule= None,
     description='DAG consulta trino e faz upload do arquivo para minio',
     catchup=False,
+    on_failure_callback=erro
 )
 def anexa_grupo_economico():
 

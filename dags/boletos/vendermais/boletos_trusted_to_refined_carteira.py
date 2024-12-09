@@ -44,7 +44,16 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     ### Definindo fechamentos de safra
     fechamentos = pd.date_range(start='2022-06-30', end=pd.Timestamp.now().replace(day=1) + pd.offsets.MonthEnd(1), freq='M')
+        # Captura a data atual
+    hoje = pd.Timestamp.now()
+
+    # Verifica se o mês atual já fechou
+    if hoje.day != pd.Timestamp.now().days_in_month:
+        # Substitui o último fechamento pela data atual
+        fechamentos = fechamentos[:-1].append(pd.DatetimeIndex([hoje]))
     print(f"Quantidade de fechamento: {fechamentos.shape[0]}")
+    fechamentos = fechamentos.normalize()
+    print(fechamentos)
 
 
 
@@ -224,17 +233,17 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     # Lógica para calcular 'VAGAO OVER 30' 
     df_final['VAGAO OVER 30'] = np.where(df_final['Over 30'].fillna(0) > 0, 
-                                        df_final['Over 30'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 30'].fillna(0))
 
     # Lógica para calcular 'VAGAO OVER 60' 
     df_final['VAGAO OVER 60'] = np.where(df_final['Over 60'].fillna(0) > 0, 
-                                        df_final['Over 60'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 60'].fillna(0))
 
     # Lógica para calcular 'VAGAO OVER 90'
     df_final['VAGAO OVER 90'] = np.where(df_final['Over 90'].fillna(0) > 0, 
-                                        df_final['Over 90'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
+                                        df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 90'].fillna(0))
     
 
@@ -339,32 +348,23 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
 
     # Exportando dados para a camada Refined
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
+     
+    storage_options = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+    }
 
-    try:
-        logger.info("Iniciando salvamento das informações")
-        
-        storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
+    # Definindo o caminho e salvando no MinIO
+    BUCKET_SOURCE_REFINED = "payments"
+    FOLDER_DESTINATION_REFINED = "carteira_vendermais"
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_REFINED = "payments"
-        FOLDER_DESTINATION_REFINED = "carteira_vendermais"
-
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-            df_final, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options,
-            mode="overwrite"
-        )
-        logger.info("Salvamento concluído com sucesso.")
-
-    except Exception as e:
-        logger.error(f"Erro ao salvar as informações: {str(e)}")
+    write_deltalake(
+        f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
+        df_final, 
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="overwrite"
+    )

@@ -1,6 +1,8 @@
 ### Importando Libs necessárias
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
@@ -15,6 +17,7 @@ from jira.propostas import extracao_jira_raw
 from jira.propostas import extracao_jira_trusted
 from jira.propostas import extracao_jira_refined
 from jira.propostas import propostas_boletos_vop
+from jira.propostas import jira_notif
 
 
 
@@ -55,51 +58,77 @@ default_args = {
     "owner": "Kevin Cardoso",
     "retries": 1,
     "retry_delay": timedelta(minutes=1),
-    "on_failure_callback": notificar_falha_teams
+    # "on_failure_callback": notificar_falha_teams
 }
 
+# Definindo o fuso horário de São Paulo
 local_tz = pendulum.timezone("America/Sao_Paulo")
 
+# Função para verificar se o horário de execução é 18:00 em São Paulo
+def check_time_to_run(execution_date, **kwargs):
+    # Converte a execução para o fuso horário de São Paulo
+    execution_time = pendulum.parse(execution_date).in_timezone(local_tz)
+    
+    # Verifica se é 18:00 São Paulo
+    if execution_time.hour == 18:
+        return 'enviar_notif_daily'  # Executa a task se for 18:00
+    return 'skip_task'  # Caso contrário, pula a execução
 
 # Definindo a DAG
 with DAG(
     dag_id='processo_jira_propostas',
     start_date=days_ago(1),
-    schedule_interval='0 8,17 * * *',
+    schedule_interval='0 11,21 * * *',  # 08:00 e 18:00 São Paulo (11:00 e 21:00 UTC)
     default_args=default_args,
     tags=['etl', 'jira','raw','trusted'],
     max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa a proposta
+    # Definindo as tasks
     extracao_jira_to_raw = PythonOperator(
         task_id='extracao_jira_raw',
         python_callable=extracao_jira_raw.base_details_raw,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
-    
-        # Definindo o task que processa a proposta
+
     extracao_jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_trusted',
         python_callable=extracao_jira_trusted.base_details_trusted,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
-# Definindo o task que refina a base propostas
     extracao_jira_to_refined = PythonOperator(
         task_id='extracao_jira_refined',
-        python_callable=extracao_jira_refined.base_details_refined,  # Garantir que a função base_details_refined existe em extracao_jira_refined
+        python_callable=extracao_jira_refined.base_details_refined,
         provide_context=True
     )
-    
+
     propostas_boletos_vop_aux = PythonOperator(
         task_id='merge_proposta_boletos_vop',
-        python_callable=propostas_boletos_vop.merge_propostas_boletos,  # Garantir que a função base_details_refined existe em extracao_jira_refined
+        python_callable=propostas_boletos_vop.merge_propostas_boletos,
         provide_context=True
     )
 
+    # BranchPythonOperator para verificar o horário e decidir qual task executar
+    check_time_task = BranchPythonOperator(
+        task_id='check_time',
+        python_callable=check_time_to_run,
+        provide_context=True,
+        op_kwargs={'execution_date': '{{ ts }}'}
+    )
 
-# Definindo a ordem de execução das tasks
-    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux
+    # Task para pular caso não seja 18:00
+    skip_task = DummyOperator(task_id='skip_task')
+
+    # Task para enviar notificações (executa somente às 18:00 São Paulo)
+    jira_notif_teams = PythonOperator(
+        task_id='enviar_notif_daily',
+        python_callable=jira_notif.enviar_notif,
+        provide_context=True
+    )
+
+    # Definindo a ordem de execução das tasks
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    check_time_task >> [jira_notif_teams, skip_task]  # Se for 18:00, executa a task 'enviar_notif_daily', caso contrário, pula a execução

@@ -8,6 +8,7 @@ from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
+from scripts.analises_credito.error_warning import erro
 from scripts.analises_credito.pcc.get_coordenadas import get_coordenadas
 from gerar_pdf.auth import get_access_token
 from dateutil import parser
@@ -24,6 +25,7 @@ default_args = {
     schedule= None,
     description='DAG consulta o relato serasa no exrep e envia o arquivo retornado para o minio',
     catchup=False,
+    on_failure_callback=erro
 )
 def consulta_relato():
 

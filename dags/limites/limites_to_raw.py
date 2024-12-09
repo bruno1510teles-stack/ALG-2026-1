@@ -142,32 +142,23 @@ def limites_to_raw(access_params=None, **kwargs):
     # Exibe o resultado
     print(contagem_por_bucket)
 
-    # Exportando dados para a camada Trusted
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
-
-    try:
-        logger.info("Iniciando salvamento das informações")
+    # Exportando dados para a camada Raw
         
-        storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_raw'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_raw'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_raw']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
+    storage_options = {
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_raw'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_raw'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_raw']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+    }
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_TRUSTED = "limites"
+    # Definindo o caminho e salvando no MinIO
+    BUCKET_SOURCE_TRUSTED = "limites"
 
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_TRUSTED}", 
-            df_final, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options,
-            mode="overwrite"
-        )
-        logger.info("Salvamento concluído com sucesso.")
-
-    except Exception as e:
-        logger.error(f"Erro ao salvar as informações: {str(e)}")
+    write_deltalake(
+        f"s3a://{BUCKET_SOURCE_TRUSTED}", 
+        df_final, 
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="overwrite"
+    )

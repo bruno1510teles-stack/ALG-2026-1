@@ -184,7 +184,7 @@ def base_details_refined(access_params=None,  **kwargs):
     jira_tratado_refined = df[
         [
         'issue_key', 'politica_desc', 'cnpj', 'cnpj_formatado','pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor',
+        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor','prioridade_desc',
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
         'data_criado', 'hora_criado', 
         'data_resolvido', 'hora_resolvido',
