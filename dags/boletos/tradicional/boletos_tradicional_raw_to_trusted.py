@@ -60,12 +60,12 @@ def boletos_tradicional_raw_to_trusted(access_params=None,  **kwargs):
                             bt.numero_nfe
                         from 
                             postgres.ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo bt 
-                        where 
-                            bt.codigo_cedente not in (11, 12, 188, 40585)
-                            and bt.excluido != true
-                            and bt.codigo_estagio_titulo in (6) 
-                            and bt.codigo_empresa = 1
-                            and bt.data_efetivacao is not null
+                        -- where 
+                            -- bt.codigo_cedente not in (11, 12, 188, 40585)
+                            -- and bt.excluido != true
+                            -- and bt.codigo_estagio_titulo in (6) 
+                            -- and bt.codigo_empresa = 1
+                            -- and bt.data_efetivacao is not null
                     """
 
     fidc = execute_query(conn, query_fidc)
