@@ -79,7 +79,7 @@ def check_time_to_run(execution_date, **kwargs):
     print(f"execution_date processado: {execution_time}")
 
     # Verifica se o horário é igual ou posterior a 21:00 UTC
-    if execution_time.hour >= 18:
+    if execution_time.hour >= 21:
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
     return 'skip_task'  # Caso contrário, pula a execução
 
@@ -93,32 +93,32 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    # # Definindo as tasks
-    # extracao_jira_to_raw = PythonOperator(
-    #     task_id='extracao_jira_raw',
-    #     python_callable=extracao_jira_raw.base_details_raw,
-    #     op_kwargs={'access_params': access_params},
-    #     provide_context=True
-    # )
+    # Definindo as tasks
+    extracao_jira_to_raw = PythonOperator(
+        task_id='extracao_jira_raw',
+        python_callable=extracao_jira_raw.base_details_raw,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
 
-    # extracao_jira_raw_to_trusted = PythonOperator(
-    #     task_id='extracao_jira_trusted',
-    #     python_callable=extracao_jira_trusted.base_details_trusted,
-    #     op_kwargs={'access_params': access_params},
-    #     provide_context=True
-    # )
+    extracao_jira_raw_to_trusted = PythonOperator(
+        task_id='extracao_jira_trusted',
+        python_callable=extracao_jira_trusted.base_details_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
 
-    # extracao_jira_to_refined = PythonOperator(
-    #     task_id='extracao_jira_refined',
-    #     python_callable=extracao_jira_refined.base_details_refined,
-    #     provide_context=True
-    # )
+    extracao_jira_to_refined = PythonOperator(
+        task_id='extracao_jira_refined',
+        python_callable=extracao_jira_refined.base_details_refined,
+        provide_context=True
+    )
 
-    # propostas_boletos_vop_aux = PythonOperator(
-    #     task_id='merge_proposta_boletos_vop',
-    #     python_callable=propostas_boletos_vop.merge_propostas_boletos,
-    #     provide_context=True
-    # )
+    propostas_boletos_vop_aux = PythonOperator(
+        task_id='merge_proposta_boletos_vop',
+        python_callable=propostas_boletos_vop.merge_propostas_boletos,
+        provide_context=True
+    )
 
     # BranchPythonOperator para verificar o horário e decidir qual task executar
     check_time_task = BranchPythonOperator(
@@ -139,5 +139,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    #extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
     check_time_task >> [jira_notif_teams, skip_task] 
