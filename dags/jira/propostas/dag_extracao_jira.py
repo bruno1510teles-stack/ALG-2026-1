@@ -67,13 +67,17 @@ local_tz = pendulum.timezone("America/Sao_Paulo")
 
 # Função para verificar se o horário de execução esta correto
 def check_time_to_run(execution_date, **kwargs):
-    # Converte o 'execution_date' (string ISO-8601) para um objeto datetime
+    # Log para depuração
+    print(f"execution_date recebido: {execution_date}")
+    print(f"Horário atual UTC: {datetime.utcnow()}")
+
+    # Converte execution_date para datetime
     execution_time = datetime.fromisoformat(execution_date)
 
-    # Verifica se a execução foi às 21:00 UTC ou depois
+    # Verifica se é 21:00 ou mais
     if execution_time.hour >= 21:
-        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
-    return 'skip_task'  # Caso contrário, pula a execução
+        return 'enviar_notif_daily'
+    return 'skip_task'
 
 # Definindo a DAG
 with DAG(
