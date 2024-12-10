@@ -46,13 +46,13 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-def notificar_falha_teams(context):
-    url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
-    mensagem = {
-        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
-        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
-    }
-    requests.post(url, json=mensagem)
+# def notificar_falha_teams(context):
+#     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
+#     mensagem = {
+#         "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
+#         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+#     }
+#     requests.post(url, json=mensagem)
  
 ### Definindo defaults
 default_args = {
@@ -79,7 +79,7 @@ def check_time_to_run(execution_date, **kwargs):
     print(f"execution_date processado: {execution_time}")
 
     # Verifica se o horário é igual ou posterior a 21:00 UTC
-    if execution_time.hour >= 21:
+    if execution_time.hour >= 11:
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
     return 'skip_task'  # Caso contrário, pula a execução
 
@@ -139,5 +139,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    # extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
     check_time_task >> [jira_notif_teams, skip_task] 

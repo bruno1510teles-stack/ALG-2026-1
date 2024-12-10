@@ -77,31 +77,27 @@ def enviar_notif(access_params=None, **kwargs):
     # Garantindo que ambas as contagens (total e do dia) tenham o mesmo índice
     ramificacao_count_total = ramificacao_count_total.reindex(ramificacao_count_dia.index, fill_value=0)
 
-    # Calculando o percentual diário por 'ramificacao_motor_desc' (percentual de propostas do dia sobre o total de propostas do dia)
-    total_dia = ramificacao_count_dia.sum()  # Soma total das propostas no dia
+    # Soma total das propostas no dia
+    total_dia = ramificacao_count_dia.sum()
 
-    # Calculando o percentual diário (percentual de propostas no dia sobre o total diário)
-    percent_dia = (ramificacao_count_dia / total_dia) * 100 if total_dia > 0 else 0
+    # Calculando os percentuais por índice
+    percent_dia = (ramificacao_count_dia / total_dia * 100) if total_dia > 0 else ramificacao_count_dia * 0
+    percent_hist = (ramificacao_count_total / propostas_total * 100) if propostas_total > 0 else ramificacao_count_total * 0
 
-    # Calculando o percentual histórico (percentual de propostas no dia sobre o total geral)
-    percent_hist = (ramificacao_count_total / propostas_total) * 100 if propostas_total > 0 else 0
-
-    # Calculando a variação entre o percentual diário e o percentual histórico
-    variacao_percentual = percent_dia - percent_hist * 1
+    # Calculando a variação entre os percentuais
+    variacao_percentual = percent_dia - percent_hist
 
     # Criando o DataFrame final com as contagens e percentuais
     result_rami = pd.DataFrame({
         'Ramificação': ramificacao_count_dia.index,
         'Propostas Dia': ramificacao_count_dia.values,
-        # Percentuais com 2 casas decimais, símbolo de "%" e vírgula como separador decimal
-        'Dia %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" if isinstance(val, (int, float)) else "0,00 %" for val in percent_dia.values],
-        'Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" if isinstance(val, (int, float)) else "0,00 %" for val in percent_hist.values],
-        'Variação Hoje x Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" if isinstance(val, (int, float)) else "0,00 %" for val in variacao_percentual]
+        'Dia %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_dia],
+        'Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_hist],
+        'Variação Hoje x Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in variacao_percentual]
     })
 
     # Exibindo o resultado final
     print(result_rami.head())
-
 
 
     # Exportando para Excel
@@ -113,7 +109,7 @@ def enviar_notif(access_params=None, **kwargs):
     data_execucao = data_hoje if not df.empty else 'Data não disponível'
     
     # URL do Webhook do Microsoft Teams
-    webhook_url = "https://yandehbr.webhook.office.com/webhookb2/0c94e931-a331-49d4-a0cf-bc72233bc19b@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/8499bebcbc6e4395a83a9ae3f6050a8e/bd7b1c42-afa1-4108-9114-508dccf195b1/V2lgMG2h_UjUIkOx3zXiC_sEWuYXIa9ef4sKJUJM5ES-Y1"
+    webhook_url = "https://yandehbr.webhook.office.com/webhookb2/11355f7b-95b1-414a-8ace-fd3555a3f761@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/339eb623c8ea44608834e99bb2381457/bd7b1c42-afa1-4108-9114-508dccf195b1/V25zJILk1PdfrDJhZO9ChlnubijOHK8YHVVMSo6p5udE01"
 
 
     # Criando a mensagem para o Teams
