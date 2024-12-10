@@ -88,32 +88,32 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    # Definindo as tasks
-    extracao_jira_to_raw = PythonOperator(
-        task_id='extracao_jira_raw',
-        python_callable=extracao_jira_raw.base_details_raw,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
+    # # Definindo as tasks
+    # extracao_jira_to_raw = PythonOperator(
+    #     task_id='extracao_jira_raw',
+    #     python_callable=extracao_jira_raw.base_details_raw,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True
+    # )
 
-    extracao_jira_raw_to_trusted = PythonOperator(
-        task_id='extracao_jira_trusted',
-        python_callable=extracao_jira_trusted.base_details_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
+    # extracao_jira_raw_to_trusted = PythonOperator(
+    #     task_id='extracao_jira_trusted',
+    #     python_callable=extracao_jira_trusted.base_details_trusted,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True
+    # )
 
-    extracao_jira_to_refined = PythonOperator(
-        task_id='extracao_jira_refined',
-        python_callable=extracao_jira_refined.base_details_refined,
-        provide_context=True
-    )
+    # extracao_jira_to_refined = PythonOperator(
+    #     task_id='extracao_jira_refined',
+    #     python_callable=extracao_jira_refined.base_details_refined,
+    #     provide_context=True
+    # )
 
-    propostas_boletos_vop_aux = PythonOperator(
-        task_id='merge_proposta_boletos_vop',
-        python_callable=propostas_boletos_vop.merge_propostas_boletos,
-        provide_context=True
-    )
+    # propostas_boletos_vop_aux = PythonOperator(
+    #     task_id='merge_proposta_boletos_vop',
+    #     python_callable=propostas_boletos_vop.merge_propostas_boletos,
+    #     provide_context=True
+    # )
 
     # BranchPythonOperator para verificar o horário e decidir qual task executar
     check_time_task = BranchPythonOperator(
