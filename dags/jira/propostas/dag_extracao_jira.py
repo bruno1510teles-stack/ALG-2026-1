@@ -67,14 +67,19 @@ local_tz = pendulum.timezone("America/Sao_Paulo")
 
 def check_time_to_run(execution_date, **kwargs):
     """
-    Função para verificar se o horário de execução é igual ou posterior ao horário definido (21:00 UTC).
+    Verifica se o horário de execução é igual ou posterior a 21:00 UTC.
     """
-    # Log para depuração
-    print(f"execution_date recebido: {execution_date}")
-    print(f"Horário atual UTC: {datetime.utcnow()}")
+    # Certifica-se de que execution_date é um objeto datetime
+    if isinstance(execution_date, str):
+        execution_time = datetime.fromisoformat(execution_date)  # Converte a string ISO-8601 para datetime
+    else:
+        execution_time = execution_date  # Já é datetime, usa diretamente
 
-    # Verifica se o execution_date é 21:00 ou mais (no horário UTC)
-    if execution_date.hour >= 21:
+    # Log para depuração
+    print(f"execution_date processado: {execution_time}")
+
+    # Verifica se o horário é igual ou posterior a 21:00 UTC
+    if execution_time.hour >= 21:
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
     return 'skip_task'  # Caso contrário, pula a execução
 
