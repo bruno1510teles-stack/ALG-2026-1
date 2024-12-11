@@ -89,7 +89,7 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='0 11,21 * * *',  # 08:00 e 18:00 São Paulo (11:00 e 21:00 UTC)
     default_args=default_args,
-    tags=['etl', 'jira','raw','trusted'],
+    tags=['etl', 'jira','raw','trusted','refined'],
     max_active_runs=1
 ) as dag:
 
