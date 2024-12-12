@@ -8,6 +8,7 @@ from airflow.models import Variable
 import pandas as pd
 import requests
 import pendulum
+from datetime import datetime
 from datetime import timedelta
 from time import sleep
 
@@ -45,13 +46,13 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-def notificar_falha_teams(context):
-    url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
-    mensagem = {
-        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
-        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
-    }
-    requests.post(url, json=mensagem)
+# def notificar_falha_teams(context):
+#     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
+#     mensagem = {
+#         "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
+#         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+#     }
+#     requests.post(url, json=mensagem)
  
 ### Definindo defaults
 default_args = {
@@ -64,14 +65,22 @@ default_args = {
 # Definindo o fuso horário de São Paulo
 local_tz = pendulum.timezone("America/Sao_Paulo")
 
-# Função para verificar se o horário de execução é 18:00 em São Paulo
 def check_time_to_run(execution_date, **kwargs):
-    # Converte a execução para o fuso horário de São Paulo
-    execution_time = pendulum.parse(execution_date).in_timezone(local_tz)
-    
-    # Verifica se é 18:00 São Paulo
-    if execution_time.hour == 18:
-        return 'enviar_notif_daily'  # Executa a task se for 18:00
+    """
+    Verifica se o horário de execução é igual ou posterior a 21:00 UTC.
+    """
+    # Certifica-se de que execution_date é um objeto datetime
+    if isinstance(execution_date, str):
+        execution_time = datetime.fromisoformat(execution_date)  # Converte a string ISO-8601 para datetime
+    else:
+        execution_time = execution_date  # Já é datetime, usa diretamente
+
+    # Log para depuração
+    print(f"execution_date processado: {execution_time}")
+
+    # Verifica se o horário é igual ou posterior a 21:00 UTC
+    if execution_time.hour >= 15:
+        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
     return 'skip_task'  # Caso contrário, pula a execução
 
 # Definindo a DAG
@@ -80,7 +89,7 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval='0 11,21 * * *',  # 08:00 e 18:00 São Paulo (11:00 e 21:00 UTC)
     default_args=default_args,
-    tags=['etl', 'jira','raw','trusted'],
+    tags=['etl', 'jira','raw','trusted','refined'],
     max_active_runs=1
 ) as dag:
 
@@ -131,4 +140,4 @@ with DAG(
 
     # Definindo a ordem de execução das tasks
     extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
-    check_time_task >> [jira_notif_teams, skip_task]  # Se for 18:00, executa a task 'enviar_notif_daily', caso contrário, pula a execução
+    check_time_task >> [jira_notif_teams, skip_task] 
