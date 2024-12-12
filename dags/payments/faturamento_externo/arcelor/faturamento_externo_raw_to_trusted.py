@@ -34,7 +34,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
     FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=10/day=23'
-    file_name = 'Faturamento Base dez24.xlsx'
+    file_name = 'Faturamento Base dez24 - v2.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
@@ -42,6 +42,12 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
     df = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
+
+    # Remover o sufixo .0 e transformar em object
+    df['Raiz CNPJ'] = df['Raiz CNPJ'].astype(str).str.rstrip('.0')
+
+    # Confirmar o tipo da coluna
+    df['Raiz CNPJ'] = df['Raiz CNPJ'].astype('object')
 
 
     # Treating column names
@@ -114,8 +120,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Agrupando por Razao Social e Unidade
     df_razao_social_e_unidade = df.groupby('Raiz CNPJ').agg({
-                            'Unidade': 'max',
-                            'Razão Social': 'max'
+                            'Unidade': 'first',
+                            'Razão Social': 'first'
                             }).reset_index()
 
     df_razao_social_e_unidade = df_razao_social_e_unidade.drop_duplicates()
