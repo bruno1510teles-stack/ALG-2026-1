@@ -35,10 +35,10 @@ def extracao_pagamento(access_params=None, **kwargs):
             print(f"Erro ao conectar ao MinIO: {e}")
 
 
-    # Gerando nome do arquivo para importacao
+     # Gerando nome do arquivo para importacao
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=10/day=23'
-    file_name = 'Faturamento Base ago2024 - Revisada.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=12/day=12'
+    file_name = 'Faturamento Base dez24 - Tratada.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
@@ -179,6 +179,7 @@ def extracao_pagamento(access_params=None, **kwargs):
     # Unindo os dois DFs
     df_dados_final = pd.merge(df_unidade, df_agrup_cnpj_datas, on='raiz_cnpj', how='left')
     df_dados_final = df_dados_final.reset_index(drop=True)
+
 
     #---------------------------------------------------------------------------------------#
     # Exportando saida para Trusted
