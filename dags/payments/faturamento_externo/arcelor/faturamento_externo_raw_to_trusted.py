@@ -145,7 +145,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        df_dados, 
+        df, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"
