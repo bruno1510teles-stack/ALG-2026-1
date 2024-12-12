@@ -31,10 +31,10 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
 
 
-    # Bucket and Folder_Destination
+       # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=10/day=23'
-    file_name = 'Faturamento Base dez24 - v2.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=12/day=12'
+    file_name = 'Faturamento Base dez24 - Tratada.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
@@ -42,12 +42,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
     df = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
-
-    # Remover o sufixo .0 e transformar em object
-    df['Raiz CNPJ'] = df['Raiz CNPJ'].astype(str).str.rstrip('.0')
-
-    # Confirmar o tipo da coluna
-    df['Raiz CNPJ'] = df['Raiz CNPJ'].astype('object')
 
 
     # Treating column names
@@ -64,6 +58,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     format_column_names(df)
 
+    df = df.dropna(subset=['Razão Social'])
+
+    print('Parte 1')
 
     # Adjusting columns with upper()
     df['Razão Social'] = df['Razão Social'].str.upper()
@@ -89,6 +86,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     tratar_colunas_202(df)
 
 
+    print('Parte 2')
+
     # Treating NaN values
     def fillna_in_columns_starting_with(df, prefix, value):
         # Filtering columns
@@ -112,36 +111,22 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     df['Raiz CNPJ'] = df['Raiz CNPJ'].str[-8:]
 
 
+    print('Parte 3')
+
+    # Removendo coluna antiga de Raiz CNPJ antes do tratamento
+    df = df.drop(columns=["Raiz CNPJ Recebido", "Pagador"])
+
+    # Renomeando colunas
+    df.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
 
+    print('Parte 4')
 
-    # Agrupando por Razao Social e Unidade
-    df_razao_social_e_unidade = df.groupby('Raiz CNPJ').agg({
-                            'Unidade': 'first',
-                            'Razão Social': 'first'
-                            }).reset_index()
-
-    df_razao_social_e_unidade = df_razao_social_e_unidade.drop_duplicates()
-    df_razao_social_e_unidade
-
-
-    # Agrupando por Raiz_cnpj, year, month, day e somando valores
-    df_raiz_cnpj_datas = df.copy()
-    df_raiz_cnpj_datas = df_raiz_cnpj_datas.drop(columns=['Pagador', 'Razão Social', 'Unidade'])
-
-    df_agrup_cnpj_datas = df_raiz_cnpj_datas.groupby(['Raiz CNPJ', 'atualizado_em', 'year', 'month', 'day']).sum().reset_index()
-
-
-    # Unindo os dois DFs
-    df_dados = pd.merge(df_razao_social_e_unidade, df_agrup_cnpj_datas, on='Raiz CNPJ', how='left')
-
-    df_dados = df_dados.reset_index(drop=True)
-
-    # Renomeando colunas
-    df_dados.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
+    df = df.reset_index(drop=True)
 
 
     # Exportando dados para a camada Trusted
