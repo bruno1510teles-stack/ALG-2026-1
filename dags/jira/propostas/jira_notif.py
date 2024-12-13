@@ -68,36 +68,31 @@ def enviar_notif(access_params=None, **kwargs):
     # Contagem total de propostas no DataFrame filtrado
     propostas_total = len(df_motor)
 
-    # Contagem de propostas por 'ramificacao_motor_desc' no DataFrame todo
-    ramificacao_count_total = df_motor.groupby('ramificacao_motor_desc').size()
+    # ----- Contagens e percentuais por política e ramificação -----
+    group_total = df_motor.groupby(['politica_desc', 'ramificacao_motor_desc']).size()
+    group_dia = propostas_dia.groupby(['politica_desc', 'ramificacao_motor_desc']).size()
 
-    # Contagem de propostas por 'ramificacao_motor_desc' no dia filtrado
-    ramificacao_count_dia = propostas_dia.groupby('ramificacao_motor_desc').size()
-
-    # Garantindo que ambas as contagens (total e do dia) tenham o mesmo índice
-    ramificacao_count_total = ramificacao_count_total.reindex(ramificacao_count_dia.index, fill_value=0)
+    # Garantindo alinhamento entre total e dia
+    group_total = group_total.reindex(group_dia.index, fill_value=0)
 
     # Soma total das propostas no dia
-    total_dia = ramificacao_count_dia.sum()
-
-    # Calculando os percentuais por índice
-    percent_dia = (ramificacao_count_dia / total_dia * 100) if total_dia > 0 else ramificacao_count_dia * 0
-    percent_hist = (ramificacao_count_total / propostas_total * 100) if propostas_total > 0 else ramificacao_count_total * 0
-
-    # Calculando a variação entre os percentuais
+    total_dia = group_dia.sum()
+    percent_dia = (group_dia / total_dia * 100) if total_dia > 0 else group_dia * 0
+    percent_hist = (group_total / propostas_total * 100) if propostas_total > 0 else group_total * 0
     variacao_percentual = percent_dia - percent_hist
 
     # Criando o DataFrame final com as contagens e percentuais
     result_rami = pd.DataFrame({
-        'Ramificação': ramificacao_count_dia.index,
-        'Propostas Dia': ramificacao_count_dia.values,
+        'Política': [index[0] for index in group_dia.index],
+        'Ramificação': [index[1] for index in group_dia.index],
+        'Propostas Dia': group_dia.values,
         'Dia %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_dia],
         'Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_hist],
         'Variação Hoje x Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in variacao_percentual]
     })
 
     # Exibindo o resultado final
-    print(result_rami.head())
+    print(result_rami)
 
 
     # Exportando para Excel
@@ -114,45 +109,44 @@ def enviar_notif(access_params=None, **kwargs):
 
     # Criando a mensagem para o Teams
     mensagem = {
-        "@type": "MessageCard",
-        "@context": "http://schema.org/extensions",
-        "summary": "Resumo Diário de Propostas",
-        "themeColor": "0078D4",
-        "title": "Resumo Diário de Propostas",
-        "sections": [
-            {
-                "activityTitle": "📊 Resumo Diário de Propostas",
-                "activitySubtitle": f"Data de Execução: {data_execucao}",
-                "activityText": (
-                    f"Prezados(as), boa tarde,<br><br>"
-                    f"Em relação ao resumo de propostas por Ramificação, registramos:<br><br>"
-                    f"<table style='width:100%; border: 1px solid black; border-collapse: collapse;'>"
-                    f"<tr><th style='border: 1px solid black; padding: 5px;'>Ramificação</th>"
-                    f"<th style='border: 1px solid black; padding: 5px;'>Propostas Dia</th>"
-                    f"<th style='border: 1px solid black; padding: 5px;'>Percentual Dia %</th>"
-                    f"<th style='border: 1px solid black; padding: 5px;'>Percentual Histórico %</th>"
-                    f"<th style='border: 1px solid black; padding: 5px;'>Variação Hoje x Histórico %</th></tr>"
-                    + "".join([  # Itera sobre os dados de 'result_rami' para gerar a tabela
-                        f"<tr><td style='border: 1px solid black; padding: 5px;'>{row['Ramificação']}</td>"
-                        f"<td style='border: 1px solid black; padding: 5px;'>{row['Propostas Dia']}</td>"
-                        f"<td style='border: 1px solid black; padding: 5px;'>{row['Dia %']}</td>"
-                        f"<td style='border: 1px solid black; padding: 5px;'>{row['Histórico %']}</td>"
-                        f"<td style='border: 1px solid black; padding: 5px;'>{row['Variação Hoje x Histórico %']}</td></tr>"
-                        for index, row in result_rami.iterrows()  # Itera sobre o DataFrame result_rami
-                    ])
-                    # Adicionando a linha de totais
-                    + f"<tr><td style='border: 1px solid black; padding: 5px; font-weight: bold;'>Totais</td>"
-                    + f"<td style='border: 1px solid black; padding: 5px; font-weight: bold;'>{result_rami['Propostas Dia'].sum()}</td>"
-                    + f"<td style='border: 1px solid black; padding: 5px; font-weight: bold;'>{f'{percent_dia.sum():.2f}'.replace('.', ',')} %</td>"
-                    + f"<td style='border: 1px solid black; padding: 5px; font-weight: bold;'>{f'{percent_hist.sum():.2f}'.replace('.', ',')} %</td>"
-                    + f"<td style='border: 1px solid black; padding: 5px; font-weight: bold;'>{f'{variacao_percentual.sum():.2f}'.replace('.', ',')} %</td></tr>"
-                    + "</table><br><br>"
-                    f"Atenciosamente,<br>"
-                    f"Equipe de Políticas de Modelagem de Crédito"
-                )
-            }
-        ]
-    }
+    "@type": "MessageCard",
+    "@context": "http://schema.org/extensions",
+    "summary": "Resumo Diário de Propostas",
+    "themeColor": "0078D4",
+    "title": "Resumo Diário de Propostas",
+    "sections": [
+        {
+            "activityTitle": "📊 Resumo Diário de Propostas",
+            "activitySubtitle": f"Data de Execução: {data_hoje}",
+            "activityText": (
+                f"Prezados(as), boa tarde,<br><br>"
+                f"Segue o resumo de propostas por Política e Ramificação:<br><br>"
+                f"<table style='width:100%; border: 1px solid black; border-collapse: collapse;'>"
+                f"<tr><th style='border: 1px solid black; padding: 5px;'>Política</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Ramificação</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Propostas Dia</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Percentual Dia %</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Percentual Histórico %</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Variação Hoje x Histórico %</th></tr>"
+                + "".join([  # Itera sobre os dados de 'result_rami' para gerar a tabela
+                    f"<tr>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Política']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Ramificação']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Propostas Dia']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Dia %']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Histórico %']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Variação Hoje x Histórico %']}</td>"
+                    f"</tr>"
+                    for _, row in result_rami.iterrows()
+                ])
+                + f"</table><br><br>"
+                f"Atenciosamente,<br>"
+                f"Equipe de Políticas de Modelagem de Crédito"
+            )
+        }
+    ]
+}
+
 
 
 
