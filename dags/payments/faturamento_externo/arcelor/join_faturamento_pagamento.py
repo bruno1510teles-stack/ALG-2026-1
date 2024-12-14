@@ -165,6 +165,16 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     fat_pag['razao_social'] = fat_pag['razao_social'].fillna('')
 
+
+    # Atribuindo data
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    fat_pag['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    fat_pag['year'], fat_pag['month'], fat_pag['day'] = now.year, now.month, now.day
+
+    print('Exportando...')
+
+    fat_pag = fat_pag.reset_index(drop=True)
+
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
