@@ -85,11 +85,8 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
     pag_trusted['unidade'] = pag_trusted['unidade'].apply(remover_acentos)
 
     # Agrupando Pagamento Trusted
-    print(f'Antes do agrupamento: {pag_trusted['raiz_cnpj'].count()}')
-
     pag_trusted = pag_trusted.groupby(['raiz_cnpj', 'unidade'], as_index=False).sum()
 
-    print(f'Apos agrupamento: {pag_trusted['raiz_cnpj'].count()}')
 
     # Pivot Pagamento Trusted
     pag_trusted = pag_trusted.melt(id_vars=['raiz_cnpj', 'unidade'], 
