@@ -12,6 +12,7 @@ from datetime import timedelta
 ### Importando scripts necessários
 from payments.faturamento_externo.arcelor import faturamento_externo_raw_to_trusted
 from payments.faturamento_externo.arcelor import faturamento_externo_trusted_to_refined
+from payments.faturamento_externo.arcelor import join_faturamento_pagamento
 
 
 # Parâmetros de acesso
@@ -68,18 +69,25 @@ with DAG(
 ) as dag:
 
     # Definindo o task que carrega a tabela na trusted (tratamentos iniciais)
-    task1 = PythonOperator(
-        task_id='raw_to_trusted',
-        python_callable=faturamento_externo_raw_to_trusted.extracao_faturamento_externo,
-        provide_context=True
-    )
+    #task1 = PythonOperator(
+    #    task_id='raw_to_trusted',
+    #    python_callable=faturamento_externo_raw_to_trusted.extracao_faturamento_externo,
+    #    provide_context=True
+    #)
 
     # Definindo o task que carrega a tabela do Trino(Trusted) e cria os indicadores para a Refined
-    task2 = PythonOperator(
-        task_id='trusted_to_refined',
-        python_callable=faturamento_externo_trusted_to_refined.tratamento_faturamento_externo,
+    #task2 = PythonOperator(
+    #    task_id='trusted_to_refined',
+    #    python_callable=faturamento_externo_trusted_to_refined.tratamento_faturamento_externo,
+    #    provide_context=True
+    #)
+
+    # Definindo o task que carrega a tabela do Trino(Trusted) e cria os indicadores para a Refined
+    task3 = PythonOperator(
+        task_id='join_fat_pag',
+        python_callable=join_faturamento_pagamento.join_faturamento_pagamento,
         provide_context=True
     )
     
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    task3
