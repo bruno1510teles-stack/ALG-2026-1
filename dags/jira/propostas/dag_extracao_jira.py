@@ -79,7 +79,7 @@ def check_time_to_run(execution_date, **kwargs):
     print(f"execution_date processado: {execution_time}")
 
     # Verifica se o horário é igual ou posterior a 21:00 UTC
-    if execution_time.hour >= 13:
+    if execution_time.hour > 17:
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
     return 'skip_task'  # Caso contrário, pula a execução
 
