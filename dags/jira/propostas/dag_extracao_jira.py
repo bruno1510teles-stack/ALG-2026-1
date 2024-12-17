@@ -53,16 +53,8 @@ def notificar_falha_teams(context):
         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
- 
-### Definindo defaults
-default_args = {
-    "owner": "Kevin Cardoso",
-    "retries": 1,
-    "retry_delay": timedelta(minutes=1),
-    "on_failure_callback": notificar_falha_teams
-}
 
-# Definindo o fuso horário de São Paulo
+
 local_tz = pendulum.timezone("America/Sao_Paulo")
 
 def check_time_to_run(execution_date, next_execution_date, **kwargs):
@@ -83,55 +75,27 @@ def check_time_to_run(execution_date, next_execution_date, **kwargs):
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
     return 'skip_task'  # Caso contrário, pula a execução
 
+
+ 
 ### Definindo defaults
 default_args = {
     "owner": "Kevin Cardoso",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1),
+    "retry_delay": timedelta(minutes=5),
     "on_failure_callback": notificar_falha_teams
 }
 
-# Definindo o fuso horário de São Paulo
-local_tz = pendulum.timezone("America/Sao_Paulo")
-
-def check_time_to_run(execution_date, **kwargs):
-    """
-    Verifica se o horário de execução é igual ou posterior à última execução agendada do dia (21:00 UTC).
-    """
-    # Certifica-se de que execution_date é um objeto datetime
-    if isinstance(execution_date, str):
-        execution_time = datetime.fromisoformat(execution_date)  # Converte a string ISO-8601 para datetime
-    else:
-        execution_time = execution_date  # Já é datetime, usa diretamente
-
-    # Converte para o horário local (São Paulo)
-    execution_time_local = execution_time.astimezone(local_tz)
-
-    # Log para depuração
-    print(f"execution_date processado (UTC): {execution_time}")
-    print(f"execution_date processado (São Paulo): {execution_time_local}")
-
-    # Verifica se é a última execução do dia (21:00 UTC)
-    if execution_time.hour >= 21 :
-        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
-    return 'skip_task'  # Caso contrário, pula a execução
 
 # Definindo a DAG
 with DAG(
-    dag_id='processo_jira_propostas',
+    dag_id='tratamento_boletos',
     start_date=days_ago(1),
-    schedule_interval='0 11,21 * * *',  # 08:00 e 18:00 São Paulo (11:00 e 21:00 UTC)
-    default_args={
-        'owner': 'airflow',
-        'depends_on_past': False,
-        'email_on_failure': False,
-        'email_on_retry': False,
-        'retries': 1,
-        'retry_delay': timedelta(minutes=5),
-    },
-    tags=['etl', 'jira', 'raw', 'trusted'],
+    schedule_interval='0 11,21 * * *',
+    default_args=default_args,
+    tags=['etl', 'jira', 'raw', 'trusted','refined'],
     max_active_runs=1
 ) as dag:
+
 
     # Definindo as tasks
     extracao_jira_to_raw = PythonOperator(
