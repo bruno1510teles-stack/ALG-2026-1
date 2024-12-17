@@ -59,26 +59,22 @@ default_args = {
     "owner": "Kevin Cardoso",
     "retries": 1,
     "retry_delay": timedelta(minutes=1),
-    # "on_failure_callback": notificar_falha_teams
+    "on_failure_callback": notificar_falha_teams
 }
 
 # Definindo o fuso horário de São Paulo
 local_tz = pendulum.timezone("America/Sao_Paulo")
 
-def check_time_to_run(execution_date, **kwargs):
+def check_time_to_run(execution_date, next_execution_date, **kwargs):
     """
-    Verifica se o horário de execução é igual ou posterior à última execução agendada do dia (21:00 UTC).
+    Verifica se o horário de execução é igual ao último horário programado no dia.
     """
-    # Certifica-se de que execution_date é um objeto datetime
-    if isinstance(execution_date, str):
-        execution_time = datetime.fromisoformat(execution_date)  # Converte a string ISO-8601 para datetime
-    else:
-        execution_time = execution_date  # Já é datetime, usa diretamente
+    # Certifica-se de que os parâmetros são datetime
+    execution_time = datetime.fromisoformat(execution_date) if isinstance(execution_date, str) else execution_date
+    next_execution_time = datetime.fromisoformat(next_execution_date) if isinstance(next_execution_date, str) else next_execution_date
 
-    # Converte para o horário local (São Paulo)
+    # Converte o horário para São Paulo
     execution_time_local = execution_time.astimezone(local_tz)
-
-    # Log para depuração
     print(f"execution_date processado (UTC): {execution_time}")
     print(f"execution_date processado (São Paulo): {execution_time_local}")
 
