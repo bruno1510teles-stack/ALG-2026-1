@@ -53,6 +53,9 @@ def notificar_falha_teams(context):
         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
+    
+    
+
 
 
 local_tz = pendulum.timezone("America/Sao_Paulo")
@@ -75,9 +78,7 @@ def check_time_to_run(execution_date, next_execution_date, **kwargs):
         return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
     return 'skip_task'  # Caso contrário, pula a execução
 
-
- 
-### Definindo defaults
+# Definindo defaults
 default_args = {
     "owner": "Kevin Cardoso",
     "retries": 1,
@@ -86,9 +87,10 @@ default_args = {
 }
 
 
+
 # Definindo a DAG
 with DAG(
-    dag_id='tratamento_boletos',
+    dag_id='processo_jira_propostas',
     start_date=days_ago(1),
     schedule_interval='0 11,21 * * *',
     default_args=default_args,
