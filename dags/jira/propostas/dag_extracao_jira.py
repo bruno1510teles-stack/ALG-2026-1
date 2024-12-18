@@ -53,45 +53,51 @@ def notificar_falha_teams(context):
         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
- 
-### Definindo defaults
+    
+    
+
+
+
+local_tz = pendulum.timezone("America/Sao_Paulo")
+
+def check_time_to_run(execution_date, next_execution_date, **kwargs):
+    """
+    Verifica se o horário de execução é igual ao último horário programado no dia.
+    """
+    # Certifica-se de que os parâmetros são datetime
+    execution_time = datetime.fromisoformat(execution_date) if isinstance(execution_date, str) else execution_date
+    next_execution_time = datetime.fromisoformat(next_execution_date) if isinstance(next_execution_date, str) else next_execution_date
+
+    # Converte o horário para São Paulo
+    execution_time_local = execution_time.astimezone(local_tz)
+    print(f"execution_date processado (UTC): {execution_time}")
+    print(f"execution_date processado (São Paulo): {execution_time_local}")
+
+    # Verifica se é a última execução do dia (21:00 UTC)
+    if execution_time.hour >= 21 :
+        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
+    return 'skip_task'  # Caso contrário, pula a execução
+
+# Definindo defaults
 default_args = {
     "owner": "Kevin Cardoso",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1),
-    # "on_failure_callback": notificar_falha_teams
+    "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": notificar_falha_teams
 }
 
-# Definindo o fuso horário de São Paulo
-local_tz = pendulum.timezone("America/Sao_Paulo")
 
-def check_time_to_run(execution_date, **kwargs):
-    """
-    Verifica se o horário de execução é igual ou posterior a 21:00 UTC.
-    """
-    # Certifica-se de que execution_date é um objeto datetime
-    if isinstance(execution_date, str):
-        execution_time = datetime.fromisoformat(execution_date)  # Converte a string ISO-8601 para datetime
-    else:
-        execution_time = execution_date  # Já é datetime, usa diretamente
-
-    # Log para depuração
-    print(f"execution_date processado: {execution_time}")
-
-    # Verifica se o horário é igual ou posterior a 21:00 UTC
-    if execution_time.hour > 17:
-        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC ou mais
-    return 'skip_task'  # Caso contrário, pula a execução
 
 # Definindo a DAG
 with DAG(
     dag_id='processo_jira_propostas',
     start_date=days_ago(1),
-    schedule_interval='0 11,21 * * *',  # 08:00 e 18:00 São Paulo (11:00 e 21:00 UTC)
+    schedule_interval='0 11,21 * * *',
     default_args=default_args,
-    tags=['etl', 'jira','raw','trusted','refined'],
+    tags=['etl', 'jira', 'raw', 'trusted','refined'],
     max_active_runs=1
 ) as dag:
+
 
     # Definindo as tasks
     extracao_jira_to_raw = PythonOperator(
@@ -128,10 +134,10 @@ with DAG(
         op_kwargs={'execution_date': '{{ ts }}'}
     )
 
-    # Task para pular caso não seja 18:00
+    # Task para pular caso não seja 21:00 UTC
     skip_task = DummyOperator(task_id='skip_task')
 
-    # Task para enviar notificações (executa somente às 18:00 São Paulo)
+    # Task para enviar notificações (executa somente às 21:00 UTC)
     jira_notif_teams = PythonOperator(
         task_id='enviar_notif_daily',
         python_callable=enviar_notif,
@@ -140,4 +146,4 @@ with DAG(
 
     # Definindo a ordem de execução das tasks
     extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
-    check_time_task >> [jira_notif_teams, skip_task] 
+    check_time_task >> [jira_notif_teams, skip_task]
