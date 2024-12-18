@@ -9,8 +9,7 @@ import pandas as pd
 import requests
 import pendulum
 import sys
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 from time import sleep
 
 sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
@@ -58,25 +57,25 @@ def notificar_falha_teams(context):
 
 
 
-local_tz = pendulum.timezone("America/Sao_Paulo")
-
-def check_time_to_run(execution_date, next_execution_date, **kwargs):
+def check_time_to_run(**kwargs):
     """
-    Verifica se o horário de execução é igual ao último horário programado no dia.
+    Verifica se o horário atual é igual ou posterior ao último horário programado no dia (21:00 UTC).
     """
-    # Certifica-se de que os parâmetros são datetime
-    execution_time = datetime.fromisoformat(execution_date) if isinstance(execution_date, str) else execution_date
-    next_execution_time = datetime.fromisoformat(next_execution_date) if isinstance(next_execution_date, str) else next_execution_date
+    # Obtém o horário atual em UTC
+    current_time_utc = datetime.now(timezone.utc)
 
-    # Converte o horário para São Paulo
-    execution_time_local = execution_time.astimezone(local_tz)
-    print(f"execution_date processado (UTC): {execution_time}")
-    print(f"execution_date processado (São Paulo): {execution_time_local}")
+    # Logs para depuração
+    print(f"Horário atual UTC: {current_time_utc}")
 
-    # Verifica se é a última execução do dia (21:00 UTC)
-    if execution_time.hour >= 21 :
-        return 'enviar_notif_daily'  # Executa a task se for 21:00 UTC
-    return 'skip_task'  # Caso contrário, pula a execução
+    # Verifica se o horário atual é posterior ou igual a 21:00 UTC
+    if current_time_utc.hour >= 21:
+        print("Horário válido para executar a notificação.")
+        return 'enviar_notif_daily'  # Executa a task
+    else:
+        print("Horário inválido. Pulando a notificação.")
+        return 'skip_task'  # Pula a execução
+    
+    
 
 # Definindo defaults
 default_args = {
