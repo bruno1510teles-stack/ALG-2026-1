@@ -79,7 +79,7 @@ def enviar_notif(access_params=None, **kwargs):
     total_dia = group_dia.sum()
     percent_dia = (group_dia / total_dia * 100) if total_dia > 0 else group_dia * 0
     percent_hist = (group_total / propostas_total * 100) if propostas_total > 0 else group_total * 0
-    variacao_percentual = percent_dia - percent_hist
+    variacao_percentual = percent_dia / percent_hist - 1
 
     # Criando o DataFrame final com as contagens e percentuais
     result_rami = pd.DataFrame({
