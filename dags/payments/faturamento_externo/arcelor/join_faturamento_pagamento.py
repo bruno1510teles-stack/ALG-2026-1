@@ -39,8 +39,9 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
                         """
 
     fat_trusted = execute_query(conn, query_fat_trusted)
+    fat_trusted = fat_trusted.drop_duplicates()
 
-    print(f"Quantidade de linhas no DataFrame 'boleto': {fat_trusted.shape[0]}")
+    print(f"Quantidade de linhas no DataFrame 'Faturamento': {fat_trusted.shape[0]}")
 
     # Query Pagamento Trusted
     query_pag_trusted = f"""
@@ -50,8 +51,9 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
                         """
 
     pag_trusted = execute_query(conn, query_pag_trusted)
+    pag_trusted = pag_trusted.drop_duplicates()
 
-    print(f"Quantidade de linhas no DataFrame 'boleto': {pag_trusted.shape[0]}")
+    print(f"Quantidade de linhas no DataFrame 'Pagamento': {pag_trusted.shape[0]}")
 
     # Tratando Faturamento Trusted
 
@@ -124,14 +126,16 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
     cnpjs = fat_pag['raiz_cnpj'].unique().tolist()
 
-    tamanho = len(cnpjs) // 2
+    tamanho = len(cnpjs) // 3
 
     cnpj_part_1 = cnpjs[:tamanho]
-    cnpj_part_2 = cnpjs[tamanho:]
+    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
+    cnpj_part_3 = cnpjs[2*tamanho:]
 
     # Convertendo a lista para uma string no formato adequado para o SQL
     cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
     cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
+    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
 
 
     query_receita_1 =  f""" 
@@ -151,10 +155,19 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
                         where cnpj_raiz in ({cnpjs_str_2})
                     """
 
+    query_receita_3 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_3})
+                    """
+
     receita_1 = execute_query(conn, query_receita_1)
     receita_2 = execute_query(conn, query_receita_2)
+    receita_3 = execute_query(conn, query_receita_3)
 
-    receita = pd.concat([receita_1, receita_2], ignore_index=True)
+    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
 
     fat_pag = pd.merge(
         fat_pag, 
