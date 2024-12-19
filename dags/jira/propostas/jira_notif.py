@@ -85,7 +85,7 @@ def enviar_notif(access_params=None, **kwargs):
     result_rami = pd.DataFrame({
         'Política': [index[0] for index in group_dia.index],
         'Ramificação': [index[1] for index in group_dia.index],
-        'Parecer': [index[1] for index in group_dia.index],
+        'Parecer': [index[2] for index in group_dia.index],
         'Propostas Dia': group_dia.values,
         'Dia %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_dia],
         'Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_hist],
