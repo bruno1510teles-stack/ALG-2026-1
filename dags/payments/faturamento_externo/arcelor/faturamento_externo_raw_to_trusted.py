@@ -33,8 +33,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
        # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=12/day=12'
-    file_name = 'Faturamento Base dez24 - Tratada.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=12/day=18'
+    file_name = 'Faturamento Base dez24 - Tratada 2.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
