@@ -69,8 +69,8 @@ def enviar_notif(access_params=None, **kwargs):
     propostas_total = len(df_motor)
 
     # ----- Contagens e percentuais por política e ramificação -----
-    group_total = df_motor.groupby(['politica_desc', 'ramificacao_motor_desc']).size()
-    group_dia = propostas_dia.groupby(['politica_desc', 'ramificacao_motor_desc']).size()
+    group_total = df_motor.groupby(['politica_desc', 'ramificacao_motor_desc', 'parecer_desc']).size()
+    group_dia = propostas_dia.groupby(['politica_desc', 'ramificacao_motor_desc', 'parecer_desc']).size()
 
     # Garantindo alinhamento entre total e dia
     group_total = group_total.reindex(group_dia.index, fill_value=0)
@@ -79,12 +79,13 @@ def enviar_notif(access_params=None, **kwargs):
     total_dia = group_dia.sum()
     percent_dia = (group_dia / total_dia * 100) if total_dia > 0 else group_dia * 0
     percent_hist = (group_total / propostas_total * 100) if propostas_total > 0 else group_total * 0
-    variacao_percentual = percent_dia - percent_hist
+    variacao_percentual = percent_dia / percent_hist - 1
 
     # Criando o DataFrame final com as contagens e percentuais
     result_rami = pd.DataFrame({
         'Política': [index[0] for index in group_dia.index],
         'Ramificação': [index[1] for index in group_dia.index],
+        'Parecer': [index[1] for index in group_dia.index],
         'Propostas Dia': group_dia.values,
         'Dia %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_dia],
         'Histórico %': [f"{round(val, 2):.2f}".replace('.', ',') + " %" for val in percent_hist],
@@ -120,10 +121,11 @@ def enviar_notif(access_params=None, **kwargs):
             "activitySubtitle": f"Data de Execução: {data_hoje}",
             "activityText": (
                 f"Prezados(as), boa tarde,<br><br>"
-                f"Segue o resumo de propostas por Política e Ramificação:<br><br>"
+                f"Segue o resumo de propostas por Política, Ramificação e Parecer:<br><br>"
                 f"<table style='width:100%; border: 1px solid black; border-collapse: collapse;'>"
                 f"<tr><th style='border: 1px solid black; padding: 5px;'>Política</th>"
                 f"<th style='border: 1px solid black; padding: 5px;'>Ramificação</th>"
+                f"<th style='border: 1px solid black; padding: 5px;'>Parecer</th>"
                 f"<th style='border: 1px solid black; padding: 5px;'>Propostas Dia</th>"
                 f"<th style='border: 1px solid black; padding: 5px;'>Percentual Dia %</th>"
                 f"<th style='border: 1px solid black; padding: 5px;'>Percentual Histórico %</th>"
@@ -132,6 +134,7 @@ def enviar_notif(access_params=None, **kwargs):
                     f"<tr>"
                     f"<td style='border: 1px solid black; padding: 5px;'>{row['Política']}</td>"
                     f"<td style='border: 1px solid black; padding: 5px;'>{row['Ramificação']}</td>"
+                    f"<td style='border: 1px solid black; padding: 5px;'>{row['Parecer']}</td>"
                     f"<td style='border: 1px solid black; padding: 5px;'>{row['Propostas Dia']}</td>"
                     f"<td style='border: 1px solid black; padding: 5px;'>{row['Dia %']}</td>"
                     f"<td style='border: 1px solid black; padding: 5px;'>{row['Histórico %']}</td>"
