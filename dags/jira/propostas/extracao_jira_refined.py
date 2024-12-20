@@ -187,18 +187,23 @@ def base_details_refined(access_params=None,  **kwargs):
 
 
     # Criando df para verificar a diferença de dias
-    df['diferença_dias_criado_resolvido'] = (df['resolvido_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
-    df['diferença_dias_atribuido_resolvido'] = (df['resolvido_tratado'] - df['atribuido_tratado']).dt.days.astype('Int64')
+    df['diferença_dias_criado_resolvido'] = (df['resolvido_status_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
+    df['diferença_dias_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
 
     # Criando df para verificar a diferença de horas e minutos - Criado/ Resolvido
-    df['diferença_horas_criado_resolvido'] = (
-    (df['resolvido_tratado'].dt.tz_localize(None) - df['criado_tratado'].dt.tz_localize(None)).dt.total_seconds() / 3600)
-    df['diferença_minutos_criado_resolvido'] = (df['resolvido_tratado'] - df['criado_tratado']).dt.total_seconds() / 60
+    df['diferença_horas_criado_resolvido'] = (df['resolvido_status_tratado'] - df['criado_tratado']).dt.total_seconds() / 3600
+    df['diferença_minutos_criado_resolvido'] = (df['resolvido_status_tratado'] - df['criado_tratado']).dt.total_seconds() / 60
 
     # Criando df para verificar a diferença de horas e minutos - Atribuido/ Resolvido
-    df['diferença_horas_atribuido_resolvido'] = (
-    (df['resolvido_tratado'].dt.tz_localize(None) - df['atribuido_tratado'].dt.tz_localize(None)).dt.total_seconds() / 3600)
-    df['diferença_minutos_atribuido_resolvido'] = (df['resolvido_tratado'] - df['atribuido_tratado']).dt.total_seconds() / 60
+    df['diferença_horas_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['resolvido_status_tratado']).dt.total_seconds() / 3600
+    df['diferença_minutos_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['resolvido_status_tratado']).dt.total_seconds() / 60
+    
+    
+    # Criando df para verificar a diferença de dias
+    df['diferença_dias_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['resolvido_status_tratado']).dt.days.astype('Int64')
+    
+    df['diferença_horas_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['resolvido_status_tratado']).dt.total_seconds() / 3600
+    df['diferença_minutos_atribuido_resolvido'] = (df['aguardando_execucao_tratado'] - df['resolvido_status_tratado']).dt.total_seconds() / 60
     
     #SLA Tempo Dias e Horas
     
@@ -232,7 +237,6 @@ def base_details_refined(access_params=None,  **kwargs):
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
         'data_criado', 'hora_criado', 
         'data_resolvido', 'hora_resolvido',
-        'data_atribuido', 'hora_atribuido',
         'faixa_valor_solicitado', 
         'diferença_dias_criado_resolvido', 'diferença_dias_atribuido_resolvido', 
         'diferença_minutos_criado_resolvido', 'diferença_horas_criado_resolvido',
