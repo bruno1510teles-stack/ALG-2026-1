@@ -219,7 +219,7 @@ def base_details_trusted(access_params=None, **kwargs):
     df['em_progresso_tratado'] = pd.to_datetime(df['In Progress'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
     df['reprovacao_massa_tratado'] = pd.to_datetime(df['Mass Reproval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
     df['aberto_tratado'] = pd.to_datetime(df['Open'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['resolvido_status_tratado'] = pd.to_datetime(df['resolved'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['resolvido_status_tratado'] = pd.to_datetime(df['Resolved'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
 
     
     # Convertendo colunas de data e hora Status SLA
@@ -287,8 +287,8 @@ def base_details_trusted(access_params=None, **kwargs):
     df['data_aberto'] = df['Open'].dt.date
     df['time_aberto'] = df['Open'].dt.strftime('%H:%M:%S')
     
-    df['data_resolvido_status'] = df['resolved'].dt.date
-    df['time_resolvido_status'] = df['resolved'].dt.strftime('%H:%M:%S')
+    df['data_resolvido_status'] = df['Resolved'].dt.date
+    df['time_resolvido_status'] = df['Resolved'].dt.strftime('%H:%M:%S')
 
     # Aplicando o filtro para criar o DataFrame final
     filtro = df[
