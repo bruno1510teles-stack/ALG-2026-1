@@ -98,13 +98,13 @@ with DAG(
 ) as dag:
 
 
-    # # Definindo as tasks
-    # extracao_jira_to_raw = PythonOperator(
-    #     task_id='extracao_jira_raw',
-    #     python_callable=base_details_raw,
-    #     op_kwargs={'access_params': access_params},
-    #     provide_context=True
-    # )
+    # Definindo as tasks
+    extracao_jira_to_raw = PythonOperator(
+        task_id='extracao_jira_raw',
+        python_callable=base_details_raw,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
 
     extracao_jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_trusted',
@@ -144,6 +144,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    # extracao_jira_to_raw >> 
-    extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
     check_time_task >> [jira_notif_teams, skip_task]
