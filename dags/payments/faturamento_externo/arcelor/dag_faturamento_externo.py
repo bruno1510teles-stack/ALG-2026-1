@@ -69,18 +69,18 @@ with DAG(
 ) as dag:
 
     # Definindo o task que carrega a tabela na trusted (tratamentos iniciais)
-    #task1 = PythonOperator(
-    #    task_id='raw_to_trusted',
-    #    python_callable=faturamento_externo_raw_to_trusted.extracao_faturamento_externo,
-    #    provide_context=True
-    #)
+    task1 = PythonOperator(
+        task_id='raw_to_trusted',
+        python_callable=faturamento_externo_raw_to_trusted.extracao_faturamento_externo,
+        provide_context=True
+    )
 
     # Definindo o task que carrega a tabela do Trino(Trusted) e cria os indicadores para a Refined
-    #task2 = PythonOperator(
-    #    task_id='trusted_to_refined',
-    #    python_callable=faturamento_externo_trusted_to_refined.tratamento_faturamento_externo,
-    #    provide_context=True
-    #)
+    task2 = PythonOperator(
+        task_id='trusted_to_refined',
+        python_callable=faturamento_externo_trusted_to_refined.tratamento_faturamento_externo,
+        provide_context=True
+    )
 
     # Definindo o task que carrega a tabela do Trino(Trusted) e cria os indicadores para a Refined
     task3 = PythonOperator(
@@ -90,4 +90,4 @@ with DAG(
     )
     
     # Definindo a ordem de execução das tasks
-    task3
+    task1 >> task2 >> task3

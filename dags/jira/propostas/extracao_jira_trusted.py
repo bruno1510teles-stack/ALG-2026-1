@@ -199,18 +199,96 @@ def base_details_trusted(access_params=None, **kwargs):
 
     # Convertendo colunas de data e hora
     df['criado_tratado'] = pd.to_datetime(df['criado'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['resolvido_tratado'] = pd.to_datetime(df['resolvido'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_aprovacao_gerente_tratado'] = pd.to_datetime(df['AWAITING MANAGER APPROVAL'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['analise_pontuacao_credito_tratado'] = pd.to_datetime(df['Analyzing Credit Score'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['anexando_documentacao_tratado'] = pd.to_datetime(df['Attaching Documentation'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_aprovacao_tratado'] = pd.to_datetime(df['Awaiting Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_documentos_bv_tratado'] = pd.to_datetime(df['Awaiting BV docs'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_aprovacao_comite_tratado'] = pd.to_datetime(df['Awaiting Comitee Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_aprovacao_comite_2_tratado'] = pd.to_datetime(df['Awaiting Comitee II Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_documentacao_tratado'] = pd.to_datetime(df['Awaiting Documentation'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_execucao_tratado'] = pd.to_datetime(df['Awaiting Execution'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_aprovacao_legal_tratado'] = pd.to_datetime(df['Awaiting Legal Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_menor_aprovacao_tratado'] = pd.to_datetime(df['Awaiting Minor Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_priorizacao_cs_tratado'] = pd.to_datetime(df['Awaiting Priorization CS'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['priorizacao_cs_tratado'] = pd.to_datetime(df['PRIORITIZING CS'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aguardando_priorizacao_vendedor_tratado'] = pd.to_datetime(df['Awaiting Priorization Seller'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['fechado_tratado'] = pd.to_datetime(df['Closed'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['erro_tratado'] = pd.to_datetime(df['Error'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['em_progresso_tratado'] = pd.to_datetime(df['In Progress'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['reprovacao_massa_tratado'] = pd.to_datetime(df['Mass Reproval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['aberto_tratado'] = pd.to_datetime(df['Open'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    df['resolvido_status_tratado'] = pd.to_datetime(df['Resolved'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+
+    
+    # Convertendo colunas de data e hora Status SLA
+    
     df['data_criado'] = df['criado_tratado'].dt.date
     df['hora_criado'] = df['criado_tratado'].dt.strftime('%H:%M:%S')
-
-    df['resolvido_tratado'] = pd.to_datetime(df['resolvido'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    
     df['data_resolvido'] = df['resolvido_tratado'].dt.date
     df['hora_resolvido'] = df['resolvido_tratado'].dt.strftime('%H:%M:%S')
-
-    df['atribuido_tratado'] = (pd.to_datetime(df['dataatribuido'], unit='ms', errors='coerce')
-    .dt.tz_localize('UTC')  # Define como UTC
-    .dt.tz_convert('America/Sao_Paulo'))  # Converte para o horário de São Paulo
-    df['data_atribuido'] = df['atribuido_tratado'].dt.date
-    df['hora_atribuido'] = df['atribuido_tratado'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_aprovacao_gerente'] = df['AWAITING MANAGER APPROVAL'].dt.date
+    df['time_aguardando_aprovacao_gerente'] = df['AWAITING MANAGER APPROVAL'].dt.strftime('%H:%M:%S')
+    
+    df['data_analise_pontuacao_credito'] = df['Analyzing Credit Score'].dt.date
+    df['time_analise_pontuacao_credito'] = df['Analyzing Credit Score'].dt.strftime('%H:%M:%S')
+    
+    df['data_anexando_documentacao'] = df['Attaching Documentation'].dt.date
+    df['time_anexando_documentacao'] = df['Attaching Documentation'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_aprovacao'] = df['Awaiting Approval'].dt.date
+    df['time_aguardando_aprovacao'] = df['Awaiting Approval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_documentos_bv'] = df['Awaiting BV docs'].dt.date
+    df['time_aguardando_documentos_bv'] = df['Awaiting BV docs'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_aprovacao_comite'] = df['Awaiting Comitee Approval'].dt.date
+    df['time_aguardando_aprovacao_comite'] = df['Awaiting Comitee Approval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_aprovacao_comite_2'] = df['Awaiting Comitee II Approval'].dt.date
+    df['time_aguardando_aprovacao_comite_2'] = df['Awaiting Comitee II Approval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_documentacao'] = df['Awaiting Documentation'].dt.date
+    df['time_aguardando_documentacao'] = df['Awaiting Documentation'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_execucao'] = df['Awaiting Execution'].dt.date
+    df['time_aguardando_execucao'] = df['Awaiting Execution'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_aprovacao_legal'] = df['Awaiting Legal Approval'].dt.date
+    df['time_aguardando_aprovacao_legal'] = df['Awaiting Legal Approval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_menor_aprovacao'] = df['Awaiting Minor Approval'].dt.date
+    df['time_aguardando_menor_aprovacao'] = df['Awaiting Minor Approval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_priorizacao_cs'] = df['Awaiting Priorization CS'].dt.date
+    df['time_aguardando_priorizacao_cs'] = df['Awaiting Priorization CS'].dt.strftime('%H:%M:%S')
+    
+    df['data_priorizacao_cs'] = df['PRIORITIZING CS'].dt.date
+    df['time_priorizacao_cs'] = df['PRIORITIZING CS'].dt.strftime('%H:%M:%S')
+    
+    df['data_aguardando_priorizacao_vendedor'] = df['Awaiting Priorization Seller'].dt.date
+    df['time_aguardando_priorizacao_vendedor'] = df['Awaiting Priorization Seller'].dt.strftime('%H:%M:%S')
+    
+    df['data_fechado'] = df['Closed'].dt.date
+    df['time_fechado'] = df['Closed'].dt.strftime('%H:%M:%S')
+    
+    df['data_erro'] = df['Error'].dt.date
+    df['time_erro'] = df['Error'].dt.strftime('%H:%M:%S')
+    
+    df['data_em_progresso'] = df['In Progress'].dt.date
+    df['time_em_progresso'] = df['In Progress'].dt.strftime('%H:%M:%S')
+    
+    df['data_reprovação_massa'] = df['Mass Reproval'].dt.date
+    df['time_reprovação_massa'] = df['Mass Reproval'].dt.strftime('%H:%M:%S')
+    
+    df['data_aberto'] = df['Open'].dt.date
+    df['time_aberto'] = df['Open'].dt.strftime('%H:%M:%S')
+    
+    df['data_resolvido_status'] = df['Resolved'].dt.date
+    df['time_resolvido_status'] = df['Resolved'].dt.strftime('%H:%M:%S')
 
     # Aplicando o filtro para criar o DataFrame final
     filtro = df[
@@ -219,24 +297,48 @@ def base_details_trusted(access_params=None, **kwargs):
         (df['limite_pedido'] >= 0) & 
         (df['limite_pedido'] <= 500000000)
     ]
-    
-    print("Tratamento de DataFrame realizado com sucesso!")
 
     # Selecionando as colunas relevantes
     jira_tratado = filtro[[
         'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor','prioridade_desc',
+        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor', 'prioridade_desc',
         'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc',
-        'resolvido_tratado', 'criado_tratado', 'atribuido_tratado',
-        'data_criado', 'hora_criado', 
+        'resolvido_tratado', 'criado_tratado',
+        'analise_pontuacao_credito_tratado','anexando_documentacao_tratado','aguardando_aprovacao_tratado',
+        'aguardando_documentos_bv_tratado','aguardando_aprovacao_comite_tratado','aguardando_aprovacao_comite_2_tratado',
+        'aguardando_documentacao_tratado','aguardando_execucao_tratado', 'aguardando_aprovacao_legal_tratado',
+        'aguardando_menor_aprovacao_tratado','aguardando_priorizacao_cs_tratado','priorizacao_cs_tratado',
+        'aguardando_priorizacao_vendedor_tratado','fechado_tratado','erro_tratado','em_progresso_tratado',
+        'reprovacao_massa_tratado','aberto_tratado','resolvido_status_tratado',
+        'data_criado', 'hora_criado',
         'data_resolvido', 'hora_resolvido',
-        'data_atribuido', 'hora_atribuido', 'atualizado_em',
-        'year', 'month', 'day'
+        'data_aguardando_aprovacao_gerente', 'time_aguardando_aprovacao_gerente',
+        'data_analise_pontuacao_credito', 'time_analise_pontuacao_credito',
+        'data_anexando_documentacao', 'time_anexando_documentacao',
+        'data_aguardando_aprovacao', 'time_aguardando_aprovacao',
+        'data_aguardando_documentos_bv', 'time_aguardando_documentos_bv',
+        'data_aguardando_aprovacao_comite', 'time_aguardando_aprovacao_comite',
+        'data_aguardando_aprovacao_comite_2', 'time_aguardando_aprovacao_comite_2',
+        'data_aguardando_documentacao', 'time_aguardando_documentacao',
+        'data_aguardando_execucao', 'time_aguardando_execucao',
+        'data_aguardando_aprovacao_legal', 'time_aguardando_aprovacao_legal',
+        'data_aguardando_menor_aprovacao', 'time_aguardando_menor_aprovacao',
+        'data_aguardando_priorizacao_cs', 'time_aguardando_priorizacao_cs',
+        'data_priorizacao_cs', 'time_priorizacao_cs',
+        'data_aguardando_priorizacao_vendedor', 'time_aguardando_priorizacao_vendedor',
+        'data_fechado', 'time_fechado',
+        'data_erro', 'time_erro',
+        'data_em_progresso', 'time_em_progresso',
+        'data_reprovação_massa', 'time_reprovação_massa',
+        'data_aberto', 'time_aberto',
+        'data_resolvido_status', 'time_resolvido_status',
+        'atualizado_em', 'year', 'month', 'day'
     ]].reset_index(drop=True)
 
     # Exibindo o DataFrame tratado
     print(f"{len(jira_tratado)} propostas válidas.")
-    print(jira_tratado.head())
+    print(jira_tratado)
+
 
 
     # Configurações para acesso ao MinIO
