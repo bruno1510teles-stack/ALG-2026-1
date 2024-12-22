@@ -1,11 +1,10 @@
-from airflow.utils.dates import days_ago
-
-from airflow.decorators import dag, task
+import pendulum
+from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 
-from politica_e_modelagem.pre_filtro.pre_filtro_v_2 import analise_pre_filtro
+from politica_e_modelagem.pre_filtro.pre_filtro_comun import analise_pre_filtro
 
 ### Parâmetros de acesso
 access_params = {          
@@ -28,7 +27,11 @@ access_params = {
     "exrep_url": Variable.get('EXREP_BASE_URL'),
     "exrep_client_id": Variable.get('EXREP_CLIENT_ID'),
     "exrep_client_secret": Variable.get('EXREP_CLIENT_SECRET'),
-    "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
+    "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL'),
+    "jira_url": Variable.get('JIRA_API_URL'),
+    "jira_api_token": Variable.get('JIRA_API_TOKEN'),
+    "jira_api_user": Variable.get('JIRA_API_USER'),
+    "jira_project": Variable.get('JIRA_PROJECT')
     }
 
 ### Definindo defaults
@@ -38,27 +41,25 @@ default_args = {
 }
 
 # Definindo a DAG
-@dag(
-    dag_id='pre_filtro_comun',
-    start_date=days_ago(1),
-    schedule_interval=None,
+with DAG(
+    dag_id='pre_filtro',
+    start_date=pendulum.today('UTC').add(days=-1),
+    schedule_interval='*/2 * * * *',
     default_args=default_args,
     catchup=False,
     tags=['pre-filtro', 'proposta-negocio'],
     description="Pre filtro das propostas de negócio independente da política",
     max_active_tasks=1
-)
-def prefiltro_dag():
+) as dag:
     
-    # init & finish task
-    init_data_load = EmptyOperator(task_id="init")
-    finish_data_load = EmptyOperator(task_id="finish")
+    start = EmptyOperator(task_id="start")
+    end = EmptyOperator(task_id="end")
 
     prefiltro_task =  PythonOperator(
-        task_id="pre_filtro_comun_task",
-        python_callable=analise_pre_filtro,
-        op_kwargs={'access_params': access_params},
-    )
-
+            task_id="pre_filtro_comun_task",
+            python_callable=analise_pre_filtro,
+            op_kwargs={'access_params': access_params},
+        )
+    
     # Definindo a ordem de execução das tasks
-    init_data_load >> prefiltro_task >> finish_data_load
+    start >> prefiltro_task >> end
