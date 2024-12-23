@@ -143,7 +143,7 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 	vencer_limites[['codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 'vendedor_fn_email', 'vendedor_fn_telefone']] = ""
 	vencer_limites['prioridade'] = 6
 	vencer_limites['policy'] = 'V3'
-	vencer_limites['pre_filtro'] = 'sim'
+	vencer_limites['pre_filtro'] = 'Não'
 	vencer_limites['bucket_pgid'] = 'urn-party-pgid-' + vencer_limites['pgid']
 
 	# Organiza base exportação

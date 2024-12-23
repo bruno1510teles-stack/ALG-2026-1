@@ -122,7 +122,7 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
     df_vencer[['codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 'vendedor_fn_email', 'vendedor_fn_telefone']] = ""
     df_vencer['prioridade'] = 6
     df_vencer['policy'] = 'V4'
-    df_vencer['pre_filtro'] = 'sim'
+    df_vencer['pre_filtro'] = 'Não'
     df_vencer['bucket_pgid'] = 'urn-party-pgid-' + df_vencer['pgid']
 
 
