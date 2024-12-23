@@ -298,6 +298,13 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
     df["safra_vencimento"] = df["safra_vencimento"].dt.date
     df["safra_baixa"] = df["safra_baixa"].dt.date
 
+
+    # Calculando o atraso em dias para calculo do ever
+    df['atraso_dias_ever'] = (df['data_baixa'].fillna(data_hoje) - df['data_vencimento']).dt.days
+
+    # Criando a flag para atrasos superiores a 30 dias
+    df['ever30_flag'] = (df['atraso_dias_ever'] > 30).astype(int)
+
     # Filtrando apenas colunas para a Refined
     df_final = df[[ 'nome_cedente', 'cnpj_cedente', 'codigo_cedente', 'cedente_id', 'nome_sacado', 'cnpj_sacado', 'codigo_sacado', 
                 'sacado_id', 'uf_sacado', 'safra_concessao', 'safra_vencimento', 'safra_baixa', 'status_titulo', 'valor_desagio', 'vop', 
@@ -305,7 +312,7 @@ def boletos_raw_to_refined_vop(access_params=None,  **kwargs):
                 'prazo_medio', 'vop_over15_mob2', 'vop_over15_mob3', 'vop_over30_mob1', 'vop_over30_mob2', 'vop_over30_mob3',
                 'vop_over30_mob4','vop_over30_mob5', 'vop_over30_mob6', 'vop_over60_mob1', 'vop_over60_mob2', 'vop_over60_mob3',
                 'vop_over60_mob4', 'vop_over60_mob5', 'vop_over60_mob6', 'vop_over90_mob1', 'vop_over90_mob2', 'vop_over90_mob3',
-                'vop_over90_mob4', 'vop_over90_mob5', 'vop_over90_mob6', 'duration', 'maturity']].copy()
+                'vop_over90_mob4', 'vop_over90_mob5', 'vop_over90_mob6', 'duration', 'maturity', 'ever30_flag']].copy()
 
 
     # Atribuindo data
