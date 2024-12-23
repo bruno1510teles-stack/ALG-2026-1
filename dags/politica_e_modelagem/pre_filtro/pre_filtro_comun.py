@@ -95,9 +95,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             print(f'Issue {key_jira} esta inelegivel e foi fechada por falta de CNPJ do Sacado!')
             print("")
             continue
-        if pular_pre_filtro is not None and pular_pre_filtro['value'] == 'Sim':
+        if pular_pre_filtro is not None and pular_pre_filtro['value'] == 'Não':
             jira_connection.transition_issue(key_jira, "enrich")
-            print(f'Issue {key_jira} foi pedido para pular o filtro e foi para AWAITING ENRICH !')
+            print(f'Issue {key_jira} foi pedido para não executar o filtro e foi para AWAITING ENRICH !')
             print("")
             continue
         
