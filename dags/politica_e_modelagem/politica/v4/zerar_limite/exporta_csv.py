@@ -41,7 +41,7 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
                     limite_utilizado,
                     limite_disponivel
                     from deltalaketrusted.limites.limite
-                    where limite_atribuido > 1
+                    where limite_atribuido > 0
                     """
 
     limites = execute_query(conn, query_limites)
@@ -135,6 +135,9 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
     exporta_csv = exporta_csv.drop_duplicates()
 
+    # Para teste em produção
+    exporta_csv = exporta_csv[:1]
+
     # Agrupando por Bucket PGID
     exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
@@ -209,4 +212,4 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
 	# Timer de 1 minuto no final
     print("Aguardando 30 minutos antes de rodar o proximo processo...")
-    time.sleep(1800)  # Aguardar 60 segundos (1 minuto)
+    time.sleep(300)  # Aguardar 60 segundos (1 minuto)

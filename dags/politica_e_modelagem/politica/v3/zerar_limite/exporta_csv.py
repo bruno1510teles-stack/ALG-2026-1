@@ -153,6 +153,9 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 		'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'bucket_pgid'
 	]]
 
+	# Filtro para teste em produção
+	exporta_csv = exporta_csv[:1]
+
 	# Agrupando por Bucket PGID
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
@@ -227,4 +230,4 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 
 	# Timer de 1 minuto no final
 	print("Aguardando 20 minutos antes de rodar o proximo processo...")
-	time.sleep(1200)  # Aguardar 60 segundos (1 minuto)
+	time.sleep(300)  # Aguardar 60 segundos (1 minuto)
