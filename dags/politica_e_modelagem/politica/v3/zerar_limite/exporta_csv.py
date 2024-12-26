@@ -156,6 +156,8 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 	# Filtro para teste em produção
 	exporta_csv = exporta_csv[:1]
 
+	print(f"Quantidade de CNPJs para criar issue no Jira politica v3: {exporta_csv.shape[0]}")
+
 	# Agrupando por Bucket PGID
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 

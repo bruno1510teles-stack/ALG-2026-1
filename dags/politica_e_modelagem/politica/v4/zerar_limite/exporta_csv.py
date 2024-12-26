@@ -14,13 +14,20 @@ import time
 
 def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
-    # Conectando com o Trino
+	#conn = connect(
+	#	host=access_params['trino_endpoint'],
+	#	port=access_params['trino_port'],
+	#	user=access_params['trino_user'],
+	#	auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+	#	http_scheme="https"
+	#)
+
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-        http_scheme="https"
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
     )
 
     # Função para execução da query
@@ -137,6 +144,8 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
     # Para teste em produção
     exporta_csv = exporta_csv[:1]
+
+    print(f"Quantidade de CNPJs para criar issue no Jira politica v4: {exporta_csv.shape[0]}")
 
     # Agrupando por Bucket PGID
     exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
