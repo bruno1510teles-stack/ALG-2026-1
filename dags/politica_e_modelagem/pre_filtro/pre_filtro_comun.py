@@ -36,7 +36,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         "Content-Type": "application/json"
     }   
 
-    max_results = 100  # Defina o número máximo de resultados por página (até 1000 conforme a configuração do Jira)
+    max_results = 50  # Defina o número máximo de resultados por página (até 1000 conforme a configuração do Jira)
     start_at = 0       # Inicie na primeira página de resultados
     all_tickets = []   # Lista para armazenar todos os tickets
     data = []   # Data para armazenar os resultados finais
