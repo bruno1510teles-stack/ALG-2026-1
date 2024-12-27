@@ -143,7 +143,7 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 	vencer_limites[['codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 'vendedor_fn_email', 'vendedor_fn_telefone']] = ""
 	vencer_limites['prioridade'] = 6
 	vencer_limites['policy'] = 'V3'
-	vencer_limites['pre_filtro'] = 'sim'
+	vencer_limites['pre_filtro'] = 'Não'
 	vencer_limites['bucket_pgid'] = 'urn-party-pgid-' + vencer_limites['pgid']
 
 	# Organiza base exportação
@@ -152,6 +152,9 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 		'codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 
 		'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'bucket_pgid'
 	]]
+
+
+	print(f"Quantidade de CNPJs para criar issue no Jira politica v3: {exporta_csv.shape[0]}")
 
 	# Agrupando por Bucket PGID
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
@@ -226,5 +229,5 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 		exit(1)
 
 	# Timer de 1 minuto no final
-	print("Aguardando 20 minutos antes de rodar o proximo processo...")
-	time.sleep(1200)  # Aguardar 60 segundos (1 minuto)
+	print("Aguardando 30 minutos antes de rodar o proximo processo...")
+	time.sleep(2300)  # Aguardar 60 segundos (1 minuto)

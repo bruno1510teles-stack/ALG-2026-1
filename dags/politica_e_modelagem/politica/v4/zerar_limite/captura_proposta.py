@@ -38,7 +38,7 @@ def captura_proposta(access_params=None):
     while True:
         # Query para buscar os tickets da fila desejada
         query = {
-            "jql": "project = cmgh AND Política = 'Política 4' AND status = 'Analyzing Credit Score'",
+            "jql": "project = cmgt AND Política = 'Política 4' AND status = 'Analyzing Credit Score'",
             "fields": ["key",  # ISSUE_JIRA
                     "summary",
                     "customfield_13729",  # CNPJ

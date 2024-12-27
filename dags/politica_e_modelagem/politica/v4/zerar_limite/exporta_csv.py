@@ -14,13 +14,20 @@ import time
 
 def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
-    # Conectando com o Trino
+	#conn = connect(
+	#	host=access_params['trino_endpoint'],
+	#	port=access_params['trino_port'],
+	#	user=access_params['trino_user'],
+	#	auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+	#	http_scheme="https"
+	#)
+
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-        http_scheme="https"
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
     )
 
     # Função para execução da query
@@ -41,7 +48,7 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
                     limite_utilizado,
                     limite_disponivel
                     from deltalaketrusted.limites.limite
-                    where limite_atribuido > 1
+                    where limite_atribuido > 0
                     """
 
     limites = execute_query(conn, query_limites)
@@ -122,7 +129,7 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
     df_vencer[['codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 'vendedor_fn_email', 'vendedor_fn_telefone']] = ""
     df_vencer['prioridade'] = 6
     df_vencer['policy'] = 'V4'
-    df_vencer['pre_filtro'] = 'sim'
+    df_vencer['pre_filtro'] = 'Não'
     df_vencer['bucket_pgid'] = 'urn-party-pgid-' + df_vencer['pgid']
 
 
@@ -134,6 +141,9 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
     ]]
 
     exporta_csv = exporta_csv.drop_duplicates()
+
+
+    print(f"Quantidade de CNPJs para criar issue no Jira politica v4: {exporta_csv.shape[0]}")
 
     # Agrupando por Bucket PGID
     exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
@@ -209,4 +219,4 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
 	# Timer de 1 minuto no final
     print("Aguardando 30 minutos antes de rodar o proximo processo...")
-    time.sleep(1800)  # Aguardar 60 segundos (1 minuto)
+    time.sleep(2300)  # Aguardar 60 segundos (1 minuto)
