@@ -153,8 +153,6 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 		'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'bucket_pgid'
 	]]
 
-	# Filtro para teste em produção
-	exporta_csv = exporta_csv[:1]
 
 	print(f"Quantidade de CNPJs para criar issue no Jira politica v3: {exporta_csv.shape[0]}")
 
@@ -231,5 +229,5 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 		exit(1)
 
 	# Timer de 1 minuto no final
-	print("Aguardando 20 minutos antes de rodar o proximo processo...")
-	time.sleep(300)  # Aguardar 60 segundos (1 minuto)
+	print("Aguardando 30 minutos antes de rodar o proximo processo...")
+	time.sleep(2300)  # Aguardar 60 segundos (1 minuto)

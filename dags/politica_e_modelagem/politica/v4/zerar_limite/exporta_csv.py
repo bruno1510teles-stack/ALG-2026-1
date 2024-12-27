@@ -142,8 +142,6 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
     exporta_csv = exporta_csv.drop_duplicates()
 
-    # Para teste em produção
-    exporta_csv = exporta_csv[:1]
 
     print(f"Quantidade de CNPJs para criar issue no Jira politica v4: {exporta_csv.shape[0]}")
 
@@ -221,4 +219,4 @@ def execucao_politica_zerar_limites_v4 (access_params=None,  **kwargs):
 
 	# Timer de 1 minuto no final
     print("Aguardando 30 minutos antes de rodar o proximo processo...")
-    time.sleep(300)  # Aguardar 60 segundos (1 minuto)
+    time.sleep(2300)  # Aguardar 60 segundos (1 minuto)
