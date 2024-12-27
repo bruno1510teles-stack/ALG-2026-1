@@ -44,7 +44,7 @@ default_args = {
 with DAG(
     dag_id='pre_filtro',
     start_date=pendulum.today('UTC').add(days=-1),
-    schedule_interval='*/4 * * * *',
+    schedule_interval='*/5 * * * *',
     default_args=default_args,
     catchup=False,
     tags=['pre-filtro', 'proposta-negocio'],
