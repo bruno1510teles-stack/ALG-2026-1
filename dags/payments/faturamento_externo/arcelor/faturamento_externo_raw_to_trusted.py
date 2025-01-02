@@ -4,6 +4,8 @@ from io import BytesIO
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
+from trino.dbapi import connect
+from trino.auth import BasicAuthentication
 
 
 def extracao_faturamento_externo(access_params=None, **kwargs):
@@ -126,7 +128,93 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     print('Parte 4')
 
-    df = df.reset_index(drop=True)
+    # Inserindo Cidade e UF
+
+    conn = connect(
+    host='trino.alpe.com.br',
+    port='443',
+    user='trinodados',
+    auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+    http_scheme="https",
+    )
+
+    def execute_query(conn, query):
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+
+        return pd.DataFrame(rows, columns=columns)
+
+
+    # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
+    cnpjs = df['raiz_cnpj'].unique().tolist()
+
+    tamanho = len(cnpjs) // 3
+
+    cnpj_part_1 = cnpjs[:tamanho]
+    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
+    cnpj_part_3 = cnpjs[2*tamanho:]
+
+    # Convertendo a lista para uma string no formato adequado para o SQL
+    cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
+    cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
+    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
+
+    query_receita_1 = f"""
+                    select
+                        distinct
+                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                        municipio as cidade,
+                        uf
+                    from deltalaketrusted.pessoas_e_organizacoes.endereco
+                    where year = 2024
+                    and month = 6
+                    and day = 5
+                    and substr(identificador, 9, 4) = '0001'
+                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_1})
+                    """
+    
+    query_receita_2 = f"""
+                    select
+                        distinct
+                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                        municipio as cidade,
+                        uf
+                    from deltalaketrusted.pessoas_e_organizacoes.endereco
+                    where year = 2024
+                    and month = 6
+                    and day = 5
+                    and substr(identificador, 9, 4) = '0001'
+                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_2})
+                    """
+
+    query_receita_3 = f"""
+                        select
+                            distinct
+                            substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                            municipio as cidade,
+                            uf
+                        from deltalaketrusted.pessoas_e_organizacoes.endereco
+                        where year = 2024
+                        and month = 6
+                        and day = 5
+                        and substr(identificador, 9, 4) = '0001'
+                        and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_3})
+                        """
+
+    receita_1 = execute_query(conn, query_receita_1)
+    receita_2 = execute_query(conn, query_receita_2)
+    receita_3 = execute_query(conn, query_receita_3)
+
+    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+
+    # Fazendo JOIN
+
+    df_final = pd.merge(df, receita, on='raiz_cnpj', how='left')
+
+    df_final = df_final.reset_index(drop=True)
 
 
     # Exportando dados para a camada Trusted
@@ -145,7 +233,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        df, 
+        df_final, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"
