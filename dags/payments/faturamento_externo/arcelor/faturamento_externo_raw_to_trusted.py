@@ -225,10 +225,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     file_data_2 = BytesIO(response_2.read())
     df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
 
-    df_unidade_consolidada['raiz_cnpj'] = '00000000' + df_unidade_consolidada['raiz_cnpj'].astype(str)
-    df_unidade_consolidada['raiz_cnpj'] = df_unidade_consolidada['raiz_cnpj'].str[-8:]
+    df = pd.merge(df, df_unidade_consolidada, on = 'unidade', how='left')
 
-    df['unidade_consolidada'] = df_unidade_consolidada['unidade_consolidada']
+    df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
