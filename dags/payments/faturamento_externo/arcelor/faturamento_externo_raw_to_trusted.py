@@ -121,11 +121,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # Renomeando colunas
     df.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
 
-    # Atribuindo data
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df['year'], df['month'], df['day'] = now.year, now.month, now.day
-
     print('Parte 4')
 
     # Inserindo Cidade e UF
@@ -212,9 +207,33 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Fazendo JOIN
 
-    df_final = pd.merge(df, receita, on='raiz_cnpj', how='left')
+    df = pd.merge(df, receita, on='raiz_cnpj', how='left')
 
-    df_final = df_final.reset_index(drop=True)
+    df = df.reset_index(drop=True)
+
+    # Incluindo campo Unidade Consolidada
+
+    # Bucket and Folder_Destination
+    BUCKET_SOURCE_RAW_2 = "arquivos-python"
+    FOLDER_DESTINATION_RAW_2 = 'depara_unidade_fat_externo'
+    file_name_2 = 'depara_unidade_fat_externo.xlsx'
+    file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
+
+
+    # Uploading Excel File
+    response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
+    file_data_2 = BytesIO(response_2.read())
+    df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
+
+    df_unidade_consolidada['raiz_cnpj'] = '00000000' + df_unidade_consolidada['raiz_cnpj'].astype(str)
+    df_unidade_consolidada['raiz_cnpj'] = df_unidade_consolidada['raiz_cnpj'].str[-8:]
+
+    df['unidade_consolidada'] = df_unidade_consolidada['unidade_consolidada']
+
+    # Atribuindo data
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df['year'], df['month'], df['day'] = now.year, now.month, now.day
 
 
     # Exportando dados para a camada Trusted
