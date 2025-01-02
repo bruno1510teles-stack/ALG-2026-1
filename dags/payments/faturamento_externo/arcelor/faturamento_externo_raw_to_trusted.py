@@ -219,7 +219,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     file_name_2 = 'depara_unidade_fat_externo.xlsx'
     file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
 
-
     # Uploading Excel File
     response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
     file_data_2 = BytesIO(response_2.read())
@@ -228,6 +227,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     df = pd.merge(df, df_unidade_consolidada, on = 'unidade', how='left')
 
     df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
+
+    df = df.reset_index(drop=True)
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
