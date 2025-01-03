@@ -66,7 +66,6 @@ def boletos_tradicional_raw_to_trusted(access_params=None,  **kwargs):
                             and bt.codigo_estagio_titulo in (6) 
                             and bt.codigo_empresa = 1
                             and bt.data_efetivacao is not null
-                            and bt.codigo_tipo_cobranca <> 7
                     """
 
     fidc = execute_query(conn, query_fidc)
