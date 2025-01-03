@@ -33,10 +33,20 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
     
     # Base Boletos
     query_boleto = """
-    select * from deltalaketrusted.payments.boletos_internos_tradicional
+    select * 
+    from deltalaketrusted.payments.boletos_internos_tradicional
+    where codigo_cedente not in (12, 10906, 6482, 13664, 14571)
     """
     boleto = execute_query(conn, query_boleto)
     print(f"Quantidade de linhas no DataFrame 'boleto': {boleto.shape[0]}")
+
+    # Lista de rótulos para excluir
+    excluir = [
+    'CCB MIXTEL'
+    ]
+
+    # Filtrando os dados
+    boleto = boleto[~boleto['rotulo'].isin(excluir)]
 
     df_titulos = boleto
 
