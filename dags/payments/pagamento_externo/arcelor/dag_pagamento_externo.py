@@ -12,6 +12,7 @@ from datetime import timedelta
 ### Importando scripts necessários
 from payments.pagamento_externo.arcelor import pagamento_raw_to_trusted
 from payments.pagamento_externo.arcelor import pagamento_trusted_to_refined
+from payments.pagamento_externo.arcelor import pontualidade_pagamento
 
 
 # Parâmetros de acesso
@@ -81,5 +82,12 @@ with DAG(
         provide_context=True
     )
 
+    # Definindo o task que carrega a tabela na Refined
+    task3 = PythonOperator(
+        task_id='trusted_to_refind_pontualidade',
+        python_callable=pontualidade_pagamento.pontualidade_pagamento,
+        provide_context=True
+    )
+
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    task1 >> task2 >> task3
