@@ -70,6 +70,16 @@ def boletos_tradicional_raw_to_trusted(access_params=None,  **kwargs):
 
     fidc = execute_query(conn, query_fidc)
 
+    # Lista de rótulos para excluir
+    excluir = [
+    'COBRANÇA SIMPLES - G&B GRAFENO ',
+    'COBRANÇA SIMPLES - MIXTEL - MONEY PLUS ',
+    'COBRANÇA SIMPLES - MIXTEL ARBI '
+    ]
+
+    # Filtrando os dados
+    fidc = fidc[~fidc['rotulo'].isin(excluir)]
+
     print(f"Quantidade de linhas no DataFrame 'boleto': {fidc.shape[0]}")
 
     # Base Sacado
