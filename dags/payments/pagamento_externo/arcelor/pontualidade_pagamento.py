@@ -122,7 +122,7 @@ def pontualidade_pagamento (access_params=None,  **kwargs):
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
             pagamento_final, 
-            partition_by=["year", "month", "day"],
+            partition_by = ["year", "month", "day"],
             storage_options=storage_options,
             mode="overwrite",
             #overwrite_schema=True
