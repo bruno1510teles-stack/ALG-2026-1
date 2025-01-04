@@ -108,9 +108,9 @@ def pontualidade_pagamento (access_params=None,  **kwargs):
         logger.info("Iniciando salvamento das informações")
         
         storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+            "AWS_ACCESS_KEY_ID": "fAI0FfaXtvj9oSyFBrZ7",
+            "AWS_SECRET_ACCESS_KEY": "GE2NyDWjrLIPo9WkmdIFBuPzJ2HZr1hEc63PEE4O",
+            "AWS_ENDPOINT_URL":"https://api-refined.alpe.com.br",
             "AWS_REGION": "us-east-1",
             "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
         }
@@ -121,7 +121,7 @@ def pontualidade_pagamento (access_params=None,  **kwargs):
 
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-            pagamento_final, 
+            pagamento_final,
             partition_by = ["year", "month", "day"],
             storage_options=storage_options,
             mode="overwrite",
