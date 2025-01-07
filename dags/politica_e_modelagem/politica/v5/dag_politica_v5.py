@@ -11,6 +11,7 @@ import requests
 
 ### Importando scripts necessários
 from politica_e_modelagem.politica.v5 import pre_filtro_task
+from politica_e_modelagem.politica.v5 import teste
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 
 
@@ -86,7 +87,7 @@ with DAG(
     # Definindo o task que faz a chamada do serasa
     serasa = PythonOperator(
         task_id="serasa_task",
-        python_callable=execucao_chamada_serasa.chamando_serasa,
+        python_callable=teste.chamando_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True,
     )
