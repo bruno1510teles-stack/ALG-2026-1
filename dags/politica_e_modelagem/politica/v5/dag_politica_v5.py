@@ -60,7 +60,7 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    "retries": 1,
+    #"retries": 1,
     "retry_delay": timedelta(minutes=1),
     #"on_failure_callback": notificar_falha_teams
 }
@@ -81,7 +81,6 @@ with DAG(
         python_callable=pre_filtro_task.analise_pre_filtro_v5,
         op_kwargs={'access_params': access_params},
         provide_context=True,
-        execution_timeout=timedelta(minutes=3)
     )
 
     # Definindo o task que faz a chamada do serasa
@@ -90,7 +89,6 @@ with DAG(
         python_callable=execucao_chamada_serasa.chamando_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True,
-        execution_timeout=timedelta(minutes=3)
     )
 
     # Definindo a ordem de execução das tasks
