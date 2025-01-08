@@ -123,9 +123,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     print('Parte 4')
 
-    # Drop Duplicates
-    df = df.drop_duplicates()
-
     # Inserindo Cidade e UF
 
     conn = connect(
@@ -232,6 +229,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
 
     df = df.reset_index(drop=True)
+
+    # Drop Duplicates
+    df = df.drop_duplicates()
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
