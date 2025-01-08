@@ -70,7 +70,7 @@ def base_details_raw(access_params=None, **kwargs):
         existing_issues_updated = {}
 
     # Data limite de 15 dias atrás
-    fifteen_days_ago = datetime.now() - timedelta(days=20)
+    fifteen_days_ago = datetime.now() - timedelta(days=240)
 
     # Query JQL
     print("Listando páginas na API para consolidar em uma lista...")
