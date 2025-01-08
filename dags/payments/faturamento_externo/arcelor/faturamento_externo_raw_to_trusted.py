@@ -123,6 +123,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     print('Parte 4')
 
+    # Drop Duplicates
+    df = df.drop_duplicates()
+
     # Inserindo Cidade e UF
 
     conn = connect(
