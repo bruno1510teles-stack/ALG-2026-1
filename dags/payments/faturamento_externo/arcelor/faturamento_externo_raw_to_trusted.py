@@ -4,6 +4,8 @@ from io import BytesIO
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
+from trino.dbapi import connect
+from trino.auth import BasicAuthentication
 
 
 def extracao_faturamento_externo(access_params=None, **kwargs):
@@ -119,14 +121,119 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # Renomeando colunas
     df.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
 
+    print('Parte 4')
+
+    # Inserindo Cidade e UF
+
+    conn = connect(
+    host='trino.alpe.com.br',
+    port='443',
+    user='trinodados',
+    auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+    http_scheme="https",
+    )
+
+    def execute_query(conn, query):
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+
+        return pd.DataFrame(rows, columns=columns)
+
+
+    # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
+    cnpjs = df['raiz_cnpj'].unique().tolist()
+
+    tamanho = len(cnpjs) // 3
+
+    cnpj_part_1 = cnpjs[:tamanho]
+    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
+    cnpj_part_3 = cnpjs[2*tamanho:]
+
+    # Convertendo a lista para uma string no formato adequado para o SQL
+    cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
+    cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
+    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
+
+    query_receita_1 = f"""
+                    select
+                        distinct
+                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                        municipio as cidade,
+                        uf
+                    from deltalaketrusted.pessoas_e_organizacoes.endereco
+                    where year = 2024
+                    and month = 6
+                    and day = 5
+                    and substr(identificador, 9, 4) = '0001'
+                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_1})
+                    """
+    
+    query_receita_2 = f"""
+                    select
+                        distinct
+                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                        municipio as cidade,
+                        uf
+                    from deltalaketrusted.pessoas_e_organizacoes.endereco
+                    where year = 2024
+                    and month = 6
+                    and day = 5
+                    and substr(identificador, 9, 4) = '0001'
+                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_2})
+                    """
+
+    query_receita_3 = f"""
+                        select
+                            distinct
+                            substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
+                            municipio as cidade,
+                            uf
+                        from deltalaketrusted.pessoas_e_organizacoes.endereco
+                        where year = 2024
+                        and month = 6
+                        and day = 5
+                        and substr(identificador, 9, 4) = '0001'
+                        and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_3})
+                        """
+
+    receita_1 = execute_query(conn, query_receita_1)
+    receita_2 = execute_query(conn, query_receita_2)
+    receita_3 = execute_query(conn, query_receita_3)
+
+    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+
+    # Fazendo JOIN
+
+    df = pd.merge(df, receita, on='raiz_cnpj', how='left')
+
+    df = df.reset_index(drop=True)
+
+    # Incluindo campo Unidade Consolidada
+
+    # Bucket and Folder_Destination
+    BUCKET_SOURCE_RAW_2 = "arquivos-python"
+    FOLDER_DESTINATION_RAW_2 = 'depara_unidade_fat_externo'
+    file_name_2 = 'depara_unidade_fat_externo.xlsx'
+    file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
+
+    # Uploading Excel File
+    response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
+    file_data_2 = BytesIO(response_2.read())
+    df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
+
+    df = pd.merge(df, df_unidade_consolidada, on = 'unidade', how='left')
+
+    df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
+
+    df = df.reset_index(drop=True)
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
-
-    print('Parte 4')
-
-    df = df.reset_index(drop=True)
 
 
     # Exportando dados para a camada Trusted

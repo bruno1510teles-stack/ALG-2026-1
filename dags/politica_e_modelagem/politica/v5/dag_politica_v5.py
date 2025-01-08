@@ -1,21 +1,21 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import pendulum
-import requests
+from time import sleep
 from datetime import timedelta
+import requests
 
 
 ### Importando scripts necessários
-from payments.pagamento_externo.arcelor import pagamento_raw_to_trusted
-from payments.pagamento_externo.arcelor import pagamento_trusted_to_refined
-from payments.pagamento_externo.arcelor import pontualidade_pagamento
+from politica_e_modelagem.politica.v5 import pre_filtro_task
+from politica_e_modelagem.politica.v5 import teste
+from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 
 
-# Parâmetros de acesso
+### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
     "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
@@ -39,55 +39,58 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-
 '''
 def notificar_falha_teams(context):
+    task_id = context['task_instance'].task_id
+
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
-    mensagem = {
-        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
-        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!! - teste"
-    }
-    requests.post(url, json=mensagem)
+
+    # Verifica se a task_id é 'captura_proposta' e, se for, não envia notificação
+    if task_id == "captura_proposta":
+        print("Notificação não enviada para 'captura_proposta'")
+    else:
+          
+
+        mensagem = {
+            "title": "Falha na DAG - politica_v_2",
+            "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+        }
+        requests.post(url, json=mensagem)
 '''
 
-
-# Definindo defaults
+### Definindo defaults
 default_args = {
-    "owner": "Vinicius Moraes Teixeira",
-    "retries": 0,
-    # "on_failure_callback": notificar_falha_teams          # Descomentar quando for para producao
+    "owner": "Vinicius Moraes",
+    #"retries": 1,
+    "retry_delay": timedelta(minutes=1),
+    #"on_failure_callback": notificar_falha_teams
 }
 
 
 # Definindo a DAG
 with DAG(
-    dag_id='pagamento_externo',
+    dag_id='politica_v5',
     start_date=days_ago(1),
-    schedule_interval=None,
     default_args=default_args,
-    tags=['etl', 'pagamento','trusted','refined']
+    tags=['politica_v5', 'lote', 'pre-aprovado'],
+    max_active_runs=1  # Apenas uma execução ativa
 ) as dag:
-
-    # Definindo o task que carrega a tabela na trusted (tratamentos iniciais)
-    task1 = PythonOperator(
-        task_id='raw_to_trusted',
-        python_callable=pagamento_raw_to_trusted.extracao_pagamento,
-        provide_context=True
+     
+    # Definindo o task de pre filtro
+    pre_filtro = PythonOperator(
+        task_id="pre_filtro_task",
+        python_callable=pre_filtro_task.analise_pre_filtro_v5,
+        op_kwargs={'access_params': access_params},
+        provide_context=True,
     )
 
-    # Definindo o task que carrega a tabela na Refined
-    task2 = PythonOperator(
-        task_id='trusted_to_refind',
-        python_callable=pagamento_trusted_to_refined.tratamento_pagamento_externo,
-        provide_context=True
-    )
-
-    # Definindo o task que carrega a tabela na Refined
-    task3 = PythonOperator(
-        task_id='trusted_to_refind_pontualidade',
-        python_callable=pontualidade_pagamento.pontualidade_pagamento,
-        provide_context=True
+    # Definindo o task que faz a chamada do serasa
+    serasa = PythonOperator(
+        task_id="serasa_task",
+        python_callable=teste.chamando_serasa,
+        op_kwargs={'access_params': access_params},
+        provide_context=True,
     )
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2 >> task3
+    pre_filtro >> serasa

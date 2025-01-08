@@ -70,6 +70,16 @@ def boletos_tradicional_raw_to_trusted(access_params=None,  **kwargs):
 
     fidc = execute_query(conn, query_fidc)
 
+    # Lista de rótulos para excluir
+    excluir = [
+    'COBRANÇA SIMPLES - G&B GRAFENO ',
+    'COBRANÇA SIMPLES - MIXTEL - MONEY PLUS ',
+    'COBRANÇA SIMPLES - MIXTEL ARBI '
+    ]
+
+    # Filtrando os dados
+    fidc = fidc[~fidc['rotulo'].isin(excluir)]
+
     print(f"Quantidade de linhas no DataFrame 'boleto': {fidc.shape[0]}")
 
     # Base Sacado
@@ -147,6 +157,16 @@ def boletos_tradicional_raw_to_trusted(access_params=None,  **kwargs):
 
     # Aplicar a função na coluna 'valor_titulo'
     df['valor_titulo'] = df['valor_titulo'].apply(ajustar_decimal)
+
+    def transformar_colunas_em_float(df, colunas):
+        for coluna in colunas:
+            if coluna in df.columns:
+                df[coluna] = pd.to_numeric(df[coluna], errors='coerce')  # Converte para float, trata erros como NaN
+        return df
+
+    colunas_para_transformar = ['valor_face', 'valor_titulo', 'valor_baixado', 'valor_desagio']
+
+    df = transformar_colunas_em_float(df, colunas_para_transformar)
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))

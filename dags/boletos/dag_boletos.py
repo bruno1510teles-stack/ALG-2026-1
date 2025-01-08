@@ -14,6 +14,8 @@ from boletos.vendermais import boletos_raw_to_trusted
 from boletos.vendermais import boletos_trusted_to_refined_carteira
 from boletos.vendermais import boletos_trusted_to_refined_vop
 from boletos.tradicional import boletos_tradicional_raw_to_trusted
+from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
+from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
 
 
 ### Parâmetros de acesso
@@ -101,5 +103,22 @@ with DAG(
         op_kwargs = {'access_params': access_params},
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
+
+    # Definindo o task que processa boletos tradicional trusted to refined - carteira
+    trusted_to_refined_tradicional_carteira = PythonOperator(
+        task_id = 'trusted_to_refined_tradicional_carteira',
+        python_callable = boletos_tradicional_trusted_to_refined_carteira.boletos_tradiconal_trusted_to_refined_carteira,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
+
+    # Definindo o task que processa boletos tradicional trusted to refined - vop
+    trusted_to_refined_tradicional_vop = PythonOperator(
+        task_id = 'trusted_to_refined_tradicional_vop',
+        python_callable = boletos_tradicional_trusted_to_refined_vop.boletos_tradicional_trusted_to_refined_vop,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
+
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional
+    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop
