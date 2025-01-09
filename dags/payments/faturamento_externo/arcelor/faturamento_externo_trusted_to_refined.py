@@ -206,6 +206,8 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
 
     df_final = df_final.fillna(0)
 
+    df_final['razao_social'] = df_final['razao_social'].astype(str)
+
     print('Exportando base para Refined...')
 
 
