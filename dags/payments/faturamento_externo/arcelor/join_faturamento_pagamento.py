@@ -57,7 +57,7 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     # Tratando Faturamento Trusted
 
-    fat_trusted = fat_trusted.drop(columns=['razao_social', 'atualizado_em', 'year', 'month', 'day'])
+    fat_trusted = fat_trusted.drop(columns=['razao_social', 'atualizado_em', 'year', 'month', 'day', 'Base'])
 
     def remover_acentos(texto):
         if isinstance(texto, str):

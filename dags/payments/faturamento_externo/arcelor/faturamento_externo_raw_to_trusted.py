@@ -15,7 +15,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
         access_key = 'B7q0avvSIpSdyGPXWnEC',
         secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
     )
-    
+
 
     # Connection validation
     try:
@@ -32,19 +32,16 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
             print(f"Erro ao conectar ao MinIO: {e}")
 
 
-
-       # Bucket and Folder_Destination
+    # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2024/month=12/day=19'
-    file_name = 'Faturamento Base dez24 - Tratada 2.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2025/month=1/day=8'
+    file_name = 'Base_Faturamento_08012025.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
-
 
     # Uploading Excel File
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
-    df = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
-
+    df = pd.read_excel(file_data, sheet_name="Historico de Faturamento", header=1)
 
     # Treating column names
     def format_column_names(df):
@@ -60,9 +57,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     format_column_names(df)
 
-    df = df.dropna(subset=['Razão Social'])
+    df = df.dropna(subset=['Razão Social']).copy()
 
-    print('Parte 1')
 
     # Adjusting columns with upper()
     df['Razão Social'] = df['Razão Social'].str.upper()
@@ -88,8 +84,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     tratar_colunas_202(df)
 
 
-    print('Parte 2')
-
     # Treating NaN values
     def fillna_in_columns_starting_with(df, prefix, value):
         # Filtering columns
@@ -103,17 +97,13 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     #Transforming float64 in float
     df[df.select_dtypes(include=['float64']).columns] = df.select_dtypes(include=['float64']).astype(float)
 
-
     #Transforming ['Pagador']
     df['Pagador'] = df['Pagador'].astype(str)
-
 
     #Transforming ['Raiz CNPJ']
     df['Raiz CNPJ'] = '00000000' + df['Raiz CNPJ'].astype(str)
     df['Raiz CNPJ'] = df['Raiz CNPJ'].str[-8:]
 
-
-    print('Parte 3')
 
     # Removendo coluna antiga de Raiz CNPJ antes do tratamento
     df = df.drop(columns=["Raiz CNPJ Recebido", "Pagador"])
@@ -123,14 +113,15 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     print('Parte 4')
 
+
     # Inserindo Cidade e UF
 
     conn = connect(
-    host='trino.alpe.com.br',
-    port='443',
-    user='trinodados',
-    auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-    http_scheme="https",
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
     )
 
     def execute_query(conn, query):
@@ -170,7 +161,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                     and substr(identificador, 9, 4) = '0001'
                     and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_1})
                     """
-    
+
     query_receita_2 = f"""
                     select
                         distinct
@@ -228,10 +219,14 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
 
-    df = df.reset_index(drop=True)
 
-    # Drop Duplicates
-    df = df.drop_duplicates()
+    # Lista de colunas para considerar na remoção de duplicatas
+    colunas_drop_duplicates = ['raiz_cnpj', 'unidade'] + [col for col in df.columns if col.startswith('20')]
+
+    # Remover duplicatas com base nas colunas específicas
+    df = df.drop_duplicates(subset=colunas_drop_duplicates, keep='first')
+
+    df = df.reset_index(drop=True)
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
