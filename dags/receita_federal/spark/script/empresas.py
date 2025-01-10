@@ -175,7 +175,7 @@ def empresas_to_trusted(spark):
         .format("delta") \
         .option("mergeSchema", "true") \
         .mode("overwrite") \
-        .save("s3a://teste-felipe/receita-federal/empresas")
+        .save("s3a://bureaus/receita-federal/empresas")
 
 
     print("Arquivos Salvos")    

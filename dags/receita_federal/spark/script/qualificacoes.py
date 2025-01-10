@@ -85,7 +85,7 @@ def qualificacoes_to_trusted(spark):
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
-        .save("s3a://teste-felipe/receita-federal/qualificacoes")
+        .save("s3a://bureaus/receita-federal/qualificacoes")
 
     print("Arquivos Salvos")
 

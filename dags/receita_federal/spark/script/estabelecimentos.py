@@ -320,7 +320,7 @@ def estabelecimentos_to_trusted(spark):
         .format("delta") \
         .option("mergeSchema", "true") \
         .mode("overwrite") \
-        .save("s3a://teste-felipe/receita-federal/estabelecimentos")
+        .save("s3a://bureaus/receita-federal/estabelecimentos")
 
     print("Arquivos Salvos")    
     # Fechar a sessão Spark
