@@ -19,6 +19,28 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         http_scheme="https",
     )
 
+    ### Criando uma blacklist para barrar solicitações indesejadas, como por exemplo
+    # fast-track para fornecedores da Yandeh
+    black_list_pgid = [
+        'adoro',
+        'aniolli',
+        'bariloche',
+        'bassar',
+        'benassi',
+        'caboclo',
+        'comprefacil',
+        'embala',
+        'girotrade',
+        'ltcarol',
+        'ltdeale',
+        'ocean',
+        'philipmorris',
+        'roge',
+        'seugil',
+        'ultracheese',
+        'yandeh'
+    ] 
+
     ### Validando se a raiz do CNPJ foi analisada a menos de 60 DIAS
     # Configurações da API do Jira
     jira_url = f"{access_params['jira_url']}/rest/api/2/search"
@@ -50,7 +72,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             "assignee",
             "customfield_13729", # CNPJ do Sacado 
             "customfield_13730", # CNPJ do cedente
-            "customfield_13804"], # pular pre filtro 
+            "customfield_13804", # pular pre filtro
+            "customfield_13739"], # pgid do cedente 
         "maxResults": max_results,
         "startAt": start_at
     }
@@ -89,10 +112,16 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         limite_solicitado   = ticket['fields'].get('customfield_13730')
         key_jira            = ticket['key']
         pular_pre_filtro    = ticket['fields'].get('customfield_13804')
+        pgid_cedente        = ticket['fields'].get('customfield_13739')
 
         if cpnj_jira is None:
             jira_connection.transition_issue(key_jira, "261") # inelegivel
             print(f'Issue {key_jira} esta inelegivel e foi fechada por falta de CNPJ do Sacado!')
+            print("")
+            continue
+        if pgid_cedente in black_list_pgid:
+            jira_connection.transition_issue(key_jira, "261") # inelegivel
+            print(f'Issue {key_jira} esta inelegivel e foi fechada por estar na lista de fornecedores que não será analisada pela Alpe, por exemplo Yandeh!')
             print("")
             continue
         if pular_pre_filtro is not None and pular_pre_filtro['value'] == 'Não':

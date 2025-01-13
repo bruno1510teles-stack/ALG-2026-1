@@ -5,6 +5,7 @@ from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 
 from politica_e_modelagem.pre_filtro.pre_filtro_comun import analise_pre_filtro
+from politica_e_modelagem.pre_filtro.hub_politicas import selecionar_politica 
 
 ### Parâmetros de acesso
 access_params = {          
@@ -55,6 +56,12 @@ with DAG(
     start = EmptyOperator(task_id="start")
     end = EmptyOperator(task_id="end")
 
+    # politicas_task = PythonOperator(
+    #         task_id="selecionar_politica",
+    #         python_callable=selecionar_politica,
+    #         op_kwargs={'access_params': access_params},
+    #     )
+
     prefiltro_task =  PythonOperator(
             task_id="pre_filtro_comun_task",
             python_callable=analise_pre_filtro,
@@ -62,4 +69,5 @@ with DAG(
         )
     
     # Definindo a ordem de execução das tasks
+    # start >> politicas_task >> prefiltro_task >> end
     start >> prefiltro_task >> end
