@@ -13,6 +13,7 @@ from datetime import timedelta
 from payments.faturamento_externo.arcelor import faturamento_externo_raw_to_trusted
 from payments.faturamento_externo.arcelor import faturamento_externo_trusted_to_refined
 from payments.faturamento_externo.arcelor import join_faturamento_pagamento
+from payments.faturamento_externo.arcelor import trata_base_foto
 
 
 # Parâmetros de acesso
@@ -88,6 +89,13 @@ with DAG(
         python_callable=join_faturamento_pagamento.join_faturamento_pagamento,
         provide_context=True
     )
+
+    # Trata Base Foto
+    task4 = PythonOperator(
+        task_id='trata_base_foto_task',
+        python_callable=trata_base_foto.trata_base_foto,
+        provide_context=True
+    )
     
     # Definindo a ordem de execução das tasks
-    task1 >> task2 >> task3
+    task4 >> task1 >> task2 >> task3
