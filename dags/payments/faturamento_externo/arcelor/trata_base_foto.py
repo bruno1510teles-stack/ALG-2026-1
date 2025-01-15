@@ -539,7 +539,7 @@ def trata_base_foto(access_params=None, **kwargs):
 
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_TRUSTED = 'payments'
-    FOLDER_DESTINATION_TRUSTED = 'faturamento_externo/arcelor'
+    FOLDER_DESTINATION_TRUSTED = 'faturamento_externo/arcelor/base_foto'
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
