@@ -47,6 +47,7 @@ def boletos_tradicional_trusted_to_refined_vop(access_params=None,  **kwargs):
                                     "data_efetivacao",
                                     "data_vencimento",
                                     "data_baixa",
+                                    "rotulo",
                                     "status_titulo",
                                     "status_liquidez",
                                     "safra_concessao",
@@ -69,6 +70,16 @@ def boletos_tradicional_trusted_to_refined_vop(access_params=None,  **kwargs):
                             """
 
     df = execute_query(conn, query_boletos_trusted)
+
+    # Lista de rótulos para excluir
+    excluir = [
+    'CCB MIXTEL'
+    ]
+
+    # Filtrando os dados
+    df = df[~df['rotulo'].isin(excluir)]
+
+    df = df.drop(columns=['rotulo'])
 
     print('Parte 1')
 
