@@ -524,6 +524,8 @@ def trata_base_foto(access_params=None, **kwargs):
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
 
+    df_final = df_final.reset_index(drop=True)
+
 
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
