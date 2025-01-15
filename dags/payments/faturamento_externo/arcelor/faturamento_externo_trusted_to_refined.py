@@ -210,6 +210,8 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
 
     print('Exportando base para Refined...')
 
+    df_final = df_final.reset_index(drop=True)
+
 
     # Exportando dados para a camada Refined
     # # Conectando na Refined
