@@ -21,7 +21,6 @@ def trata_base_foto(access_params=None, **kwargs):
         secret_key = 'uwE7qzfhoYodtf56bDRg4BAoxzOGJp9O4rRRMDn2'
     )
 
-
     # Connection validation
     try:
         # Try to list the buckets
@@ -37,7 +36,9 @@ def trata_base_foto(access_params=None, **kwargs):
             print(f"Erro ao conectar ao MinIO: {e}")
 
     
+    print('Importando Bases...')
 
+    # BASE1
     # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
     FOLDER_DESTINATION_RAW = 'arcelor/year=2025/month=1/day=13'
@@ -49,7 +50,7 @@ def trata_base_foto(access_params=None, **kwargs):
     file_data = BytesIO(response.read())
     base1 = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
 
-
+    #BASE2
     file_name = 'Faturamento Base dez24 - CNPJ RAIZ TRATADO.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
@@ -58,7 +59,7 @@ def trata_base_foto(access_params=None, **kwargs):
     file_data = BytesIO(response.read())
     base2 = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
 
-
+    # BASE3
     file_name = 'Base para envio 17.12.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
@@ -66,6 +67,8 @@ def trata_base_foto(access_params=None, **kwargs):
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
     base3 = pd.read_excel(file_data, sheet_name="HIstórico de Faturamento", header=1)
+
+    print('Iniciando tratamento das bases...')
 
 
     # TRATANDO BASE 1
@@ -134,7 +137,6 @@ def trata_base_foto(access_params=None, **kwargs):
     base1.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
 
 
-
     # TRATANDO BASE 2
 
     # Treating column names
@@ -199,7 +201,6 @@ def trata_base_foto(access_params=None, **kwargs):
 
     # Renomeando colunas
     base2.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
-
 
 
     # TRATANDO BASE 3
@@ -268,6 +269,8 @@ def trata_base_foto(access_params=None, **kwargs):
     base3.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
 
 
+    print('Pegando depara de Unidade Consolidada e cruzando...')
+
 
     # DEPARA UNIDADE CONSOLIDADA ANTES DO MERGE
 
@@ -300,7 +303,6 @@ def trata_base_foto(access_params=None, **kwargs):
     base3 = pd.merge(base3, df_unidade_consolidada, on = 'unidade', how='left')
     base3['unidade_consolidada'] = base3['unidade_consolidada'].fillna(base3['unidade'])
 
-
     # Dropar a coluna 'unidade' de base1 e base2 (unidade antiga)
     base1 = base1.drop(columns=['unidade'])
     base2 = base2.drop(columns=['unidade'])
@@ -311,38 +313,56 @@ def trata_base_foto(access_params=None, **kwargs):
     base2 = base2.drop(columns=['razao_social'])
     base3 = base3.drop(columns=['razao_social'])
 
+    base1 = base1.drop_duplicates()
+    base2 = base2.drop_duplicates()
+    base3 = base3.drop_duplicates()
 
-    # base1, base2, base3
+    print('Cruzando as bases...')
 
-    def merge_bases(base_principal, base_nova):
-        # Identifica as colunas de valores na base nova
-        colunas_valores = [col for col in base_nova.columns if col not in ['raiz_cnpj', 'unidade_consolidada']]
-        
-        # Identifica os CNPJs e unidades que já existem na base principal
-        chaves_existentes = base_principal[['raiz_cnpj', 'unidade_consolidada']].drop_duplicates()
-        
-        # Se o CNPJ e unidade da base nova já existem na base principal
-        base_intersect = base_nova.merge(chaves_existentes, on=['raiz_cnpj', 'unidade_consolidada'], how='inner')
-        
-        # Adiciona apenas as novas colunas de valores
-        base_intersect = base_intersect[['raiz_cnpj', 'unidade_consolidada'] + colunas_valores]
-        
-        # Se o CNPJ e unidade da base nova não existem na base principal
-        base_new = base_nova.merge(chaves_existentes, on=['raiz_cnpj', 'unidade_consolidada'], how='outer', indicator=True)
-        base_new = base_new[base_new['_merge'] == 'left_only']
-        base_new = base_new.drop(columns=['_merge'])
-        
-        # Adiciona todas as colunas
-        base_final = pd.concat([base_principal, base_intersect, base_new], ignore_index=True).drop_duplicates()
+    # Cruzando as bases 1, 2 e 3
+
+
+    def cruzar_bases(base1, base2, chave=['raiz_cnpj', 'unidade_consolidada']):
+
+        # Identificar colunas exclusivas da base2
+        colunas_novas = [col for col in base2.columns if col not in base1.columns]
+
+        # Identificar as colunas comuns entre base1 e base2, excluindo as colunas a serem ignoradas
+        colunas_iguais = [col for col in base2.columns if col in base1.columns and col not in chave]
+
+        # Garantir que base1 tenha apenas um valor por chave, priorizando soma maior das colunas
+        base1 = base1.assign(soma_colunas_novas=base1[colunas_iguais].sum(axis=1))
+        base1 = base1.sort_values(by='soma_colunas_novas', ascending=False).drop_duplicates(subset=chave).drop(columns='soma_colunas_novas')
+
+        # Garantir que base2 tenha apenas um valor por chave, priorizando soma maior nas colunas_novas
+        base2 = base2.assign(soma_colunas_novas=base2[colunas_novas].sum(axis=1))
+        base2 = base2.sort_values(by='soma_colunas_novas', ascending=False).drop_duplicates(subset=chave).drop(columns='soma_colunas_novas')
+
+        # Casos que aparecem nas duas bases
+        base_comum = pd.merge(base1, base2[chave + colunas_novas], on=chave, how='inner')
+
+        # Casos que aparecem apenas na base1
+        apenas_base1 = base1[~base1[chave].apply(tuple, axis=1).isin(base2[chave].apply(tuple, axis=1))]
+
+        # Casos que aparecem apenas na base2
+        apenas_base2 = base2[~base2[chave].apply(tuple, axis=1).isin(base1[chave].apply(tuple, axis=1))]
+
+        # Concatenar os dados para formar a base final
+        base_final = pd.concat([base_comum, apenas_base1, apenas_base2], ignore_index=True)
+
+        # Preencher valores ausentes com 0
+        base_final = base_final.fillna(0)
+
+        # Removendo linhas iguais
+        base_final = base_final.drop_duplicates()
+
         return base_final
+    
 
-    # Cruzando as bases
-    base_final_1_2 = merge_bases(base1, base2)
-    base_final_1_2_3 = merge_bases(base_final_1_2, base3)
+    base1_2 = cruzar_bases(base1, base2)
+    base_final_merge = cruzar_bases(base1_2, base3)
 
-    # Resultado final
-    base_final_1_2_3 = base_final_1_2_3.fillna(0)
-
+    print('Inserindo Cidade e UF...')
 
 
     # Inserindo Cidade e UF
@@ -366,7 +386,7 @@ def trata_base_foto(access_params=None, **kwargs):
 
 
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
-    cnpjs = base_final_1_2_3['raiz_cnpj'].unique().tolist()
+    cnpjs = base_final_merge['raiz_cnpj'].unique().tolist()
 
     tamanho = len(cnpjs) // 3
 
@@ -429,23 +449,75 @@ def trata_base_foto(access_params=None, **kwargs):
 
     # Fazendo JOIN
 
-    df_final = pd.merge(base_final_1_2_3, receita, on='raiz_cnpj', how='left')
+    df_final = pd.merge(base_final_merge, receita, on='raiz_cnpj', how='left')
 
     df_final = df_final.reset_index(drop=True)
 
 
-    colunas_ordem = ['raiz_cnpj', 'unidade_consolidada', 'cidade', 'uf'] + [col for col in df_final.columns if col not in ['raiz_cnpj', 'unidade_consolidada', 'cidade', 'uf']]
+    print('Pegando Razao Social do nosso banco de dados...')
+
+
+    cnpjs = df_final['raiz_cnpj'].unique().tolist()
+
+    tamanho = len(cnpjs) // 3
+
+    cnpj_part_1 = cnpjs[:tamanho]
+    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
+    cnpj_part_3 = cnpjs[2*tamanho:]
+
+    # Convertendo a lista para uma string no formato adequado para o SQL
+    cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
+    cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
+    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
+
+
+    query_receita_1 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_1})
+                    """
+
+
+    query_receita_2 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_2})
+                    """
+
+    query_receita_3 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_3})
+                    """
+
+    receita_1 = execute_query(conn, query_receita_1)
+    receita_2 = execute_query(conn, query_receita_2)
+    receita_3 = execute_query(conn, query_receita_3)
+
+    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+
+    df_final = pd.merge(
+        df_final, 
+        receita, 
+        on=['raiz_cnpj'], 
+        how='left'
+    )
+
+    df_final['razao_social'] = df_final['razao_social'].fillna('X')
+
+
+    # Reorganizando Colunas
+
+    colunas_ordem = ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf'] + [col for col in df_final.columns if col not in ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf']]
     df_final = df_final[colunas_ordem]
 
-
-    # Lista de colunas para considerar na remoção de duplicatas
-    colunas_drop_duplicates = ['raiz_cnpj', 'unidade_consolidada'] + [col for col in df_final.columns if col.startswith('20')]
-
-    # Remover duplicatas com base nas colunas específicas
-    df_final = df_final.drop_duplicates(subset=colunas_drop_duplicates, keep='first')
-
-    df_final = df_final.reset_index(drop=True)
-
+    print('Exportando base...')
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -474,4 +546,3 @@ def trata_base_foto(access_params=None, **kwargs):
         storage_options=storage_options,
         mode="overwrite"
     )
-
