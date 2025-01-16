@@ -9,6 +9,7 @@ import pandas as pd
 import requests
 import pendulum
 import sys
+from tqdm import tqdm
 from datetime import datetime, timezone, timedelta
 from time import sleep
 
