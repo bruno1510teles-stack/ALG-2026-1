@@ -253,7 +253,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         df_final, 
         partition_by=["year", "month"],
         storage_options=storage_options_trusted,
-        mode="append"
+        mode="overwrite"
     )
 
     print('Arquivo salvo com sucesso!')
