@@ -152,6 +152,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta_jira_v2
-    #extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
-    #check_time_task >> [jira_notif_teams, skip_task]
+    captura_proposta_jira_v2 >> extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    check_time_task >> [jira_notif_teams, skip_task]
