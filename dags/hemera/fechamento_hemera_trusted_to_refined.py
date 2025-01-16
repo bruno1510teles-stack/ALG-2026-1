@@ -13,7 +13,7 @@ from io import BytesIO
 
 def hemera_trusted_to_refined(access_params=None,  **kwargs):
 
-    para_fechamento = '2024-09-30'
+    para_fechamento = '2024-08-31'
 
     print('Conectando com o Trino')
     ### Coletando dados da camada Trusted
