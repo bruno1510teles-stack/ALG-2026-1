@@ -72,13 +72,6 @@ with DAG(
     max_active_runs=1
 ) as dag:
     
-    # estoque = SparkKubernetesOperator(
-    #     task_id='estoque',
-    #     application_file='estoque-hemera-raw-to-trusted-spark-app.yaml',
-    #     namespace='spark',
-    #     kubernetes_conn_id='kubernetes_default',
-    #     do_xcom_push=True,
-    # )
 
     # #Definindo as tasks
     estoque_raw_to_trusted = PythonOperator(
@@ -88,27 +81,27 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
-     # Definindo o task que processa limites_raw_to_trusted
-    aquisicao_raw_to_trusted = PythonOperator(
-        task_id='aquisicao_raw_to_trusted',
-        python_callable=aquisicao_hemera_raw_to_trusted.hemera_raw_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
+    #  # Definindo o task que processa limites_raw_to_trusted
+    # aquisicao_raw_to_trusted = PythonOperator(
+    #     task_id='aquisicao_raw_to_trusted',
+    #     python_callable=aquisicao_hemera_raw_to_trusted.hemera_raw_to_trusted,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    # )
 
-    retorno_raw_to_trusted = PythonOperator(
-        task_id='retorno_raw_to_trusted',
-        python_callable=retorno_hemera_raw_to_trusted.hemera_raw_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
+    # retorno_raw_to_trusted = PythonOperator(
+    #     task_id='retorno_raw_to_trusted',
+    #     python_callable=retorno_hemera_raw_to_trusted.hemera_raw_to_trusted,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    # )
 
-    recompra_raw_to_trusted = PythonOperator(
-        task_id='recompra_raw_to_trusted',
-        python_callable=recompra_hemera_raw_to_trusted.hemera_raw_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
+    # recompra_raw_to_trusted = PythonOperator(
+    #     task_id='recompra_raw_to_trusted',
+    #     python_callable=recompra_hemera_raw_to_trusted.hemera_raw_to_trusted,
+    #     op_kwargs={'access_params': access_params},
+    #     provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    # )
 
     trusted_to_refined = PythonOperator(
         task_id='trusted_to_refined',
@@ -118,4 +111,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    estoque_raw_to_trusted >> aquisicao_raw_to_trusted >> retorno_raw_to_trusted >> recompra_raw_to_trusted >> trusted_to_refined
+    #estoque_raw_to_trusted >> aquisicao_raw_to_trusted >> retorno_raw_to_trusted >> recompra_raw_to_trusted >> trusted_to_refined
+    estoque_raw_to_trusted >> trusted_to_refined
