@@ -138,7 +138,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
     start_time = time.time()
     processed_count = 0
 
-    with ThreadPoolExecutor(max_workers=20) as executor:
+    with ThreadPoolExecutor(max_workers=13) as executor:
         futures = [executor.submit(process_issue, issue) for issue in issues_list]
         total_issues = len(issues_list)
         
@@ -146,7 +146,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
             processed_count += 1
             issues_data.append(future.result())
             
-            if processed_count <= 1000:
+            if processed_count <= 50000:
                 elapsed_time = time.time() - start_time
                 avg_time_per_issue = elapsed_time / processed_count
                 remaining_issues = total_issues - processed_count

@@ -98,7 +98,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-
+    '''
     # Definindo as tasks
     extracao_jira_to_raw = PythonOperator(
         task_id='extracao_jira_raw',
@@ -125,12 +125,14 @@ with DAG(
         python_callable=merge_propostas_boletos,
         provide_context=True
     )
-
+    '''
     captura_proposta_jira_v2 = PythonOperator(
         task_id='captura_proposta_jira_v2',
         python_callable=captura_propostas_jira,
         provide_context=True
     )
+
+    '''
 
     # BranchPythonOperator para verificar o horário e decidir qual task executar
     check_time_task = BranchPythonOperator(
@@ -149,6 +151,7 @@ with DAG(
         python_callable=enviar_notif,
         provide_context=True
     )
+    '''
 
     # Definindo a ordem de execução das tasks
     captura_proposta_jira_v2
