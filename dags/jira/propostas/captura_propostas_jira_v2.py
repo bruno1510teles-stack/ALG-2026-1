@@ -127,7 +127,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
         }
 
         # Atraso entre requisições para evitar sobrecarga
-        time.sleep(0.2)  # Intervalo de 400ms
+        time.sleep(0.3)  # Intervalo de 400ms
 
         # Adicionando a data de mudança (assumindo que é lenta)
         issue_data['data_disponivel_mesa'] = get_data_disponivel(issue_key, jira_url_base, email, api_token, headers)
@@ -138,7 +138,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
     start_time = time.time()
     processed_count = 0
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         futures = [executor.submit(process_issue, issue) for issue in issues_list]
         total_issues = len(issues_list)
         
