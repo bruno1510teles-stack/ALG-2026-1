@@ -19,7 +19,7 @@ from extracao_jira_trusted import base_details_trusted
 from extracao_jira_refined import base_details_refined
 from propostas_boletos_vop import merge_propostas_boletos
 from jira_notif import  enviar_notif
-from captura_propostas_jira_v2 import captura_propostas_jira
+#from captura_propostas_jira_v2 import captura_propostas_jira
 
 
 
@@ -127,11 +127,13 @@ with DAG(
         provide_context=True
     )
 
+    '''
     captura_proposta_jira_v2 = PythonOperator(
         task_id='captura_proposta_jira_v2',
         python_callable=captura_propostas_jira,
         provide_context=True
     )
+    '''
 
     # BranchPythonOperator para verificar o horário e decidir qual task executar
     check_time_task = BranchPythonOperator(
@@ -152,5 +154,7 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta_jira_v2 >> extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
+    extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
     check_time_task >> [jira_notif_teams, skip_task]
+
+    #captura_proposta_jira_v2 >> 

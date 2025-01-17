@@ -150,7 +150,7 @@ select
             df[coluna] = df[coluna].dt.date
         return df
     
-    colunas_para_converter_datetime = ['data_emissao', 'data_efetivacao', 'data_vencimento', 'data_baixa']
+    colunas_para_converter_datetime = ['data_emissao', 'data_efetivacao', 'data_vencimento', 'data_baixa', 'data_original_vencimento']
     df = converter_para_datetime(df, colunas_para_converter_datetime)
 
     # Criando safras
