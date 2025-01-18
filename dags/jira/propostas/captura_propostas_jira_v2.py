@@ -20,15 +20,14 @@ def captura_propostas_jira(access_params=None, **kwargs):
     # Função para buscar a data de mudança de status para "Awaiting Execution"
     def get_data_disponivel(issue_key, jira_url_base, email, api_token, headers):
         changelog_url = f"{jira_url_base}/rest/api/3/issue/{issue_key}?expand=changelog"
-        response = requests.get(changelog_url, 
-                                headers=headers, 
-                                auth=HTTPBasicAuth(email, api_token))
+        response = requests.get(changelog_url, headers=headers, auth=HTTPBasicAuth(email, api_token))
         
         if response.status_code == 200:
             issue_data = response.json()
+
             changelog = issue_data.get('changelog', {}).get('histories', [])
             
-            # Iterar sobre o changelog para encontrar a mudança de status para "Analyzing Credit Score"
+            # Iterar sobre o changelog para encontrar a mudança de status para "Awaiting Execution"
             for history in changelog:
                 for item in history.get('items', []):
                     if item.get('field') == 'status':
@@ -41,15 +40,13 @@ def captura_propostas_jira(access_params=None, **kwargs):
             print(f"Erro ao buscar o changelog da issue {issue_key}: {response.status_code}")
         
         return None
-    
 
     # Configurações da API do Jira
-    jira_url_base  = "https://alpe.atlassian.net"
+    jira_url_base = "https://alpe.atlassian.net"
     jira_url_search = f"{jira_url_base}/rest/api/3/search"
     # Credenciais de acesso
     email = "felipe.ferraz@alpe.com.br"
     api_token = "ATATT3xFfGF0HVdx6POVBSFWH3BnpC0HyKvTF9EXgjLZ6rpwZuHnIAcI1UDeNTht79mL-O60ezlE4a2qKr4d-H_A3DmY7VCwATPRMABBMQns1ubEjMI_uFgCjEMPeUKkpVgb_-BZ5btV7yQQal1ZNmEm2dGZY_NTpUpOkHdC-SjK0iiBIj3EP80=037ADAA4"
-
 
     # Headers para requisições
     headers = {
@@ -57,14 +54,12 @@ def captura_propostas_jira(access_params=None, **kwargs):
         "Accept": "application/json"
     }
 
-
     # JQL query e parâmetros de paginação
     jql_query = 'project = cmgt' # and issue = "CMGT-49482"
     start_at = 0
     max_results = 100
     total_issues = 0
     issues_list = []
-
 
     # Paginação para carregar todas as issues
     while True:
@@ -77,10 +72,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
         }
 
         # Requisição para API do Jira
-        response = requests.post(jira_url_search, 
-                                headers=headers, 
-                                auth=HTTPBasicAuth(email, api_token), 
-                                data=json.dumps(params))
+        response = requests.post(jira_url_search, headers=headers, auth=HTTPBasicAuth(email, api_token), data=json.dumps(params))
 
         # Verifica se a requisição foi bem-sucedida
         if response.status_code == 200:
@@ -99,53 +91,60 @@ def captura_propostas_jira(access_params=None, **kwargs):
             print(response.text)
             break
 
-    
     issues_data = []
 
+    # Função para processar cada issue
     def process_issue(issue):
         issue_key = issue['key']
         issue_data = {
             'issue_key': issue_key,
             'politica': issue['fields'].get('customfield_13793', {}).get('value') if issue['fields'].get('customfield_13793') else None,
-            'cnpj': issue['fields']['customfield_13729'],
-            'pgid': issue['fields']['customfield_13739'],
-            'limite_pedido': issue['fields']['customfield_13737'],
-            'limite_aprovado': issue['fields']['customfield_13709'],
-            'nome_issue': issue['fields']['summary'],
-            'nome_vendedor_alpe': issue['fields']['customfield_13743'],
-            'nome_vendedor_fn': issue['fields']['customfield_13742'],
-            'filial_fn': issue['fields']['customfield_13798'],
+            'cnpj': issue['fields'].get('customfield_13729', None),
+            'pgid': issue['fields'].get('customfield_13739', None),
+            'limite_pedido': issue['fields'].get('customfield_13737', None),
+            'limite_aprovado': issue['fields'].get('customfield_13709', None),
+            'nome_issue': issue['fields'].get('summary', None),
+            'nome_vendedor_alpe': issue['fields'].get('customfield_13743', None),
+            'nome_vendedor_fn': issue['fields'].get('customfield_13742', None),
+            'filial_fn': issue['fields'].get('customfield_13798', None),
             'prioridade': issue['fields'].get('priority', {}).get('name') if issue['fields'].get('priority') else None,
-            'status': issue['fields']['status']['name'],
-            'decisor': issue['fields']['assignee']['displayName'] if issue['fields']['assignee'] else None,
-            'decisao': issue['fields']['resolution']['name'] if issue['fields']['resolution'] else None,
-            'parecer': issue['fields']['customfield_13753'],
-            'ramificacao_motor': issue['fields']['customfield_13807'],
-            'data_criado': issue['fields']['created'],
-            'data_resolvido': issue['fields']['resolutiondate'],
-            'data_atualizado': issue['fields']['updated']
+            'status': issue['fields'].get('status', {}).get('name', None),
+            'decisor': issue['fields'].get('assignee', {}).get('displayName') if issue['fields'].get('assignee') else None,
+            'decisao': issue['fields'].get('resolution', {}).get('name') if issue['fields'].get('resolution') else None,
+            'parecer': issue['fields'].get('customfield_13753', None),
+            'ramificacao_motor': issue['fields'].get('customfield_13807', None),
+            'data_criado': issue['fields'].get('created', None),
+            'data_resolvido': issue['fields'].get('resolutiondate', None),
+            'data_atualizado': issue['fields'].get('updated', None)
         }
 
         # Atraso entre requisições para evitar sobrecarga
-        time.sleep(0.3)  # Intervalo de 400ms
+        time.sleep(0.2)  # Intervalo de 300ms
 
         # Adicionando a data de mudança (assumindo que é lenta)
-        issue_data['data_disponivel_mesa'] = get_data_disponivel(issue_key, jira_url_base, email, api_token, headers)
-        
+        data_disponivel = get_data_disponivel(issue_key, jira_url_base, email, api_token, headers)
+        issue_data['data_disponivel_mesa'] = data_disponivel if data_disponivel else None
+
         return issue_data
 
     # Processando as issues com informações detalhadas por interação
     start_time = time.time()
     processed_count = 0
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=9) as executor:
         futures = [executor.submit(process_issue, issue) for issue in issues_list]
         total_issues = len(issues_list)
         
         for future in tqdm(as_completed(futures), total=total_issues, desc="Processando issues"):
+            try:
+                result = future.result()  # Pode levantar exceções aqui
+                issues_data.append(result)
+            except Exception as e:
+                print(f"Erro ao processar a issue: {e}")
+                continue  # Continua processando as outras issues
+
+            # Exibindo informações sobre o progresso
             processed_count += 1
-            issues_data.append(future.result())
-            
             if processed_count <= 50000:
                 elapsed_time = time.time() - start_time
                 avg_time_per_issue = elapsed_time / processed_count
@@ -162,14 +161,10 @@ def captura_propostas_jira(access_params=None, **kwargs):
     total_time = end_time - start_time
     print(f"\nProcessamento concluído em {total_time:.2f} segundos.")
 
-
+    # Convertendo os dados para DataFrame
     df_jira = pd.DataFrame(issues_data)
 
-
-    print('Tratando JSON do parecer...')
-
-
-    # Função para extrair o texto
+    # Tratando JSON do parecer...
     def extrair_parecer(parecer):
         try:
             return parecer['content'][0]['content'][0]['text']
@@ -179,14 +174,13 @@ def captura_propostas_jira(access_params=None, **kwargs):
     # Aplicando a função para criar uma nova coluna com o texto extraído
     df_jira['parecer'] = df_jira['parecer'].apply(extrair_parecer)
 
-
-    # Atribuindo data
+    # Atribuindo data atual
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_jira['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_jira['year'], df_jira['month'], df_jira['day'] = now.year, now.month, now.day
 
-    # Reset Index
-    df_jira = df_jira.reset_index()
+    # Resetando o índice
+    df_jira = df_jira.reset_index(drop=True)
 
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
