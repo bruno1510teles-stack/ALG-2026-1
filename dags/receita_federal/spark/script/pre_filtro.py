@@ -26,8 +26,8 @@ def cnaes_to_trusted(spark):
     trusted_simples = spark.read.format("delta").load("s3a://bureaus/receita-federal/simples")
     trusted_natureza_juridica = spark.read.format("delta").load("s3a://bureaus/receita-federal/naturezas")
     trusted_pep = spark.read.format("delta").load("s3a://pessoas-e-organizacoes/pep")
-    trusted_socios = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/socios")
-    trusted_cnae = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/cnaes")
+    trusted_socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios")
+    trusted_cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
 
 
 
