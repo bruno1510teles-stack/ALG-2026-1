@@ -90,20 +90,15 @@ def cnaes_to_trusted(spark):
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
-    print(os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
-    print(os.getenv('MINIO_TRUSTED_SECRET_KEY'))
-    print(os.getenv('MINIO_TRUSTED_ENDPOINT'))
-
-
     print("Iniciando salvamento dos arquivos")
+    print("Salvando no caminho::", "s3a://bureaus/receita-federal/cnaes")
     trusted_cnae.write \
         .partitionBy("data_ref") \
         .format("delta") \
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
-        .option("path", "s3a://bureaus/receita-federal/cnaes") \
         .mode("overwrite") \
-        .save()
+        .save("s3a://bureaus/receita-federal/cnaes")
 
     print("Arquivos Salvos")
 
@@ -123,5 +118,8 @@ if __name__ == "__main__":
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
+
+
+
 
     cnaes_to_trusted(spark)
