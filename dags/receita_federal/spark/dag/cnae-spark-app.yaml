@@ -115,7 +115,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -228,7 +228,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
