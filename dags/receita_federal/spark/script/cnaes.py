@@ -101,8 +101,9 @@ def cnaes_to_trusted(spark):
         .format("delta") \
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
+        .option("path", "s3a://bureaus/receita-federal/cnaes") \
         .mode("overwrite") \
-        .save("s3a://bureaus/receita-federal/cnaes")
+        .save()
 
     print("Arquivos Salvos")
 
