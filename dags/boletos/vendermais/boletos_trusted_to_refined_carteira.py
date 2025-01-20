@@ -316,7 +316,14 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         'Atraso de 151 a 180 dias X5': 'Atraso de 151 a 180 dias mes X5'
     })
 
-
+    def converter_para_datetime(df, colunas, formato='%Y-%m-%d'):
+        for coluna in colunas:
+            df[coluna] = pd.to_datetime(df[coluna], format=formato)
+            df[coluna] = df[coluna].dt.date
+        return df
+    
+    colunas_para_converter_datetime = ['fechamento']
+    df_final = converter_para_datetime(df_final, colunas_para_converter_datetime)
 
     # Função para padronizar os nomes das colunas e tabela
     def padronizar_nome_coluna(coluna):
