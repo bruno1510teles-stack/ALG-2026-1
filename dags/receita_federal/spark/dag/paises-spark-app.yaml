@@ -7,7 +7,7 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.75-SNAPSHOT"
+  image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.75"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/paises.py
@@ -115,7 +115,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -228,7 +228,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -265,6 +265,12 @@ spec:
               secretKeyRef:
                 key: password
                 name: bitbucket-spark-access
+      - name: permission-fix
+        image: busybox
+        command: ["sh", "-c", "chmod -R 777 /scripts/repo && chmod -R 777 /scripts/*"]
+        volumeMounts:
+          - name: spark-scripts-volume
+            mountPath: /scripts
   volumes:
     - name: "spark-scripts-volume"
       persistentVolumeClaim:

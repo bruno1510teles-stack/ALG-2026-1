@@ -91,7 +91,6 @@ def cnaes_to_trusted(spark):
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
     print("Iniciando salvamento dos arquivos")
-    print("Salvando no caminho::", "s3a://bureaus/receita-federal/cnaes")
     trusted_cnae.write \
         .partitionBy("data_ref") \
         .format("delta") \
