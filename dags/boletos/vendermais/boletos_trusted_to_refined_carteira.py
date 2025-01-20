@@ -322,7 +322,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
             df[coluna] = df[coluna].dt.date
         return df
     
-    colunas_para_converter_datetime = ['fechamento']
+    colunas_para_converter_datetime = ['safra']
     df_final = converter_para_datetime(df_final, colunas_para_converter_datetime)
 
     # Função para padronizar os nomes das colunas e tabela
