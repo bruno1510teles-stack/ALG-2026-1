@@ -82,7 +82,7 @@ def paises_to_trusted(spark):
     trusted_paises.write \
         .partitionBy("data_ref") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save("s3a://bureaus/receita-federal/paises")

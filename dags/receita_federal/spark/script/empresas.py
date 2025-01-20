@@ -173,7 +173,7 @@ def empresas_to_trusted(spark):
     trusted_empresas_tratado.write \
         .partitionBy("data_ref") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .mode("overwrite") \
         .save("s3a://bureaus/receita-federal/empresas")
 

@@ -318,7 +318,7 @@ def estabelecimentos_to_trusted(spark):
     trusted_estabelecimentos.write \
         .partitionBy("data_ref") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .mode("overwrite") \
         .save("s3a://bureaus/receita-federal/estabelecimentos")
 

@@ -200,7 +200,7 @@ def socios_to_trusted(spark):
     trusted_socios.write \
         .partitionBy("data_ref") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save("s3a://bureaus/receita-federal/socios")

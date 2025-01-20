@@ -130,7 +130,7 @@ def cnaes_to_trusted(spark):
     resultado_tratamento.write \
         .partitionBy("data_ref_receita") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save(f"s3a://motor/pre_filtro") 
