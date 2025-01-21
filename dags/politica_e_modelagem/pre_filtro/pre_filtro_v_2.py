@@ -311,13 +311,6 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     df = df.drop(columns=['documento_sem_formatacao'])
     df.rename(columns={'CNPJ': 'documento_sem_formatacao'}, inplace=True)
 
-
-    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
-    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
-    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
-    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
-
-
     print(df)
 
     ### Cruzando DF
@@ -368,9 +361,11 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         (df['cnae_aceito'] == 'NAO', 'PF CNAE'),
         (df['nat_ju_aceita'] == 'NAO', 'PF NATUREZA JURIDICA'),
         (df['is_spe_consorcio_construtora'], 'PF CONSORCIO/CONSTRUTORA/SPE'),
-        (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) | (df['tem_socio_pj'] == True), 'PF SOCIO PJ OU < 2 ANOS'),
-        (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS')
+        (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS'),
+        ((df['tem_socio_pj'] == True), 'PF SOCIO PJ'),
+        (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) , 'PF SOCIO < 2 ANOS'),
     ]
+
     # Aplicar condições
     for condition, value in conditions:
         df.loc[condition & df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = value
@@ -382,9 +377,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
+        'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS', 'PF SOCIO < 2 ANOS'],
         'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
-        'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS', 'PF BLOQUEIO ALPE'],
+        'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ', 'PF BLOQUEIO ALPE'],
         'SEGUE': ['PF SEGUE']
     }
     # Aplicar as respostas
@@ -397,13 +392,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Printando resultado
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
-
-
-
-    pd.reset_option('display.max_rows')
-    pd.reset_option('display.max_columns')
-    pd.reset_option('display.width')
-    pd.reset_option('display.max_colwidth')
+    print(f"Resumo pré-filtro: {df.groupby(['resposta'])['documento_sem_formatacao'].size()}")
 
 
     ### Salvando DF para utilizar na próxima tarefa da DAG
