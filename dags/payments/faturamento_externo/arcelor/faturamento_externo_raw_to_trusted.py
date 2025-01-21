@@ -33,7 +33,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     query_base_fat_externo_trusted = f"""
                                         select *
-                                        from deltalaketrusted.payments.faturamento_externo_arcelor
+                                        from deltalaketrusted.payments.faturamento_externo_arcelor_aux
                                     """
 
     df = execute_query(conn, query_base_fat_externo_trusted)
