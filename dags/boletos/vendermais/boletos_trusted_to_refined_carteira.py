@@ -316,6 +316,14 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         'Atraso de 151 a 180 dias X5': 'Atraso de 151 a 180 dias mes X5'
     })
 
+    def converter_para_datetime(df, colunas, formato='%Y-%m-%d'):
+        for coluna in colunas:
+            df[coluna] = pd.to_datetime(df[coluna], format=formato)
+            df[coluna] = df[coluna].dt.date
+        return df
+    
+    colunas_para_converter_datetime = ['safra']
+    df_final = converter_para_datetime(df_final, colunas_para_converter_datetime)
 
 
     # Função para padronizar os nomes das colunas e tabela
@@ -340,6 +348,14 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     df_final.columns = [padronizar_nome_coluna(coluna) for coluna in df_final.columns]
 
     df_final.fillna(0, inplace=True)
+
+    # Padronizando coluna valores
+    
+    colunas_valores = ['carteira',	'carteira_em_dia',	'carteira_vencida',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
+                       'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
+                       'vagao_over_60',	'vagao_over_90',	'carteira_em_dia_mes_anterior',	'atraso_de_31_a_60_dias_mes_posterior',	'atraso_de_151_a_180_dias_mes_x5']
+
+    df_final[colunas_valores] = df_final[colunas_valores].apply(pd.to_numeric, errors='coerce').round(2)
 
 
     # Atribuindo data

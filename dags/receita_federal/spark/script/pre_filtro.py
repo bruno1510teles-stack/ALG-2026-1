@@ -21,13 +21,13 @@ def cnaes_to_trusted(spark):
     hadoop_conf.set("hadoop.security.authorization", "false")
 
     # Leitura dos dados brutos da camada Trusted
-    trusted_estabelecimentos = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/estabelecimentos")
-    trusted_empresas = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/empresas")
-    trusted_simples = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/simples")
-    trusted_natureza_juridica = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/naturezas")
+    trusted_estabelecimentos = spark.read.format("delta").load("s3a://bureaus/receita-federal/estabelecimentos")
+    trusted_empresas = spark.read.format("delta").load("s3a://bureaus/receita-federal/empresas")
+    trusted_simples = spark.read.format("delta").load("s3a://bureaus/receita-federal/simples")
+    trusted_natureza_juridica = spark.read.format("delta").load("s3a://bureaus/receita-federal/naturezas")
     trusted_pep = spark.read.format("delta").load("s3a://pessoas-e-organizacoes/pep")
-    trusted_socios = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/socios")
-    trusted_cnae = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/cnaes")
+    trusted_socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios")
+    trusted_cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
 
 
 
@@ -130,7 +130,7 @@ def cnaes_to_trusted(spark):
     resultado_tratamento.write \
         .partitionBy("data_ref_receita") \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save(f"s3a://motor/pre_filtro") 

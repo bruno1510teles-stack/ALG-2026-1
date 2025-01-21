@@ -90,11 +90,6 @@ def cnaes_to_trusted(spark):
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
-    print(os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
-    print(os.getenv('MINIO_TRUSTED_SECRET_KEY'))
-    print(os.getenv('MINIO_TRUSTED_ENDPOINT'))
-
-
     print("Iniciando salvamento dos arquivos")
     trusted_cnae.write \
         .partitionBy("data_ref") \
@@ -111,7 +106,7 @@ def cnaes_to_trusted(spark):
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
-        .appName("CNAEsToTrusted") \
+        .appName("Cnaes_Trusted") \
         .config("spark.sql.encoding", "latin1") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
@@ -122,5 +117,8 @@ if __name__ == "__main__":
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
+
+
+
 
     cnaes_to_trusted(spark)

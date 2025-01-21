@@ -117,12 +117,13 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
         # Condição 2: Data de vencimento esteja dentro do período do fechamento
         titulos_validos = titulos_validos[titulos_validos['data_vencimento'] < fechamento]
 
-        # Calcular a diferença de meses entre a data de vencimento e a data de fechamento
-        titulos_validos['meses_vencido'] = (fechamento.year - titulos_validos['data_vencimento'].dt.year) * 12 + \
-                                        (fechamento.month - titulos_validos['data_vencimento'].dt.month)
+        # Calcular a diferença de dias entre a data de vencimento e a data de fechamento
+        titulos_validos['dias_vencido'] = (fechamento - titulos_validos['data_vencimento']).dt.days
 
+        # Transformar a diferença em meses fracionados
+        titulos_validos['meses_vencido'] = titulos_validos['dias_vencido'] // 30  # Aproximação de meses com 30 dias
 
-        # Limitar a diferença de meses até 6 meses, e colocar "6+" para valores maiores que 7
+        # Limitar a diferença de meses até 6 meses, e colocar "6+" para valores maiores que 5
         titulos_validos['faixa_vencido'] = np.where(titulos_validos['meses_vencido'] > 5, 
                                                     'Vencido +6 meses ou mais', 
                                                     'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses')
