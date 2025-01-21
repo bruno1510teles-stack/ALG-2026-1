@@ -371,8 +371,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS'),
         ((df['tem_socio_pj'] == True), 'PF SOCIO PJ'),
         (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) , 'PF SOCIO < 2 ANOS'),
-
     ]
+    
     # Aplicar condições
     for condition, value in conditions:
         df.loc[condition & df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = value
