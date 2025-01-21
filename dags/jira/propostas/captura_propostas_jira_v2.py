@@ -11,7 +11,6 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from minio import Minio
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
-import s3fs
 from logging import Logger
 
 
