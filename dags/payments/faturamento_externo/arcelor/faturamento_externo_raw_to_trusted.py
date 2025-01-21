@@ -6,16 +6,46 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
+import numpy as np
 
 
 def extracao_faturamento_externo(access_params=None, **kwargs):
 
+
+    # CARREGANDO BASE FOTO, OU SEJA MINHA BASE ATUAL
+    conn = connect(
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
+    )
+
+
+    def execute_query(conn, query):
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+        
+        return pd.DataFrame(rows, columns=columns)
+
+    query_base_fat_externo_trusted = f"""
+                                        select *
+                                        from deltalaketrusted.payments.faturamento_externo_arcelor
+                                    """
+
+    df = execute_query(conn, query_base_fat_externo_trusted)
+
+
+
+    # IMPORTA BASE QUE VAI SER ACUMULADA
     minio_raw = Minio(
         "api-raw.alpe.com.br",
         access_key = 'B7q0avvSIpSdyGPXWnEC',
         secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
     )
-
 
     # Connection validation
     try:
@@ -31,17 +61,23 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
             # If the connection was failed, print the error message
             print(f"Erro ao conectar ao MinIO: {e}")
 
+    print('Importando Bases...')
 
+    # BASE1
     # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2025/month=1/day=8'
-    file_name = 'Base_Faturamento_08012025.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2025/month=1/day=20'
+    file_name = 'Base Sul - Revisada jan25.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
     # Uploading Excel File
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
-    df = pd.read_excel(file_data, sheet_name="Historico de Faturamento", header=1)
+    base1 = pd.read_excel(file_data, sheet_name="Histórico de Faturamento", header=1)
+
+
+
+    # TRATANDO BASE NOVA
 
     # Treating column names
     def format_column_names(df):
@@ -55,14 +91,13 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
             
         df.columns = new_columns
 
-    format_column_names(df)
+    format_column_names(base1)
 
-    df = df.dropna(subset=['Razão Social']).copy()
-
+    base1 = base1.dropna(subset=['Razão Social']).copy()
 
     # Adjusting columns with upper()
-    df['Razão Social'] = df['Razão Social'].str.upper()
-    df['Unidade'] = df['Unidade'].str.upper()
+    base1['Razão Social'] = base1['Razão Social'].str.upper()
+    base1['Unidade'] = base1['Unidade'].str.upper()
 
 
     def tratar_colunas_202(df):
@@ -81,7 +116,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
         
         return df
 
-    tratar_colunas_202(df)
+    tratar_colunas_202(base1)
 
 
     # Treating NaN values
@@ -91,27 +126,88 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
         
         df[filtered_columns] = df[filtered_columns].fillna(value)
 
-    fillna_in_columns_starting_with(df, '20', 0)
+    fillna_in_columns_starting_with(base1, '20', 0)
 
 
     #Transforming float64 in float
-    df[df.select_dtypes(include=['float64']).columns] = df.select_dtypes(include=['float64']).astype(float)
-
-    #Transforming ['Pagador']
-    df['Pagador'] = df['Pagador'].astype(str)
+    base1[base1.select_dtypes(include=['float64']).columns] = base1.select_dtypes(include=['float64']).astype(float)
 
     #Transforming ['Raiz CNPJ']
-    df['Raiz CNPJ'] = '00000000' + df['Raiz CNPJ'].astype(str)
-    df['Raiz CNPJ'] = df['Raiz CNPJ'].str[-8:]
-
+    base1['Raiz CNPJ'] = '00000000' + base1['Raiz CNPJ'].astype(str)
+    base1['Raiz CNPJ'] = base1['Raiz CNPJ'].str[-8:]
 
     # Removendo coluna antiga de Raiz CNPJ antes do tratamento
-    df = df.drop(columns=["Raiz CNPJ Recebido", "Pagador"])
+    base1 = base1.drop(columns=["Pagador"])
 
     # Renomeando colunas
-    df.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
+    base1.rename(columns={'Raiz CNPJ': 'raiz_cnpj', 'Razão Social': 'razao_social', 'Unidade':'unidade'}, inplace=True)
 
-    print('Parte 4')
+
+    # DEPARA UNIDADE CONSOLIDADA PARA CRUZAMENTO
+    # Bucket and Folder_Destination
+    BUCKET_SOURCE_RAW_2 = "arquivos-python"
+    FOLDER_DESTINATION_RAW_2 = 'depara_unidade_fat_externo'
+    file_name_2 = 'depara_unidade_fat_externo.xlsx'
+    file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
+
+    # Uploading Excel File
+    response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
+    file_data_2 = BytesIO(response_2.read())
+    df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
+
+    # BASE 1
+    base1 = pd.merge(base1, df_unidade_consolidada, on = 'unidade', how='left')
+    base1['unidade_consolidada'] = base1['unidade_consolidada'].fillna(base1['unidade'])
+
+
+    # Dropar a colunas antigas
+    base1 = base1.drop(columns=['unidade', 'razao_social'])
+    base1 = base1.drop_duplicates()
+
+
+
+    def cruzar_bases(base1, base2, chave=['raiz_cnpj', 'unidade_consolidada']):
+
+        # Identificar colunas exclusivas da base2
+        colunas_novas = [col for col in base2.columns if col not in base1.columns]
+
+        # Identificar as colunas comuns entre base1 e base2, excluindo as colunas a serem ignoradas
+        colunas_iguais = [col for col in base2.columns if col in base1.columns and col not in chave]
+
+        # Garantir que base1 tenha apenas um valor por chave, priorizando soma maior das colunas
+        base1 = base1.assign(soma_colunas_novas=base1[colunas_iguais].sum(axis=1))
+        base1 = base1.sort_values(by='soma_colunas_novas', ascending=False).drop_duplicates(subset=chave).drop(columns='soma_colunas_novas')
+
+        # Garantir que base2 tenha apenas um valor por chave, priorizando soma maior nas colunas_novas
+        base2 = base2.assign(soma_colunas_novas=base2[colunas_novas].sum(axis=1))
+        base2 = base2.sort_values(by='soma_colunas_novas', ascending=False).drop_duplicates(subset=chave).drop(columns='soma_colunas_novas')
+
+        # Casos que aparecem nas duas bases
+        base_comum = pd.merge(base1, base2[chave + colunas_novas], on=chave, how='inner')
+
+        # Casos que aparecem apenas na base1
+        apenas_base1 = base1[~base1[chave].apply(tuple, axis=1).isin(base2[chave].apply(tuple, axis=1))]
+
+        # Casos que aparecem apenas na base2
+        apenas_base2 = base2[~base2[chave].apply(tuple, axis=1).isin(base1[chave].apply(tuple, axis=1))]
+
+        # Concatenar os dados para formar a base final
+        base_final = pd.concat([base_comum, apenas_base1, apenas_base2], ignore_index=True)
+
+        # Preencher valores ausentes com 0
+        base_final = base_final.fillna(0)
+
+        # Removendo linhas iguais
+        base_final = base_final.drop_duplicates()
+
+        return base_final
+    
+
+    # DROPAR COLUNAS DA BASE FOTO ANTES DO MERGE
+    df = df.drop(columns=['razao_social', 'cidade', 'uf', 'atualizado_em', 'year', 'month', 'day'])
+
+
+    base_final_merge = cruzar_bases(df, base1)
 
 
     # Inserindo Cidade e UF
@@ -135,7 +231,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
 
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
-    cnpjs = df['raiz_cnpj'].unique().tolist()
+    cnpjs = base_final_merge['raiz_cnpj'].unique().tolist()
 
     tamanho = len(cnpjs) // 3
 
@@ -198,40 +294,80 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Fazendo JOIN
 
-    df = pd.merge(df, receita, on='raiz_cnpj', how='left')
+    df_final = pd.merge(base_final_merge, receita, on='raiz_cnpj', how='left')
 
-    df = df.reset_index(drop=True)
-
-    # Incluindo campo Unidade Consolidada
-
-    # Bucket and Folder_Destination
-    BUCKET_SOURCE_RAW_2 = "arquivos-python"
-    FOLDER_DESTINATION_RAW_2 = 'depara_unidade_fat_externo'
-    file_name_2 = 'depara_unidade_fat_externo.xlsx'
-    file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
-
-    # Uploading Excel File
-    response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
-    file_data_2 = BytesIO(response_2.read())
-    df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
-
-    df = pd.merge(df, df_unidade_consolidada, on = 'unidade', how='left')
-
-    df['unidade_consolidada'] = df['unidade_consolidada'].fillna(df['unidade'])
+    df_final = df_final.reset_index(drop=True)
 
 
-    # Lista de colunas para considerar na remoção de duplicatas
-    colunas_drop_duplicates = ['raiz_cnpj', 'unidade'] + [col for col in df.columns if col.startswith('20')]
+    # INSERINDO RAZAO SOCIAL DO NOSSO BANCO DE DADOS
+    cnpjs = df_final['raiz_cnpj'].unique().tolist()
 
-    # Remover duplicatas com base nas colunas específicas
-    df = df.drop_duplicates(subset=colunas_drop_duplicates, keep='first')
+    tamanho = len(cnpjs) // 3
 
-    df = df.reset_index(drop=True)
+    cnpj_part_1 = cnpjs[:tamanho]
+    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
+    cnpj_part_3 = cnpjs[2*tamanho:]
+
+    # Convertendo a lista para uma string no formato adequado para o SQL
+    cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
+    cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
+    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
+
+
+    query_receita_1 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_1})
+                    """
+
+
+    query_receita_2 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_2})
+                    """
+
+    query_receita_3 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_3})
+                    """
+
+    receita_1 = execute_query(conn, query_receita_1)
+    receita_2 = execute_query(conn, query_receita_2)
+    receita_3 = execute_query(conn, query_receita_3)
+
+    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+
+    df_final = pd.merge(
+        df_final, 
+        receita, 
+        on=['raiz_cnpj'], 
+        how='left'
+    )
+
+    df_final['razao_social'] = df_final['razao_social'].fillna('X')
+
+
+    # Reorganizando Colunas
+
+    colunas_ordem = ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf'] + [col for col in df_final.columns if col not in ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf']]
+    df_final = df_final[colunas_ordem]
+
+    print('Exportando base...')
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df['year'], df['month'], df['day'] = now.year, now.month, now.day
+    df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
+
+    df_final = df_final.reset_index(drop=True)
 
 
     # Exportando dados para a camada Trusted
@@ -246,11 +382,11 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_TRUSTED = 'payments'
-    FOLDER_DESTINATION_TRUSTED = 'faturamento_externo/arcelor'
+    FOLDER_DESTINATION_TRUSTED = 'faturamento_externo/arcelor/base_atual'
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        df, 
+        df_final, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"
