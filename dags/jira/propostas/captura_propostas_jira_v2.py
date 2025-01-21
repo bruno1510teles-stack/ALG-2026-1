@@ -183,28 +183,39 @@ def captura_propostas_jira(access_params=None, **kwargs):
     # Resetando o índice
     df_jira = df_jira.reset_index(drop=True)
 
-    # Log para registrar informações
-    logger = LoggingMixin().log
 
+
+    # Salvando Output
+    
+    logger = LoggingMixin().log 
+    
     try:
         logger.info("Iniciando salvamento das informações")
 
-        # Configurações de acesso ao MinIO (S3)
-        storage_options = {
-            "key": access_params['aws_access_key_id_raw'],
-            "secret": access_params['aws_secret_access_key_raw'],
-            "client": s3fs.S3FileSystem(anon=False, key=access_params['aws_access_key_id_raw'], secret=access_params['aws_secret_access_key_raw'])
-        }
+        BUCKET_SOURCE_RAW = "jira"
+        FOLDER_DESTINATION_RAW = 'propostas'
 
-        # Definindo o caminho do arquivo no MinIO
-        BUCKET_SOURCE_TRUSTED = "jira"
-        file_path = f"s3://{BUCKET_SOURCE_TRUSTED}/propostas/propostas_{pd.to_datetime('today').strftime('%Y-%m-%d')}.csv"
+        # Conectando na raw
+        client = Minio(
+            access_params['endpoint_url_raw'],
+            access_key=access_params['aws_access_key_id_raw'],
+            secret_key=access_params['aws_secret_access_key_raw']
+            )
 
-        # Salvando o DataFrame como CSV no MinIO
-        with s3fs.S3FileSystem().open(file_path, 'w') as f:
-            df_jira.to_csv(f, index=False)
-        
-        logger.info("Salvamento concluído com sucesso.")
 
+        # Nome do arquivo Parquet que você deseja criar
+        file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
+
+        # Convertendo o DataFrame para Parquet e armazenando em BytesIO
+        parquet_bytes = df_jira.to_parquet(index=False)
+        parquet_buffer = BytesIO(parquet_bytes)
+
+        # Upload para o MinIO
+        client.put_object(
+            f'{BUCKET_SOURCE_RAW}',
+            f'{FOLDER_DESTINATION_RAW}/{file_out}',
+            data=parquet_buffer,
+            length=len(parquet_bytes)
+        )
     except Exception as e:
         logger.error(f"Erro ao salvar as informações: {str(e)}")
