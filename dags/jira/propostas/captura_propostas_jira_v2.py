@@ -11,7 +11,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from minio import Minio
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
-from deltalake import write_deltalake
+from logging import Logger
 
 
 def captura_propostas_jira(access_params=None, **kwargs):
@@ -182,32 +182,39 @@ def captura_propostas_jira(access_params=None, **kwargs):
     # Resetando o índice
     df_jira = df_jira.reset_index(drop=True)
 
-    # Exportando dados para a camada Trusted
-    # # Conectando na Trusted
-    logger = LoggingMixin().log 
 
+
+    # Salvando Output
+    
+    logger = LoggingMixin().log 
+    
     try:
         logger.info("Iniciando salvamento das informações")
-        
-        storage_options = {
-            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_raw'],
-            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_raw'],
-            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_raw']}",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-        }
 
-        # Definindo o caminho e salvando no MinIO
-        BUCKET_SOURCE_TRUSTED = "jira"
+        BUCKET_SOURCE_RAW = "jira"
+        FOLDER_DESTINATION_RAW = 'propostas'
 
-        write_deltalake(
-            f"s3a://{BUCKET_SOURCE_TRUSTED}/propostas", 
-            df_jira, 
-            partition_by=["year", "month", "day"],
-            storage_options=storage_options,
-            mode="overwrite"
+        # Conectando na raw
+        client = Minio(
+            access_params['endpoint_url_raw'],
+            access_key=access_params['aws_access_key_id_raw'],
+            secret_key=access_params['aws_secret_access_key_raw']
+            )
+
+
+        # Nome do arquivo Parquet que você deseja criar
+        file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
+
+        # Convertendo o DataFrame para Parquet e armazenando em BytesIO
+        parquet_bytes = df_jira.to_parquet(index=False)
+        parquet_buffer = BytesIO(parquet_bytes)
+
+        # Upload para o MinIO
+        client.put_object(
+            f'{BUCKET_SOURCE_RAW}',
+            f'{FOLDER_DESTINATION_RAW}/{file_out}',
+            data=parquet_buffer,
+            length=len(parquet_bytes)
         )
-        logger.info("Salvamento concluído com sucesso.")
-
     except Exception as e:
         logger.error(f"Erro ao salvar as informações: {str(e)}")
