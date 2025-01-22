@@ -55,47 +55,36 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     print(f"Quantidade de linhas no DataFrame 'Pagamento': {pag_trusted.shape[0]}")
 
+    pd.set_option('display.float_format', '{:.0f}'.format)
+
+
     # Tratando Faturamento Trusted
 
-    fat_trusted = fat_trusted.drop(columns=['razao_social', 'atualizado_em', 'year', 'month', 'day', 'base'])
-
-    def remover_acentos(texto):
-        if isinstance(texto, str):
-            return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
-        return texto
-
-    fat_trusted['unidade'] = fat_trusted['unidade'].apply(remover_acentos)
+    fat_trusted = fat_trusted.drop(columns=['razao_social', 'unidade_consolidada', 'atualizado_em', 'year', 'month', 'day', 'cidade', 'uf'])
 
     # Agrupando Faturamento Trusted
-    fat_trusted = fat_trusted.groupby(['raiz_cnpj', 'unidade'], as_index=False).sum()
-
+    fat_trusted = fat_trusted.groupby(['raiz_cnpj'], as_index=False).max()
 
     # Pivot Faturamento Trusted
-    fat_trusted = fat_trusted.melt(id_vars=['raiz_cnpj', 'unidade'], 
-                                    var_name='anomes', 
-                                    value_name='valor_fat')
+    fat_trusted = fat_trusted.melt(id_vars=['raiz_cnpj'], 
+                                var_name='anomes', 
+                                value_name='valor_fat')
+    
 
     # Tratando Pagamento Trusted
 
-    pag_trusted = pag_trusted.drop(columns=['atualizado_em', 'year', 'month', 'day'])
+    pag_trusted = pag_trusted.drop(columns=['atualizado_em', 'year', 'month', 'day', 'unidade'])
 
-    def remover_acentos(texto):
-        if isinstance(texto, str):
-            return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
-        return texto
-
-    pag_trusted['unidade'] = pag_trusted['unidade'].apply(remover_acentos)
 
     # Agrupando Pagamento Trusted
-    pag_trusted = pag_trusted.groupby(['raiz_cnpj', 'unidade'], as_index=False).sum()
-
+    pag_trusted = pag_trusted.groupby(['raiz_cnpj'], as_index=False).max()
 
     # Pivot Pagamento Trusted
-    pag_trusted = pag_trusted.melt(id_vars=['raiz_cnpj', 'unidade'], 
-                                    value_vars=[col for col in pag_trusted.columns if col not in ['raiz_cnpj', 'unidade']], 
+    pag_trusted = pag_trusted.melt(id_vars=['raiz_cnpj'], 
+                                    value_vars=[col for col in pag_trusted.columns if col not in ['raiz_cnpj']], 
                                     var_name='auxiliar', 
                                     value_name='valor_pag')
-
+    
 
     pag_trusted['anomes'] = pag_trusted['auxiliar'].str[-6:]  # Ano no final
 
@@ -103,23 +92,26 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     pag_trusted = pag_trusted.drop(columns=['auxiliar'])
 
-    pag_trusted = pag_trusted.pivot_table(index=['raiz_cnpj', 'unidade', 'anomes'], 
-                                columns='tipo_valor', 
-                                values='valor_pag', 
-                                aggfunc='sum').reset_index()
 
+    pag_trusted = pag_trusted.pivot_table(index=['raiz_cnpj', 'anomes'], 
+                            columns='tipo_valor', 
+                            values='valor_pag', 
+                            aggfunc='max').reset_index()
+    
     pag_trusted = pag_trusted.drop(columns=['prazo_medio_atrasado'])
+
 
     # Merge Faturamento e Pagamento
 
     fat_pag = pd.merge(
         fat_trusted, 
         pag_trusted, 
-        on=['raiz_cnpj', 'unidade', 'anomes'], 
+        on=['raiz_cnpj', 'anomes'], 
         how='outer'
     )
 
     fat_pag = fat_pag.fillna(0)
+
 
     # Incluindo Razao Social Sacado
 
@@ -168,6 +160,7 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
     receita_3 = execute_query(conn, query_receita_3)
 
     receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+
 
     fat_pag = pd.merge(
         fat_pag, 

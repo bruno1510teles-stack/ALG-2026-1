@@ -198,7 +198,7 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
     print('Parte 6')
 
 
-    df_final = df.filter(items=['raiz_cnpj', 'unidade', 'razao_social', 'atualizado_em', 'year', 'month', 'day', 'vop_2023', 'vop_2024', 'vop_2025',
+    df_final = df.filter(items=['raiz_cnpj', 'unidade_consolidada', 'razao_social', 'atualizado_em', 'year', 'month', 'day', 'vop_2023', 'vop_2024', 'vop_2025',
                         'vop_2026', 'vop_total', 'vop_ult_12_meses', 'max_vop_2023', 'max_vop_2024', 'max_vop_2025', 'max_vop_2026',
                         'max_vop_total', 'max_vop_ult_12_meses', 'media_vop_2023', 'media_vop_2024', 'media_vop_2025', 'media_vop_2026',
                         'media_vop_total', 'media_vop_ult_12_meses', 'mediana_total', 'mediana_ult_12_meses', 'qtd_fat_inform_periodo', 'qtd_fat_inform_12_meses'])
