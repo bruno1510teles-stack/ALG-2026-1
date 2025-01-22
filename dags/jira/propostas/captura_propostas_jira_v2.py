@@ -183,38 +183,40 @@ def captura_propostas_jira(access_params=None, **kwargs):
     df_jira = df_jira.reset_index(drop=True)
 
 
-
     # Salvando Output
-    
-    logger = LoggingMixin().log 
-    
+
+    logger = LoggingMixin().log
+
     try:
         logger.info("Iniciando salvamento das informações")
 
         BUCKET_SOURCE_RAW = "jira"
         FOLDER_DESTINATION_RAW = 'propostas'
 
-        # Conectando na raw
+        # Conectando no MinIO
         client = Minio(
             access_params['endpoint_url_raw'],
             access_key=access_params['aws_access_key_id_raw'],
             secret_key=access_params['aws_secret_access_key_raw']
-            )
+        )
 
+        # Gerando o nome do arquivo com a data atual
+        current_date = datetime.now().strftime('%Y-%m-%d')  # Formato de data: '2025-01-21'
+        file_out = f'base_jira_propostas_{current_date}.csv'  # Adicionando a data no nome do arquivo
 
-        # Nome do arquivo Parquet que você deseja criar
-        file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
-
-        # Convertendo o DataFrame para Parquet e armazenando em BytesIO
-        parquet_bytes = df_jira.to_parquet(index=False)
-        parquet_buffer = BytesIO(parquet_bytes)
+        # Convertendo o DataFrame para CSV e armazenando em BytesIO
+        csv_bytes = df_jira.to_csv(index=False).encode()  # Convertendo para CSV (e encode para bytes)
+        csv_buffer = BytesIO(csv_bytes)
 
         # Upload para o MinIO
         client.put_object(
-            f'{BUCKET_SOURCE_RAW}',
+            BUCKET_SOURCE_RAW,
             f'{FOLDER_DESTINATION_RAW}/{file_out}',
-            data=parquet_buffer,
-            length=len(parquet_bytes)
+            data=csv_buffer,
+            length=len(csv_bytes)
         )
+
+        logger.info(f"Arquivo {file_out} salvo com sucesso no MinIO.")
+
     except Exception as e:
         logger.error(f"Erro ao salvar as informações: {str(e)}")
