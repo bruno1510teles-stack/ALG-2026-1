@@ -19,6 +19,7 @@ from extracao_jira_refined import base_details_refined
 from propostas_boletos_vop import merge_propostas_boletos
 from jira_notif import  enviar_notif
 from captura_propostas_jira_v2 import captura_propostas_jira
+from extracao_jira_trusted_v2 import jira_raw_to_trusted
 
 
 
@@ -98,15 +99,16 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    '''
+
     # Definindo as tasks
-    extracao_jira_to_raw = PythonOperator(
+    jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_raw',
-        python_callable=base_details_raw,
+        python_callable=jira_raw_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
+    '''
     extracao_jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_trusted',
         python_callable=base_details_trusted,
@@ -152,6 +154,6 @@ with DAG(
     '''
 
     # Definindo a ordem de execução das tasks
-    captura_proposta_jira_v2
+    captura_proposta_jira_v2 >> jira_raw_to_trusted
     #extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
     #check_time_task >> [jira_notif_teams, skip_task]

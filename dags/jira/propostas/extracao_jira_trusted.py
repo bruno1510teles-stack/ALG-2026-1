@@ -85,7 +85,7 @@ def base_details_trusted(access_params=None, **kwargs):
 
     def formata_status(status_func):
         status_dict = {
-            'Analyzing Credit Score': "Análise da Pontuação de Crédito",
+            'Analyzing Credit Score': "Analisando Pontuação de Crédito",
             'Attaching Documentation': "Anexando Documentação",
             'Awaiting Approval': "Aguardando Aprovação",
             'Awaiting BV docs': "Aguardando Documentos BV",
