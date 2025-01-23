@@ -131,7 +131,7 @@ def captura_propostas_jira(access_params=None, **kwargs):
     start_time = time.time()
     processed_count = 0
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=7) as executor:
         futures = [executor.submit(process_issue, issue) for issue in issues_list]
         total_issues = len(issues_list)
         
@@ -195,9 +195,9 @@ def captura_propostas_jira(access_params=None, **kwargs):
 
         # Conectando no MinIO
         client = Minio(
-            access_params['endpoint_url_raw'],
-            access_key=access_params['aws_access_key_id_raw'],
-            secret_key=access_params['aws_secret_access_key_raw']
+            "api-raw.alpe.com.br",
+            access_key = 'B7q0avvSIpSdyGPXWnEC',
+            secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
         )
 
         # Gerando o nome do arquivo com a data atual
