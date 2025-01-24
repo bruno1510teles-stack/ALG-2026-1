@@ -130,5 +130,12 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    # Definindo o task que cria vop_visao_safra
+    vop_visao_safra_tradicional_task = PythonOperator(
+        task_id = 'vop_visao_safra_tradicional',
+        python_callable = vop_visao_safra.vop_visao_safra,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task
+    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
