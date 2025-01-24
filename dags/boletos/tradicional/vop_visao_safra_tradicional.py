@@ -390,7 +390,7 @@ def vop_visao_safra(access_params=None,  **kwargs):
 
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_REFINED = "payments"
-    FOLDER_DESTINATION_REFINED = "vop_visao_safra"
+    FOLDER_DESTINATION_REFINED = "vop_visao_safra_tradicional"
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
