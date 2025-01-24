@@ -328,10 +328,10 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
 
     # CONVERTENDO COLUNAS DE DATA
-    df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce').dt.strftime('%Y-%m-%d %H:%M:%S')
-    df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce').dt.strftime('%Y-%m-%d %H:%M:%S')
-    df_resolvido['data_atualizado'] = pd.to_datetime(df_resolvido['data_atualizado'], errors='coerce').dt.strftime('%Y-%m-%d %H:%M:%S')
-    df_resolvido['data_disponivel_mesa'] = pd.to_datetime(df_resolvido['data_disponivel_mesa'], errors='coerce').dt.strftime('%Y-%m-%d %H:%M:%S')
+    df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
+    df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
+    df_resolvido['data_atualizado'] = pd.to_datetime(df_resolvido['data_atualizado'], errors='coerce')
+    df_resolvido['data_disponivel_mesa'] = pd.to_datetime(df_resolvido['data_disponivel_mesa'], errors='coerce')
 
 
     # Adicionando colunas de data e hora
