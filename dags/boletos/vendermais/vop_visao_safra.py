@@ -310,7 +310,7 @@ def vop_visao_safra(access_params=None,  **kwargs):
     df_final = df_final.rename(columns={
         'fechamento': 'safra',
         'valor_face': 'vop',
-        'Total a Vencer': 'vop_em_dia',
+        'Total a Vencer': 'vop_a_vencer',
         'Total Vencido': 'vop_vencido',
         'Total a Vencer Mês Anterior': 'vop_a_vencer_mes_anterior',
         'Atraso de 31 a 60 dias Próximo Mês' : 'Atraso de 31 a 60 dias mes posterior',
@@ -351,10 +351,11 @@ def vop_visao_safra(access_params=None,  **kwargs):
 
     df_final.fillna(0, inplace=True)
 
+    df_final['vop_performado'] = df_final['vop'] - df_final['vop_a_vencer']
 
 
     # Padronizando coluna valores
-    colunas_valores = ['vop',	'vop_em_dia',	'vop_vencido',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
+    colunas_valores = ['vop','vop_a_vencer','vop_performado','vop_vencido',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
                     'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
                     'vagao_over_60',	'vagao_over_90',	'vop_a_vencer_mes_anterior',	'atraso_de_31_a_60_dias_mes_posterior',	'atraso_de_151_a_180_dias_mes_x5']
 
