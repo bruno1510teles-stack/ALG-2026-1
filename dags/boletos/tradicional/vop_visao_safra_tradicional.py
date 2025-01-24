@@ -12,7 +12,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from io import BytesIO
 import re
 
-def vop_visao_safra(access_params=None,  **kwargs):
+def vop_visao_safra_tradicional(access_params=None,  **kwargs):
 
     # Conectando no Trino e validando
 
