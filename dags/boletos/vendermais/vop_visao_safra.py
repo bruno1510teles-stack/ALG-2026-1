@@ -96,8 +96,13 @@ def vop_visao_safra(access_params=None,  **kwargs):
     #### VOP VENCIDO
 
     def calcular_vop_vencido_no_fechamento(df_titulos, fechamento):
-        
-        titulos_validos = df_titulos[df_titulos['data_vencimento'] < fechamento].copy()
+
+
+        # Condição 1: Títulos que não foram pagos até o fechamento ou ainda não foram pagos
+        titulos_validos = df_titulos[(df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)]
+
+        # Condição 2: Data de vencimento esteja dentro do período do fechamento
+        titulos_validos = titulos_validos[titulos_validos['data_vencimento'] < fechamento]
 
         # Calcular a diferença de dias entre a data de vencimento e a data de fechamento
         titulos_validos['dias_vencido'] = (fechamento - titulos_validos['data_vencimento']).dt.days
