@@ -351,6 +351,10 @@ def vop_visao_safra(access_params=None,  **kwargs):
 
     df_final.fillna(0, inplace=True)
 
+    df_final['vop'] = df_final['vop'].astype(float)
+    df_final['vop_a_vencer'] = df_final['vop_a_vencer'].astype(float)
+
+    # Agora faça a subtração
     df_final['vop_performado'] = df_final['vop'] - df_final['vop_a_vencer']
 
 
