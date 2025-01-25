@@ -86,7 +86,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         else:
             return vendedor
 
-    df_resolvido['nome_vendedor_alpe'] = df_resolvido['nome_vendedor_alpe'].apply(verifica_vendedor).str.upper()
+    df_resolvido['nome_vendedor_alpe'] = df_resolvido['nome_vendedor_alpe'].apply(verifica_vendedor).str.upper().str.strip()
 
 
     # PADRONIZANDO OS NOMES
