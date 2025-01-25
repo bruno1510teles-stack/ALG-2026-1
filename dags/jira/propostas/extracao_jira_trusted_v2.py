@@ -142,6 +142,16 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe'].apply(padronizar_nome_vendedor_alpe)
 
+    # DEFININDO OS NOMES DOS VENDEDORES ALPE, TUDO QUE NAO ESTIVER NA LISTA, SETAR "OUTROS"
+
+    vendedores_alpe = [
+    'CAROLINE FREIHAT', 'CLAUDIA CINARE', 'DIANA TIEMI', 'JOSE VITOR', 'LARISSA FREIRE',
+    'LEANDRO QUINTINO', 'ROGERIO FRIAS', 'ROSEMEIRE DIAS', 'VANESSA LINO', 'CAMILA CABRAL'
+    ]
+
+    df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe_tratado'].apply(
+        lambda x: x if x in vendedores_alpe else 'OUTROS'
+    )
 
     # TRATANDO VENDEDOR FN
     def verifica_vendedor_fn(fn):
@@ -206,12 +216,12 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'JOSE CARVALHO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA', 'LEANDRO QUINTINO DA ANUNCIACAO', 
         'CLAUDIA CINARE RODRIGUES ETO', 'ROGERIO DE CAMPOS FRIAS', 'AUGUSTO DE ABREU', 
         'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO', 'ANA BEATRIZ RODRIGUES ANDRADE', 
-        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS'
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'JOSE.CARVALHO@ALPE.COM.BR'
     ]
 
     outros = [
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
-        'PRISCILA YURI NAGATA ORTEGA'
+        'PRISCILA YURI NAGATA ORTEGA', 'JIRA SERVICE USER', 'MAYARA.COSTA'
     ]
 
     # Função para atribuir categorias
