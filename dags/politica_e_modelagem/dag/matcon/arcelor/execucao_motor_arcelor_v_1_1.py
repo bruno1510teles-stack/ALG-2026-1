@@ -43,6 +43,7 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
+'''
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
 
@@ -59,13 +60,15 @@ def notificar_falha_teams(context):
             "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
         }
         requests.post(url, json=mensagem)
+'''
+
 
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1),
-    "on_failure_callback": notificar_falha_teams
+    "retry_delay": timedelta(minutes=1)
+    #"on_failure_callback": notificar_falha_teams
 }
 
 
