@@ -9,17 +9,20 @@ import numpy as np
 import re
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
+from io import BytesIO
+import re
 
+def vop_visao_safra_tradicional(access_params=None,  **kwargs):
 
-def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs):
+    # Conectando no Trino e validando
 
-    ### Coletando dados da camada Raw
+    # Coletando dados da camada Trusted
     # Conectando com o banco
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
 
@@ -30,26 +33,18 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
         columns = [desc[0] for desc in cur.description]
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
-    
-    # Base Boletos
-    query_boleto = """
-    select * 
-    from deltalaketrusted.payments.boletos_internos_tradicional
-    where codigo_cedente not in (12, 10906, 6482, 13664, 14571)
-    """
-    boleto = execute_query(conn, query_boleto)
-    print(f"Quantidade de linhas no DataFrame 'boleto': {boleto.shape[0]}")
 
-    # Lista de rótulos para excluir
-    excluir = [
-    'CCB MIXTEL'
-    ]
+    print('Importação da base...')
 
-    # Filtrando os dados
-    boleto = boleto[~boleto['rotulo'].isin(excluir)]
+    query_boletos_trusted =  f"""
+                            select *
+                            from deltalaketrusted.payments.boletos_internos_tradicional
+                            """
 
-    df_titulos = boleto
+    df = execute_query(conn, query_boletos_trusted)
 
+
+    df_titulos = df.copy()
 
 
     ### Definindo fechamentos de safra
@@ -66,7 +61,6 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
     print(fechamentos)
 
 
-
     ### Tratando colunas de data
     df_titulos['data_emissao'] = pd.to_datetime(df_titulos['data_emissao'])
     df_titulos['data_efetivacao'] = pd.to_datetime(df_titulos['data_efetivacao'])
@@ -75,41 +69,34 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
 
 
 
-    ### Criando funções
-    # Criando função de carteira
-    def calcular_carteira_no_fechamento(df_titulos, fechamento):
-        # Um título faz parte da carteira se:
-        # - Ele não foi pago até a data do fechamento OU a data de pagamento for depois do fechamento
-        # - O título foi emitido até a data do fechamento
-        
-        # Condição 1: Títulos que não foram pagos até o fechamento ou ainda não foram pagos
-        titulos_validos = df_titulos[(df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)]
-        
-        # Condição 2: O título foi emitido até a data do fechamento
-        titulos_validos = titulos_validos[titulos_validos['data_efetivacao'] <= fechamento]
+    #### VOP
+
+    def calcular_vop_no_fechamento(df_titulos, fechamento):
+
+        titulos_validos = df_titulos[(df_titulos['data_efetivacao'] <= fechamento)].copy()
         
         # Agrupando por cedente/cliente
-        carteira_cliente = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
+        vop_cliente = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
         
         # Adicionar a data de fechamento na coluna para identificar
-        carteira_cliente['fechamento'] = fechamento
-        return carteira_cliente
-    
+        vop_cliente['fechamento'] = fechamento
+        return vop_cliente
+
     # Criando DataFrame para armazenar a carteira de cada cliente em cada fechamento
-    carteira_historica = pd.DataFrame()
+    vop_historica = pd.DataFrame()
 
     # Calculando a carteira para cada fechamento
     for fechamento in fechamentos:
-        carteira_no_fechamento = calcular_carteira_no_fechamento(df_titulos, fechamento)
-        carteira_historica = pd.concat([carteira_historica, carteira_no_fechamento], ignore_index=True)
+        vop_no_fechamento = calcular_vop_no_fechamento(df_titulos, fechamento)
+        vop_historica = pd.concat([vop_historica, vop_no_fechamento], ignore_index=True)
 
 
 
-    # Criando função de carteira vencida
-    def calcular_carteira_vencida_no_fechamento(df_titulos, fechamento):
-        # Um titulo será considerado como carteira vencida se:
-        # - Ele não foi pago até a data do fechamento OU a data de pagamento for depois do fechamento
-        # - A data de vencimento esteja dentro do período do fechamento
+
+    #### VOP VENCIDO
+
+    def calcular_vop_vencido_no_fechamento(df_titulos, fechamento):
+
 
         # Condição 1: Títulos que não foram pagos até o fechamento ou ainda não foram pagos
         titulos_validos = df_titulos[(df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)]
@@ -132,30 +119,31 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
         agrupado = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido'])['valor_face'].sum().reset_index()
 
         # Usando pivot_table para transformar faixas em colunas
-        carteira_vencida_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], 
+        vop_vencido_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], 
                                                         columns='faixa_vencido', 
                                                         values='valor_face', 
                                                         aggfunc='sum', 
                                                         fill_value=0).reset_index()
 
         # Adicionar a coluna "Total Vencido" somando todas as colunas de faixas
-        carteira_vencida_cliente['Total Vencido'] = carteira_vencida_cliente.filter(like='Vencido').sum(axis=1)
+        vop_vencido_cliente['Total Vencido'] = vop_vencido_cliente.filter(like='Vencido').sum(axis=1)
         
         # Adicionar a data de fechamento como coluna de identificação
-        carteira_vencida_cliente['fechamento'] = fechamento
+        vop_vencido_cliente['fechamento'] = fechamento
 
-        return carteira_vencida_cliente
-    
-    # Criando DataFrame para armazenar a carteira vencida de cada cliente em cada fechamento
-    carteira_vencida = pd.DataFrame()
+        return vop_vencido_cliente
+
+    # Criando DataFrame para armazenar o vop vencido de cada cliente em cada fechamento
+    vop_vencido = pd.DataFrame()
 
     # Calculando a carteira vencida para cada fechamento
     for fechamento in fechamentos:
-        carteira_no_fechamento = calcular_carteira_vencida_no_fechamento(df_titulos, fechamento)
-        carteira_vencida = pd.concat([carteira_vencida, carteira_no_fechamento], ignore_index=True)
+        vop_no_fechamento = calcular_vop_vencido_no_fechamento(df_titulos, fechamento)
+        vop_vencido = pd.concat([vop_vencido, vop_no_fechamento], ignore_index=True)
+
 
     # Renomeando colunas
-    carteira_vencida = carteira_vencida.rename(columns={
+    vop_vencido = vop_vencido.rename(columns={
         'Vencido +0 meses': 'Atraso até 30 dias',
         'Vencido +1 meses': 'Atraso de 31 a 60 dias',
         'Vencido +2 meses': 'Atraso de 61 a 90 dias',
@@ -165,28 +153,30 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
         'Vencido +6 meses ou mais': 'Atraso acima de 180 dias'
     })
 
+
     # Criar a coluna 'Over 30', que é a soma de todas as colunas com atraso acima de 30 dias
-    carteira_vencida['Over 30'] = carteira_vencida[
+    vop_vencido['Over 30'] = vop_vencido[
         ['Atraso de 31 a 60 dias', 'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias', 'Atraso acima de 180 dias']
     ].sum(axis=1)
 
     # Criar a coluna 'Over 60', que é a soma de todas as colunas com atraso acima de 60 dias
-    carteira_vencida['Over 60'] = carteira_vencida[
+    vop_vencido['Over 60'] = vop_vencido[
         ['Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias', 'Atraso acima de 180 dias']
     ].sum(axis=1)
 
     # Criar a coluna 'Over 90', que é a soma de todas as colunas com atraso acima de 90 dias
-    carteira_vencida['Over 90'] = carteira_vencida[
+    vop_vencido['Over 90'] = vop_vencido[
         ['Atraso de 91 a 120 dias', 'Atraso de 121 a 150 dias',
         'Atraso de 151 a 180 dias', 'Atraso acima de 180 dias']
     ].sum(axis=1)
 
 
 
-    # Criando função de carteira a vencer
-    def calcular_carteira_a_vencer(df_titulos, fechamento):      
+    ### VOP A VENCER
+
+    def calcular_vop_a_vencer(df_titulos, fechamento):      
         # Condição para títulos a vencer:
         # - Data de vencimento é após o fechamento
         # - E o título não foi pago antes do fechamento (data_baixa nula ou posterior ao fechamento)
@@ -197,44 +187,47 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
         ]
         
         # Agrupando títulos a vencer por cliente e cedente
-        carteira_a_vencer = titulos_a_vencer.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
-        carteira_a_vencer.rename(columns={'valor_face': 'Total a Vencer'}, inplace=True)
+        vop_a_vencer = titulos_a_vencer.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])['valor_face'].sum().reset_index()
+        vop_a_vencer.rename(columns={'valor_face': 'Total a Vencer'}, inplace=True)
         
         
         # Retornar o DataFrame completo
-        return carteira_a_vencer
-    
-    # Inicializar um DataFrame vazio para armazenar a carteira a vencer
-    carteira_a_vencer = pd.DataFrame()
+        return vop_a_vencer
 
-    # Passo 5: Calcular a carteira para cada fechamento
+    # Inicializar um DataFrame vazio para armazenar o vop a vencer
+    vop_a_vencer = pd.DataFrame()
+
+    # Passo 5: Calcular o vop para cada fechamento
     for fechamento in fechamentos:
-        carteira_no_fechamento = calcular_carteira_a_vencer(df_titulos, fechamento)
+        vop_no_fechamento = calcular_vop_a_vencer(df_titulos, fechamento)
         
         # Adicionar a coluna do fechamento correspondente em cada iteração
-        carteira_no_fechamento['fechamento'] = fechamento
+        vop_no_fechamento['fechamento'] = fechamento
         
         # Concatenar os resultados ao DataFrame principal
-        carteira_a_vencer = pd.concat([carteira_a_vencer, carteira_no_fechamento], ignore_index=True)
+        vop_a_vencer = pd.concat([vop_a_vencer, vop_no_fechamento], ignore_index=True)
 
 
-
+    
     ### Cruzando todos os df's
-        
-    # Realizar o merge da carteira histórica e carteira vencida
-    df_intermediario = pd.merge(carteira_historica, carteira_vencida, 
+    
+    # Realizar o merge da vop histórico e vop vencido
+    df_intermediario = pd.merge(vop_historica, vop_vencido, 
                                 on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
                                 how='outer')
 
     # Realizar o merge do DataFrame intermediário com a carteira a vencer
-    df_final = pd.merge(df_intermediario, carteira_a_vencer, 
+    df_final = pd.merge(df_intermediario, vop_a_vencer, 
                         on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
                         how='outer')
-    
+
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
     df_final['Total Vencido'] = df_final['Total Vencido'].astype(float)
     df_final['Total a Vencer'] = df_final['Total a Vencer'].astype(float)
+
+
+
 
     ### Tratamentos para df_final
     # Lógica para calcular 'VAGAO OVER X'
@@ -257,6 +250,8 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
                                         df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 90'].fillna(0))
     
+
+
 
 
     # Calculo para rolagens
@@ -315,26 +310,27 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
     ]].reset_index(drop=True)
 
 
+
     ### Renomeando colunas
     df_final = df_final.rename(columns={
         'fechamento': 'safra',
-        'valor_face': 'carteira',
-        'Total a Vencer': 'carteira_em_dia',
-        'Total Vencido': 'carteira_vencida',
-        'Total a Vencer Mês Anterior': 'carteira_em_dia_mes_anterior',
+        'valor_face': 'vop',
+        'Total a Vencer': 'vop_a_vencer',
+        'Total Vencido': 'vop_vencido',
+        'Total a Vencer Mês Anterior': 'vop_a_vencer_mes_anterior',
         'Atraso de 31 a 60 dias Próximo Mês' : 'Atraso de 31 a 60 dias mes posterior',
         'Atraso de 151 a 180 dias X5': 'Atraso de 151 a 180 dias mes X5'
     })
-
 
     def converter_para_datetime(df, colunas, formato='%Y-%m-%d'):
         for coluna in colunas:
             df[coluna] = pd.to_datetime(df[coluna], format=formato)
             df[coluna] = df[coluna].dt.date
         return df
-    
+
     colunas_para_converter_datetime = ['safra']
     df_final = converter_para_datetime(df_final, colunas_para_converter_datetime)
+
 
 
     # Função para padronizar os nomes das colunas e tabela
@@ -360,6 +356,20 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
 
     df_final.fillna(0, inplace=True)
 
+    df_final['vop'] = df_final['vop'].astype(float)
+    df_final['vop_a_vencer'] = df_final['vop_a_vencer'].astype(float)
+
+    # Agora faça a subtração
+    df_final['vop_performado'] = df_final['vop'] - df_final['vop_a_vencer']
+
+
+    # Padronizando coluna valores
+    colunas_valores = ['vop','vop_a_vencer','vop_performado','vop_vencido',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
+                    'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
+                    'vagao_over_60',	'vagao_over_90',	'vop_a_vencer_mes_anterior',	'atraso_de_31_a_60_dias_mes_posterior',	'atraso_de_151_a_180_dias_mes_x5']
+
+    df_final[colunas_valores] = df_final[colunas_valores].apply(pd.to_numeric, errors='coerce').round(2)
+
 
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -367,8 +377,9 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
 
 
+
     # Exportando dados para a camada Refined
-     
+ 
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
@@ -379,7 +390,7 @@ def boletos_tradiconal_trusted_to_refined_carteira(access_params=None,  **kwargs
 
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_REFINED = "payments"
-    FOLDER_DESTINATION_REFINED = "carteira_tradicional"
+    FOLDER_DESTINATION_REFINED = "vop_visao_safra_tradicional"
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 

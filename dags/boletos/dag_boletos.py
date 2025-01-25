@@ -18,6 +18,7 @@ from boletos.vendermais import vop_visao_safra
 from boletos.tradicional import boletos_tradicional_raw_to_trusted
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
+from boletos.tradicional import vop_visao_safra_tradicional
 
 
 ### Parâmetros de acesso
@@ -130,5 +131,12 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    # Definindo o task que cria vop_visao_safra
+    vop_visao_safra_tradicional_task = PythonOperator(
+        task_id = 'vop_visao_safra_tradicional',
+        python_callable = vop_visao_safra_tradicional.vop_visao_safra_tradicional,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task
+    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
