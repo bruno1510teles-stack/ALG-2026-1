@@ -77,11 +77,12 @@ def exporta_csv_cria_proposta_jira (access_params=None,  **kwargs):
     exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
 
-        # Configuração do cliente MinIO
+    # Configuração do cliente MinIO
     minio_client = Minio(
-        endpoint = "minio-api.alpe.tech",
-        access_key = "dhHGmnBBi0ZPUlNWQFPn",
-        secret_key = "wI9KSfQpqwpPWyGlouSzxD7Zp9YhLRPkfDZugsG5"
+            "minio-api.alpenet.com.br",
+            access_key="pe4MdrBZnRqrLUatARfZ",
+            secret_key="d7RdWy02br3Q9Tsvmq8rOXDI9buAWlurPATmTFZh",
+            secure=True
     )
 
     # Connection validation
