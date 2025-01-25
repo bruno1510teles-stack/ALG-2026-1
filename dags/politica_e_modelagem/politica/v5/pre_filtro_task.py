@@ -12,50 +12,13 @@ import time
 import base64
 import requests
 
+def pre_filtro_task(access_params=None,  **kwargs):
 
-def analise_pre_filtro_v5(access_params=None,  **kwargs):
-
-    # Conectando com Minio para pegar input da base
-    minio_raw = Minio(
-        "api-raw.alpe.com.br",
-        access_key = 'B7q0avvSIpSdyGPXWnEC',
-        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
-    )
-
-
-    # Connection validation
-    try:
-        # Try to list the buckets
-        buckets = minio_raw.list_buckets()
-        
-        # If the connection was successful, print the buckests
-        print("Conexão bem-sucedida. Lista de buckets disponíveis:")
-        for bucket in buckets:
-            print(bucket.name)
-        
-    except Exception as e:
-            # If the connection was failed, print the error message
-            print(f"Erro ao conectar ao MinIO: {e}")
-
-
-    # Bucket and Folder_Destination
-    BUCKET_SOURCE_RAW = "pre-aprovado-lote"
-    FOLDER_DESTINATION_RAW = 'year=2025/month=1/day=6'
-    file_name = 'Base de Clientes Matcon - CDB Curitiba.xlsx'
-    file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
-
-
-    # Uploading Excel File
-    response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
-    file_data = BytesIO(response.read())
-    base_analisar = pd.read_excel(file_data)
-
-
-    # Tratando base
-    base_analisar['CNPJ'] = base_analisar['CNPJ'].astype(str).str.zfill(14)
-    base_analisar['cnpj_raiz'] = base_analisar['CNPJ'].str.slice(0, 8).str.zfill(8)
-    print(f"Quantidade de CNPJs na base_analisar: {base_analisar.shape[0]}")
-
+    # Pegando DF tarefa anterior
+    # Recupera o objeto ti (task instance) via kwargs
+    ti = kwargs['ti']
+    base_analisar_dict = ti.xcom_pull(task_ids='importa_base_lote')
+    base_analisar = pd.DataFrame(base_analisar_dict)
 
     cnpjs = base_analisar['CNPJ'].unique()
     cnpjs_raiz = base_analisar['cnpj_raiz'].str.slice(0, 8).unique()
@@ -70,8 +33,11 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
     if ids_query == "()":
         ids_query = "('')"
 
+    
+    print('Parte 1...')
 
-        ### Validando se a raiz do CNPJ foi analisada a menos de 60 DIAS
+
+    ### Validando se a raiz do CNPJ foi analisada a menos de 60 DIAS
     # Configurações da API do Jira
     jira_url = "https://alpe.atlassian.net/rest/api/2/search"
     # Credenciais de acesso
@@ -124,7 +90,7 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
                 for ticket in tickets:
                     # Acessando o assignee corretamente dentro de fields
                     assignee = ticket['fields'].get('assignee')
-                    #cpnj_jira = ticket['fields'].get('customfield_13729')
+                    #cnpj_jira = ticket['fields'].get('customfield_13729')
                     assignee_name = assignee['displayName'] if assignee else 'Não atribuído'
                     resolucao = ticket['fields'].get('resolution', {})
                     if resolucao is None:
@@ -138,7 +104,7 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
                     # Adiciona dados ao DataFrame
                     data.append({
                         'cnpj_raiz': cnpj,
-                        #'cnpj_jira': cpnj_jira,
+                        #'cpnj_jira': cnpj_jira,
                         'analise_menor_60_dias': True,
                         'decisor': assignee_name,
                         'decisao': decisao
@@ -154,7 +120,7 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
         if not has_tickets:
             data.append({
                 'cnpj_raiz': cnpj,
-                #'cnpj_jira': cpnj_jira,
+                #'cnpj_jira': cnpj_jira,
                 'analise_menor_60_dias': False,
                 'decisor': None,  # Nenhum decisor para esse CNPJ
                 'decisao': None  # Nenhum limite encontrado
@@ -165,6 +131,9 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
     df_jira = df_jira[df_jira['decisao'] != 'Duplicado']
     df_jira = df_jira.drop_duplicates(subset='cnpj_raiz')
     df_jira['decisor'] = np.where(df_jira['decisor'] == 'Jira Service User', 'Motor', 'Mesa')
+
+
+    print('Parte 2...')
 
 
     # Conectando com o banco de dados Trino
@@ -305,8 +274,8 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
     cur.close()
     conn.close()
 
-    # Exibe o DataFrame final com os resultados acumulados
-    print(df)
+
+    print('Parte 3...')
 
 
     ### Olhando para os CNAE's secundários também
@@ -350,16 +319,8 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
     df = df.drop(columns=['documento_sem_formatacao'])
     df.rename(columns={'CNPJ': 'documento_sem_formatacao'}, inplace=True)
 
-
-    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
-    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
-    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
-    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
-
-
     ### Cruzando DF
     df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'left')
-
 
     # Criando função para verificar se é SPE, Consorcio ou Construtora
     def spe_consorcio_construtora(data_frame):
@@ -410,6 +371,10 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
         (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) | (df['tem_socio_pj'] == True), 'PF SOCIO PJ OU < 2 ANOS'),
         (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS')
     ]
+
+    # Garantindo que o campo aceita string
+    df['ramificacao_pre_filtro'] = df['ramificacao_pre_filtro'].astype('object')
+
     # Aplicar condições
     for condition, value in conditions:
         df.loc[condition & df['ramificacao_pre_filtro'].isna(), 'ramificacao_pre_filtro'] = value
@@ -434,17 +399,18 @@ def analise_pre_filtro_v5(access_params=None,  **kwargs):
     df['versao_motor'] = '1.0'
 
 
-    # Contar a quantidade por ramificação
-    qtd_por_ramificacao = df.groupby('resposta').size()
+    # Lista das colunas a serem mantidas
+    colunas_df_final = [
+        "cnpj_raiz", "cnae_aceito", "razao_social", "cod_natureza_juridica", 
+        "codigo_porte_empresa", "Capital Social", "idade", "situacao_cadastral", 
+        "idade_socio", "tem_socio_pj", "is_mei", "tem_pep", "situacao_especial", 
+        "data_ref_receita", "limite_alpe", "situacao_sacado", "pcto_limite_utilizado", 
+        "limite_atribuido", "documento_sem_formatacao", "analise_menor_60_dias", 
+        "nat_ju_aceita", "is_spe_consorcio_construtora", "ramificacao_pre_filtro", 
+        "resposta", "politica", "versao_motor"
+    ]
 
-    # Printando o resultado
-    print(qtd_por_ramificacao)
+    # Filtrar o DataFrame
+    df_final = df[colunas_df_final]
 
-
-    pd.reset_option('display.max_rows')
-    pd.reset_option('display.max_columns')
-    pd.reset_option('display.width')
-    pd.reset_option('display.max_colwidth')
-
-    ### Salvando DF para utilizar na próxima tarefa da DAG
-    return df.to_dict(orient='records')
+    return df_final.to_dict(orient='records')
