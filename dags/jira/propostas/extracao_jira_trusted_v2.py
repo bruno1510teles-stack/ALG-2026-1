@@ -206,6 +206,17 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     df_resolvido['decisor'] = df_resolvido['decisor'].apply(verifica_decisor).str.upper()
 
+    # TRATA VALORES ESPECIFICOS DO DECISOR
+    def verifica_decisor_v2(valor):
+        if valor == "JOSE.CARVALHO@ALPE.COM.BR":
+            return "JOSE CARVALHO"
+        elif valor == "JIRA SERVICE USER":
+            return "MOTOR"
+        else:
+            return valor
+
+    df_resolvido['decisor'] = df_resolvido['decisor'].apply(verifica_decisor_v2).str.upper()
+
     # Lista de nomes por categorias
     motor = [
         'MOTOR', 'JIRA SERVICE USER'
