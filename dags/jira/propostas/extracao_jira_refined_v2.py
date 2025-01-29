@@ -54,6 +54,16 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
     print(df.columns.tolist())
 
 
+    # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
+
+    # Transformando colunas de data
+    df['data_resolvido'] = pd.to_datetime(df['data_resolvido'])
+
+    df_sorted = df.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
+
+    df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['decisor'].transform('first')
+
+
     # Criando Funções para formatar DataFrame
     print("CRIANDO FUNÇÕES PARA FORMATAR DATAFRAME...")
 
