@@ -360,6 +360,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
 
+    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
+    df_resolvido = df_resolvido.loc[df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])]
 
     # SELECIONA AS COLUNAS PARA EXPORTAR
     df_final = df_resolvido[[
