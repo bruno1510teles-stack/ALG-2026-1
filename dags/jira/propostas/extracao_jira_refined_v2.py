@@ -209,7 +209,7 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
         'diferenca_horas_disp_mesa_resolvido', 'sla_hora_criado_resolvido',
         'sla_hora_disp_mesa_resolvido', 'sla_dias_criado_resolvido',
         'sla_dias_disp_mesa_resolvido', 'faixa_valor_solicitado',
-        'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional',
+        'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional','analista_responsavel',
         'atualizado_em', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
