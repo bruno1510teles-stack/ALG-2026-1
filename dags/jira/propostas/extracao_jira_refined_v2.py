@@ -94,7 +94,7 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
         elif percent == 1:
             return "04 - 100%"
         elif percent > 1:
-            return "APROVADO COM OVERLIMIT"
+            return "05 - > 100%"
         else:
             return "VALOR NÃO INFORMADO"
 
@@ -122,31 +122,31 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
         diferenca_horas = round(diferenca_horas, 2)  # Arredondar para 2 casas decimais
         
         if diferenca_horas <= 2:
-            return "ATE 2 HORAS"
+            return "01 - ATE 2 HORAS"
         elif diferenca_horas <= 4:
-            return "2-4 HORAS"
+            return "02 - 2-4 HORAS"
         elif diferenca_horas <= 8:
-            return "4-8 HORAS"
+            return "03 - 4-8 HORAS"
         elif diferenca_horas <= 24:
-            return "8-24 HORAS"
+            return "04 - 8-24 HORAS"
         elif diferenca_horas <= 48:
-            return "D + 1"
+            return "05 - D + 1"
         elif diferenca_horas <= 72:
-            return "D + 2"
-        return "D + 3"
+            return "06 - D + 2"
+        return "07 - D + 3"
         
         
     def classificar_sla_dias(dias):
         if pd.isna(dias):  # Verifica se o valor é NaN
             return "SLA NÃO DEFINIDO"
         elif dias == 0:
-            return "D = 0"
+            return "01 - D = 0"
         elif dias == 1:
-            return "D + 1"
+            return "02 - D + 1"
         elif dias == 2:
-            return "D + 2"
+            return "03 - D + 2"
         elif dias >= 3:
-            return ">= D + 3"
+            return "04 - >= D + 3"
         
     
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
