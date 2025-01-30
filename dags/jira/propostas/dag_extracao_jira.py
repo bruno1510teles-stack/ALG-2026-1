@@ -14,7 +14,7 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from dags.jira.propostas import captura_propostas_jira_raw
+from .captura_propostas_jira_raw import captura_propostas_jira_raw
 from dags.jira.propostas import extracao_jira_trusted
 from dags.jira.propostas import extracao_jira_refined
 from dags.jira.propostas import jira_notif
