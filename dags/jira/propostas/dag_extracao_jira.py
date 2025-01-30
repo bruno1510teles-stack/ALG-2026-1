@@ -75,7 +75,7 @@ with DAG(
 ) as dag:
 
     captura_proposta_jira = PythonOperator(
-        task_id='captura_proposta_jira_v2',
+        task_id='captura_proposta_jira',
         python_callable=captura_propostas_jira,
         provide_context=True
     )
