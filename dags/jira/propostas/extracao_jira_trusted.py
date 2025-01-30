@@ -365,7 +365,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 500.000.000
     df_resolvido = df_resolvido.loc[
         (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])) & 
-        (df_resolvido['limite_solicitado'] < 1000000000)
+        (df_resolvido['limite_pedido'] < 1000000000)
     ]
 
     # SELECIONA AS COLUNAS PARA EXPORTAR
