@@ -14,11 +14,11 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from captura_propostas_jira import captura_propostas_jira_raw
-from extracao_jira_trusted import jira_raw_to_trusted
-from extracao_jira_refined import jira_trusted_to_refined
-from jira_notif import enviar_notif
-from propostas_boletos_vop import merge_propostas_boletos
+from dags.jira.propostas.captura_propostas_jira_raw import captura_propostas_jira_raw
+from dags.jira.propostas.extracao_jira_trusted import jira_raw_to_trusted
+from dags.jira.propostas.extracao_jira_refined import jira_trusted_to_refined
+from dags.jira.propostas.jira_notif import enviar_notif
+from dags.jira.propostas.propostas_boletos_vop import merge_propostas_boletos
 
 
 
