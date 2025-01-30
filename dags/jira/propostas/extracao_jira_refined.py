@@ -14,7 +14,9 @@ from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 from airflow.utils.log.logging_mixin import LoggingMixin
 
-def base_details_refined(access_params=None,  **kwargs):
+
+def jira_trusted_to_refined(access_params=None, **kwargs):
+
 
     # Conectando ao Trino para Leitura
     conn = connect(
@@ -46,41 +48,51 @@ def base_details_refined(access_params=None,  **kwargs):
         df = None
         print("A consulta não foi executada porque a conexão com o Trino falhou.")
 
-        return df
-    
 
     # Inspecionando colunas do DataFrame
     print("Colunas carregadas e disponíveis no DataFrame:")
     print(df.columns.tolist())
-    
-    
-    
+
+
+    # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
+
+    # Transformando colunas de data
+    df['data_resolvido'] = pd.to_datetime(df['data_resolvido'])
+
+    df_sorted = df.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
+
+    df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['decisor'].transform('first')
+
+
     # Criando Funções para formatar DataFrame
-    print("Criando funções para tratamento de colunas no DataFrame...")
+    print("CRIANDO FUNÇÕES PARA FORMATAR DATAFRAME...")
 
     def format_faixa_valor_solicitado(vlr):
+        if pd.isnull(vlr) or not isinstance(vlr, (int, float)):
+            return "VALOR INVALIDO"
+        
         if vlr <= 30000:
-            return "01 - Até R$30.000"
+            return "01 - ATE R$30.000"
         elif 30000 < vlr <= 50000:
-            return "02 - R$30.000 a R$50.000"
+            return "02 - R$30.000 A R$50.000"
         elif 50000 < vlr <= 80000:
-            return "03 - R$50.000 a R$80.000"
+            return "03 - R$50.000 A R$80.000"
         elif 80000 < vlr <= 120000:
-            return "04 - R$80.000 a R$120.000"
+            return "04 - R$80.000 A R$120.000"
         elif 120000 < vlr <= 200000:
-            return "05 - R$120.000 a R$200.000"
+            return "05 - R$120.000 A R$200.000"
         elif 200000 < vlr <= 250000:
-            return "06 - R$200.000 a R$250.000"
+            return "06 - R$200.000 A R$250.000"
         elif 250000 < vlr <= 400000:
-            return "07 - R$250.000 a R$400.000"
+            return "07 - R$250.000 A R$400.000"
         elif 400000 < vlr <= 500000:
-            return "08 - R$400.000 a R$500.000"
+            return "08 - R$400.000 A R$500.000"
         elif 500000 < vlr <= 1000000:
-            return "09 - R$500.000 a R$1.000.000"
+            return "09 - R$500.000 A R$1.000.000"
         elif 1000000 < vlr <= 5000000:
-            return "10 - R$1.000.000 a R$5.000.000"
+            return "10 - R$1.000.000 A R$5.000.000"
         elif vlr > 5000000:
-            return "11 - Maior que R$5.000.000"
+            return "11 - MAIOR QUE R$5.000.000"
 
     def format_faixa_aprov(percent):
         if percent <= 0.5:
@@ -92,120 +104,85 @@ def base_details_refined(access_params=None,  **kwargs):
         elif percent == 1:
             return "04 - 100%"
         elif percent > 1:
-            return "Aprovado acima do Valor Solicitado"
+            return "05 - > 100%"
         else:
-            return "Valor não especificado"
+            return "VALOR NÃO INFORMADO"
 
 
     def status_decisao_relacional(status_decisao, status_aprovacao):
-        if status_decisao == "Reprovado":
-            return "Reprovado"
+        if status_decisao == "REPROVADO":
+            return "REPROVADO"
         elif status_aprovacao == "01 - 0-50%":
-            return "Aprovado com Redução"
+            return "APROVADO COM REDUÇÃO"
         elif status_aprovacao == "02 - 50-75%":
-            return "Aprovado com Redução"
+            return "APROVADO COM REDUÇÃO"
         elif status_aprovacao == "03 - 75-100%":
-            return "Aprovado com Redução"
+            return "APROVADO COM REDUÇÃO"
         elif status_aprovacao == "04 - 100%":
-            return "Aprovado"
-        elif status_decisao == "Aprovado":
-            return "Aprovado"
+            return "APROVADO"
+        elif status_decisao == "APROVADO":
+            return "APROVADO"
         else:
-            return "Decisão não atribuída"
+            return "NÃO ATRIBUIDA"
         
     def classificar_sla_horas(diferenca_horas):
         if pd.isna(diferenca_horas):  # Verifica se o valor é NaN
-            return "SLA não definido"
-    
+            return "SLA NÃO DEFINIDO"
+
         diferenca_horas = round(diferenca_horas, 2)  # Arredondar para 2 casas decimais
         
         if diferenca_horas <= 2:
-            return "Até 2 horas"
+            return "01 - ATE 2 HORAS"
         elif diferenca_horas <= 4:
-            return "Até 2-4 horas"
+            return "02 - 2-4 HORAS"
         elif diferenca_horas <= 8:
-            return "Até 4-8 horas"
+            return "03 - 4-8 HORAS"
         elif diferenca_horas <= 24:
-            return "Até 8-24 horas"
+            return "04 - 8-24 HORAS"
         elif diferenca_horas <= 48:
-            return "D + 1"
+            return "05 - D + 1"
         elif diferenca_horas <= 72:
-            return "D + 2"
-        return "D + 3"
+            return "06 - D + 2"
+        return "07 - D + 3"
         
         
     def classificar_sla_dias(dias):
         if pd.isna(dias):  # Verifica se o valor é NaN
-            return "SLA não definido"
+            return "SLA NÃO DEFINIDO"
         elif dias == 0:
-            return "D = 0"
+            return "01 - D = 0"
         elif dias == 1:
-            return "D + 1"
+            return "02 - D + 1"
         elif dias == 2:
-            return "D + 2"
+            return "03 - D + 2"
         elif dias >= 3:
-            return ">= D + 3"
-
-
-
-
-
-    def format_tipo_analista(nome_decisor):
-        # Mapeamento de nomes para tipos
-        tipo_mapping = {
-            "Ana Beatriz Rodrigues Andrade": "Mesa",
-            "Beatriz Pereira Gama Cardoso": "Outros",
-            "Camila Mamede Cabral": "Outros",
-            "Caroline Freihat Henrique De Alcantara Santana": "Mesa",
-            "Claudia Cinare Rodrigues Eto": "Mesa",
-            "Claudia Cravo": "Outros",
-            "Decisor não atribuído": "Decisor não atribuído",
-            "Diana Tiemi Yamamoto": "Mesa",
-            "Jose Carvalho": "Mesa",
-            "Larissa Freire Soares": "Mesa",
-            "Leandro Quintino Da Anunciacao": "Mesa",
-            "Mayara Costa": "Outros",
-            "Motor": "Motor",
-            "Priscila Yuri Nagata Ortega": "Outros",
-            "Rafael Rocha Leite": "Outros",
-            "Rogerio De Campos Frias": "Mesa",
-            "Rosemeire Dias Ferreira": "Mesa",
-            "Vanessa Souza": "Mesa",
-            "Vivian Pompeu": "Outros"
-        }
+            return "04 - >= D + 3"
         
-        # Retornar o tipo correspondente ou "Outros" se não estiver no mapeamento
-        return tipo_mapping.get(nome_decisor, "Outros")
-        
-    print("Criação de funções finalizadas com sucesso!")
-        
-    print("Tratando colunas no DataFrame conforme as funções criadas...")
-    # Adicionando colunas de data e hora
+    
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
 
 
     # Criando df para verificar a diferença de dias
-    df['diferença_dias_criado_resolvido'] = ( df['resolvido_tratado'] - df['criado_tratado']).dt.days.astype('Int64')
-    df['diferença_dias_atribuido_resolvido'] = ( df['resolvido_tratado'] - df['aguardando_execucao_tratado']).dt.days.astype('Int64')
+    df['diferenca_dias_criado_resolvido'] = ( df['data_resolvido'] - df['data_criado']).dt.days.astype('Int64')
+    df['diferenca_horas_criado_resolvido'] = ( df['data_resolvido'] - df['data_criado']).dt.total_seconds() / 3600
 
-    # Criando df para verificar a diferença de horas e minutos - Criado/ Resolvido
-    df['diferença_horas_criado_resolvido'] = ( df['resolvido_tratado'] - df['criado_tratado']).dt.total_seconds() / 3600
-    df['diferença_minutos_criado_resolvido'] = ( df['resolvido_tratado'] - df['criado_tratado'] ).dt.total_seconds() / 60
-       
-    
-    df['diferença_horas_atribuido_resolvido'] = (df['resolvido_tratado'] - df['aguardando_execucao_tratado'] ).dt.total_seconds() / 3600
-    df['diferença_minutos_atribuido_resolvido'] = (df['resolvido_tratado'] - df['aguardando_execucao_tratado']).dt.total_seconds() / 60
-    
-    #SLA Tempo Dias e Horas
-    
-    df['sla_hora_atribuido_resolvido'] = df["diferença_horas_atribuido_resolvido"].apply(classificar_sla_horas)
-    df['sla_dias_atribuido_resolvido'] = df["diferença_dias_atribuido_resolvido"].apply(classificar_sla_dias)
+    df['diferenca_dias_disp_mesa_resolvido'] = ( df['data_resolvido'] - df['data_disponivel_mesa']).dt.days.astype('Int64')
+    df['diferenca_horas_disp_mesa_resolvido'] = ( df['data_resolvido'] - df['data_disponivel_mesa']).dt.total_seconds() / 3600
+
+
+    # SLA Tempo Dias e Horas
+    df['sla_hora_criado_resolvido'] = df["diferenca_horas_criado_resolvido"].apply(classificar_sla_horas)
+    df['sla_hora_disp_mesa_resolvido'] = df["diferenca_horas_disp_mesa_resolvido"].apply(classificar_sla_horas)
+
+    df['sla_dias_criado_resolvido'] = df["diferenca_dias_criado_resolvido"].apply(classificar_sla_dias)
+    df['sla_dias_disp_mesa_resolvido'] = df["diferenca_dias_disp_mesa_resolvido"].apply(classificar_sla_dias)
+
 
     # Aplicando funções para criar colunas com informações formatadas
     df['faixa_valor_solicitado'] = df['limite_pedido'].apply(format_faixa_valor_solicitado)
-    df['cnpj_formatado'] = df['cnpj'].str[:2] + '.' + df['cnpj'].str[2:5] + '.' + df['cnpj'].str[5:8] + '/' + df['cnpj'].str[8:12] + '-' + df['cnpj'].str[12:]
+
 
     # Criando df de Aprovação %
     df['aprovacao_percent'] = np.where(df['limite_pedido'] != 0, 
@@ -214,41 +191,33 @@ def base_details_refined(access_params=None,  **kwargs):
 
     # Criando df Status Aprovação
     df['status_aprovacao_percent'] = df['aprovacao_percent'].apply(format_faixa_aprov)
-    df['status_relacional'] = df.apply(
-        lambda row: status_decisao_relacional(row['status_decisao'], row['status_aprovacao_percent']), axis=1
-    )
-    df['tipo_analista'] = df['nome_decisor'].apply(format_tipo_analista)
 
-    print("Tratamento de DataFrame realizado com sucesso!")
+    df['status_relacional'] = df.apply(
+        lambda row: status_decisao_relacional(row['status'], row['status_aprovacao_percent']), axis=1
+    )
 
 
     # Selecionando as colunas relevantes
-    jira_tratado_refined = df[
-        [
-        'issue_key', 'politica_desc', 'cnpj', 'cnpj_formatado','pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor','prioridade_desc',
-        'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc', 
-        'data_criado', 'hora_criado', 
-        'data_resolvido', 'hora_resolvido',
-        'faixa_valor_solicitado', 
-        'diferença_dias_criado_resolvido', 'diferença_dias_atribuido_resolvido', 
-        'diferença_minutos_criado_resolvido', 'diferença_horas_criado_resolvido',
-        'diferença_horas_atribuido_resolvido', 'diferença_minutos_atribuido_resolvido',
-        'sla_hora_atribuido_resolvido', 'sla_dias_atribuido_resolvido',
-        'aprovacao_percent', 'status_aprovacao_percent',
-        'status_relacional','tipo_analista',
-        'atualizado_em', 'year', 'month', 'day'
+    df_final = df[
+        ['issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
+        'limite_aprovado', 'nome_vendedor_alpe_tratado', 'nome_vendedor_fn', 'filial_fn',
+        'prioridade', 'status','categoria_decisor', 'decisao',
+        'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
+        'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
+        'diferenca_dias_criado_resolvido', 'diferenca_horas_criado_resolvido',
+        'diferenca_dias_disp_mesa_resolvido',
+        'diferenca_horas_disp_mesa_resolvido', 'sla_hora_criado_resolvido',
+        'sla_hora_disp_mesa_resolvido', 'sla_dias_criado_resolvido',
+        'sla_dias_disp_mesa_resolvido', 'faixa_valor_solicitado',
+        'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional','analista_responsavel',
+        'atualizado_em', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
-
-    # Exibindo o DataFrame tratado
-    print(f"{len(jira_tratado_refined)} propostas válidas.")
-    print(jira_tratado_refined.head())
 
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
-    
+
     try:
         logger.info("Iniciando salvamento das informações")
         
@@ -267,7 +236,7 @@ def base_details_refined(access_params=None,  **kwargs):
 
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-            jira_tratado_refined, 
+            df_final, 
             partition_by=["year", "month", "day"],
             storage_options=storage_options,
             mode="overwrite"

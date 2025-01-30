@@ -13,14 +13,11 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
-from extracao_jira_raw import base_details_raw
-from extracao_jira_trusted import base_details_trusted
-from extracao_jira_refined import base_details_refined
 from propostas_boletos_vop import merge_propostas_boletos
 from jira_notif import  enviar_notif
-from captura_propostas_jira_v2 import captura_propostas_jira
-from extracao_jira_trusted_v2 import jira_raw_to_trusted
-from extracao_jira_refined_v2 import jira_trusted_to_refined
+from dags.jira.propostas.captura_propostas_jira import captura_propostas_jira
+from dags.jira.propostas.extracao_jira_trusted import jira_raw_to_trusted
+from dags.jira.propostas.extracao_jira_refined import jira_trusted_to_refined
 
 
 
@@ -82,7 +79,7 @@ def check_time_to_run(**kwargs):
 
 # Definindo defaults
 default_args = {
-    "owner": "Kevin Cardoso",
+    "owner": "Vinicius Moraes",
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
     "on_failure_callback": notificar_falha_teams
@@ -100,6 +97,11 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
+    captura_proposta_jira = PythonOperator(
+        task_id='captura_proposta_jira_v2',
+        python_callable=captura_propostas_jira,
+        provide_context=True
+    )
 
     # Definindo as tasks
     jira_raw_to_trusted = PythonOperator(
@@ -116,45 +118,5 @@ with DAG(
         provide_context=True
     )
 
-    '''
-    extracao_jira_to_refined = PythonOperator(
-        task_id='extracao_jira_refined',
-        python_callable=base_details_refined,
-        provide_context=True
-    )
-
-    propostas_boletos_vop_aux = PythonOperator(
-        task_id='merge_proposta_boletos_vop',
-        python_callable=merge_propostas_boletos,
-        provide_context=True
-    )
-    '''
-    captura_proposta_jira_v2 = PythonOperator(
-        task_id='captura_proposta_jira_v2',
-        python_callable=captura_propostas_jira,
-        provide_context=True
-    )
-    '''
-    # BranchPythonOperator para verificar o horário e decidir qual task executar
-    check_time_task = BranchPythonOperator(
-        task_id='check_time',
-        python_callable=check_time_to_run,
-        provide_context=True,
-        op_kwargs={'execution_date': '{{ ts }}'}
-    )
-
-    # Task para pular caso não seja 21:00 UTC
-    skip_task = DummyOperator(task_id='skip_task')
-
-    # Task para enviar notificações (executa somente às 21:00 UTC)
-    jira_notif_teams = PythonOperator(
-        task_id='enviar_notif_daily',
-        python_callable=enviar_notif,
-        provide_context=True
-    )
-    '''
-
     # Definindo a ordem de execução das tasks
-    captura_proposta_jira_v2 >> jira_raw_to_trusted >> extracao_jira_trusted_to_refined
-    #extracao_jira_to_raw >> extracao_jira_raw_to_trusted >> extracao_jira_to_refined >> propostas_boletos_vop_aux >> check_time_task
-    #check_time_task >> [jira_notif_teams, skip_task]
+    captura_proposta_jira >> jira_raw_to_trusted >> extracao_jira_trusted_to_refined

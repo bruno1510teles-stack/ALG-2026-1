@@ -11,22 +11,24 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 
-def base_details_trusted(access_params=None, **kwargs):
-    # Conectando na Raw para Leitura
+
+def jira_raw_to_trusted(access_params=None, **kwargs):
+
+    # Conectando no MinIO
     client = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw']
+        "api-raw.alpe.com.br",
+        access_key = 'B7q0avvSIpSdyGPXWnEC',
+        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
     )
-    
+
     # Definindo bucket e caminho do arquivo
     BUCKET_SOURCE_RAW = "jira"
     FOLDER_DESTINATION_RAW = 'propostas'
     file_name = 'base_jira_propostas.parquet'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
-    
-    
-# Lendo o arquivo da Raw
+
+
+    # Lendo o arquivo da Raw
     response = client.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
     df = pd.read_parquet(file_data)
@@ -35,315 +37,348 @@ def base_details_trusted(access_params=None, **kwargs):
     # Inspecionando colunas do DataFrame
     print("Colunas carregadas e disponíveis no DataFrame:")
     print(df.columns.tolist())
-    
-    
-    
-    
-    print("Criando funções para tratamento de colunas no DataFrame...")
+
+
+    # Filtrando apenas casos Fechados ou Resolvidos
+
+    df_resolvido = df[(df['status'] == 'Fechada') | (df['status'] == 'Resolvido')].copy()
+
+    print(f"Quantidade de linhas com status \"Resolvido\" ou \"Fechada\": {df_resolvido.shape[0]}")
+
+
+    # TRATANDO COLUNA DA POLITICA
     def verifica_politica(politica_desc):
         if pd.isnull(politica_desc):
-            return "Politica não atribuída"
+            return "NÃO ATRIBUIDA"
         else:
             return politica_desc
-    
-    def verifica_parecer(parecer):
-        if pd.isnull(parecer):
-            return "Descrição Parecer não atribuída"
+
+    df_resolvido['politica'] = df_resolvido['politica'].apply(verifica_politica).str.upper()
+
+
+    # CRIANDO RAIZ CNPJ 8
+    df_resolvido['raiz_cnpj'] = df_resolvido['cnpj'].astype(str).str[:8]
+
+
+    # TRATANDO PGID
+    def verifica_pgid(pgid):
+        if pd.isnull(pgid):
+            return "NÃO ATRIBUIDA"
         else:
-            return parecer
+            return pgid
+
+    df_resolvido['pgid'] = df_resolvido['pgid'].apply(verifica_pgid).str.upper()
 
 
-    def verifica_ramificacao_motor(ramificacao):
-        if pd.isnull(ramificacao):
-            return "Ramificação não atribuída"
-        else:
-            return ramificacao
+    # Substituindo valores nulos por 0 nas colunas 'limite_pedido' e 'limite_aprovado'
+    df_resolvido['limite_pedido'] = df_resolvido['limite_pedido'].fillna(0)
+    df_resolvido['limite_aprovado'] = df_resolvido['limite_aprovado'].fillna(0)
 
+
+    # Nome_Issue Maiusculo
+    df_resolvido['nome_issue'] = df_resolvido['nome_issue'].str.upper()
+
+
+    # TRATANDO VENDEDOR ALPE
     def verifica_vendedor(vendedor):
         if pd.isnull(vendedor):
-            return "Vendedor não atribuído"
+            return "NÃO ATRIBUIDA"
         else:
             return vendedor
-        
-    def verifica_filial_fn(fn):
+
+    df_resolvido['nome_vendedor_alpe'] = df_resolvido['nome_vendedor_alpe'].apply(verifica_vendedor).str.upper().str.strip()
+
+
+    # PADRONIZANDO OS NOMES
+    nome_padronizado = {
+        'NÃO ATRIBUIDA': 'NÃO ATRIBUIDA',
+        'ALEXANDRE SANTOS CARMO': 'ALEXANDRE SANTOS CARMO',
+        'ALPE QUE REALIZOU A SOLICITAÇÃO': 'ALPE',
+        'CAMILA CABRAL': 'CAMILA CABRAL',
+        'CAROLINE FREIHAT': 'CAROLINE FREIHAT',
+        ('CASSIO ESTEVES', 'CASSIO FILIPE ALVES ESTEVES') : 'CASSIO ESTEVES',
+        ('CLAUDIA CINARE', 'CLAUDIA ETO', 'CLAUDIA RODIGUES', 'CLAUDIA RODRIGUES') : 'CLAUDIA CINARE',
+        ('DIANA TIEMI', 'DIANA TIENI', 'DIANA YAMAMOTO') : 'DIANA TIEMI',
+        'EDER CAVALCANTE': 'EDER CAVALCANTE',
+        'ELAINE FABIANA BARBOSA': 'ELAINE FABIANA BARBOSA',
+        'EMANUELLE CATORI': 'EMANUELLE CATORI',
+        'FATURAMENTO': 'FATURAMENTO',
+        ('GLAUCIANE OLIVEIRA', 'GLAUCIELE OLIVEIRA') : 'GLAUCIELE OLIVEIRA',
+        ('JOSE CARVALHO', 'JOSÉ CARVALHO', 'JOSE VICTOR', 'JOSE VITOR'): 'JOSE VITOR',
+        ('LARISSA - CRÉDITO', 'LARISSA FREIRE', 'LARISSA SOARES', 'LARISSA SOARES - CRÉDITO') : 'LARISSA FREIRE',
+        ('LEANDRO ANUNCIAÇÃO', 'LEANDRO QUINTINO') : 'LEANDRO QUINTINO',
+        'LEDIMIR HENRIQUE': 'LEDIMIR HENRIQUE',
+        ('MAYCON HELDER', 'MAYCON HELDER]', 'MAYCON OLIVEIRA'): 'MAYCON HELDER',   
+        'MILEIDE VIEIRA': 'MILEIDE VIEIRA',
+        'NILTON SANTOS': 'NILTON SANTOS',
+        ('PEDRO VINICIUS', 'PEDRO ALVES'): 'PEDRO ALVES',
+        'PORTAL ARCELOR': 'PORTAL ARCELOR',
+        'PRISCILA YURI': 'PRISCILA YURI',
+        ('PRISCILLA MORAES', 'PRISCILLA COSTA'): 'PRISCILLA COSTA',  
+        'RAFAEL CANTAGALLI': 'RAFAEL CANTAGALLI',
+        'RAFAELA - ASUS': 'RAFAELA - ASUS',
+        ('ROGERIO', 'ROGERIO FRIAS'): 'ROGERIO FRIAS',
+        ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'ROSEMEIRE DIAS',
+        ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES') : 'TALITA LIANDRA DA SILVA RODRIGUES',
+        'THAIS DAS NEVES' : 'THAIS DAS NEVES',
+        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
+        'VANESSA LINO': 'VANESSA LINO',
+        ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
+        'JOEL DONIZETTI APARECIDO': 'JOEL DONIZETTI APARECIDO'
+    }
+
+    # Função para padronizar o nome
+    def padronizar_nome_vendedor_alpe(nome):
+        # Percorre o dicionário e verifica se o nome está na chave
+        for key, value in nome_padronizado.items():
+            if isinstance(key, tuple):  # Se a chave for uma tupla (vários nomes)
+                if nome in key:
+                    return value
+            else:
+                if nome == key:
+                    return value
+        # Se o nome não estiver no dicionário, retorna uma mensagem para adicionar
+        return 'ADICIONAR NO DICIONARIO DE NOMES'
+
+    df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe'].apply(padronizar_nome_vendedor_alpe)
+
+    # DEFININDO OS NOMES DOS VENDEDORES ALPE, TUDO QUE NAO ESTIVER NA LISTA, SETAR "OUTROS"
+
+    vendedores_alpe = [
+    'CAROLINE FREIHAT', 'CLAUDIA CINARE', 'DIANA TIEMI', 'JOSE VITOR', 'LARISSA FREIRE',
+    'LEANDRO QUINTINO', 'ROGERIO FRIAS', 'ROSEMEIRE DIAS', 'VANESSA LINO', 'CAMILA CABRAL', 'TALITA LIANDRA DA SILVA RODRIGUES',
+    'CASSIO ESTEVES', 'PRISCILLA COSTA', 'GLAUCIELE OLIVEIRA', 'RAFAEL CANTAGALLI'
+    ]
+
+    df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe_tratado'].apply(
+        lambda x: x if x in vendedores_alpe else 'OUTROS'
+    )
+
+    # TRATANDO VENDEDOR FN
+    def verifica_vendedor_fn(fn):
         if pd.isnull(fn):
-            return "Filial Fornecedor não atribuída"
+            return "NÃO ATRIBUIDA"
         else:
             return fn
 
+    df_resolvido['nome_vendedor_fn'] = df_resolvido['nome_vendedor_fn'].apply(verifica_vendedor_fn).str.upper()
 
-    # Função para formatar o nome do decisor
-    def formata_decisor(var_decisor):
-        if pd.isnull(var_decisor):  # Verificando se é null (NaN)
-            return "Decisor não atribuído"
-        if var_decisor == "Jira Service User":
-            return "Motor"
 
-        nome_parte = var_decisor.split('@')[0]
-        partes = nome_parte.split('.')
-        return ' '.join(part.title() for part in partes)
-
-    def formata_status(status_func):
-        status_dict = {
-            'Analyzing Credit Score': "Analisando Pontuação de Crédito",
-            'Attaching Documentation': "Anexando Documentação",
-            'Awaiting Approval': "Aguardando Aprovação",
-            'Awaiting BV docs': "Aguardando Documentos BV",
-            'Awaiting Comitee Approval': "Aguardando Aprovação do Comitê",
-            'Awaiting Comitee II Approval': "Aguardando Aprovação do Comitê II",
-            'Awaiting Design': "Aguardando Design",
-            'Awaiting Documentation': "Aguardando Documentação",
-            'Awaiting Execution': "Aguardando Execução",
-            'Awaiting Legal Approval': "Aguardando Aprovação Legal",
-            'Awaiting Manager Approval': "Aguardando Aprovação do Gerente",
-            'Awaiting Minor Approval': "Aguardando Menor Aprovação",
-            'Awaiting Priorization CS': "Aguardando Priorização CS",
-            'Awaiting Priorization Seller': "Aguardando Priorização Vendedor",
-            'Error': "Erro",
-            'Prioritized': "Priorizado",
-            'Prioritizing CS': "Priorizando CS",
-            'Prioritizing Seller': "Priorizando Vendedor",
-            'Fechada': "Fechada",
-            'Resolvido': "Resolvido",
-            'Em Progresso': "Em Progresso",
-            'Aberto': "Aberto"
-    }
-
-        # Verificando se alguma das chaves está contida em status_func
-        for key in status_dict:
-            if key in status_func:
-                return status_dict[key]
-
-        return "Outros"
-
-    # Função para formatar decisão
-    def formata_decisao(decisor_func):
-        if decisor_func == 'Approved':
-            return "Aprovado"
-        elif decisor_func == 'Reproved':
-            return "Reprovado"
-        elif decisor_func == 'Duplicado':
-            return "Duplicado"
+    # TRATANDO FILIAL FN
+    def verifica_filial_fn(fn):
+        if pd.isnull(fn):
+            return "NÃO ATRIBUIDA"
         else:
-            return "Decisão não atribuida"
-        
+            return fn
+
+    df_resolvido['filial_fn'] = df_resolvido['filial_fn'].apply(verifica_filial_fn).str.upper()
 
 
-    # Função para classificar o tipo de proposta
-    def classifica_tipo_proposta(proposta):
-        if isinstance(proposta, str):  # Verifica se proposta é uma string
-            if 'Solicitação de limite' in proposta or 'Análise de sacado' in proposta or 'Solicitação de Limite' in proposta or 'Solicitação de cadastro' in proposta:
-                return "Solicitação de Limite"
-            elif 'Transferencia de limite' in proposta or 'Transferência  de limite' in proposta or 'Transferência de limite' in proposta or 'Transferência de Limite' in proposta:
-                return "Transferência de Limite"
-            elif 'Solicitação de Over' in proposta or 'Solicitação de Overlimite' in proposta or 'Overlimit' in proposta:
-                return "Solicitação de Overlimite"
-            elif 'Zerar Limite' in proposta or 'Zerar limite' in proposta or 'Zerar Limte' in proposta or 'Zerar  limite' in proposta or 'Zerar  limite' in proposta or 'Zerar | Ajuste limite' in proposta:
-                return "Zerar Limite"
-            elif 'Ajuste de Limite' in proposta or 'Ajuste de limite' in proposta or 'Reajuste de limite' in proposta or 'Revisão de limite' in proposta or 'Remanejamento de limite' in proposta or 'Ajuste  de limite' in proposta or 'Ajuste  de limite' in proposta or 'Ajuste de LC' in proposta:
-                return "Ajuste de Limite"
-            elif 'Redução de limite' in proposta or 'Redução de Limite' in proposta or 'Reduzição de limite' in proposta or 'Resuzição de limite' in proposta or 'Limite' in proposta:
-                return "Redução de Limite"
-            elif 'Bloqueio Sacado ' in proposta:
-                return "Bloqueio Sacado"
-            elif 'LOTE' in proposta:
-                return "Lote"
-            elif 'CNPJ' in proposta or 'CNPJ Errado' in proposta:
-                return "Verificar CNPJ"
-            elif 'Majoração de limite' in proposta or 'Majoração de Limite' in proposta or 'Majoração  de limite' in proposta or 'MAjoração de limite' in proposta or 'Majoração limite' in proposta or 'Majoração' in proposta or 'Marojação de limite' in proposta or 'Majoraçãode limite' in proposta or 'Majoração limite' in proposta or 'Majoração limite/Transferência de LC' in proposta:
-                return "Majoração de Limite"
-            elif 'Baixa de Overlimit' in proposta or 'Baixa de Over' in proposta or 'Reduzir Over' in proposta or 'Overlimite' in proposta:
-                return "Baixa de Overlimit"
-            return "Outros"
-        
+    # TRATANDO PRIORIDADE
     def formata_prioridade(nivel):
         if nivel == 'Low':
-            return "Baixo"
+            return "BAIXO"
         elif nivel == 'Medium':
-            return "Médio"
+            return "MEDIO"
         elif nivel == 'High':
-            return "Alto"
+            return "ALTO"
         elif nivel == 'Lowest':
-            return "Muito Baixo"
+            return "MUITO BAIXO"
         elif nivel == 'Highest':
-            return "Muito Alto"
+            return "MUITO ALTO"
         elif nivel == 'Unknown':
-            return "Prioridade não definida"
+            return "NÃO ATRIBUIDA"
         else:
-            return "Prioridade não atribuida"
-        
-        
-    print("Criação de funções finalizadas com sucesso!")
-    
-    
-    
-    print("Tratando colunas no DataFrame conforme as funções criadas...")
-    # Adicionando colunas de data e hora
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df['year'], df['month'], df['day'] = now.year, now.month, now.day
+            return "NÃO ATRIBUIDA"
 
-    # Aplicando funções para criar colunas com informações formatadas
-    df['politica_desc'] = df['politica'].apply(verifica_politica)
-    df['vendedor_fornecedor'] = df['nome_vendedor_fn'].apply(verifica_vendedor)
-    df['vendedor_alpe'] = df['nome_vendedor_alpe'].apply(verifica_vendedor)
-    df['filial_fornecedor'] = df['filial_fn'].apply(verifica_filial_fn)
-    df['tipo_proposta'] = df['nome_issue'].apply(classifica_tipo_proposta)
-    df['nome_decisor'] = df['decisor'].apply(formata_decisor)
-    df['tipo_status'] = df['status'].apply(formata_status)
-    df['ramificacao_motor_desc'] = df['ramificacao_motor'].apply(verifica_ramificacao_motor)
-    df['status_decisao'] = df['decisao'].apply(formata_decisao)
-    df['parecer_desc'] = df['parecer'].apply(verifica_parecer)
-    df['prioridade_desc'] = df['prioridade'].apply(formata_prioridade)
+    df_resolvido['prioridade'] = df_resolvido['prioridade'].apply(formata_prioridade).str.upper()
 
 
-    # Convertendo colunas de data e hora
-    df['criado_tratado'] = pd.to_datetime(df['criado'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['resolvido_tratado'] = pd.to_datetime(df['resolvido'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_aprovacao_gerente_tratado'] = pd.to_datetime(df['AWAITING MANAGER APPROVAL'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['analise_pontuacao_credito_tratado'] = pd.to_datetime(df['Analyzing Credit Score'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['anexando_documentacao_tratado'] = pd.to_datetime(df['Attaching Documentation'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_aprovacao_tratado'] = pd.to_datetime(df['Awaiting Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_documentos_bv_tratado'] = pd.to_datetime(df['Awaiting BV docs'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_aprovacao_comite_tratado'] = pd.to_datetime(df['Awaiting Comitee Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_aprovacao_comite_2_tratado'] = pd.to_datetime(df['Awaiting Comitee II Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_documentacao_tratado'] = pd.to_datetime(df['Awaiting Documentation'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_execucao_tratado'] = pd.to_datetime(df['Awaiting Execution'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_aprovacao_legal_tratado'] = pd.to_datetime(df['Awaiting Legal Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_menor_aprovacao_tratado'] = pd.to_datetime(df['Awaiting Minor Approval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_priorizacao_cs_tratado'] = pd.to_datetime(df['Awaiting Priorization CS'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['priorizacao_cs_tratado'] = pd.to_datetime(df['PRIORITIZING CS'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aguardando_priorizacao_vendedor_tratado'] = pd.to_datetime(df['Awaiting Priorization Seller'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['fechado_tratado'] = pd.to_datetime(df['Closed'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['erro_tratado'] = pd.to_datetime(df['Error'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['em_progresso_tratado'] = pd.to_datetime(df['In Progress'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['reprovacao_massa_tratado'] = pd.to_datetime(df['Mass Reproval'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['aberto_tratado'] = pd.to_datetime(df['Open'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
-    df['resolvido_status_tratado'] = pd.to_datetime(df['Resolved'], format="%Y-%m-%dT%H:%M:%S.%f%z", errors='coerce')
+    # TRATANDO STATUS
+    df_resolvido['status'] = 'RESOLVIDO'
 
-    
-    # Convertendo colunas de data e hora Status SLA
-    
-    df['data_criado'] = df['criado_tratado'].dt.date
-    df['hora_criado'] = df['criado_tratado'].dt.strftime('%H:%M:%S')
-    
-    df['data_resolvido'] = df['resolvido_tratado'].dt.date
-    df['hora_resolvido'] = df['resolvido_tratado'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_aprovacao_gerente'] = df['AWAITING MANAGER APPROVAL'].dt.date
-    df['time_aguardando_aprovacao_gerente'] = df['AWAITING MANAGER APPROVAL'].dt.strftime('%H:%M:%S')
-    
-    df['data_analise_pontuacao_credito'] = df['Analyzing Credit Score'].dt.date
-    df['time_analise_pontuacao_credito'] = df['Analyzing Credit Score'].dt.strftime('%H:%M:%S')
-    
-    df['data_anexando_documentacao'] = df['Attaching Documentation'].dt.date
-    df['time_anexando_documentacao'] = df['Attaching Documentation'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_aprovacao'] = df['Awaiting Approval'].dt.date
-    df['time_aguardando_aprovacao'] = df['Awaiting Approval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_documentos_bv'] = df['Awaiting BV docs'].dt.date
-    df['time_aguardando_documentos_bv'] = df['Awaiting BV docs'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_aprovacao_comite'] = df['Awaiting Comitee Approval'].dt.date
-    df['time_aguardando_aprovacao_comite'] = df['Awaiting Comitee Approval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_aprovacao_comite_2'] = df['Awaiting Comitee II Approval'].dt.date
-    df['time_aguardando_aprovacao_comite_2'] = df['Awaiting Comitee II Approval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_documentacao'] = df['Awaiting Documentation'].dt.date
-    df['time_aguardando_documentacao'] = df['Awaiting Documentation'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_execucao'] = df['Awaiting Execution'].dt.date
-    df['time_aguardando_execucao'] = df['Awaiting Execution'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_aprovacao_legal'] = df['Awaiting Legal Approval'].dt.date
-    df['time_aguardando_aprovacao_legal'] = df['Awaiting Legal Approval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_menor_aprovacao'] = df['Awaiting Minor Approval'].dt.date
-    df['time_aguardando_menor_aprovacao'] = df['Awaiting Minor Approval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_priorizacao_cs'] = df['Awaiting Priorization CS'].dt.date
-    df['time_aguardando_priorizacao_cs'] = df['Awaiting Priorization CS'].dt.strftime('%H:%M:%S')
-    
-    df['data_priorizacao_cs'] = df['PRIORITIZING CS'].dt.date
-    df['time_priorizacao_cs'] = df['PRIORITIZING CS'].dt.strftime('%H:%M:%S')
-    
-    df['data_aguardando_priorizacao_vendedor'] = df['Awaiting Priorization Seller'].dt.date
-    df['time_aguardando_priorizacao_vendedor'] = df['Awaiting Priorization Seller'].dt.strftime('%H:%M:%S')
-    
-    df['data_fechado'] = df['Closed'].dt.date
-    df['time_fechado'] = df['Closed'].dt.strftime('%H:%M:%S')
-    
-    df['data_erro'] = df['Error'].dt.date
-    df['time_erro'] = df['Error'].dt.strftime('%H:%M:%S')
-    
-    df['data_em_progresso'] = df['In Progress'].dt.date
-    df['time_em_progresso'] = df['In Progress'].dt.strftime('%H:%M:%S')
-    
-    df['data_reprovação_massa'] = df['Mass Reproval'].dt.date
-    df['time_reprovação_massa'] = df['Mass Reproval'].dt.strftime('%H:%M:%S')
-    
-    df['data_aberto'] = df['Open'].dt.date
-    df['time_aberto'] = df['Open'].dt.strftime('%H:%M:%S')
-    
-    df['data_resolvido_status'] = df['Resolved'].dt.date
-    df['time_resolvido_status'] = df['Resolved'].dt.strftime('%H:%M:%S')
 
-    # Aplicando o filtro para criar o DataFrame final
-    filtro = df[
-        (~df['decisao'].isin(["Não será feito", "Canceled", "Duplicado"])) &
-        (~df['status'].isin(["Error"])) &
-        (df['limite_pedido'] >= 0) & 
-        (df['limite_pedido'] <= 500000000)
+    # TRATANDO DECISOR
+    def verifica_decisor(decisor):
+        if pd.isnull(decisor):
+            return "NÃO ATRIBUIDA"
+        else:
+            return decisor
+
+    df_resolvido['decisor'] = df_resolvido['decisor'].apply(verifica_decisor).str.upper()
+
+    # TRATA VALORES ESPECIFICOS DO DECISOR
+    def verifica_decisor_v2(valor):
+        if valor == "JOSE.CARVALHO@ALPE.COM.BR":
+            return "JOSE CARVALHO"
+        elif valor == "JIRA SERVICE USER":
+            return "MOTOR"
+        else:
+            return valor
+
+    df_resolvido['decisor'] = df_resolvido['decisor'].apply(verifica_decisor_v2).str.upper()
+
+    # Lista de nomes por categorias
+    motor = [
+        'MOTOR', 'JIRA SERVICE USER'
     ]
 
-    # Selecionando as colunas relevantes
-    jira_tratado = filtro[[
-        'issue_key', 'politica_desc', 'cnpj', 'pgid', 'limite_pedido', 'limite_aprovado', 'nome_issue',
-        'tipo_proposta', 'vendedor_alpe', 'vendedor_fornecedor', 'filial_fornecedor', 'prioridade_desc',
-        'tipo_status','nome_decisor', 'status_decisao','parecer_desc', 'ramificacao_motor_desc',
-        'resolvido_tratado', 'criado_tratado',
-        'analise_pontuacao_credito_tratado','anexando_documentacao_tratado','aguardando_aprovacao_tratado',
-        'aguardando_documentos_bv_tratado','aguardando_aprovacao_comite_tratado','aguardando_aprovacao_comite_2_tratado',
-        'aguardando_documentacao_tratado','aguardando_execucao_tratado', 'aguardando_aprovacao_legal_tratado',
-        'aguardando_menor_aprovacao_tratado','aguardando_priorizacao_cs_tratado','priorizacao_cs_tratado',
-        'aguardando_priorizacao_vendedor_tratado','fechado_tratado','erro_tratado','em_progresso_tratado',
-        'reprovacao_massa_tratado','aberto_tratado','resolvido_status_tratado',
-        'data_criado', 'hora_criado',
-        'data_resolvido', 'hora_resolvido',
-        'data_aguardando_aprovacao_gerente', 'time_aguardando_aprovacao_gerente',
-        'data_analise_pontuacao_credito', 'time_analise_pontuacao_credito',
-        'data_anexando_documentacao', 'time_anexando_documentacao',
-        'data_aguardando_aprovacao', 'time_aguardando_aprovacao',
-        'data_aguardando_documentos_bv', 'time_aguardando_documentos_bv',
-        'data_aguardando_aprovacao_comite', 'time_aguardando_aprovacao_comite',
-        'data_aguardando_aprovacao_comite_2', 'time_aguardando_aprovacao_comite_2',
-        'data_aguardando_documentacao', 'time_aguardando_documentacao',
-        'data_aguardando_execucao', 'time_aguardando_execucao',
-        'data_aguardando_aprovacao_legal', 'time_aguardando_aprovacao_legal',
-        'data_aguardando_menor_aprovacao', 'time_aguardando_menor_aprovacao',
-        'data_aguardando_priorizacao_cs', 'time_aguardando_priorizacao_cs',
-        'data_priorizacao_cs', 'time_priorizacao_cs',
-        'data_aguardando_priorizacao_vendedor', 'time_aguardando_priorizacao_vendedor',
-        'data_fechado', 'time_fechado',
-        'data_erro', 'time_erro',
-        'data_em_progresso', 'time_em_progresso',
-        'data_reprovação_massa', 'time_reprovação_massa',
-        'data_aberto', 'time_aberto',
-        'data_resolvido_status', 'time_resolvido_status',
+    mesa = [
+        'DIANA TIEMI YAMAMOTO', 'VANESSA SOUZA', 'LARISSA FREIRE SOARES', 'ROSEMEIRE DIAS FERREIRA', 
+        'JOSE CARVALHO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA', 'LEANDRO QUINTINO DA ANUNCIACAO', 
+        'CLAUDIA CINARE RODRIGUES ETO', 'ROGERIO DE CAMPOS FRIAS', 
+        'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO', 'ANA BEATRIZ RODRIGUES ANDRADE', 
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'JOSE.CARVALHO@ALPE.COM.BR'
+    ]
+
+    outros = [
+        'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
+        'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU'
+    ]
+
+    # Função para atribuir categorias
+    def categorizar_decisor(nome):
+        nome = nome.upper()
+        if nome in motor:
+            return 'MOTOR'
+        elif nome in mesa:
+            return 'MESA'
+        elif nome in outros:
+            return 'OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['categoria_decisor'] = df_resolvido['decisor'].apply(categorizar_decisor)
+
+
+    # TRATANDO DECISAO
+    def formata_decisao(decisor_func):
+        if decisor_func == 'Approved':
+            return "APROVADO"
+        elif decisor_func == 'Reproved':
+            return "REPROVADO"
+        elif decisor_func == 'Duplicado':
+            return "DUPLICADO"
+        elif decisor_func == 'Ineligible':
+            return "REPROVADO"
+        elif decisor_func == 'Canceled':
+            return "CANCELADO"
+        elif decisor_func == 'Não será feito':
+            return "REPROVADO"
+        elif decisor_func == 'Concluído':
+            return "APROVADO"
+        else:
+            return "NÃO ATRIBUIDA"
+
+    df_resolvido['decisao'] = df_resolvido['decisao'].apply(formata_decisao).str.upper()
+
+
+
+    #TRATANDO RAMIFICACAO MOTOR
+    def verifica_ramificacao(ramificacao):
+        if pd.isnull(ramificacao):
+            return "NÃO ATRIBUIDA"
+        else:
+            return ramificacao
+
+    df_resolvido['ramificacao_motor'] = df_resolvido['ramificacao_motor'].apply(verifica_ramificacao).str.upper()
+
+
+    def classifica_ramificacao(ramificacao):
+        if ramificacao == 'PF 1':
+            return 'PF CNPJ IRREGULAR'
+        elif ramificacao == 'PF 11':
+            return 'PF JA TEVE ANALISE ANTERIOR ALPE'
+        elif ramificacao == 'PF 2':
+            return 'PF RJ'
+        elif ramificacao == 'PF 3':
+            return 'PF MEI'
+        elif ramificacao == 'PF 10':
+            return 'PF INAD ALPE'
+        elif ramificacao == 'PF 4':
+            return 'PF CNAE'
+        elif ramificacao == 'PF 5':
+            return 'PF CONSORCIO/CONSTRUTORA/SPE'
+        elif ramificacao == 'PF 6':
+            return 'PF NATUREZA JURIDICA'
+        elif ramificacao == 'PF 7':
+            return 'PF PEP'
+        elif ramificacao == 'PF 8':
+            return 'PF SOCIO < 2 ANOS'
+        elif ramificacao == 'PF 9':
+            return 'PF FUNDACAO < 2 ANOS'
+        else:
+            return ramificacao  # Caso não corresponda a nenhum valor, retorna o próprio valor
+
+    # Exemplo de uso no DataFrame
+    df_resolvido['ramificacao_motor'] = df_resolvido['ramificacao_motor'].apply(classifica_ramificacao).str.upper()
+
+
+    # CRIANDO COLUNA TIPO DA PROPOSTA
+    def classifica_tipo_proposta(proposta):
+        if isinstance(proposta, str):  # Verifica se proposta é uma string
+            proposta = proposta.upper()  # Converte para maiúsculas
+            
+            if 'SOLICITAÇÃO DE LIMITE' in proposta or 'ANÁLISE DE SACADO' in proposta or 'SOLICITAÇÃO DE LIMITE' in proposta or 'SOLICITAÇÃO DE CADASTRO' in proposta:
+                return "SOLICITAÇÃO DE LIMITE"
+            elif 'TRANSFERENCIA DE LIMITE' in proposta or 'TRANSFERÊNCIA  DE LIMITE' in proposta or 'TRANSFERÊNCIA DE LIMITE' in proposta or 'TRANSFERÊNCIA DE LIMITE' in proposta:
+                return "TRANSFERÊNCIA DE LIMITE"
+            elif 'SOLICITAÇÃO DE OVER' in proposta or 'SOLICITAÇÃO DE OVERLIMITE' in proposta or 'OVERLIMIT' in proposta:
+                return "SOLICITAÇÃO DE OVERLIMIT"
+            elif 'ZERAR LIMITE' in proposta or 'ZERAR LIMITE' in proposta or 'ZERAR LIMTE' in proposta or 'ZERAR  LIMITE' in proposta or 'ZERAR  LIMITE' in proposta or 'ZERAR | AJUSTE LIMITE' in proposta:
+                return "ZERAR LIMITE"
+            elif 'AJUSTE DE LIMITE' in proposta or 'AJUSTE DE LIMITE' in proposta or 'REAJUSTE DE LIMITE' in proposta or 'REVISÃO DE LIMITE' in proposta or 'REMANEJAMENTO DE LIMITE' in proposta or 'AJUSTE  DE LIMITE' in proposta or 'AJUSTE  DE LIMITE' in proposta or 'AJUSTE DE LC' in proposta:
+                return "AJUSTE DE LIMITE"
+            elif 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta:
+                return "REDUÇÃO DE LIMITE"
+            elif 'BLOQUEIO SACADO' in proposta:
+                return "BLOQUEIO SACADO"
+            elif 'LOTE' in proposta:
+                return "LOTE"
+            elif 'CNPJ' in proposta or 'CNPJ ERRADO' in proposta:
+                return "VERIFICAR CNPJ"
+            elif 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO  DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO LIMITE' in proposta or 'MAJORAÇÃO' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE/TRANSFERÊNCIA DE LC' in proposta:
+                return "MAJORAÇÃO DE LIMITE"
+            elif 'BAIXA DE OVERLIMIT' in proposta or 'BAIXA DE OVER' in proposta or 'REDUZIR OVER' in proposta or 'OVERLIMITE' in proposta:
+                return "BAIXA DE OVERLIMIT"
+            
+            return "OUTROS"
+
+    df_resolvido['tipo_proposta'] = df_resolvido['nome_issue'].apply(classifica_tipo_proposta)
+
+
+    # CONVERTENDO COLUNAS DE DATA
+    df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
+    df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
+    df_resolvido['data_atualizado'] = pd.to_datetime(df_resolvido['data_atualizado'], errors='coerce')
+    df_resolvido['data_disponivel_mesa'] = pd.to_datetime(df_resolvido['data_disponivel_mesa'], errors='coerce')
+
+
+    # Adicionando colunas de data e hora
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    df_resolvido['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
+
+    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
+    df_resolvido = df_resolvido.loc[df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])]
+
+    # SELECIONA AS COLUNAS PARA EXPORTAR
+    df_final = df_resolvido[[
+        'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
+        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'nome_vendedor_alpe_tratado',
+        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor',
+        'categoria_decisor',
+        'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
+        'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
         'atualizado_em', 'year', 'month', 'day'
-    ]].reset_index(drop=True)
-
-    # Exibindo o DataFrame tratado
-    print(f"{len(jira_tratado)} propostas válidas.")
-    print(jira_tratado)
-
-
+        ]
+    ].reset_index(drop=True)\
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
-    
+
     try:
         logger.info("Iniciando salvamento das informações")
             
@@ -362,7 +397,7 @@ def base_details_trusted(access_params=None, **kwargs):
 
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-            jira_tratado, 
+            df_final, 
             partition_by=["year", "month", "day"],
             storage_options=storage_options,
             mode="overwrite"
