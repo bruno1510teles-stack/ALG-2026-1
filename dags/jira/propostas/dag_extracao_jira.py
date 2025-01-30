@@ -13,12 +13,12 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 
-### Importando scripts necessários
-from .captura_propostas_jira_raw import captura_propostas_jira_raw
-from dags.jira.propostas import extracao_jira_trusted
-from dags.jira.propostas import extracao_jira_refined
-from dags.jira.propostas import jira_notif
-from dags.jira.propostas import propostas_boletos_vop
+sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
+from captura_propostas_jira_raw import captura_propostas_jira_raw
+from extracao_jira_trusted import jira_raw_to_trusted
+from extracao_jira_refined import jira_trusted_to_refined
+#from propostas_boletos_vop import merge_propostas_boletos
+#from jira_notif import  enviar_notif
 
 
 
@@ -76,7 +76,7 @@ with DAG(
 
     captura_proposta_jira = PythonOperator(
         task_id='captura_proposta_jira',
-        python_callable=captura_propostas_jira_raw.captura_propostas_jira_raw,
+        python_callable=captura_propostas_jira_raw,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
@@ -84,14 +84,14 @@ with DAG(
     # Definindo as tasks
     jira_raw_to_trusted = PythonOperator(
         task_id='extracao_jira_raw',
-        python_callable=extracao_jira_trusted.jira_raw_to_trusted,
+        python_callable=jira_raw_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     extracao_jira_trusted_to_refined = PythonOperator(
         task_id='extracao_jira_refined',
-        python_callable=extracao_jira_refined.jira_trusted_to_refined,
+        python_callable=jira_trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
