@@ -121,7 +121,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'OUTROS',
         ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES') : 'TALITA LIANDRA',
         'THAIS DAS NEVES' : 'OUTROS',
-        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'OUTROS',
+        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
         'VANESSA LINO': 'OUTROS',
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
         'JOEL DONIZETTI APARECIDO': 'OUTROS'
@@ -222,7 +222,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     outros = [
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
         'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU', 'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO',
-        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'JOSE.CARVALHO@ALPE.COM.BR'
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS'
     ]
 
     # Função para atribuir categorias
@@ -235,7 +235,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         elif nome in outros:
             return 'OUTROS'
         else:
-            return 'ADICIONAR NO DICIONARIO DE NOMES'
+            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
 
 
     # Aplicando a função de categorizar no DataFrame
@@ -253,7 +253,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         elif nome in outros:
             return 'OUTROS'
         else:
-            return 'ADICIONAR NO DICIONARIO DE NOMES'
+            return 'ADICIONAR NO DICIONARIO DE NOMES ANALISTAS'
         
     # Aplicando a função de categorizar no DataFrame
     df_resolvido['analista'] = df_resolvido['decisor'].apply(categorizar_decisor)
@@ -377,8 +377,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     # SELECIONA AS COLUNAS PARA EXPORTAR
     df_final = df_resolvido[[
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
-        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'nome_vendedor_alpe_tratado',
-        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor',
+        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente',
+        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista',
         'categoria_decisor',
         'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
         'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
