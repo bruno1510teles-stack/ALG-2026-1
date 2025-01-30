@@ -256,7 +256,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
             return 'ADICIONAR NO DICIONARIO DE NOMES ANALISTAS'
         
     # Aplicando a função de categorizar no DataFrame
-    df_resolvido['analista'] = df_resolvido['decisor'].apply(categorizar_decisor)
+    df_resolvido['analista_tratado'] = df_resolvido['decisor'].apply(categorizar_decisor)
 
 
     # TRATANDO DECISAO
@@ -377,8 +377,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     # SELECIONA AS COLUNAS PARA EXPORTAR
     df_final = df_resolvido[[
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
-        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente',
-        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista',
+        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
+        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
         'categoria_decisor',
         'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
         'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
