@@ -146,7 +146,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     vendedores_alpe = [
     'CAROLINE FREIHAT', 'CLAUDIA CINARE', 'DIANA TIEMI', 'JOSE VITOR', 'LARISSA FREIRE',
-    'LEANDRO QUINTINO', 'ROGERIO FRIAS', 'ROSEMEIRE DIAS', 'VANESSA LINO', 'CAMILA CABRAL'
+    'LEANDRO QUINTINO', 'ROGERIO FRIAS', 'ROSEMEIRE DIAS', 'VANESSA LINO', 'CAMILA CABRAL', 'TALITA LIANDRA DA SILVA RODRIGUES',
+    'CASSIO ESTEVES', 'PRISCILLA COSTA', 'GLAUCIELE OLIVEIRA', 'RAFAEL CANTAGALLI'
     ]
 
     df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe_tratado'].apply(
