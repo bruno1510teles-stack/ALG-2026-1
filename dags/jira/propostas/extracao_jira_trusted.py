@@ -92,39 +92,39 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     # PADRONIZANDO OS NOMES
     nome_padronizado = {
         'NÃO ATRIBUIDA': 'NÃO ATRIBUIDA',
-        'ALEXANDRE SANTOS CARMO': 'ALEXANDRE SANTOS CARMO',
-        'ALPE QUE REALIZOU A SOLICITAÇÃO': 'ALPE',
-        'CAMILA CABRAL': 'CAMILA CABRAL',
-        'CAROLINE FREIHAT': 'CAROLINE FREIHAT',
+        'ALEXANDRE SANTOS CARMO': 'OUTROS',
+        'ALPE QUE REALIZOU A SOLICITAÇÃO': 'OUTROS',
+        'CAMILA CABRAL': 'OUTROS',
+        'CAROLINE FREIHAT': 'OUTROS',
         ('CASSIO ESTEVES', 'CASSIO FILIPE ALVES ESTEVES') : 'CASSIO ESTEVES',
-        ('CLAUDIA CINARE', 'CLAUDIA ETO', 'CLAUDIA RODIGUES', 'CLAUDIA RODRIGUES') : 'CLAUDIA CINARE',
-        ('DIANA TIEMI', 'DIANA TIENI', 'DIANA YAMAMOTO') : 'DIANA TIEMI',
-        'EDER CAVALCANTE': 'EDER CAVALCANTE',
-        'ELAINE FABIANA BARBOSA': 'ELAINE FABIANA BARBOSA',
-        'EMANUELLE CATORI': 'EMANUELLE CATORI',
-        'FATURAMENTO': 'FATURAMENTO',
+        ('CLAUDIA CINARE', 'CLAUDIA ETO', 'CLAUDIA RODIGUES', 'CLAUDIA RODRIGUES') : 'OUTROS',
+        ('DIANA TIEMI', 'DIANA TIENI', 'DIANA YAMAMOTO') : 'OUTROS',
+        'EDER CAVALCANTE': 'OUTROS',
+        'ELAINE FABIANA BARBOSA': 'OUTROS',
+        'EMANUELLE CATORI': 'OUTROS',
+        'FATURAMENTO': 'OUTROS',
         ('GLAUCIANE OLIVEIRA', 'GLAUCIELE OLIVEIRA') : 'GLAUCIELE OLIVEIRA',
-        ('JOSE CARVALHO', 'JOSÉ CARVALHO', 'JOSE VICTOR', 'JOSE VITOR'): 'JOSE VITOR',
-        ('LARISSA - CRÉDITO', 'LARISSA FREIRE', 'LARISSA SOARES', 'LARISSA SOARES - CRÉDITO') : 'LARISSA FREIRE',
-        ('LEANDRO ANUNCIAÇÃO', 'LEANDRO QUINTINO') : 'LEANDRO QUINTINO',
-        'LEDIMIR HENRIQUE': 'LEDIMIR HENRIQUE',
+        ('JOSE CARVALHO', 'JOSÉ CARVALHO', 'JOSE VICTOR', 'JOSE VITOR'): 'OUTROS',
+        ('LARISSA - CRÉDITO', 'LARISSA FREIRE', 'LARISSA SOARES', 'LARISSA SOARES - CRÉDITO') : 'OUTROS',
+        ('LEANDRO ANUNCIAÇÃO', 'LEANDRO QUINTINO') : 'OUTROS',
+        'LEDIMIR HENRIQUE': 'OUTROS',
         ('MAYCON HELDER', 'MAYCON HELDER]', 'MAYCON OLIVEIRA'): 'MAYCON HELDER',   
-        'MILEIDE VIEIRA': 'MILEIDE VIEIRA',
-        'NILTON SANTOS': 'NILTON SANTOS',
-        ('PEDRO VINICIUS', 'PEDRO ALVES'): 'PEDRO ALVES',
-        'PORTAL ARCELOR': 'PORTAL ARCELOR',
-        'PRISCILA YURI': 'PRISCILA YURI',
+        'MILEIDE VIEIRA': 'OUTROS',
+        'NILTON SANTOS': 'OUTROS',
+        ('PEDRO VINICIUS', 'PEDRO ALVES'): 'PEDRO VINICIUS',
+        'PORTAL ARCELOR': 'OUTROS',
+        'PRISCILA YURI': 'OUTROS',
         ('PRISCILLA MORAES', 'PRISCILLA COSTA'): 'PRISCILLA COSTA',  
         'RAFAEL CANTAGALLI': 'RAFAEL CANTAGALLI',
-        'RAFAELA - ASUS': 'RAFAELA - ASUS',
-        ('ROGERIO', 'ROGERIO FRIAS'): 'ROGERIO FRIAS',
-        ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'ROSEMEIRE DIAS',
-        ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES') : 'TALITA LIANDRA DA SILVA RODRIGUES',
-        'THAIS DAS NEVES' : 'THAIS DAS NEVES',
-        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
-        'VANESSA LINO': 'VANESSA LINO',
+        'RAFAELA - ASUS': 'OUTROS',
+        ('ROGERIO', 'ROGERIO FRIAS'): 'OUTROS',
+        ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'OUTROS',
+        ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES') : 'TALITA LIANDRA',
+        'THAIS DAS NEVES' : 'OUTROS',
+        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'OUTROS',
+        'VANESSA LINO': 'OUTROS',
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
-        'JOEL DONIZETTI APARECIDO': 'JOEL DONIZETTI APARECIDO'
+        'JOEL DONIZETTI APARECIDO': 'OUTROS'
     }
 
     # Função para padronizar o nome
@@ -138,21 +138,10 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
                 if nome == key:
                     return value
         # Se o nome não estiver no dicionário, retorna uma mensagem para adicionar
-        return 'ADICIONAR NO DICIONARIO DE NOMES'
+        return 'ADICIONAR NO DICIONARIO DE NOMES DE GERENTES'
 
-    df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe'].apply(padronizar_nome_vendedor_alpe)
+    df_resolvido['gerente_tratado'] = df_resolvido['nome_vendedor_alpe'].apply(padronizar_nome_vendedor_alpe)
 
-    # DEFININDO OS NOMES DOS VENDEDORES ALPE, TUDO QUE NAO ESTIVER NA LISTA, SETAR "OUTROS"
-
-    vendedores_alpe = [
-    'CAROLINE FREIHAT', 'CLAUDIA CINARE', 'DIANA TIEMI', 'JOSE VITOR', 'LARISSA FREIRE',
-    'LEANDRO QUINTINO', 'ROGERIO FRIAS', 'ROSEMEIRE DIAS', 'VANESSA LINO', 'CAMILA CABRAL', 'TALITA LIANDRA DA SILVA RODRIGUES',
-    'CASSIO ESTEVES', 'PRISCILLA COSTA', 'GLAUCIELE OLIVEIRA', 'RAFAEL CANTAGALLI'
-    ]
-
-    df_resolvido['nome_vendedor_alpe_tratado'] = df_resolvido['nome_vendedor_alpe_tratado'].apply(
-        lambda x: x if x in vendedores_alpe else 'OUTROS'
-    )
 
     # TRATANDO VENDEDOR FN
     def verifica_vendedor_fn(fn):
@@ -227,13 +216,13 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'DIANA TIEMI YAMAMOTO', 'VANESSA SOUZA', 'LARISSA FREIRE SOARES', 'ROSEMEIRE DIAS FERREIRA', 
         'JOSE CARVALHO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA', 'LEANDRO QUINTINO DA ANUNCIACAO', 
         'CLAUDIA CINARE RODRIGUES ETO', 'ROGERIO DE CAMPOS FRIAS', 
-        'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO', 'ANA BEATRIZ RODRIGUES ANDRADE', 
-        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'JOSE.CARVALHO@ALPE.COM.BR'
+        'ANA BEATRIZ RODRIGUES ANDRADE'      
     ]
 
     outros = [
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
-        'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU'
+        'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU', 'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO',
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'JOSE.CARVALHO@ALPE.COM.BR'
     ]
 
     # Função para atribuir categorias
@@ -251,6 +240,23 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     # Aplicando a função de categorizar no DataFrame
     df_resolvido['categoria_decisor'] = df_resolvido['decisor'].apply(categorizar_decisor)
+
+
+
+    # Função para atribuir categorias
+    def categorizar_decisor_analista(nome):
+        nome = nome.upper()
+        if nome in motor:
+            return 'MOTOR'
+        elif nome in mesa:
+            return nome  # Retorna o próprio nome, se estiver na lista de 'mesa'
+        elif nome in outros:
+            return 'OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES'
+        
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['analista'] = df_resolvido['decisor'].apply(categorizar_decisor)
 
 
     # TRATANDO DECISAO
