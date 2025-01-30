@@ -12,12 +12,12 @@ import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
 
-sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
-from propostas_boletos_vop import merge_propostas_boletos
-from jira_notif import  enviar_notif
-from captura_propostas_jira import captura_propostas_jira
-from extracao_jira_trusted import jira_raw_to_trusted
-from extracao_jira_refined import jira_trusted_to_refined
+
+from jira.propostas.captura_propostas_jira import captura_propostas_jira
+from jira.propostas.extracao_jira_trusted import jira_raw_to_trusted
+from jira.propostas.extracao_jira_refined import jira_trusted_to_refined
+from jira.propostas.jira_notif import enviar_notif
+from jira.propostas.propostas_boletos_vop import merge_propostas_boletos
 
 
 
@@ -53,29 +53,6 @@ def notificar_falha_teams(context):
     }
     requests.post(url, json=mensagem)
     
-    
-
-
-
-def check_time_to_run(**kwargs):
-    """
-    Verifica se o horário atual é igual ou posterior ao último horário programado no dia (21:00 UTC).
-    """
-    # Obtém o horário atual em UTC
-    current_time_utc = datetime.now(timezone.utc)
-
-    # Logs para depuração
-    print(f"Horário atual UTC: {current_time_utc}")
-
-    # Verifica se o horário atual é posterior ou igual a 21:00 UTC
-    if current_time_utc.hour >= 21:
-        print("Horário válido para executar a notificação.")
-        return 'enviar_notif_daily'  # Executa a task
-    else:
-        print("Horário inválido. Pulando a notificação.")
-        return 'skip_task'  # Pula a execução
-    
-    
 
 # Definindo defaults
 default_args = {
@@ -84,7 +61,6 @@ default_args = {
     "retry_delay": timedelta(minutes=5),
     "on_failure_callback": notificar_falha_teams
 }
-
 
 
 # Definindo a DAG
