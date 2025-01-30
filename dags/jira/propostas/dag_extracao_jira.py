@@ -13,11 +13,12 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 
-from jira.propostas.captura_propostas_jira import captura_propostas_jira
-from jira.propostas.extracao_jira_trusted import jira_raw_to_trusted
-from jira.propostas.extracao_jira_refined import jira_trusted_to_refined
-from jira.propostas.jira_notif import enviar_notif
-from jira.propostas.propostas_boletos_vop import merge_propostas_boletos
+### Importando scripts necessários
+from captura_propostas_jira import captura_propostas_jira
+from extracao_jira_trusted import jira_raw_to_trusted
+from extracao_jira_refined import jira_trusted_to_refined
+from jira_notif import enviar_notif
+from propostas_boletos_vop import merge_propostas_boletos
 
 
 
