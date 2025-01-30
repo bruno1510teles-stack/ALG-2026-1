@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from logging import Logger
 
 
-def captura_propostas_jira(access_params=None, **kwargs):
+def captura_propostas_jira_raw(access_params=None, **kwargs):
 
 
     # Função para buscar a data de mudança de status para "Awaiting Execution"

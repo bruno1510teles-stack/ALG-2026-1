@@ -14,7 +14,7 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from captura_propostas_jira import captura_propostas_jira
+from captura_propostas_jira import captura_propostas_jira_raw
 from extracao_jira_trusted import jira_raw_to_trusted
 from extracao_jira_refined import jira_trusted_to_refined
 from jira_notif import enviar_notif
@@ -76,7 +76,7 @@ with DAG(
 
     captura_proposta_jira = PythonOperator(
         task_id='captura_proposta_jira',
-        python_callable=captura_propostas_jira,
+        python_callable=captura_propostas_jira_raw,
         provide_context=True
     )
 
