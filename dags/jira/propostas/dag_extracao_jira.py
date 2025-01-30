@@ -77,6 +77,7 @@ with DAG(
     captura_proposta_jira = PythonOperator(
         task_id='captura_proposta_jira',
         python_callable=captura_propostas_jira_raw.captura_propostas_jira_raw,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
