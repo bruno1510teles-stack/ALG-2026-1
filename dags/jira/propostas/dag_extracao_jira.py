@@ -15,9 +15,9 @@ from time import sleep
 sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
 from propostas_boletos_vop import merge_propostas_boletos
 from jira_notif import  enviar_notif
-from dags.jira.propostas.captura_propostas_jira import captura_propostas_jira
-from dags.jira.propostas.extracao_jira_trusted import jira_raw_to_trusted
-from dags.jira.propostas.extracao_jira_refined import jira_trusted_to_refined
+from captura_propostas_jira import captura_propostas_jira
+from extracao_jira_trusted import jira_raw_to_trusted
+from extracao_jira_refined import jira_trusted_to_refined
 
 
 
