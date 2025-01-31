@@ -56,12 +56,20 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
 
     # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
 
-    # Transformando colunas de data
+    # Convertendo a coluna de data para datetime
     df['data_resolvido'] = pd.to_datetime(df['data_resolvido'])
 
-    df_sorted = df.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
+    # Filtrando as linhas onde a decisão é "APROVADO"
+    df_aprovado = df[df['decisao'] == 'APROVADO']
 
+    # Ordenando o DataFrame pela raiz_cnpj e data_resolvido
+    df_sorted = df_aprovado.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
+
+    # Atribuindo o analista responsável, pegando o primeiro analista de cada grupo de raiz_cnpj
     df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['analista_tratado'].transform('first')
+
+    # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
+    df['analista_responsavel'] = df['analista_responsavel'].fillna('NA')
 
 
     # Criando Funções para formatar DataFrame
