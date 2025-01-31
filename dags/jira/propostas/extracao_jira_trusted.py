@@ -256,7 +256,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
             return 'ADICIONAR NO DICIONARIO DE NOMES ANALISTAS'
         
     # Aplicando a função de categorizar no DataFrame
-    df_resolvido['analista_tratado'] = df_resolvido['decisor'].apply(categorizar_decisor)
+    df_resolvido['analista_tratado'] = df_resolvido['decisor'].apply(categorizar_decisor_analista)
 
 
     # TRATANDO DECISAO
