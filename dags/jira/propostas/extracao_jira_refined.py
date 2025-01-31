@@ -61,7 +61,7 @@ def jira_trusted_to_refined(access_params=None, **kwargs):
 
     df_sorted = df.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
 
-    df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['analista'].transform('first')
+    df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['analista_tratado'].transform('first')
 
 
     # Criando Funções para formatar DataFrame
