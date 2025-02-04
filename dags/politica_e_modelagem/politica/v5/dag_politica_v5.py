@@ -8,7 +8,7 @@ from time import sleep
 
 ### Importando scripts necessários
 from politica_e_modelagem.politica.v5.importa_base_lote import importa_base_pre_aprovado_lote
-#from dags.politica_e_modelagem.politica.v5.pre_filtro_task_old import pre_filtro_task
+from politica_e_modelagem.politica.v5.pre_filtro_task_old import pre_filtro_task
 from politica_e_modelagem.politica.v5.pre_filtro_task_new import pre_filtro_task_v2
 from politica_e_modelagem.politica.v5.serasa import compra_info_serasa
 from politica_e_modelagem.politica.v5.motor_v5 import executa_politica_v5
