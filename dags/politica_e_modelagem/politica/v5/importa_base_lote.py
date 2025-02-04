@@ -39,8 +39,8 @@ def importa_base_pre_aprovado_lote (access_params=None,  **kwargs):
 
     # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "pre-aprovado-lote"
-    FOLDER_DESTINATION_RAW = 'year=2025/month=1/day=6'
-    file_name = 'Base de Clientes Matcon - CDB Curitiba.xlsx'
+    FOLDER_DESTINATION_RAW = 'year=2025/month=2/day=4'
+    file_name = 'Clientes Novos.reativações - Curitiba (hunting).xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
