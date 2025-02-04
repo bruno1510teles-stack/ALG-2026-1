@@ -9,6 +9,7 @@ from time import sleep
 ### Importando scripts necessários
 from politica_e_modelagem.politica.v5.importa_base_lote import importa_base_pre_aprovado_lote
 from politica_e_modelagem.politica.v5.pre_filtro_task import pre_filtro_task
+from politica_e_modelagem.politica.v5.pre_filtro_v2 import pre_filtro_task_v2
 from politica_e_modelagem.politica.v5.serasa import compra_info_serasa
 from politica_e_modelagem.politica.v5.motor_v5 import executa_politica_v5
 from politica_e_modelagem.politica.v5.exporta_csv import exporta_csv_cria_proposta_jira
@@ -67,7 +68,7 @@ with DAG(
     # Captura proposta no jira
     task2 = PythonOperator(
         task_id = "pre_filtro",
-        python_callable = pre_filtro_task,
+        python_callable = pre_filtro_task_v2,
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
