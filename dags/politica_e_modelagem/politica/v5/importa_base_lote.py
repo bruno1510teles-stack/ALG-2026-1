@@ -47,7 +47,7 @@ def importa_base_pre_aprovado_lote (access_params=None,  **kwargs):
     # Uploading Excel File
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
-    base_analisar = pd.read_excel(file_data)
+    base_analisar = pd.read_excel(file_data, sheet_name= 'Planilha1')
 
     print('Parte 2 - Tratando dados...')
 
