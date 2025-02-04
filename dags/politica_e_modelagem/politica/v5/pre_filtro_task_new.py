@@ -387,8 +387,8 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
         df.loc[df['ramificacao_pre_filtro'].isin(values), 'resposta'] = response
 
     # Definindo a Política e Versão
-    df['politica'] = 'Arcelor Mittal'
-    df['versao_motor'] = '1.1'
+    df['politica'] = 'V5'
+    df['versao_motor'] = '1.0'
 
     # Printando resultado
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")

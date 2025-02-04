@@ -18,7 +18,7 @@ def compra_info_serasa (access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro_task')
+    base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro_task_new')
     base_analisar = pd.DataFrame(base_analisar_dict)
 
     base_analisar['cnpj_raiz'] = base_analisar['cnpj_raiz'].astype(str).str.zfill(8)
