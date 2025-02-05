@@ -69,6 +69,7 @@ with DAG(
     task2 = PythonOperator(
         task_id = "pre_filtro",
         python_callable = pre_filtro_task_v2,
+        op_kwargs = {'access_params': access_params},
         provide_context = True
     )
 
