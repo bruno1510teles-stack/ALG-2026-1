@@ -310,7 +310,6 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
     #df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'outer')
     df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
-    df = df.drop(columns=['documento_sem_formatacao'])
     df.rename(columns={'CNPJ': 'documento_sem_formatacao'}, inplace=True)
 
     print(df)
