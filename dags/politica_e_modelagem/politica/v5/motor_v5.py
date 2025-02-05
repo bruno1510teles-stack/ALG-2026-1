@@ -461,7 +461,7 @@ def executa_politica_v5 (access_params=None,  **kwargs):
 
     print(resultado_politica)
 
-    resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
+    resultado_politica['ramificacao_final'] =   resultado_politica['ramificacao_2'] + ' | ' + resultado_politica['ramificacao']
     resultado_politica['flag_decidido_pelo_motor'] = True
     resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
 
