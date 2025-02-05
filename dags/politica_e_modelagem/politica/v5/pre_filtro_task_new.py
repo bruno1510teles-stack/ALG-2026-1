@@ -271,6 +271,8 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
     # Exibe o DataFrame final com os resultados acumulados
     print(df)
 
+    print('Parte 1')
+
     ### Olhando para os CNAE's secundários também
     # Passo 1: Criar uma coluna com todos os CNAEs (principal + secundários)
     df['todos_cnaes'] = df.apply(lambda row: [row['cod_cnae']] + (row['cnae_secundaria'].split(',') if pd.notna(row['cnae_secundaria']) else []), axis=1)
@@ -339,6 +341,8 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
     
     df['ramificacao_pre_filtro'] = np.nan
 
+    print('Parte 2')
+
     # Dicionário para mapear condições a valores de 'ramificacao_pre_filtro'
     conditions = [
         # Impedidos de Operar
@@ -389,6 +393,8 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
     # Definindo a Política e Versão
     df['politica'] = 'V5'
     df['versao_motor'] = '1.0'
+
+    print('Parte 3')
 
     # Printando resultado
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
