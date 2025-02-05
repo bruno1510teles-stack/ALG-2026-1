@@ -391,7 +391,7 @@ def pre_filtro_task_v2(access_params=None,  **kwargs):
     df['versao_motor'] = '1.0'
 
     # Printando resultado
-    print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
+    print(f"Demonstrativo relação pré-filtro: {df.groupby(['documento_sem_formatacao', 'ramificacao_pre_filtro'])['documento_sem_formatacao'].size()}")
     print(f"Resumo pré-filtro: {df.groupby(['resposta'])['documento_sem_formatacao'].size()}")
 
 
