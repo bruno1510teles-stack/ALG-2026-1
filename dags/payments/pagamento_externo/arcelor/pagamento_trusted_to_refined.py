@@ -90,7 +90,7 @@ def tratamento_pagamento_externo(access_params=None, **kwargs):
 
     print('Parte 2')
 
-    df_final = df.filter(items=['raiz_cnpj', 'unidade', 'razao_social', 'atualizado_em', 'year', 'month', 'day', 'valor_titulo_aberto_total',
+    df_final = df.filter(items=['raiz_cnpj', 'unidade_consolidada', 'razao_social', 'atualizado_em', 'year', 'month', 'day', 'valor_titulo_aberto_total',
                                 'valor_inad_corrente_total', 'valor_receb_atrasado_total', 'valor_recebido_total', 'liquidez%', 'pontualidade%', 'inadimplente%'])
 
     # Exportando dados para a camada Refined
