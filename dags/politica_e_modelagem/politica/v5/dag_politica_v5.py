@@ -89,6 +89,7 @@ with DAG(
         provide_context = True
     )
 
+    '''
     # Captura proposta no jira
     task5 = PythonOperator(
         task_id = "exporta_csv",
@@ -120,6 +121,7 @@ with DAG(
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
+    '''
 
     # Definindo a ordem de execução das tasks
     task1 >> task2 >> task3 >> task4 
