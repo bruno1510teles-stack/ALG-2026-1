@@ -199,7 +199,7 @@ def extracao_pagamento(access_params=None, **kwargs):
 
 
     # Dropar a colunas antigas
-    # df_dados_final = df_dados_final.drop(columns=['unidade', 'razao_social'])
+    df_dados_final = df_dados_final.drop(columns=['unidade', 'razao_social'], errors='ignore')
     df_dados_final = df_dados_final.drop_duplicates()
 
 
