@@ -21,7 +21,7 @@ def compra_info_serasa (access_params=None,  **kwargs):
     base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro_task_new')
     base_analisar = pd.DataFrame(base_analisar_dict)
 
-    base_analisar['cnpj_raiz'] = base_analisar['documento_sem_formatacao'].astype(str).str.zfill(8)
+    base_analisar['cnpj_raiz'] = base_analisar['cnpj_raiz'].astype(str).str.zfill(8)
 
     # Separando os casos que seguem analise
     segue_analise_prefiltro = base_analisar[base_analisar['resposta'] == 'SEGUE']
