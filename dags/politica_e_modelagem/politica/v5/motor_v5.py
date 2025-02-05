@@ -458,6 +458,9 @@ def executa_politica_v5 (access_params=None,  **kwargs):
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
     resultado_politica = resultado_politica.drop('id', axis=1)
     resultado_politica = resultado_politica.drop_duplicates()
+
+    print(resultado_politica)
+
     resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
     resultado_politica['flag_decidido_pelo_motor'] = True
     resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
