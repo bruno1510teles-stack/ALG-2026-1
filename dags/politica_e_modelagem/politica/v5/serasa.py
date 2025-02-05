@@ -21,6 +21,8 @@ def compra_info_serasa (access_params=None,  **kwargs):
     base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro_task_new')
     base_analisar = pd.DataFrame(base_analisar_dict)
 
+    print(base_analisar)
+
     base_analisar['cnpj_raiz'] = base_analisar['cnpj_raiz'].astype(str).str.zfill(8)
 
     # Separando os casos que seguem analise
