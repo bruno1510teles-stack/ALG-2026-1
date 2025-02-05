@@ -181,6 +181,28 @@ def extracao_pagamento(access_params=None, **kwargs):
     df_dados_final = df_dados_final.reset_index(drop=True)
 
 
+    # DEPARA UNIDADE CONSOLIDADA PARA CRUZAMENTO
+    # Bucket and Folder_Destination
+    BUCKET_SOURCE_RAW_2 = "arquivos-python"
+    FOLDER_DESTINATION_RAW_2 = 'depara_unidade_fat_externo'
+    file_name_2 = 'depara_unidade_fat_externo.xlsx'
+    file_path_2 = f'{FOLDER_DESTINATION_RAW_2}/{file_name_2}'
+
+    # Uploading Excel File
+    response_2 = minio_raw.get_object(BUCKET_SOURCE_RAW_2, file_path_2)
+    file_data_2 = BytesIO(response_2.read())
+    df_unidade_consolidada = pd.read_excel(file_data_2, sheet_name="unidade_consolidada")
+
+    # BASE 1
+    df_dados_final = pd.merge(df_dados_final, df_unidade_consolidada, on = 'unidade', how='left')
+    df_dados_final['unidade_consolidada'] = df_dados_final['unidade_consolidada'].fillna(df_dados_final['unidade'])
+
+
+    # Dropar a colunas antigas
+    df_dados_final = df_dados_final.drop(columns=['unidade', 'razao_social'])
+    df_dados_final = df_dados_final.drop_duplicates()
+
+
     #---------------------------------------------------------------------------------------#
     # Exportando saida para Trusted
 
