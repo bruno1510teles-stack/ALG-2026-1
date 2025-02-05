@@ -11,6 +11,7 @@ from datetime import datetime
 import time
 import base64
 import requests
+import joblib, logging
 
 
 def compra_info_serasa (access_params=None,  **kwargs):
