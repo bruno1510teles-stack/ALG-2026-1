@@ -35,8 +35,8 @@ def estoque_diario_hemera(spark):
     print("Lendo Arquivos")
     # Ler os arquivos por ano e adicionar na lista
     for ano in anos:
-        for meses in meses:
-            caminho_csv = f"s3a://{bucket_name}/{caminho}/year={ano}/month={meses}/"
+        for mes in meses:
+            caminho_csv = f"s3a://{bucket_name}/{caminho}/year={ano}/month={mes}/"
 
             # Verificar se o caminho existe antes de tentar ler
             if caminho_existe(caminho_csv):
@@ -50,7 +50,7 @@ def estoque_diario_hemera(spark):
                 # Adicionar o DataFrame do ano à lista
                 df_list.append(df_ano)
             else:
-                print(f"Arquivos não encontrados para {ano}/{meses}")
+                print(f"Arquivos não encontrados para {ano}/{mes}")
 
     # Verificar se a lista contém DataFrames antes de tentar unir
     if df_list:
