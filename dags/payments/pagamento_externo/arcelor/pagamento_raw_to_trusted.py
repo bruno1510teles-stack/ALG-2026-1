@@ -202,6 +202,8 @@ def extracao_pagamento(access_params=None, **kwargs):
     df_dados_final = df_dados_final.drop(columns=['unidade', 'razao_social'], errors='ignore')
     df_dados_final = df_dados_final.drop_duplicates()
 
+    df_dados_final = df_dados_final.reset_index(drop = True)
+
 
     #---------------------------------------------------------------------------------------#
     # Exportando saida para Trusted
