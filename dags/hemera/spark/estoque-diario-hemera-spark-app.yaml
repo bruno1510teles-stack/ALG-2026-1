@@ -7,7 +7,7 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.75-SNAPSHOT"
+  image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.75"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/estoque_diario_hemera.py
