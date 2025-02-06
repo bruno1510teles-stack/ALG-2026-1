@@ -18,7 +18,6 @@ spec:
     packages:
       - io.delta:delta-core_2.12:2.4.0
       - io.delta:delta-storage:2.4.0
-      - com.crealytics:spark-excel_2.12:0.12.3
       # - io.delta:delta-spark_2.12:3.2.0
       - org.apache.spark:spark-catalyst_2.12:3.5.1
       - org.apache.hadoop:hadoop-aws:3.3.4
@@ -46,12 +45,6 @@ spec:
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.hadoop.security.authentication": "simple"
     "spark.hadoop.security.authorization": "false"
-    "spark.network.timeout": "600s"
-    "spark.executor.heartbeatInterval": "120s"
-    "spark.kubernetes.executor.pod.polling.interval": "10s"
-    "spark.kubernetes.executor.pod.event.check.interval": "10s"
-    "spark.network.timeout": "300s"
-    "spark.rpc.message.maxSize": "256"   
   driver:
     deleteOnTermination: true
     coreLimit: "1"
@@ -113,13 +106,6 @@ spec:
             key: MINIO_RAW_SECRET_KEY
     initContainers:
       - name: git-sync
-        resources:
-          requests:
-            cpu: "100m"
-            memory: "128Mi"
-          limits:
-            cpu: "200m"
-            memory: "512Mi"
         image: "k8s.gcr.io/git-sync/git-sync:v3.6.1"
         imagePullPolicy: IfNotPresent
         volumeMounts:
@@ -129,10 +115,10 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-          valueFrom:
-            configMapKeyRef:
-            name: airflow-spark-configs
-            key: branch
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-spark-configs
+                key: branch
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -179,7 +165,7 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    instances: 2
+    instances: 1
     memory: "4g"
     labels:
       version: "3.5.1"
@@ -187,7 +173,7 @@ spec:
       - name: "spark-scripts-volume"
         mountPath: "/scripts"
     annotations:
-        sidecar.istio.io/inject: "false"
+      sidecar.istio.io.inject: "false"
     env:
       - name: MINIO_TRUSTED_ENDPOINT
         valueFrom:
@@ -245,10 +231,10 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-          valueFrom:
-            configMapKeyRef:
-            name: airflow-spark-configs
-            key: branch
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-spark-configs
+                key: branch
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -285,6 +271,12 @@ spec:
               secretKeyRef:
                 key: password
                 name: bitbucket-spark-access
+      - name: permission-fix
+        image: busybox
+        command: ["sh", "-c", "chmod -R 777 /scripts/repo && chmod -R 777 /scripts/*"]
+        volumeMounts:
+          - name: spark-scripts-volume
+            mountPath: /scripts
   volumes:
     - name: "spark-scripts-volume"
       persistentVolumeClaim:
