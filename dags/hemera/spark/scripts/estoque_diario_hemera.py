@@ -25,28 +25,42 @@ def estoque_diario_hemera(spark):
 
     # Definir o caminho de cada ano
     anos = ['2024', '2023', '2022', '2021']
+    meses = ['01',	'02',	'03',	'04',	'05',	'06',	'07',	'08',	'09',	'10',	'11',	'12']
 
     # Lista para armazenar os DataFrames de cada ano
     df_list = []
-
+    def caminho_existe(caminho):
+        return os.path.exists(caminho)
+    
     print("Lendo Arquivos")
     # Ler os arquivos por ano e adicionar na lista
     for ano in anos:
-        caminho_csv = f"s3a://{bucket_name}/{caminho}/year={ano}/"
-        df_ano = spark.read \
-            .option("delimiter", ",") \
-            .option("header", True) \
-            .option("inferSchema", True) \
-            .option("allowMissingColumns", True) \
-            .csv(caminho_csv)
-        
-        # Adicionar o DataFrame do ano à lista
-        df_list.append(df_ano)
+        for meses in meses:
+            caminho_csv = f"s3a://{bucket_name}/{caminho}/year={ano}/month={meses}/"
 
-    # Unir os DataFrames de todos os anos
-    df = df_list[0]  # Começa com o primeiro DataFrame
-    for df_atual in df_list[1:]:
-        df = df.unionByName(df_atual, allowMissingColumns=True)
+            # Verificar se o caminho existe antes de tentar ler
+            if caminho_existe(caminho_csv):
+                df_ano = spark.read \
+                    .option("delimiter", ",") \
+                    .option("header", True) \
+                    .option("inferSchema", True) \
+                    .option("allowMissingColumns", True) \
+                    .csv(caminho_csv)
+                
+                # Adicionar o DataFrame do ano à lista
+                df_list.append(df_ano)
+            else:
+                print(f"Arquivos não encontrados para {ano}/{meses}")
+
+    # Verificar se a lista contém DataFrames antes de tentar unir
+    if df_list:
+        # Unir os DataFrames de todos os anos
+        df = df_list[0]  
+        for df_atual in df_list[1:]:
+            df = df.unionByName(df_atual, allowMissingColumns=True)
+    else:
+        df = None
+        print("Nenhum arquivo foi encontrado para os anos e meses fornecidos.")
     print("Arquivos Lidos")
 
     print("Iniciando Tratamento Dados")
