@@ -29,35 +29,25 @@ def estoque_diario_hemera(spark):
 
     # Lista para armazenar os DataFrames de cada ano
     df_list = []
-    def caminho_existe(caminho):
-        try:
-            # Usar a configuração do Hadoop no Spark para verificar se o caminho existe
-            fs = spark._jvm.org.apache.hadoop.fs.FileSystem.get(spark._jsc.hadoopConfiguration())
-            return fs.exists(spark._jvm.org.apache.hadoop.fs.Path(caminho))
-        except Exception as e:
-            print(f"Erro ao verificar o caminho {caminho}: {e}")
-            return False
-
-    
-    print("Lendo Arquivos")
-    # Ler os arquivos por ano e adicionar na lista
     for ano in anos:
         for mes in meses:
             caminho_csv = f"s3a://{bucket_name}/{caminho}/year={ano}/month={mes}/"
 
-            # Verificar se o caminho existe antes de tentar ler
-            if caminho_existe(caminho_csv):
+            try:
+                # Tentar ler o arquivo
                 df_ano = spark.read \
                     .option("delimiter", ",") \
                     .option("header", True) \
                     .option("inferSchema", True) \
                     .option("allowMissingColumns", True) \
                     .csv(caminho_csv)
-                
+
                 # Adicionar o DataFrame do ano à lista
                 df_list.append(df_ano)
-            else:
-                print(f"Arquivos não encontrados para {ano}/{mes}")
+                print(f"Arquivos lidos para {ano}/{mes}")
+            
+            except Exception as e:
+                print(f"Erro ao ler arquivos para {ano}/{mes}: {e}")
 
     # Verificar se a lista contém DataFrames antes de tentar unir
     if df_list:
