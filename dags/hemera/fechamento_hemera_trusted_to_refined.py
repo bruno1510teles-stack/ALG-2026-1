@@ -532,7 +532,7 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
             f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
             df_analitico, 
             storage_options=storage_options,
-            mode="overwrite"
+            mode="append"
         )
 
         print('Arquivo salvo com sucesso!')
