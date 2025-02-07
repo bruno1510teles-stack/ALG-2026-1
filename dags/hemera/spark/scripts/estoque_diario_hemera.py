@@ -24,8 +24,8 @@ def estoque_diario_hemera(spark):
     caminho = 'estoque_csv'
 
     # Definir o caminho de cada ano
-    anos = ['2024', '2023', '2022', '2021']
-    meses = ['01',	'02',	'03',	'04',	'05',	'06',	'07',	'08',	'09',	'10',	'11',	'12']
+    anos = ['2025']
+    meses = ['01']
 
     # Lista para armazenar os DataFrames de cada ano
     df_list = []
