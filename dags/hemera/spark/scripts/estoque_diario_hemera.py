@@ -24,8 +24,8 @@ def estoque_diario_hemera(spark):
     caminho = 'estoque_csv'
 
     # Definir o caminho de cada ano
-    anos = ['2025']
-    meses = ['01']
+    anos = ['2025', '2024','2023','2022','2021']
+    meses = ['01',	'02',	'03',	'04',	'05',	'06',	'07',	'08',	'09',	'10',	'11',	'12']   
 
     # Lista para armazenar os DataFrames de cada ano
     df_list = []
@@ -94,7 +94,15 @@ def estoque_diario_hemera(spark):
     elif "PDD REGULAMENTO" in df.columns:
         df = df.withColumn("pdd_vencido", col("PDD REGULAMENTO"))
     elif "PDDVencido" in df.columns:
-        df = df.withColumn("pdd_vencido", col("PDDVencido"))    
+        df = df.withColumn("pdd_vencido", col("PDDVencido"))   
+
+    # Tratando valor_nominal
+    if "ValorNominal" in df.columns and "ValorNominalOriginal" in df.columns:
+        df = df.withColumn("valor_nominal", coalesce(col("ValorNominal"), col("ValorNominalOriginal")))
+    elif "ValorNominal" in df.columns:
+        df = df.withColumn("valor_nominal", col("ValorNominal"))
+    elif "ValorNominalOriginal" in df.columns:
+        df = df.withColumn("valor_nominal", col("ValorNominalOriginal"))    
 
     df = df.withColumn(
         "produto",
@@ -121,7 +129,6 @@ def estoque_diario_hemera(spark):
         "NumeroTitulo":"numero_titulo",	 
         "CampoChave":"campo_chave",	 
         "ValorAquisicao":"valor_aquisicao",	 
-        "ValorNominal":"valor_nominal",	 
         "ValorPresente":"valor_presente",	 
         "DataPosicao":"data_arquivo",	 
         "DataProrrogacao":"data_prorrogacao",	 
@@ -194,7 +201,7 @@ def estoque_diario_hemera(spark):
         .format("delta") \
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
-        .mode("append") \
+        .mode("overwrite") \
         .save("s3a://trusted-hemera/estoque_diario")
 
     print("Arquivos Salvos")
