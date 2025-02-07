@@ -65,11 +65,11 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
                 select sum(r.valor_recompra)
                 from deltalaketrusted.hemera.recompra r
                 where r.id_titulo = ed.id_titulo 
-                and r.data_fechamento <= '{para_fechamento}'
+                and r.data_fechamento <= '{data}'
             ) as valor_recompra_acumulada
         from 
             estoque_detalhado ed
-            where ed.data_fechamento = '{para_fechamento}'
+            where ed.data_fechamento = '{data}'
         """
         hemera = execute_query(conn, query_hemera)
         print(f"Quantidade de linhas no DataFrame 'hemera': {hemera.shape[0]}")
