@@ -38,11 +38,12 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         df = pd.read_excel(file_data)
         
         # Extraindo o mês do caminho do arquivo
-        match = re.search(r'/month=(\d{2})/', file_path)
+        match = re.search(r'/year=(\d{4})/month=(\d{2})/', file_path)
         if match:
-            mes = match.group(1)
+            ano = match.group(1)
+            mes = match.group(2)
             # Criando a coluna 'data_ref'
-            df['data_ref'] = f"2024-{mes}"
+            df['data_ref'] = f"{ano}-{mes}"
         
         return df
     
