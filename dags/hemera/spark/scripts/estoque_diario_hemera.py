@@ -38,7 +38,6 @@ def estoque_diario_hemera(spark):
                 df_ano = spark.read \
                     .option("delimiter", ",") \
                     .option("header", True) \
-                    .option("inferSchema", True) \
                     .option("allowMissingColumns", True) \
                     .csv(caminho_csv)
 
@@ -62,6 +61,7 @@ def estoque_diario_hemera(spark):
     print("Arquivos Lidos")
 
     print("Iniciando Tratamento Dados")
+    df = df.filter((col("DataPosicao").isNotNull()) & (col("DataPosicao") != ""))
     # Função para converter números de data do Excel para o formato de data
     def excel_date_to_date(excel_date):
         return F.from_unixtime((F.col(excel_date) - 25569) * 86400).cast(DateType())
@@ -168,6 +168,9 @@ def estoque_diario_hemera(spark):
         .withColumn("pdd_nota", col("pdd_nota").cast(DoubleType())) \
         .withColumn("pdd_vencido", col("pdd_vencido").cast(DoubleType()))
 
+    padrao_data = r'^\d{4}-\d{2}-\d{2}$'
+    df = df.filter(F.col("DataPosicao").rlike(padrao_data))
+    
     print("Tratamento Concluído")
 
     # Mostrando as primeiras linhas
