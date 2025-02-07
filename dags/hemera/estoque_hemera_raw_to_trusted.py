@@ -11,9 +11,7 @@ import re
 
 def hemera_raw_to_trusted(access_params=None, **kwargs):
 
-    mes_processo = ['01','02','03','04','05', '06', '07', '08', '09', '10', '11', '12']
-
-    df_final_consolidado = pd.DataFrame()
+    mes_processo = ['01']
 
     for mes in mes_processo:
         print(f"Rodando estoque para a data de fechamento: {mes}")
@@ -27,7 +25,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
 
         # Definindo bucket e caminho do arquivo
         BUCKET_SOURCE_RAW = "hemera"
-        FOLDER_DESTINATION_RAW = f'estoque/year=2024/month={mes}'
+        FOLDER_DESTINATION_RAW = f'estoque/year=2025/month={mes}'
 
         # Listando os arquivos no diretório
         objects = list(client.list_objects(BUCKET_SOURCE_RAW, prefix=FOLDER_DESTINATION_RAW, recursive=True))
