@@ -169,7 +169,7 @@ def estoque_diario_hemera(spark):
         .withColumn("pdd_vencido", col("pdd_vencido").cast(DoubleType()))
 
     padrao_data = r'^\d{4}-\d{2}-\d{2}$'
-    df = df.filter(F.col("DataPosicao").rlike(padrao_data))
+    df = df.filter(F.col("data_arquivo").rlike(padrao_data))
     
     print("Tratamento Concluído")
 
