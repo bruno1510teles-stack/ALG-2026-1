@@ -155,7 +155,7 @@ def estoque_consolidado(spark):
         .format("delta") \
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
-        .mode("append") \
+        .mode("overwrite") \
         .save("s3a://hemera/estoque_consolidado")
 
     print("Arquivos Salvos")
