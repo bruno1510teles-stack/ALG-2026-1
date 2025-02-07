@@ -510,7 +510,7 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         total_colunas = total_colunas.apply(lambda x: f"{x:,.2f}")
         print(total_colunas)
 
-        df_final = pd.concat(df_final, df_analitico, ignore_index=True)
+        df_final = pd.concat([df_final, df_analitico], ignore_index=True)
 
 
     # Salvando

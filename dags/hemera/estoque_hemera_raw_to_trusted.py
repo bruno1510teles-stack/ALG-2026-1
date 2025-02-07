@@ -238,7 +238,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         df_final['month'] = df_final['month'].astype(str)
         df_final['atualizado_em'] = pd.to_datetime(df_final['atualizado_em']).dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        df_final_consolidado = pd.concat(df_final_consolidado, df_final, ignore_index=True)
+        df_final_consolidado = pd.concat([df_final_consolidado, df_final], ignore_index=True)
 
 
 
