@@ -11,7 +11,7 @@ import re
 
 def hemera_raw_to_trusted(access_params=None, **kwargs):
 
-    mes_processo = ['05', '06', '07', '08', '09', '10', '11', '12']
+    mes_processo = ['01','02','03','04','05', '06', '07', '08', '09', '10', '11', '12']
 
     df_final_consolidado = pd.DataFrame()
 
@@ -238,31 +238,27 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         df_final['month'] = df_final['month'].astype(str)
         df_final['atualizado_em'] = pd.to_datetime(df_final['atualizado_em']).dt.strftime('%Y-%m-%d %H:%M:%S')
 
-        df_final_consolidado = pd.concat([df_final_consolidado, df_final], ignore_index=True)
 
+        # Exportando dados para a camada Trusted
+        print('Salvando Arquivo')   
+        storage_options_trusted = {
+            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+            "AWS_REGION": "us-east-1",
+            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        }
 
+        # Definindo o caminho e salvando no MinIO
+        BUCKET_SOURCE_TRUSTED = "hemera"
+        FOLDER_DESTINATION_TRUSTED = "estoque"
 
+        write_deltalake(
+            f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+            df_final, 
+            partition_by=["year", "month"],
+            storage_options=storage_options_trusted,
+            mode="append"
+        )
 
-    # Exportando dados para a camada Trusted
-    print('Salvando Arquivo')   
-    storage_options_trusted = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
-        "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-    }
-
-    # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_TRUSTED = "hemera"
-    FOLDER_DESTINATION_TRUSTED = "estoque"
-
-    write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-        df_final, 
-        partition_by=["year", "month"],
-        storage_options=storage_options_trusted,
-        mode="append"
-    )
-
-    print('Arquivo salvo com sucesso!')
+        print('Arquivo salvo com sucesso!')

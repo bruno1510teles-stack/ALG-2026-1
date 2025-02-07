@@ -510,31 +510,29 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         total_colunas = total_colunas.apply(lambda x: f"{x:,.2f}")
         print(total_colunas)
 
-        df_final = pd.concat([df_final, df_analitico], ignore_index=True)
 
+        # Salvando
+        # Exportando dados para a camada Refined
+            
+        print('Salvando Arquivo')   
 
-    # Salvando
-    # Exportando dados para a camada Refined
-        
-    print('Salvando Arquivo')   
+        storage_options = {
+            "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+            "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+            "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+            "AWS_REGION": "us-east-1",
+            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        }
 
-    storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
-        "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-    }
+        # Definindo o caminho e salvando no MinIO
+        BUCKET_SOURCE_REFINED = "hemera"
+        FOLDER_DESTINATION_REFINED = "fechamento"
 
-    # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_REFINED = "hemera"
-    FOLDER_DESTINATION_REFINED = "fechamento"
+        write_deltalake(
+            f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
+            df_analitico, 
+            storage_options=storage_options,
+            mode="overwrite"
+        )
 
-    write_deltalake(
-        f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-        df_final, 
-        storage_options=storage_options,
-        mode="overwrite"
-    )
-
-    print('Arquivo salvo com sucesso!')
+        print('Arquivo salvo com sucesso!')
