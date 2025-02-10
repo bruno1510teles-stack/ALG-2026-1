@@ -499,8 +499,8 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         df_analitico['numero_titulo'] = df_analitico['numero_titulo'].astype(str)
 
 
-        df_analitico['year'] = df_analitico['data_fechamento'].apply(lambda x: x.year if pd.notnull(x) else None)
-        df_analitico['month'] = df_analitico['data_fechamento'].apply(lambda x: x.month if pd.notnull(x) else None)
+        df_analitico['year'] = df_analitico['data_fechamento'].dt.year
+        df_analitico['month'] = df_analitico['data_fechamento'].dt.month
 
         # Numéricas
         colunas_valores = ['estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
