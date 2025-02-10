@@ -499,8 +499,10 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         df_analitico['numero_titulo'] = df_analitico['numero_titulo'].astype(str)
 
 
-        df_analitico['year'] = df_analitico['data_fechamento'].dt.year
-        df_analitico['month'] = df_analitico['data_fechamento'].dt.month
+        # Extrair o ano e o mês da coluna formatada como string
+        df_analitico['year'] = df_analitico['data_fechamento'].str[:4]
+        df_analitico['month'] = df_analitico['data_fechamento'].str[5:7]
+
 
         # Numéricas
         colunas_valores = ['estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
