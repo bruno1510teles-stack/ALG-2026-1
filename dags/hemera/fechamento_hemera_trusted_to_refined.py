@@ -498,6 +498,10 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         df_analitico['id_titulo'] = df_analitico['id_titulo'].astype(str).str.zfill(10)  # Completando com zeros à esquerda
         df_analitico['numero_titulo'] = df_analitico['numero_titulo'].astype(str)
 
+
+        df_analitico['year'] = df_analitico['data_fechamento'].apply(lambda x: x.year if pd.notnull(x) else None)
+        df_analitico['month'] = df_analitico['data_fechamento'].apply(lambda x: x.month if pd.notnull(x) else None)
+
         # Numéricas
         colunas_valores = ['estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
                         'delta_pdd', 'pdd_final', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada', 'valor_baixa', 
@@ -531,6 +535,7 @@ def hemera_trusted_to_refined(access_params=None,  **kwargs):
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
             df_analitico, 
+            partition_by=["year", "month"],
             storage_options=storage_options,
             mode="append"
         )
