@@ -18,7 +18,7 @@ def executa_politica_v5 (access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     # Recupera o objeto ti (task instance) via kwargs
     ti = kwargs['ti']
-    base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro_task_new')
+    base_analisar_dict = ti.xcom_pull(task_ids='pre_filtro')
     base_analisar = pd.DataFrame(base_analisar_dict)
 
     df_politica = base_analisar.copy()
@@ -458,7 +458,10 @@ def executa_politica_v5 (access_params=None,  **kwargs):
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
     resultado_politica = resultado_politica.drop('id', axis=1)
     resultado_politica = resultado_politica.drop_duplicates()
-    resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
+
+    print(resultado_politica)
+
+    resultado_politica['ramificacao_final'] =   resultado_politica['ramificacao_2'] + ' | ' + resultado_politica['ramificacao']
     resultado_politica['flag_decidido_pelo_motor'] = True
     resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
 
