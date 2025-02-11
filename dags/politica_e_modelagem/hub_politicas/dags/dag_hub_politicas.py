@@ -59,7 +59,7 @@ default_args = {
 with DAG(
     dag_id='hub_politica',
     start_date=days_ago(1),
-    schedule_interval='*/5 * * * *',
+    schedule_interval='*/2 * * * *',
     default_args=default_args,
     catchup=False,
     tags=['proposta-negocio', 'definir política', 'pre-filtro'],

@@ -139,17 +139,11 @@ def aplicar_politica(access_params=None,  **kwargs):
 
         def listar_arquivos_minio(bucket_name):
             # Função para listar os arquivos no bucket do MinIO
-            # client = Minio(
-            #             access_params['endpoint_url_raw'],
-            #             access_key= access_params['aws_access_key_id_raw'],
-            #             secret_key=access_params['aws_secret_access_key_raw'],
-            #             secure=True
-            #         )
-
             client = Minio(
-                        "api-raw.alpe.tech",
-                        access_key="y1tcFwYy9VXX93eW89C1",
-                        secret_key="vrzvEU7CAvydGV4rAsO72cM31SYi9DUw2sfanMQB"
+                        access_params['endpoint_url_raw'],
+                        access_key= access_params['aws_access_key_id_raw'],
+                        secret_key=access_params['aws_secret_access_key_raw'],
+                        secure=True
                     )
 
             # Lista os objetos (arquivos) no bucket
@@ -162,17 +156,11 @@ def aplicar_politica(access_params=None,  **kwargs):
 
         def verificar_cnpj_em_excel(bucket_name, arquivo, cnpj_sacado):
             # Função para verificar se o CNPJ está dentro de um arquivo Excel no bucket
-            # client = Minio(
-            #             access_params['endpoint_url_raw'],
-            #             access_key= access_params['aws_access_key_id_raw'],
-            #             secret_key=access_params['aws_secret_access_key_raw'],
-            #             secure=True
-            #         )
-
             client = Minio(
-                        "api-raw.alpe.tech",
-                        access_key="y1tcFwYy9VXX93eW89C1",
-                        secret_key="vrzvEU7CAvydGV4rAsO72cM31SYi9DUw2sfanMQB"
+                        access_params['endpoint_url_raw'],
+                        access_key= access_params['aws_access_key_id_raw'],
+                        secret_key=access_params['aws_secret_access_key_raw'],
+                        secure=True
                     )
             
             # Baixar o arquivo Excel do MinIO
