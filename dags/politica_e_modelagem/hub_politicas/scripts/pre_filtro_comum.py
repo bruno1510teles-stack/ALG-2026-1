@@ -8,6 +8,16 @@ from jira import JIRA
 
 def analise_pre_filtro(access_params=None,  **kwargs):
 
+
+    # Pegando DF tarefa anterior
+    ti = kwargs['ti']
+    base_definicao_politica_dict = ti.xcom_pull(task_ids='selecionar_politica')
+    base_definicao_politica = pd.DataFrame(base_definicao_politica_dict)
+    issues = base_definicao_politica['issue'].unique()
+    issues_id = ', '.join(f"'{issue}'" for issue in issues)
+    issues_id = f"({issues_id})"
+    print(issues_id)
+
     print('Init task')
     ### Configurando configurações necessárias
     # Trino
@@ -65,7 +75,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     jira_project = access_params['jira_project']
 
     query = {
-        "jql": f'project = {jira_project} AND status = "Open" ORDER BY created ASC',
+        "jql": f'project = {jira_project} AND status = "Open" AND key in {issues_id} ORDER BY created ASC',
         "fields": [
             "key",  # ISSUE_JIRA
             "customfield_13808",  # LIMITE ALPE

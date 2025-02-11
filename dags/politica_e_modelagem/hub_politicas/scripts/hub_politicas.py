@@ -263,3 +263,12 @@ def aplicar_politica(access_params=None,  **kwargs):
         # Exemplo de uso:
         atualizar_politica_jira(issue, politica_atualizada)
         print('----------------------------------------------------------------------------------')
+
+        dados = {
+            'issue': [issue]
+        }
+
+        # Criando um DataFrame
+        df_resultado = pd.DataFrame(dados)
+
+        return df_resultado.to_dict(orient='records')
