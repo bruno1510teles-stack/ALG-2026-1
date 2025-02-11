@@ -12,11 +12,20 @@ def analise_pre_filtro(access_params=None,  **kwargs):
     # Pegando DF tarefa anterior
     ti = kwargs['ti']
     base_definicao_politica_dict = ti.xcom_pull(task_ids='selecionar_politica')
-    base_definicao_politica = pd.DataFrame(base_definicao_politica_dict)
-    issues = base_definicao_politica['issue'].unique()
-    issues_id = ', '.join(f"'{issue}'" for issue in issues)
-    issues_id = f"({issues_id})"
-    print(issues_id)
+    if base_definicao_politica_dict:  # Verifica se o XCom trouxe algum dado
+        base_definicao_politica = pd.DataFrame(base_definicao_politica_dict)
+    else:
+        base_definicao_politica = pd.DataFrame()
+
+    # Verifica se o DataFrame não está vazio e contém a coluna 'issue'
+    if not base_definicao_politica.empty and 'issue' in base_definicao_politica.columns:
+        issues = base_definicao_politica['issue'].unique()
+        issues_id = ', '.join(f"'{issue}'" for issue in issues)
+        issues_id = f"({issues_id})"
+    else:
+        # Defina um comportamento padrão caso não haja issues
+        issues_id = "('')"  # String vazia ou outro valor padrão
+        print("Nenhuma issue encontrada.")
 
     print('Init task')
     ### Configurando configurações necessárias
