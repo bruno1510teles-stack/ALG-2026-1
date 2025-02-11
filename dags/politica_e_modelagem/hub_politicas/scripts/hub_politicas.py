@@ -265,7 +265,7 @@ def aplicar_politica(access_params=None,  **kwargs):
         print('----------------------------------------------------------------------------------')
 
         dados = {
-            'issue': [issue]
+            'issue': [key_jira]
         }
 
         # Criando um DataFrame
