@@ -44,6 +44,7 @@ def aplicar_politica(access_params=None,  **kwargs):
     }
 
     max_results = access_params['jira_max_result']  # Defina o número máximo de resultados por página (até 1000 conforme a configuração do Jira)
+    print(max_results)
     start_at = 0                                    # Inicie na primeira página de resultados
     jira_project = access_params['jira_project']
 
