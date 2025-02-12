@@ -44,7 +44,6 @@ def aplicar_politica(access_params=None,  **kwargs):
     }
 
     max_results = access_params['jira_max_result']  # Defina o número máximo de resultados por página (até 1000 conforme a configuração do Jira)
-    print(max_results)
     start_at = 0                                    # Inicie na primeira página de resultados
     jira_project = access_params['jira_project']
 
@@ -265,11 +264,28 @@ def aplicar_politica(access_params=None,  **kwargs):
         atualizar_politica_jira(issue, politica_atualizada)
         print('----------------------------------------------------------------------------------')
 
-        dados = {
-            'issue': [key_jira]
-        }
+        # Armazenando resultados
+        issues = []
+        # Itera sobre cada ticket e captura o valor de 'key_jira'
+        for ticket in tickets:
+            key_jira = ticket['key']  
+            issues.append(key_jira)
 
-        # Criando um DataFrame
-        df_resultado = pd.DataFrame(dados)
+    # Fora do loop, cria um DataFrame com todas as 'key_jira' acumuladas
+    dados = {
+        'issue': issues  # Aqui vai a lista com todas as 'key_jira'
+    }
 
+    df_resultado = pd.DataFrame(dados)
+
+    # Retorna o DataFrame convertido para dicionário
     return df_resultado.to_dict(orient='records')
+
+    # dados = {
+    #     'issue': [key_jira]
+    # }
+
+    # # Criando um DataFrame
+    # df_resultado = pd.DataFrame(dados)
+
+    # return df_resultado.to_dict(orient='records')
