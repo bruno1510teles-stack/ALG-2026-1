@@ -280,12 +280,3 @@ def aplicar_politica(access_params=None,  **kwargs):
 
     # Retorna o DataFrame convertido para dicionário
     return df_resultado.to_dict(orient='records')
-
-    # dados = {
-    #     'issue': [key_jira]
-    # }
-
-    # # Criando um DataFrame
-    # df_resultado = pd.DataFrame(dados)
-
-    # return df_resultado.to_dict(orient='records')
