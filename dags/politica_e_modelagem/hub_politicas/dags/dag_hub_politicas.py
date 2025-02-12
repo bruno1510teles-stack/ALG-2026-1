@@ -72,7 +72,7 @@ with DAG(
             task_id="selecionar_politica",
             python_callable=aplicar_politica,
             op_kwargs={'access_params': access_params},
-            execution_timeout=timedelta(minutes=3),
+            execution_timeout=timedelta(minutes=10),
             provide_context=True
         )
 
@@ -80,7 +80,7 @@ with DAG(
             task_id="pre_filtro",
             python_callable=analise_pre_filtro,
             op_kwargs={'access_params': access_params},
-            execution_timeout=timedelta(minutes=3),
+            execution_timeout=timedelta(minutes=10),
             provide_context=True
         )
     
