@@ -272,4 +272,4 @@ def aplicar_politica(access_params=None,  **kwargs):
         # Criando um DataFrame
         df_resultado = pd.DataFrame(dados)
 
-        return df_resultado.to_dict(orient='records')
+    return df_resultado.to_dict(orient='records')
