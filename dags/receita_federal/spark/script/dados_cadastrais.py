@@ -110,7 +110,7 @@ if __name__ == "__main__":
         .config("spark.sql.parquet.datetimeRebaseModeInWrite","LEGACY") \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "8g") \
-        .config("spark.executor.cores", "3") \
+        .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
     .getOrCreate()
 
