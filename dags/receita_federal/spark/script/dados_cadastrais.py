@@ -21,15 +21,14 @@ def dados_cadastrais_to_refined(spark):
     hadoop_conf.set("hadoop.security.authorization", "false")
 
     # Leitura dos dados brutos da camada Trusted
-    # Leitura dos dados brutos da camada Trusted e tratando colunas
-    estabelecimentos = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/estabelecimentos")\
+    estabelecimentos = spark.read.format("delta").load("s3a://bureaus/receita-federal/estabelecimentos")\
             .withColumn("data_situacao_cadastral", col("data_situacao_cadastral").cast("date"))
-    empresas = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/empresas")\
+    empresas = spark.read.format("delta").load("s3a://bureaus/receita-federal/empresas")\
             .withColumn("capital_social_empresa", col("capital_social_empresa").cast("double"))
-    simples = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/simples")
-    natureza = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/naturezas")
-    cnae = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/cnaes")
-    municipio = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/municipios")
+    simples = spark.read.format("delta").load("s3a://bureaus/receita-federal/simples")
+    natureza = spark.read.format("delta").load("s3a://bureaus/receita-federal/naturezas")
+    cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
+    municipio = spark.read.format("delta").load("s3a://bureaus/receita-federal/municipios")
     print("Arquivos lidos")
     
 
