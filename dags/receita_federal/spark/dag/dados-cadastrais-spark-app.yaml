@@ -160,7 +160,7 @@ spec:
             mountPath: /scripts
   executor:
     deleteOnTermination: true
-    coreLimit: "1"
+    coreLimit: "2"
     coreRequest: "500m"
     instances: 1
     memory: "8g"
