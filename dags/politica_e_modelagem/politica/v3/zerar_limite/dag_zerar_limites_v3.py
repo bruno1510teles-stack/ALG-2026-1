@@ -48,7 +48,7 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='politica_v3',
+    dag_id='politica_v_3',
     start_date=days_ago(1),
     schedule_interval=None,
     default_args=default_args,
