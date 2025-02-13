@@ -137,12 +137,12 @@ with DAG(
         execution_timeout=timedelta(minutes=120)
     )
 
-    dados_cadastro = SparkKubernetesOperator(
-        task_id='dados-cadastro',
-        application_file='dados-cadastro-spark-app.yaml',
+    dados_cadastrais = SparkKubernetesOperator(
+        task_id='dados-cadastrais',
+        application_file='dados-cadastrais-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
     )
 
-    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastro
+    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
