@@ -10,7 +10,7 @@ spec:
   image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.78"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/dados_cadastrais.py
+  mainApplicationFile: local:///scripts/repo/dags/receita-federal/spark/script/dados_cadastrais.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
