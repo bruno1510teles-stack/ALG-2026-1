@@ -49,7 +49,7 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    memory: "4g"
+    memory: "2g"
     labels:
       version: "3.5.1"
     serviceAccount: spark-operator
@@ -115,7 +115,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -160,10 +160,10 @@ spec:
             mountPath: /scripts
   executor:
     deleteOnTermination: true
-    coreLimit: "2"
+    coreLimit: "1"
     coreRequest: "500m"
     instances: 1
-    memory: "8g"
+    memory: "4g"
     labels:
       version: "3.5.1"
     volumeMounts:
@@ -228,7 +228,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -265,6 +265,12 @@ spec:
               secretKeyRef:
                 key: password
                 name: bitbucket-spark-access
+      - name: permission-fix
+        image: busybox
+        command: ["sh", "-c", "chmod -R 777 /scripts/repo && chmod -R 777 /scripts/*"]
+        volumeMounts:
+          - name: spark-scripts-volume
+            mountPath: /scripts
   volumes:
     - name: "spark-scripts-volume"
       persistentVolumeClaim:
