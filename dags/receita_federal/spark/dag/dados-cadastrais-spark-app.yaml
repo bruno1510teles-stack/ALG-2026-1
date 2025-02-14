@@ -10,7 +10,7 @@ spec:
   image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.78"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/dados_cadastrais.py
+  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/dados_cadastrais.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
@@ -115,7 +115,10 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "master"
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-spark-configs
+                key: branch
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -228,7 +231,10 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "master"
+            valueFrom:
+              configMapKeyRef:
+                name: airflow-spark-configs
+                key: branch
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
