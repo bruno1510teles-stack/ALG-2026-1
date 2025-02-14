@@ -8,6 +8,9 @@ from datetime import datetime, timezone, timedelta
 
 def dados_cadastrais_to_refined(spark):
 
+    # Limpar cache de metadados antes da leitura dos dados
+    spark.catalog.clearCache()
+
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
     hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
     hadoop_conf.set("fs.s3a.secret.key", os.getenv('MINIO_TRUSTED_SECRET_KEY'))
