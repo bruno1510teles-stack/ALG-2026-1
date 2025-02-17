@@ -65,7 +65,7 @@ with DAG(
     tags=['proposta-negocio', 'definir política', 'pre-filtro'],
     description="Pre filtro das propostas de negócio independente da política",
     max_active_tasks=1,
-    max_active_runs=2
+    max_active_runs=1
 ) as dag:
     
     politicas_task = PythonOperator(
