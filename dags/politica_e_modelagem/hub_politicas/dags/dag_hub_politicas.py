@@ -36,7 +36,7 @@ access_params = {
     "jira_api_token": Variable.get('JIRA_API_TOKEN'),
     "jira_api_user": Variable.get('JIRA_API_USER'),
     "jira_project": Variable.get('JIRA_PROJECT'),
-    "jira_max_result": 15
+    "jira_max_result": 50
     }
 
 def notificar_falha_teams(context):
