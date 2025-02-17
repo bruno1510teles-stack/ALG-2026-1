@@ -36,7 +36,7 @@ access_params = {
     "jira_api_token": Variable.get('JIRA_API_TOKEN'),
     "jira_api_user": Variable.get('JIRA_API_USER'),
     "jira_project": Variable.get('JIRA_PROJECT'),
-    "jira_max_result": 30
+    "jira_max_result": 50
     }
 
 def notificar_falha_teams(context):
@@ -72,7 +72,7 @@ with DAG(
             task_id="selecionar_politica",
             python_callable=aplicar_politica,
             op_kwargs={'access_params': access_params},
-            execution_timeout=timedelta(minutes=10),
+            execution_timeout=timedelta(minutes=20),
             provide_context=True
         )
 
@@ -80,7 +80,7 @@ with DAG(
             task_id="pre_filtro",
             python_callable=analise_pre_filtro,
             op_kwargs={'access_params': access_params},
-            execution_timeout=timedelta(minutes=10),
+            execution_timeout=timedelta(minutes=20),
             provide_context=True
         )
     
