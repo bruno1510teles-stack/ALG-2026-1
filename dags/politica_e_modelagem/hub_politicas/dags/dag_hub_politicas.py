@@ -36,7 +36,7 @@ access_params = {
     "jira_api_token": Variable.get('JIRA_API_TOKEN'),
     "jira_api_user": Variable.get('JIRA_API_USER'),
     "jira_project": Variable.get('JIRA_PROJECT'),
-    "jira_max_result": 50
+    "jira_max_result": 30
     }
 
 def notificar_falha_teams(context):
@@ -65,7 +65,7 @@ with DAG(
     tags=['proposta-negocio', 'definir política', 'pre-filtro'],
     description="Pre filtro das propostas de negócio independente da política",
     max_active_tasks=1,
-    max_active_runs=1
+    max_active_runs=2
 ) as dag:
     
     politicas_task = PythonOperator(
