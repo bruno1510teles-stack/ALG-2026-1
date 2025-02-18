@@ -130,7 +130,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         if not has_tickets:
             data.append({
                 'cnpj_raiz': cnpj,
-                'cnpj_jira': cpnj_jira,
+                'cnpj_jira': None,
                 'analise_menor_60_dias': False,
                 'decisor': None,  # Nenhum decisor para esse CNPJ
                 'decisao': None  # Nenhum limite encontrado
