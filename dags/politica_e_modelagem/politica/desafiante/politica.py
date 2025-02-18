@@ -461,6 +461,8 @@ def executa_politica (access_params=None,  **kwargs):
 
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
     print(resultado_politica.columns)
+    print(sem_hp.columns)
+    print(sem_hp)
     resultado_politica = resultado_politica.drop('id', axis=1)
     resultado_politica = resultado_politica.drop_duplicates()
     resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
