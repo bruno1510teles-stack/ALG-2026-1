@@ -31,7 +31,7 @@ def base_analisar(access_params=None,  **kwargs):
     while True:
         # Query para buscar os tickets da fila desejada
         query = {
-            "jql": "project = cmgh AND Política = 'Desafiante' AND status = 'Analyzing Credit Score'",
+            "jql": "project = cmgt AND Política = 'Desafiante' AND status = 'Analyzing Credit Score'",
             "fields": ["key",  # ISSUE_JIRA
                     "summary",
                     "customfield_13729",  # CNPJ
