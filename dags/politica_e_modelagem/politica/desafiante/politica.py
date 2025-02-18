@@ -261,11 +261,10 @@ def executa_politica (access_params=None,  **kwargs):
 
 
     query_pontualidade = (f"""
-                        --select
-                          --  raiz_cnpj as cnpj_raiz,
-                            --pontualidade
-                        --from deltalakerefined.motor.pontualidade  
-                          select cnpj_sacado  as cnpj_raiz, cnpj_sacado as pontualidade from deltalaketrusted.payments.boletos_internos where cnpj_sacado = '00144494'
+                        select
+                            raiz_cnpj as cnpj_raiz,
+                            pontualidade
+                        from deltalakerefined.motor.pontualidade  
                         """)
 
     base_pontualidade = execute_query(conn, query_pontualidade)
