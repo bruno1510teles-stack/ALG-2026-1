@@ -265,6 +265,7 @@ def executa_politica (access_params=None,  **kwargs):
                             raiz_cnpj as cnpj_raiz,
                             pontualidade
                         from deltalakerefined.motor.pontualidade  
+                          where raiz_cnpj in {ids_query}
                         """)
 
     base_pontualidade = execute_query(conn, query_pontualidade)
@@ -459,6 +460,7 @@ def executa_politica (access_params=None,  **kwargs):
     print('Tratamentos finais...')
 
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
+    print(resultado_politica.columns)
     resultado_politica = resultado_politica.drop('id', axis=1)
     resultado_politica = resultado_politica.drop_duplicates()
     resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
