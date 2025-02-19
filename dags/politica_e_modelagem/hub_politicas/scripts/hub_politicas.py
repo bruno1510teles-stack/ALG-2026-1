@@ -109,6 +109,7 @@ def aplicar_politica(access_params=None,  **kwargs):
             bi.cnpj_sacado
         """
 
+
         # Query para regra politica_v4
         query_politica_v4 = f"""
         with 
