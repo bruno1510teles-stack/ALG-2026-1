@@ -321,7 +321,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         # Verificação SPE
         is_spe = (data_frame['cod_natureza_juridica'] == '2062') & (
             data_frame['razao_social'].str.startswith("SPE ") | 
-            data_frame['razao_social'].str.endswith(" SPE"))
+            data_frame['razao_social'].str.endswith(" SPE")| 
+            data_frame['razao_social'].str.endswith(" SPE LTDA"))
         
         # Verificação Consórcio
         is_consorcio = (data_frame['cod_natureza_juridica'].isin(['1210', '1228', '2151', '2283', '2291']) & (
@@ -377,10 +378,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
+        'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS', 'PF SOCIO < 2 ANOS'],
         'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
         'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF SOCIO PJ', 'PF BLOQUEIO ALPE'],
-        'SEGUE': ['PF SEGUE', 'PF SOCIO < 2 ANOS']
+        'SEGUE': ['PF SEGUE']
     }
     # Aplicar as respostas
     for response, values in response_map.items():
