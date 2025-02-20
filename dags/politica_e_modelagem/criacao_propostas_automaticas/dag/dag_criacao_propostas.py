@@ -48,7 +48,7 @@ default_args = {
 with DAG(
     dag_id='criacao_propostas_automaticas',
     start_date=days_ago(1),
-    schedule_interval='0 9 * * 1',  # Rodar todas as segundas-feiras às 10:00
+    schedule_interval='0 12 * * 1',  # Rodar todas as segundas-feiras às 10:00
     default_args=default_args,
     tags=['propostas', 'automaticas'] # DAG só será acionada manualmente pela API
 ) as dag:

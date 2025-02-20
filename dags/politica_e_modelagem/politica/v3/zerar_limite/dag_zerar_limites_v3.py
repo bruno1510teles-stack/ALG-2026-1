@@ -49,7 +49,7 @@ default_args = {
 with DAG(
     dag_id='politica_v_3',
     start_date=days_ago(1),
-    schedule_interval='0 10 * * 1',  # Rodar todas as segundas-feiras às 10:00
+    schedule_interval='0 13 * * 1',  # Rodar todas as segundas-feiras às 10:00
     default_args=default_args,
     tags=['politica_v3', 'zerar_limite'] # DAG só será acionada manualmente pela API
 ) as dag:
