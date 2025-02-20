@@ -9,6 +9,8 @@ from trino.auth import BasicAuthentication
 import numpy as np
 
 
+
+
 def extracao_faturamento_externo(access_params=None, **kwargs):
 
 

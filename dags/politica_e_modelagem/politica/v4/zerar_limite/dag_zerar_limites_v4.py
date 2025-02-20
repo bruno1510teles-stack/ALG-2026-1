@@ -8,7 +8,6 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.politica.v4.zerar_limite import exporta_csv
 from politica_e_modelagem.politica.v4.zerar_limite import captura_proposta
 from politica_e_modelagem.politica.v4.zerar_limite import executa_politica
 from politica_e_modelagem.politica.v4.zerar_limite import envio_kafka_task    
@@ -55,13 +54,6 @@ with DAG(
     tags=['politica_v4', 'zerar_limite']  # DAG só será acionada manualmente pela API
 ) as dag:
 
-    # Filtra casos que serão vencidos e exporta para o devido bucket
-    exporta_csv_zerar_limites = PythonOperator(
-        task_id = 'exporta_csv_zerar_limites',
-        python_callable = exporta_csv.execucao_politica_zerar_limites_v4,
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
-    )
-
     # Captura proposta no jira
     captura_proposta = PythonOperator(
         task_id = "captura_proposta",
@@ -89,4 +81,4 @@ with DAG(
 
 
     # Definindo a ordem de execução das tasks
-    exporta_csv_zerar_limites >> captura_proposta >> executa_politica >> enviar_kafka
+    captura_proposta >> executa_politica >> enviar_kafka

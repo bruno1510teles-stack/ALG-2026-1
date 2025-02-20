@@ -12,7 +12,7 @@ import re
 import time
 
 
-def execucao_politica_zerar_limites(access_params=None,  **kwargs):
+def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
 	
 	#conn = connect(
@@ -227,7 +227,3 @@ def execucao_politica_zerar_limites(access_params=None,  **kwargs):
 	except Exception as e:
 		print(f"{e}")
 		exit(1)
-
-	# Timer de 1 minuto no final
-	print("Aguardando 30 minutos antes de rodar o proximo processo...")
-	time.sleep(2300)  # Aguardar 60 segundos (1 minuto)

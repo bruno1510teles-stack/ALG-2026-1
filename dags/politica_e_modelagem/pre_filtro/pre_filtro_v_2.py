@@ -130,7 +130,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         if not has_tickets:
             data.append({
                 'cnpj_raiz': cnpj,
-                'cnpj_jira': cpnj_jira,
+                'cnpj_jira': None,
                 'analise_menor_60_dias': False,
                 'decisor': None,  # Nenhum decisor para esse CNPJ
                 'decisao': None  # Nenhum limite encontrado
@@ -321,7 +321,8 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         # Verificação SPE
         is_spe = (data_frame['cod_natureza_juridica'] == '2062') & (
             data_frame['razao_social'].str.startswith("SPE ") | 
-            data_frame['razao_social'].str.endswith(" SPE"))
+            data_frame['razao_social'].str.endswith(" SPE")| 
+            data_frame['razao_social'].str.endswith(" SPE LTDA"))
         
         # Verificação Consórcio
         is_consorcio = (data_frame['cod_natureza_juridica'].isin(['1210', '1228', '2151', '2283', '2291']) & (

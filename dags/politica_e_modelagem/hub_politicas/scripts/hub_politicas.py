@@ -104,10 +104,11 @@ def aplicar_politica(access_params=None,  **kwargs):
         where 
             status_titulo = 'VENCIDO' 
             and data_vencimento <= current_date - interval '30' day 
-            and regexp_replace(bi.cnpj_sacado, '[.-]', '') = '{cnpj_sacado}'
+            and regexp_replace(bi.cnpj_sacado, '[./-]', '') = '{cnpj_sacado}'
         group by 
             bi.cnpj_sacado
         """
+
 
         # Query para regra politica_v4
         query_politica_v4 = f"""
@@ -122,7 +123,8 @@ def aplicar_politica(access_params=None,  **kwargs):
                 cnpj_raiz as cnpj_sacado_raiz,
                 documento_sem_formatacao as cnpj_completo,
                 razao_social as razao_social_sacado,
-                coalesce(situacao_especial, 'ATIVA') as situacao_cadastral,
+                coalesce(situacao_cadastral, 'ATIVA') as situacao_cadastral,
+                situacao_especial,
                 tem_pep
             from 
                 deltalakerefined.motor.pre_filtro
@@ -211,7 +213,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                         return 'V5'
                 
                 
-                # # (Desafiante): Verifica o 4º dígito do CNPJ
+                # (Desafiante): Verifica o 4º dígito do CNPJ
                 # if len(cnpj_sacado) > 3:
                 #     quarto_digito = cnpj_sacado[3]  # Pega o 4º dígito do CNPJ (índice 3)
                 #     if quarto_digito in ['2', '3', '4']:

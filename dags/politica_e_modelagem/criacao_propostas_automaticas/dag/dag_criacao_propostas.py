@@ -8,9 +8,8 @@ from time import sleep
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.politica.v3.zerar_limite import captura_proposta
-from politica_e_modelagem.politica.v3.zerar_limite import executa_politica
-from politica_e_modelagem.politica.v3.zerar_limite import envio_kafka_task    
+from politica_e_modelagem.criacao_propostas_automaticas.scripts.propostas_v3 import exporta_csv_politica_v3
+from politica_e_modelagem.criacao_propostas_automaticas.scripts.propostas_v4 import exporta_csv_politica_v4
 
 
 ### Parâmetros de acesso
@@ -47,38 +46,27 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='politica_v_3',
+    dag_id='criacao_propostas_automaticas',
     start_date=days_ago(1),
-    schedule_interval='0 13 * * 1',  # Rodar todas as segundas-feiras às 10:00
+    schedule_interval='0 12 * * 1',  # Rodar todas as segundas-feiras às 10:00
     default_args=default_args,
-    tags=['politica_v3', 'zerar_limite'] # DAG só será acionada manualmente pela API
+    tags=['propostas', 'automaticas'] # DAG só será acionada manualmente pela API
 ) as dag:
 
+    # Filtra casos que serão vencidos e exporta para o devido bucket
+    task1 = PythonOperator(
+        task_id = 'propostas_v3',
+        python_callable = exporta_csv_politica_v3,
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
+
     # Captura proposta no jira
-    captura_proposta = PythonOperator(
-        task_id = "captura_proposta",
-        python_callable = captura_proposta.captura_proposta,
+    task2 = PythonOperator(
+        task_id = "propostas_v4",
+        python_callable = exporta_csv_politica_v4,
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
-
-    # Execução da política
-    executa_politica = PythonOperator(
-        task_id = "executa_politica",
-        python_callable = executa_politica.execucao_politica,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
-    )
-
-
-    # Enviando dados para o Kafka
-    enviar_kafka = PythonOperator(
-        task_id = "envio_kafka_task",
-        python_callable = envio_kafka_task.envio_kafka,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True,
-    )
-
 
     # Definindo a ordem de execução das tasks
-    captura_proposta >> executa_politica >> enviar_kafka
+    task1 >> task2
