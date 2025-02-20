@@ -1,4 +1,4 @@
-from scripts.utils import get_trino_connection, execute_query
+from dags.processos_antigos.scripts_diversos.utils import get_trino_connection, execute_query
 import base64
 
 class MinioSaveIndex:

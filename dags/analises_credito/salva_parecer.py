@@ -2,7 +2,7 @@ import csv
 from datetime import datetime
 import io
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
-from scripts.utils import get_trino_connection, execute_query
+from dags.processos_antigos.scripts_diversos.utils import get_trino_connection, execute_query
 from airflow.decorators import dag, task
 from airflow.utils.dates import days_ago
 
