@@ -1,12 +1,9 @@
 import pendulum
 from airflow.decorators import dag, task
 from airflow.operators.empty import EmptyOperator
-import requests
-import time
-import json
 from io import BytesIO
-from scripts.analises_credito.error_warning import erro
-from scripts.utils import extract_path_from_url, get_trino_connection, execute_query
+from processos_antigos.error_warning import erro
+from processos_antigos.scripts_diversos.utils import extract_path_from_url, get_trino_connection, execute_query
 from minio.error import S3Error
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioSaveIndex import MinioSaveIndex
