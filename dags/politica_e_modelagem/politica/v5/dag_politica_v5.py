@@ -7,7 +7,6 @@ import pandas as pd
 from time import sleep
 
 ### Importando scripts necessários
-from politica_e_modelagem.politica.v5.importa_base_lote import importa_base_pre_aprovado_lote
 from politica_e_modelagem.politica.v5.pre_filtro_task_old import pre_filtro_task
 from politica_e_modelagem.politica.v5.pre_filtro_task_new import pre_filtro_task_v2
 from politica_e_modelagem.politica.v5.serasa import compra_info_serasa
@@ -57,13 +56,6 @@ with DAG(
     default_args=default_args,
     tags=['politica_v5', 'pre_aprovado', 'lote']  # DAG só será acionada manualmente pela API
 ) as dag:
-
-    # Filtra casos que serão vencidos e exporta para o devido bucket
-    task1 = PythonOperator(
-        task_id = 'importa_base_lote',
-        python_callable = importa_base_pre_aprovado_lote,
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
-    )
 
     # Captura proposta no jira
     task2 = PythonOperator(
@@ -124,5 +116,5 @@ with DAG(
     '''
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2 >> task3 >> task4 
+    task2 >> task3 >> task4 
     #>> task5 >> task6 >> task7 >> task8
