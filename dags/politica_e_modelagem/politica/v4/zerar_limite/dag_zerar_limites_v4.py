@@ -45,6 +45,53 @@ default_args = {
 }
 
 
+# Função para processar as propostas recebidas
+
+def processar_proposta(**kwargs):
+    # Capturando os parâmetros enviados via conf
+    conf = kwargs.get('dag_run').conf
+    issue_jira = conf.get('issue_key')
+    CNPJ = conf.get('payer_identification')
+    inad_alpe = conf.get('inad')
+    pgid = conf.get('payee_pgid')
+    nome_issue = conf.get('summary')
+
+    # Criando um dicionário com os dados recebidos para simular o DataFrame
+    dados = {
+        'issue_jira' : [issue_jira],
+        'CNPJ': [CNPJ],
+        'inad_alpe': [inad_alpe],
+        'pgid': [pgid],
+        'nome_issue': [nome_issue]
+    }
+
+    # Convertendo o dicionário em DataFrame para aplicar as transformações
+    df = pd.DataFrame(dados)
+
+    # Passo 1: Remover a máscara de valor e converter para numérico
+    if df['inad_alpe'].notna().any():
+        df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
+        df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
+
+    # Passo 3: Criar as colunas de flag com base na lógica fornecida
+    df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
+
+    # Passo 4: Deixar o nome padrão
+    # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
+    df.drop(columns=['inad_alpe'], inplace=True)
+
+    # Renomear as colunas de flag para os nomes originais
+    df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+
+    # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
+    #df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+
+    # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
+    print(df)
+
+    return df.to_dict(orient='records')
+
+
 # Definindo a DAG
 with DAG(
     dag_id='politica_v_4',
@@ -54,12 +101,11 @@ with DAG(
     tags=['politica_v4', 'zerar_limite']  # DAG só será acionada manualmente pela API
 ) as dag:
 
-    # Captura proposta no jira
+    # Definindo o task que processa a proposta
     captura_proposta = PythonOperator(
-        task_id = "captura_proposta",
-        python_callable = captura_proposta.captura_proposta,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+        task_id='captura_proposta',
+        python_callable=processar_proposta,
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Execução da política
