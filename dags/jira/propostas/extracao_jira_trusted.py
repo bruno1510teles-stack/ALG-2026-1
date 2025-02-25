@@ -124,7 +124,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
         'VANESSA LINO': 'OUTROS',
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
-        'JOEL DONIZETTI APARECIDO': 'OUTROS'
+        'JOEL DONIZETTI APARECIDO': 'OUTROS',
+        'COMERCIAL CONEXÃO' : 'OUTROS'
     }
 
     # Função para padronizar o nome
