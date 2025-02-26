@@ -34,12 +34,12 @@ def captura_proposta(access_params=None):
             "jql": "project = cmgt AND Política = 'Política 5' AND status = 'Analyzing Credit Score'",
             "fields": ["key",  # ISSUE_JIRA
                     "summary",
-                    "customfield_13729",  # CNPJ
-                    "customfield_13732",  # LIMITE ALPE
-                    "customfield_13808",  # INAD ALPE 
-                    "customfield_13739",  # PGID FN
-                    "customfield_13719", # NOME PGID FN
-                    "customfield_13737"],  # LIMITE SOLICITADO
+                    "customfield_13729",    # CNPJ
+                    "customfield_13732",    # LIMITE ALPE
+                    "customfield_13808",    # INAD ALPE 
+                    "customfield_13739",    # PGID FN
+                    "customfield_13719",    # NOME PGID FN
+                    "customfield_13737"],   # LIMITE SOLICITADO
             "maxResults": max_results,
             "startAt": start_at
         }

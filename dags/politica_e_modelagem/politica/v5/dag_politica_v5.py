@@ -1,21 +1,21 @@
-# Importando Libs necessárias
+### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
 from time import sleep
+import requests
+from datetime import timedelta
+
 
 ### Importando scripts necessários
-from politica_e_modelagem.politica.v5.pre_filtro_task_old import pre_filtro_task
-from politica_e_modelagem.politica.v5.pre_filtro_task_new import pre_filtro_task_v2
-from politica_e_modelagem.politica.v5.serasa import compra_info_serasa
-from politica_e_modelagem.politica.v5.motor_v5 import executa_politica_v5
-from politica_e_modelagem.politica.v5.exporta_csv import exporta_csv_cria_proposta_jira
-from politica_e_modelagem.politica.v5.captura_proposta import captura_proposta
-from politica_e_modelagem.politica.v5.executa_politica import execucao_politica
-from politica_e_modelagem.politica.v5.envio_kafka import envio_kafka
- 
+from politica_e_modelagem.pre_filtro import pre_filtro_v_5
+from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
+from politica_e_modelagem.politica.v5 import executa_politica
+from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
+
+
 ### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -41,11 +41,70 @@ access_params = {
     }
 
 
-# Definindo defaults
+
+def notificar_falha_teams(context):
+    url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
+    mensagem = {
+        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
+        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+    }
+    requests.post(url, json=mensagem)
+
+
+### Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    "retries": 0,
+    "on_failure_callback": notificar_falha_teams
 }
+
+
+# Função para processar as propostas recebidas
+
+def processar_proposta(**kwargs):
+    # Capturando os parâmetros enviados via conf
+    conf = kwargs.get('dag_run').conf
+    issue_jira = conf.get('issue_key')
+    CNPJ = conf.get('payer_identification')
+    inad_alpe = conf.get('inad')
+    pgid = conf.get('payee_pgid')
+    nome_issue = conf.get('summary')
+
+    # Criando um dicionário com os dados recebidos para simular o DataFrame
+    dados = {
+        'issue_jira' : [issue_jira],
+        'CNPJ': [CNPJ],
+        'inad_alpe': [inad_alpe],
+        'pgid': [pgid],
+        'nome_issue': [nome_issue]
+    }
+
+    # Convertendo o dicionário em DataFrame para aplicar as transformações
+    df = pd.DataFrame(dados)
+    print(df)
+
+    # Passo 1: Remover a máscara de valor e converter para numérico
+    if df['inad_alpe'].notna().any():
+        df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
+        df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
+
+    # Passo 3: Criar as colunas de flag com base na lógica fornecida
+    df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
+
+    # Passo 4: Deixar o nome padrão
+    # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
+    df.drop(columns=['inad_alpe'], inplace=True)
+
+    # Renomear as colunas de flag para os nomes originais
+    df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+
+    # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
+    #df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+
+    # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
+    print(df)
+
+    return df.to_dict(orient='records')
+
 
 
 # Definindo a DAG
@@ -54,67 +113,53 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval=None,
     default_args=default_args,
-    tags=['politica_v5', 'pre_aprovado', 'lote']  # DAG só será acionada manualmente pela API
+    tags=['politica_v5', 'pre_aprovado', 'lote']
 ) as dag:
 
-    # Captura proposta no jira
-    task2 = PythonOperator(
-        task_id = "pre_filtro",
-        python_callable = pre_filtro_task_v2,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Definindo o task que processa a proposta
+    captura_proposta = PythonOperator(
+        task_id='captura_proposta',
+        python_callable=processar_proposta,
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
-    # Captura proposta no jira
-    task3 = PythonOperator(
-        task_id = "compra_info_serasa",
-        python_callable = compra_info_serasa,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Definindo o task de pre filtro
+    pre_filtro = PythonOperator(
+        task_id="pre_filtro_task",
+        python_callable=pre_filtro_v_5.analise_pre_filtro,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
     )
 
-    # Captura proposta no jira
-    task4 = PythonOperator(
-        task_id = "motor_v5",
-        python_callable = executa_politica_v5,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Definindo o task que faz a chamada do serasa
+    serasa = PythonOperator(
+        task_id="serasa_task",
+        python_callable=execucao_chamada_serasa.chamando_serasa,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
     )
 
-    '''
-    # Captura proposta no jira
-    task5 = PythonOperator(
-        task_id = "exporta_csv",
-        python_callable = exporta_csv_cria_proposta_jira,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Execução da política
+    politica_desafiante = PythonOperator(
+        task_id="politica_task",
+        python_callable=executa_politica.executa_politica,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
     )
 
-    # Captura proposta no jira
-    task6 = PythonOperator(
-        task_id = "captura_proposta",
-        python_callable = captura_proposta,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Enviando dados para o Kafka
+    enviar_kafka = PythonOperator(
+        task_id="envio_kafka_task",
+        python_callable=execucao_envio_kafka.envio_kafka,
+        op_kwargs={'access_params': access_params},
+        provide_context=True,
     )
 
-    # Captura proposta no jira
-    task7 = PythonOperator(
-        task_id = "executa_politica",
-        python_callable = execucao_politica,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    # Definindo o sleep para processo de dados no data lake
+    aguarde = PythonOperator(
+        task_id="esperar_tempo_serasa_15min",
+        python_callable=lambda: sleep(1020),  # Espera por 1 minuto (ajustado de 15 minutos)
     )
-
-    # Captura proposta no jira
-    task8 = PythonOperator(
-        task_id = "envio_kafka",
-        python_callable = envio_kafka,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
-    )
-    '''
 
     # Definindo a ordem de execução das tasks
-    task2 >> task3 >> task4 
-    #>> task5 >> task6 >> task7 >> task8
+    captura_proposta >> pre_filtro >> serasa >> aguarde >> politica_desafiante >> enviar_kafka
