@@ -500,7 +500,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     # Criação do mapeamento de pareceres
     parecer_map = {
-        "APROVADO":"Política V5 - Aprovado"
+        "APROVADO":"Motor - Aprovado"
     }
 
     # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
