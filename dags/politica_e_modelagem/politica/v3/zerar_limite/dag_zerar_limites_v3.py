@@ -10,7 +10,7 @@ from time import sleep
 ### Importando scripts necessários
 from politica_e_modelagem.politica.v3.zerar_limite import captura_proposta
 from politica_e_modelagem.politica.v3.zerar_limite import executa_politica
-from politica_e_modelagem.politica.v3.zerar_limite import envio_kafka_task    
+from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka   
 
 
 ### Parâmetros de acesso
@@ -123,10 +123,10 @@ with DAG(
 
     # Enviando dados para o Kafka
     enviar_kafka = PythonOperator(
-        task_id = "envio_kafka_task",
-        python_callable = envio_kafka_task.envio_kafka,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True,
+        task_id="envio_kafka_task",
+        python_callable=execucao_envio_kafka.envio_kafka,
+        op_kwargs={'access_params': access_params},
+        provide_context=True,
     )
 
     # Definindo a ordem de execução das tasks
