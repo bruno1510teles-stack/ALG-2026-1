@@ -10,7 +10,7 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.pre_filtro import pre_filtro_v_2
+from politica_e_modelagem.pre_filtro import pre_filtro_v_5
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.politica.desafiante import politica
 from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
@@ -51,53 +51,64 @@ def notificar_falha_teams(context):
     }
     requests.post(url, json=mensagem)
 
+
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "retries": 3,
-    "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
 
 
-# # Função para processar as propostas recebidas
-# def processar_proposta(**kwargs):
-#     # Capturando os parâmetros enviados via conf
-#     conf = kwargs.get('dag_run').conf
-#     issue_jira = conf.get('issue_key')
-#     CNPJ = conf.get('payer_identification')
-#     inad_alpe = conf.get('inad')
-#     pgid = conf.get('payee_pgid')
-#     nome_issue = conf.get('summary')
+# Função para processar as propostas recebidas
 
-#     # Criando um dicionário com os dados recebidos para simular o DataFrame
-#     dados = {
-#         'issue_jira' : [issue_jira],
-#         'CNPJ': [CNPJ],
-#         'inad_alpe': [inad_alpe],
-#         'pgid': [pgid],
-#         'nome_issue': [nome_issue]
-#     }
+def processar_proposta(**kwargs):
+    # Capturando os parâmetros enviados via conf
+    conf = kwargs.get('dag_run').conf
+    issue_jira = conf.get('issue_key')
+    CNPJ = conf.get('payer_identification')
+    inad_alpe = conf.get('inad')
+    pgid = conf.get('payee_pgid')
+    nome_issue = conf.get('summary')
 
-#     # Convertendo o dicionário em DataFrame para aplicar as transformações
-#     df = pd.DataFrame(dados)
+    # Criando um dicionário com os dados recebidos para simular o DataFrame
+    dados = {
+        'issue_jira' : [issue_jira],
+        'CNPJ': [CNPJ],
+        'inad_alpe': [inad_alpe],
+        'pgid': [pgid],
+        'nome_issue': [nome_issue]
+    }
 
-#     # Passo 1: Remover a máscara de valor e converter para numérico
-#     if df['inad_alpe'].notna().any():
-#         df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
-#         df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
+    print(dados)
+    print(dados['CNPJ'])
+    print(dados['issue_jira'])
 
-#     # Passo 3: Criar as colunas de flag com base na lógica fornecida
-#     df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
+    # Convertendo o dicionário em DataFrame para aplicar as transformações
+    df = pd.DataFrame(dados)
+    print(df)
 
-#     # Passo 4: Deixar o nome padrão
-#     # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
-#     df.drop(columns=['inad_alpe'], inplace=True)
+    # Passo 1: Remover a máscara de valor e converter para numérico
+    if df['inad_alpe'].notna().any():
+        df['inad_alpe'] = df['inad_alpe'].replace({'R\$ ': '', '\.': ''}, regex=True)
+        df['inad_alpe'] = pd.to_numeric(df['inad_alpe'], errors='coerce')  # Converte para float, substituindo erros por NaN
 
-#     # Renomear as colunas de flag para os nomes originais
-#     df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+    # Passo 3: Criar as colunas de flag com base na lógica fornecida
+    df['inad_alpe_flag'] = df['inad_alpe'].apply(lambda x: 'SIM' if pd.notna(x) and x > 0 else 'NAO')
 
-#     return df.to_dict()
+    # Passo 4: Deixar o nome padrão
+    # Remover as colunas originais 'limite_alpe' e 'inad_alpe'
+    df.drop(columns=['inad_alpe'], inplace=True)
+
+    # Renomear as colunas de flag para os nomes originais
+    df.rename(columns={'inad_alpe_flag': 'inad_alpe'}, inplace=True)
+
+    # Filtrar o DataFrame para manter apenas as linhas onde 'nome_issue' contenha a palavra 'LOTE'
+    #df = df[~df['nome_issue'].str.contains('LOTE', case=False, na=False)]
+
+    # Exibir o DataFrame resultante (para fins de debug, pode ser removido)
+    print(df)
+
+    return df.to_dict(orient='records')
 
 # Definindo a DAG
 with DAG(
@@ -111,14 +122,14 @@ with DAG(
     # Definindo o task que processa a proposta
     captura_proposta = PythonOperator(
         task_id='captura_proposta',
-        python_callable=import_base_desafiante.base_analisar,
+        python_callable=processar_proposta,
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
-        python_callable=pre_filtro_v_2.analise_pre_filtro,
+        python_callable=pre_filtro_v_5.analise_pre_filtro,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )

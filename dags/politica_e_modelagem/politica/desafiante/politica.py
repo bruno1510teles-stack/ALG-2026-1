@@ -18,12 +18,13 @@ def executa_politica (access_params=None,  **kwargs):
     ### Configurando configurações necessárias
     # Trino
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host='trino.alpe.com.br',
+        port='443',
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
+
     # Pegando DF tarefa anterior
     ti = kwargs['ti']
     base_pre_filtro_dict = ti.xcom_pull(task_ids='pre_filtro_task')
@@ -33,7 +34,10 @@ def executa_politica (access_params=None,  **kwargs):
     base_pre_filtro['cnpj_raiz'] = base_pre_filtro['cnpj_raiz'].str[-8:]
 
     df_politica_segue = base_pre_filtro.loc[base_pre_filtro['resposta'] == "SEGUE"]
+
+
     df_politica_dif_segue = base_pre_filtro[base_pre_filtro['resposta'] != "SEGUE"]
+    df_politica_dif_segue['ramificacao_2'] = 'REPROVADO'
 
     print(f'Quantidade de linhas onde "Resposta" == "segue": {len(df_politica_segue)}')
     print(f'Quantidade de linhas onde "Resposta" != "segue": {len(df_politica_dif_segue)}')
@@ -261,11 +265,10 @@ def executa_politica (access_params=None,  **kwargs):
 
 
     query_pontualidade = (f"""
-                        select
-                            raiz_cnpj as cnpj_raiz,
-                            pontualidade
-                        from deltalakerefined.motor.pontualidade  
-                          where raiz_cnpj in {ids_query}
+                            select
+                                raiz_cnpj as cnpj_raiz,
+                                pontualidade
+                            from deltalakerefined.motor.pontualidade  
                         """)
 
     base_pontualidade = execute_query(conn, query_pontualidade)
@@ -273,7 +276,7 @@ def executa_politica (access_params=None,  **kwargs):
     print(f"Quantidade de CNPJs que retornou da base_pontualidade: {base_pontualidade.shape[0]}")
 
 
-    print('Parte 2 - Criando Flags e Campos necessarios para Politica V5...')
+    print('Parte 2 - Criando flags e campos necessarios para politica V5...')
 
 
     base_analisar = pd.merge(base_retorno_serasa, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
@@ -457,14 +460,31 @@ def executa_politica (access_params=None,  **kwargs):
     # Aplicar a função em cada linha do DataFrame 'sem_hp'
     com_hp = com_hp.apply(aplica_regras_com_hp, axis=1)
 
-    print('Tratamentos finais...')
+    print('Parte 5 - Tratamentos finais...')
 
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
+
     resultado_politica = resultado_politica.drop('id', axis=1)
+
     resultado_politica = resultado_politica.drop_duplicates()
-    resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
-    resultado_politica['flag_decidido_pelo_motor'] = True
-    resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
+
+    print('Parte 6 - Lógica para verificar se a base está vazia...')
+
+    if resultado_politica.empty:
+        print("Nenhum dado encontrado nas tabelas 'com_hp' e 'sem_hp'. O DataFrame está vazio.")
+
+        colunas = ['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']
+        resultado_politica = pd.DataFrame(columns=colunas)
+
+    else:
+        resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
+
+        resultado_politica['flag_decidido_pelo_motor'] = True
+
+        resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
+
+
+    print('Parte 7 - Merge base pre filtro inicial com o resultado da politica...')
 
     # Merge da base inicial com campos filtrados com a base de decisao da politica
     df_resultado = pd.merge(base_pre_filtro, resultado_politica, on='cnpj_raiz', how='left')
@@ -472,13 +492,15 @@ def executa_politica (access_params=None,  **kwargs):
     # Tratando base final
     df_resultado['documento_sem_formatacao'] = df_resultado['documento_sem_formatacao'].apply(lambda x: str(x).zfill(14))
 
+    print('Parte 8 - Definindo parecer...')
+
     df_resultado.loc[df_resultado['decisao_final'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
     df_resultado.loc[df_resultado['decisao_final'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
     df_resultado.loc[df_resultado['decisao_final'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
 
     # Criação do mapeamento de pareceres
     parecer_map = {
-        "APROVADO":"Motor - Aprovado"
+        "APROVADO":"Política Desafiante - Aprovado"
     }
 
     # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
@@ -491,6 +513,7 @@ def executa_politica (access_params=None,  **kwargs):
     # Aplica a função ao DataFrame
     df_resultado['parecer'] = df_resultado.apply(parecer_personalizado, axis=1)
 
+    print('Parte 9 - Gerando path...')
 
     # Gerando Path
     def gerando_path(row):
@@ -508,7 +531,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     df_resultado = df_resultado.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
 
-   
+    print('Parte 10 - Tratando campos base final...')
 
     resposta_motor_resumida = df_resultado[['issue_jira', 'decisao_final', 'cnpj_ec', 'parecer', 'ramificacao_final', 'url', 'valor_aprovado']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
