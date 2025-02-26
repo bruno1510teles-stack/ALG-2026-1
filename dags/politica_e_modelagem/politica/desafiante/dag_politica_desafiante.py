@@ -79,10 +79,6 @@ def processar_proposta(**kwargs):
         'nome_issue': [nome_issue]
     }
 
-    print(dados)
-    print(dados['CNPJ'])
-    print(dados['issue_jira'])
-
     # Convertendo o dicionário em DataFrame para aplicar as transformações
     df = pd.DataFrame(dados)
     print(df)
