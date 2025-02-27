@@ -116,7 +116,7 @@ def dados_cadastrais_to_refined(spark):
         to_date(col("pep.data_fim_carencia"), "yyyy-MM-dd").alias("data_fim_carencia"),
         
         # Outras informações
-        col("e.data_ref"),
+        col("e.data_ref").alias("data_ref"),
         date_format(current_timestamp(), "yyyy-MM-dd").alias("Atualizado_em")
     )
 )
@@ -172,7 +172,7 @@ def dados_cadastrais_to_refined(spark):
         "data_fim_carencia",
 
         # Outras informações
-        "data_ref"
+        "data_ref",
         "Atualizado_em"
     ]
 
