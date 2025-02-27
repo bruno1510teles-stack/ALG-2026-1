@@ -41,7 +41,7 @@ access_params = {
 # Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    "retries": 0,
+    "retries": 3,
 }
 
 
