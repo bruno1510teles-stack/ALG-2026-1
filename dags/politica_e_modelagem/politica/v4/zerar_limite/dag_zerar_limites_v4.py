@@ -110,7 +110,7 @@ with DAG(
 
     # Execução da política
     executa_politica = PythonOperator(
-        task_id = "executa_politica",
+        task_id = "politica_task",
         python_callable = executa_politica.execucao_politica,
         op_kwargs = {'access_params': access_params},
         provide_context = True
