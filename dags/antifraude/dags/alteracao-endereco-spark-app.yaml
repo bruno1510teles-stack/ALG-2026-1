@@ -48,7 +48,7 @@ spec:
   driver:
     deleteOnTermination: true
     coreLimit: "1"
-    coreRequest: "1"
+    coreRequest: "500m"
     memory: "4g"
     labels:
       version: "3.5.1"
