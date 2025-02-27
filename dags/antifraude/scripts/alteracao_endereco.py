@@ -28,7 +28,7 @@ def alteracao_endereco(spark):
     # Puxando base
     print("Importando Base")
     df = spark.read.format("delta").load("s3a://bureaus/receita-federal/estabelecimentos_aud")
-    municipio = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/municipios")
+    municipio = spark.read.format("delta").load("s3a://bureaus/receita-federal/municipios")
     municipio = municipio.select("codigo","descricao")
     print("Base Importada com sucesso!!")
 
