@@ -269,7 +269,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         elif decisor_func == 'Duplicado':
             return "DUPLICADO"
         elif decisor_func == 'Ineligible':
-            return "REPROVADO"
+            return "INELEGÍVEL"
         elif decisor_func == 'Canceled':
             return "CANCELADO"
         elif decisor_func == 'Não será feito':
