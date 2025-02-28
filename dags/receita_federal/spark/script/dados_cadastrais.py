@@ -104,7 +104,7 @@ def dados_cadastrais_to_refined(spark):
         # Informações dos sócios
         col("soci.identificador_socio").alias("tipo_socio"),
         col("soci.documento_socio").alias("documento_socio_mais_recente"),
-        col("soci.nome/razao_social").alias("socio_nome_razao_social"),
+        col("soci.nome_razao_social").alias("socio_nome"),
         col("soci.qualificacao_socio").alias("socio_qualificacao_codigo"),
         col("q.descricao").alias("socio_qualificacao_descricao"),
         to_date(col("soci.data_entrada_sociedade"), "yyyy-MM-dd").alias("data_entrada_sociedade"),
