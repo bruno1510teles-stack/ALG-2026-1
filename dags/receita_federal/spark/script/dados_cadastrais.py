@@ -37,7 +37,8 @@ def dados_cadastrais_to_refined(spark):
     natureza = spark.read.format("delta").load("s3a://bureaus/receita-federal/naturezas")
     cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
     municipio = spark.read.format("delta").load("s3a://bureaus/receita-federal/municipios")
-    socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios")
+    socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios") \
+        .withColumnRenamed("nome/razao_social", "nome_razao_social")
     qualificacoes = spark.read.format("delta").load("s3a://bureaus/receita-federal/qualificacoes")
     pep = spark.read.format("delta").load("s3a://pessoas-e-organizacoes/pep")
     print("Arquivos lidos")
@@ -65,7 +66,8 @@ def dados_cadastrais_to_refined(spark):
     .join(cnae.alias("cnae"), col("e.cnae_principal") == col("cnae.codigo"), "left")
     .join(natureza.alias("nat"), col("emp.natureza_juridica") == col("nat.codigo"), "left")
     .join(municipio.alias("m"), col("e.municipio") == col("m.codigo"), "left")
-    .join(pep.alias("pep"), col("soci.documento_socio") == col("pep.documento"), "left")
+    .join(pep.alias("pep"), (col("soci.documento_socio") == col("pep.documento")) | 
+                             (col("soci.nome_razao_social") == col("pep.nome")), "left")
     .select(
         # Informações da empresa
         col("e.cnpj_raiz"),

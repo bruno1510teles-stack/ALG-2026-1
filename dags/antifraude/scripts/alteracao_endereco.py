@@ -28,39 +28,76 @@ def alteracao_endereco(spark):
     # Puxando base
     print("Importando Base")
     df = spark.read.format("delta").load("s3a://bureaus/receita-federal/estabelecimentos_aud")
+    df_estabelecimentos = spark.read.format("delta").load("s3a://bureaus/receita-federal/estabelecimentos")
     municipio = spark.read.format("delta").load("s3a://bureaus/receita-federal/municipios")
-    municipio = municipio.select("codigo","descricao")
     print("Base Importada com sucesso!!")
 
 
     # Iniciando tratamentos
     print("Iniciando tratamentos")
+
+    municipio = municipio.select("codigo","descricao")
+
+    df_estabelecimentos = df_estabelecimentos.withColumn(
+        "endereco_completo", 
+        F.concat_ws(" - ", 
+                    F.col("logradouro"), 
+                    F.col("numero"),
+                    F.col("cep")
+                )
+    )
+
+    df_estabelecimentos = df_estabelecimentos.select("documento_sem_formatacao","endereco_completo")
+
+    valida_endereco = df_estabelecimentos.groupBy("endereco_completo") \
+        .agg(F.countDistinct("documento_sem_formatacao").alias("quantidade_cnpjs"))
+
+
     df = df.join(
         municipio,
         on = df["municipio"] == municipio["codigo"],
         how = "inner"
-        )
-    
-    df = df.groupBy("documento_sem_formatacao") \
+    )
+
+    df = df.join(
+        df_estabelecimentos,
+        on = df["documento_sem_formatacao"] == df_estabelecimentos["documento_sem_formatacao"],
+        how = "inner"
+    ).drop(df_estabelecimentos["documento_sem_formatacao"])
+
+    df = df.join(
+        valida_endereco,
+        on = df["endereco_completo"] == valida_endereco["endereco_completo"],
+        how = "left"
+    ).drop(valida_endereco["endereco_completo"])
+
+
+    df = df.groupBy("documento_sem_formatacao", "endereco_completo") \
         .agg(
             F.collect_set("logradouro").alias("endereco_distintos"),
             F.collect_set("descricao").alias("cidade_distintos"),
             F.collect_set("uf").alias("estado_distintos"),
-            F.max("data_ref").alias("data_referencia")
+            F.max("data_ref").alias("data_referencia"),
+            F.max("quantidade_cnpjs").alias("quantidade_cnpjs_mesmo_endereco")
         ) \
         .withColumn("flag_mudanca_endereco", F.size("endereco_distintos") > 1) \
         .withColumn("flag_mudanca_endereco", F.when(F.col("flag_mudanca_endereco") == True, "Sim").otherwise("Nao")) \
         .withColumn("flag_mudanca_cidade", F.size("cidade_distintos") > 1) \
         .withColumn("flag_mudanca_cidade", F.when(F.col("flag_mudanca_cidade") == True, "Sim").otherwise("Nao")) \
         .withColumn("flag_mudanca_estado", F.size("estado_distintos") > 1) \
-        .withColumn("flag_mudanca_estado", F.when(F.col("flag_mudanca_estado") == True, "Sim").otherwise("Nao"))
-    
+        .withColumn("flag_mudanca_estado", F.when(F.col("flag_mudanca_estado") == True, "Sim").otherwise("Nao")) \
+        .withColumn("flag_endereco_igual", F.col("quantidade_cnpjs_mesmo_endereco") > 1) \
+        .withColumn("flag_endereco_igual", F.when(F.col("flag_endereco_igual") == True, "Sim").otherwise("Nao"))
+
     df = df.withColumnRenamed("documento_sem_formatacao", "cnpj_sem_formatacao")
+    df = df.withColumnRenamed("endereco_completo", "endereco_completo_atual")
 
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     atualizado_em = now.strftime('%Y-%m-%d %X')  
     df = df.withColumn("atualizado_em", lit(atualizado_em))
+
+    df = df.select("cnpj_sem_formatacao", "endereco_completo_atual", "endereco_distintos", "flag_mudanca_endereco", "cidade_distintos", "flag_mudanca_cidade", "estado_distintos", "flag_mudanca_estado",	"quantidade_cnpjs_mesmo_endereco",  "flag_endereco_igual", "data_referencia" , "atualizado_em")			
     print("Tratamentos realizados com sucesso!!")
     
     df.show(5)
