@@ -37,7 +37,7 @@ def dados_cadastrais_to_refined(spark):
     natureza = spark.read.format("delta").load("s3a://bureaus/receita-federal/naturezas")
     cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
     municipio = spark.read.format("delta").load("s3a://bureaus/receita-federal/municipios")
-    socios = spark.read.format("delta").load("s3a://teste-felipe/receita-federal/socios") \
+    socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios") \
         .withColumnRenamed("nome/razao_social", "nome_razao_social")
     qualificacoes = spark.read.format("delta").load("s3a://bureaus/receita-federal/qualificacoes")
     pep = spark.read.format("delta").load("s3a://pessoas-e-organizacoes/pep")
