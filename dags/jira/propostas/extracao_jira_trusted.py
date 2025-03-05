@@ -356,6 +356,40 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['tipo_proposta'] = df_resolvido['nome_issue'].apply(classifica_tipo_proposta)
 
 
+    # LISTA DE NOMES POR CARGO
+    lista_cargo_motor = ['MOTOR']
+    lista_cargo_assistente = ['ANA BEATRIZ RODRIGUES ANDRADE']
+    lista_cargo_junior = ['LARISSA FREIRE SOARES', 'VANESSA SOUZA']
+    lista_cargo_pleno = ['LEANDRO QUINTINO DA ANUNCIACAO', 'DIANA TIEMI YAMAMOTO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA']
+    lista_cargo_senior = ['CLAUDIA CINARE RODRIGUES ETO', 'ROSEMEIRE DIAS FERREIRA', 'JOSE CARVALHO']
+    lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
+    lista_cargo_outros = ['OUTROS']
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_cargo_analista(nome):
+        nome = nome.upper()
+        if nome in lista_cargo_motor:
+            return 'MOTOR'
+        elif nome in lista_cargo_assistente:
+            return 'ASSISTENTE'
+        elif nome in lista_cargo_junior:
+            return 'JÚNIOR'
+        elif nome in lista_cargo_pleno:
+            return 'PLENO'
+        elif nome in lista_cargo_senior:
+            return 'SÊNIOR'
+        elif nome in lista_cargo_gerente:
+            return 'GERENTE'
+        elif nome in lista_cargo_outros:
+            return 'OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['cargo_analista'] = df_resolvido['analista_tratado'].apply(categorizar_cargo_analista)
+
+
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
     df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
@@ -380,7 +414,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
-        'categoria_decisor',
+        'cargo_analista', 'categoria_decisor',
         'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
         'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
         'atualizado_em', 'year', 'month', 'day'
