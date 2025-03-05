@@ -66,7 +66,7 @@ def dados_cadastrais_to_refined(spark):
     .join(cnae.alias("cnae"), col("e.cnae_principal") == col("cnae.codigo"), "left")
     .join(natureza.alias("nat"), col("emp.natureza_juridica") == col("nat.codigo"), "left")
     .join(municipio.alias("m"), col("e.municipio") == col("m.codigo"), "left")
-    .join(pep.alias("pep"), (col("soci.documento_socio") == col("pep.documento")) | 
+    .join(pep.alias("pep"), (col("soci.documento_socio") == col("pep.documento")) &
                              (col("soci.nome_razao_social") == col("pep.nome")), "left")
     .select(
         # Informações da empresa
