@@ -390,6 +390,42 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['cargo_analista'] = df_resolvido['analista_tratado'].apply(categorizar_cargo_analista)
 
 
+
+
+    # LISTA DE RAMIFICAÇÕES POR CATEGORIA
+    lista_ramificacao_ruim = ['PF SOCIO < 2 ANOS', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF MESA', 'PF SOCIO PJ', 'PF FUNDACAO < 2 ANOS',
+                            'REPROVADO', 'PF MEI', 'PF NATUREZA JURIDICA', 'PF CNAE', 'B - 6', 'B - 9', 'C5 | C1', 'PF BLOQUEIO ALPE',
+                            'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
+                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'B - 12', 'A - A12']
+
+    lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 4', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5', 'B - 3',
+                            'A - B3', 'A - B2', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
+
+    lista_ramificacao_bom = ['B - 1']
+
+    lista_ramificacao_nan = ['NÃO ATRIBUIDA']
+
+    # CONFIRMAR RAMIFICAÇÕES B - 12 e A - A12
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_ramificacao(nome):
+        nome = nome.upper()
+        if nome in lista_ramificacao_ruim:
+            return 'RUIM'
+        elif nome in lista_ramificacao_medio:
+            return 'MÉDIO'
+        elif nome in lista_ramificacao_bom:
+            return 'BOM'
+        elif nome in lista_ramificacao_nan:
+            return 'NÃO ATRIBUIDA'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE RAMIFICAÇÕES'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['categoria_ramificacao'] = df_resolvido['ramificacao_motor'].apply(categorizar_ramificacao)
+
+
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
     df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
@@ -414,12 +450,11 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
-        'cargo_analista', 'categoria_decisor',
-        'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
-        'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
-        'atualizado_em', 'year', 'month', 'day'
+        'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
+        'categoria_ramificacao', 'tipo_proposta', 'data_criado','data_resolvido', 'data_atualizado', 
+        'data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
-    ].reset_index(drop=True)\
+    ].reset_index(drop=True)
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
