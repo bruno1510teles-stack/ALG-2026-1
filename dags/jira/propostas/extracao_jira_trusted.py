@@ -369,19 +369,19 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     def categorizar_cargo_analista(nome):
         nome = nome.upper()
         if nome in lista_cargo_motor:
-            return 'MOTOR'
+            return '6 - MOTOR'
         elif nome in lista_cargo_assistente:
-            return 'ASSISTENTE'
+            return '1 - ASSISTENTE'
         elif nome in lista_cargo_junior:
-            return 'JÚNIOR'
+            return '2 - JÚNIOR'
         elif nome in lista_cargo_pleno:
-            return 'PLENO'
+            return '3 - PLENO'
         elif nome in lista_cargo_senior:
-            return 'SÊNIOR'
+            return '4 - SÊNIOR'
         elif nome in lista_cargo_gerente:
-            return 'GERENTE'
+            return '5- GERENTE'
         elif nome in lista_cargo_outros:
-            return 'OUTROS'
+            return '7 - OUTROS'
         else:
             return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
 
@@ -396,14 +396,14 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     lista_ramificacao_ruim = ['PF SOCIO < 2 ANOS', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF MESA', 'PF SOCIO PJ', 'PF FUNDACAO < 2 ANOS',
                             'REPROVADO', 'PF MEI', 'PF NATUREZA JURIDICA', 'PF CNAE', 'B - 6', 'B - 9', 'C5 | C1', 'PF BLOQUEIO ALPE',
                             'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
-                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'B - 12', 'A - A12']
+                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8']
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 4', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5', 'B - 3',
                             'A - B3', 'A - B2', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
 
     lista_ramificacao_bom = ['B - 1']
 
-    lista_ramificacao_nan = ['NÃO ATRIBUIDA']
+    lista_ramificacao_nan = ['NÃO ATRIBUIDA', 'B - 12', 'A - A12']
 
     # CONFIRMAR RAMIFICAÇÕES B - 12 e A - A12
 
@@ -411,13 +411,13 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     def categorizar_ramificacao(nome):
         nome = nome.upper()
         if nome in lista_ramificacao_ruim:
-            return 'RUIM'
+            return '1 - RUIM'
         elif nome in lista_ramificacao_medio:
-            return 'MÉDIO'
+            return '2 - MÉDIO'
         elif nome in lista_ramificacao_bom:
-            return 'BOM'
+            return '3 - BOM'
         elif nome in lista_ramificacao_nan:
-            return 'NÃO ATRIBUIDA'
+            return '4 - NÃO ATRIBUIDA'
         else:
             return 'ADICIONAR NO DICIONARIO DE RAMIFICAÇÕES'
 
