@@ -436,7 +436,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     df_motor_reprov_agrup = df_motor_reprov.groupby('cnpj')['data_resolvido'].min().reset_index()
 
-    df_motor_reprov_agrup = pd.merge(df_motor_reprov_agrup, df_resolvido[['cnpj','data_resolvido','issue_key']], on=['cnpj', 'data_resolvido'], how='left')
+    df_motor_reprov_agrup = pd.merge(df_motor_reprov_agrup, df_resolvido[['cnpj','data_resolvido','ramificacao_motor']], on=['cnpj', 'data_resolvido'], how='left')
 
     df_motor_reprov_agrup.rename(columns={'data_resolvido': 'primeira_recusa_motor'}, inplace=True)
 
@@ -448,7 +448,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_mesa = df_resolvido[(df_resolvido['categoria_decisor'] == 'MESA') & 
                         (df_resolvido['cnpj'].isin(df_motor_reprov_agrup['cnpj']))]
 
-    df_mesa = df_mesa[['cnpj', 'categoria_decisor', 'decisao', 'data_resolvido']]
+    df_mesa = df_mesa[['cnpj', 'categoria_decisor', 'decisao', 'data_resolvido', 'issue_key']]
 
     df_mesa['data_resolvido'] = pd.to_datetime(df_mesa['data_resolvido'], errors='coerce')
 
@@ -469,7 +469,9 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     # Criando flag no df_resolvido
 
-    df_propostas_replicas_final = df_propostas_replicas_final['issue_key']
+    df_propostas_replicas_final = df_propostas_replicas_final[['issue_key', 'ramificacao_motor']]
+
+    df_propostas_replicas_final.rename(columns={'ramificacao_motor': 'ramificacao_proposta_replica'}, inplace=True)
 
     df_propostas_replicas_final = df_propostas_replicas_final.drop_duplicates()
 
