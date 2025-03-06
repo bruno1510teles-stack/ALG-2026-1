@@ -10,11 +10,11 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.pre_filtro import pre_filtro_v_5
+from politica_e_modelagem.auxiliares.antifraude import antifraude
+from politica_e_modelagem.pre_filtro import pre_filtro
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.politica.desafiante import politica
 from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
-from politica_e_modelagem.politica.desafiante import import_base_desafiante
 
 
 ### Parâmetros de acesso
@@ -42,7 +42,6 @@ access_params = {
     }
 
 
-
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -55,8 +54,9 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "on_failure_callback": notificar_falha_teams,
-    "retries": 3
+    "retries": 3,
+    "retry_delay": timedelta(minutes=1),
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -79,6 +79,10 @@ def processar_proposta(**kwargs):
         'pgid': [pgid],
         'nome_issue': [nome_issue]
     }
+
+    print(dados)
+    print(dados['CNPJ'])
+    print(dados['issue_jira'])
 
     # Convertendo o dicionário em DataFrame para aplicar as transformações
     df = pd.DataFrame(dados)
@@ -123,10 +127,18 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    # Definindo o task de antifraude
+    anti_fraude = PythonOperator(
+        task_id="antifraude_task",
+        python_callable=antifraude.anti_fraude,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
-        python_callable=pre_filtro_v_5.analise_pre_filtro,
+        python_callable=pre_filtro.analise_pre_filtro,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
@@ -162,4 +174,4 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta >> pre_filtro >> serasa >> aguarde >> politica_desafiante >> enviar_kafka
+    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> politica_desafiante >> enviar_kafka
