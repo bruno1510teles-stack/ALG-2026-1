@@ -508,7 +508,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
-        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica', 'data_criado',
+        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
