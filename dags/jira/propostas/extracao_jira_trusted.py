@@ -379,7 +379,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         elif nome in lista_cargo_senior:
             return '4 - SÊNIOR'
         elif nome in lista_cargo_gerente:
-            return '5- GERENTE'
+            return '5 - GERENTE'
         elif nome in lista_cargo_outros:
             return '7 - OUTROS'
         else:
@@ -469,12 +469,17 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     # Criando flag no df_resolvido
 
-    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final['issue_key'], on='issue_key', how='left', indicator=True)
+    df_propostas_replicas_final = df_propostas_replicas_final['issue_key']
+
+    df_propostas_replicas_final = df_propostas_replicas_final.drop_duplicates()
+
+    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final, on='issue_key', how='left', indicator=True)
 
     df_resolvido['flag_proposta_replica'] = df_resolvido['_merge'].apply(lambda x: 1 if x == 'both' else 0)
 
     df_resolvido = df_resolvido.drop(columns=['_merge'])
 
+    df_resolvido = df_resolvido.drop_duplicates()
 
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
@@ -505,9 +510,6 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
-
-
-    df_final = df_final.drop_duplicates()
 
 
     # Configurações para acesso ao MinIO
