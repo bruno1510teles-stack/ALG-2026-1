@@ -268,7 +268,10 @@ def executa_politica (access_params=None,  **kwargs):
                             select
                                 raiz_cnpj as cnpj_raiz,
                                 pontualidade
-                            from deltalakerefined.motor.pontualidade  
+                            from 
+                                deltalakerefined.motor.pontualidade  
+                            where 
+                                raiz_cnpj in {ids_query}
                         """)
 
     base_pontualidade = execute_query(conn, query_pontualidade)
@@ -276,7 +279,7 @@ def executa_politica (access_params=None,  **kwargs):
     print(f"Quantidade de CNPJs que retornou da base_pontualidade: {base_pontualidade.shape[0]}")
 
 
-    print('Parte 2 - Criando flags e campos necessarios para politica V5...')
+    print('Parte 2 - Criando Flags e Campos necessarios para Politica V5...')
 
 
     base_analisar = pd.merge(base_retorno_serasa, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
@@ -460,15 +463,16 @@ def executa_politica (access_params=None,  **kwargs):
     # Aplicar a função em cada linha do DataFrame 'sem_hp'
     com_hp = com_hp.apply(aplica_regras_com_hp, axis=1)
 
-    print('Parte 5 - Tratamentos finais...')
+    print('Tratamentos finais...')
 
     resultado_politica = pd.concat([com_hp, sem_hp], ignore_index=True)
 
+    print('Parte 1')
+
     resultado_politica = resultado_politica.drop('id', axis=1)
 
+    print('Parte 2')
     resultado_politica = resultado_politica.drop_duplicates()
-
-    print('Parte 6 - Lógica para verificar se a base está vazia...')
 
     if resultado_politica.empty:
         print("Nenhum dado encontrado nas tabelas 'com_hp' e 'sem_hp'. O DataFrame está vazio.")
@@ -477,43 +481,126 @@ def executa_politica (access_params=None,  **kwargs):
         resultado_politica = pd.DataFrame(columns=colunas)
 
     else:
+        print('Parte 3')
         resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
 
+        print('Parte 4')
         resultado_politica['flag_decidido_pelo_motor'] = True
 
+        print('Parte 5')
         resultado_politica = resultado_politica[['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']]
 
-
-    print('Parte 7 - Merge base pre filtro inicial com o resultado da politica...')
-
+    print('Parte 6')
+    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
+    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
+    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
+    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
+    
     # Merge da base inicial com campos filtrados com a base de decisao da politica
+    print("base pre_filtro")
+    print(base_pre_filtro)
     df_resultado = pd.merge(base_pre_filtro, resultado_politica, on='cnpj_raiz', how='left')
+    print(df_resultado)
+
+
+    print('Parte 7')
 
     # Tratando base final
     df_resultado['documento_sem_formatacao'] = df_resultado['documento_sem_formatacao'].apply(lambda x: str(x).zfill(14))
 
-    print('Parte 8 - Definindo parecer...')
+    print('Parte 8')
+
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['resposta'] == 'SEGUE'),
+        'MESA',
+        np.where(
+            (df_resultado['decisao_final'].isnull()),
+            df_resultado['resposta'],
+            df_resultado['decisao_final']
+        )
+    )
+
 
     df_resultado.loc[df_resultado['decisao_final'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
     df_resultado.loc[df_resultado['decisao_final'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
     df_resultado.loc[df_resultado['decisao_final'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
 
+
+    if 'ramificacao_pre_filtro' in df_resultado.columns:
+        df_resultado['ramificacao_final'] = np.where(
+            df_resultado['ramificacao_final'].notna(),  
+            df_resultado['ramificacao_final'],          
+            np.where(
+                df_resultado['ramificacao_pre_filtro'].notna(),  
+                df_resultado['ramificacao_pre_filtro'],          
+                df_resultado['ramificacao_antifraude']           
+            )
+        )
+    else:
+        df_resultado['ramificacao_final'] = np.where(
+            df_resultado['ramificacao_final'].notna(),  
+            df_resultado['ramificacao_final'],         
+            df_resultado['ramificacao_antifraude']      
+        )
+
+
+    print('Parte 9')
+
     # Criação do mapeamento de pareceres
     parecer_map = {
-        "APROVADO":"Motor - Aprovado"
+        "PF 1":"Motor - Recusado, impedido de operar",
+        "PF 2":"Motor - Recusado, impedido de operar",
+        "PF 3":"Motor - Recusado, MEI",
+        "PF MEI":"Motor - Recusado, MEI",
+        "PF 4":"Motor - Recusado, CNAE",
+        "PF 5":"Motor - Recusado, CNAE",
+        "PF CNAE":"Motor - Recusado, CNAE",
+        "PF 7":"Motor - Recusado, impedido de operar",
+        "PF 9":"Motor - Recusado, impedido de operar",
+        "PF 10":"Motor - Recusado, impedido de operar",
+        "PF CNPJ IRREGULAR":"Motor - Recusado, impedido de operar",
+        "A - A11":"Motor - Recusado, apontamento/score",
+        "A - A9":"Motor - Recusado, apontamento/score",
+        "A - A8":"Motor - Recusado, apontamento/score",
+        "A - A6":"Motor - Recusado, apontamento/score",
+        "A - B7":"Motor - Recusado, apontamento/score",
+        "A - B5":"Motor - Recusado, apontamento/score",
+        "A - B4":"Motor - Recusado, apontamento/score",
+        "A - E1":"Motor - Recusado, PD",
+        "A - C7":"Motor - Recusado, apontamento/score",
+        "A - C5":"Motor - Recusado, apontamento/score",
+        "A - C4":"Motor - Recusado, apontamento/score",
+        "A - C2":"Motor - Recusado, apontamento/score",
+        "B - 11":"Motor - Recusado, apontamento/score",
+        "B - 9":"Motor - Recusado, apontamento/score",
+        "B - 8":"Motor - Recusado, apontamento/score",
+        "B - 6":"Motor - Recusado, apontamento/score",
+        "C1 | C1":"Motor - Recusado, apontamento/score",
+        "C2 | C2": "Motor - Recusado, apontamento/score",
+        "D1 | D1": "Motor - Recusado, apontamento/score",
+        "C3 | C1": "Motor - Recusado, apontamento/score",
+        "C4 | C2": "Motor - Recusado, apontamento/score",
+        "D2 | D1": "Motor - Recusado, apontamento/score",
+        "D3 | D1": "Motor - Recusado, apontamento/score",
+        "AF - MUDANÇA ENDEREÇO": "Motor - Recusado, risco de fraude",
+        "AF - MUDANÇA CIDADE": "Motor - Recusado, risco de fraude",
+        "AF - MUDANÇA ESTADO": "Motor - Recusado, risco de fraude",
+        "AF - ENDEREÇO IGUAL": "Motor - Recusado, risco de fraude"
     }
+
+    print('Parte 10')
 
     # Função que retorna o parecer personalizado ou o parecer original se não houver mapeamento
     def parecer_personalizado(row):
-        decisao = row['decisao_final']
+        decisao = row['ramificacao_final']
         parecer_atual = row['parecer']
-        # Tenta obter o parecer com base na 'ramificacao_motor'
         return parecer_map.get(decisao, parecer_atual)
     
     # Aplica a função ao DataFrame
     df_resultado['parecer'] = df_resultado.apply(parecer_personalizado, axis=1)
 
-    print('Parte 9 - Gerando path...')
+    print('Parte 11')
+
 
     # Gerando Path
     def gerando_path(row):
@@ -529,9 +616,11 @@ def executa_politica (access_params=None,  **kwargs):
         0
     )
 
+    print('Parte 12')
+
     df_resultado = df_resultado.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
 
-    print('Parte 10 - Tratando campos base final...')
+    print('Parte 13')
 
     resposta_motor_resumida = df_resultado[['issue_jira', 'decisao_final', 'cnpj_ec', 'parecer', 'ramificacao_final', 'url', 'valor_aprovado']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
