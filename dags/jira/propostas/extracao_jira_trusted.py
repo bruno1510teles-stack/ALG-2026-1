@@ -356,6 +356,125 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['tipo_proposta'] = df_resolvido['nome_issue'].apply(classifica_tipo_proposta)
 
 
+    # LISTA DE NOMES POR CARGO
+    lista_cargo_motor = ['MOTOR']
+    lista_cargo_assistente = ['ANA BEATRIZ RODRIGUES ANDRADE']
+    lista_cargo_junior = ['LARISSA FREIRE SOARES', 'VANESSA SOUZA']
+    lista_cargo_pleno = ['LEANDRO QUINTINO DA ANUNCIACAO', 'DIANA TIEMI YAMAMOTO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA']
+    lista_cargo_senior = ['CLAUDIA CINARE RODRIGUES ETO', 'ROSEMEIRE DIAS FERREIRA', 'JOSE CARVALHO']
+    lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
+    lista_cargo_outros = ['OUTROS']
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_cargo_analista(nome):
+        nome = nome.upper()
+        if nome in lista_cargo_motor:
+            return 'MOTOR'
+        elif nome in lista_cargo_assistente:
+            return 'ASSISTENTE'
+        elif nome in lista_cargo_junior:
+            return 'JÚNIOR'
+        elif nome in lista_cargo_pleno:
+            return 'PLENO'
+        elif nome in lista_cargo_senior:
+            return 'SÊNIOR'
+        elif nome in lista_cargo_gerente:
+            return 'GERENTE'
+        elif nome in lista_cargo_outros:
+            return 'OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['cargo_analista'] = df_resolvido['analista_tratado'].apply(categorizar_cargo_analista)
+
+
+
+
+    # LISTA DE RAMIFICAÇÕES POR CATEGORIA
+    lista_ramificacao_ruim = ['PF SOCIO < 2 ANOS', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF MESA', 'PF SOCIO PJ', 'PF FUNDACAO < 2 ANOS',
+                            'REPROVADO', 'PF MEI', 'PF NATUREZA JURIDICA', 'PF CNAE', 'B - 6', 'B - 9', 'C5 | C1', 'PF BLOQUEIO ALPE',
+                            'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
+                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'B - 12', 'A - A12']
+
+    lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 4', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5', 'B - 3',
+                            'A - B3', 'A - B2', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
+
+    lista_ramificacao_bom = ['B - 1']
+
+    lista_ramificacao_nan = ['NÃO ATRIBUIDA']
+
+    # CONFIRMAR RAMIFICAÇÕES B - 12 e A - A12
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_ramificacao(nome):
+        nome = nome.upper()
+        if nome in lista_ramificacao_ruim:
+            return 'RUIM'
+        elif nome in lista_ramificacao_medio:
+            return 'MÉDIO'
+        elif nome in lista_ramificacao_bom:
+            return 'BOM'
+        elif nome in lista_ramificacao_nan:
+            return 'NÃO ATRIBUIDA'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE RAMIFICAÇÕES'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df_resolvido['categoria_ramificacao'] = df_resolvido['ramificacao_motor'].apply(categorizar_ramificacao)
+
+
+
+    # PROPOSTAS RÉPLICAS PARA A MESA
+
+    # -> Propostas decididas pelo MOTOR como REPROVADO
+
+    df_motor_reprov = df_resolvido[(df_resolvido['categoria_decisor'] == 'MOTOR') &
+                                (df_resolvido['decisao'] == 'REPROVADO')]
+
+    df_motor_reprov_agrup = df_motor_reprov.groupby('cnpj')['data_resolvido'].min().reset_index()
+
+    df_motor_reprov_agrup.rename(columns={'data_resolvido': 'primeira_recusa_motor'}, inplace=True)
+
+    df_motor_reprov_agrup['primeira_recusa_motor'] = pd.to_datetime(df_motor_reprov_agrup['primeira_recusa_motor'], errors='coerce')
+
+
+
+    # -> Propostas decididas pela MESA, apenas dos casos que tiveram alguma reprova pelo MOTOR
+
+    df_mesa = df_resolvido[(df_resolvido['categoria_decisor'] == 'MESA') & 
+                        (df_resolvido['cnpj'].isin(df_motor_reprov_agrup['cnpj']))]
+
+    df_mesa = df_mesa[['cnpj', 'categoria_decisor', 'decisao', 'data_resolvido', 'issue_key']]
+
+    df_mesa['data_resolvido'] = pd.to_datetime(df_mesa['data_resolvido'], errors='coerce')
+
+    df_mesa.reset_index(drop=True, inplace=True)
+
+
+    # -> Cruzando as bases
+
+    df_propostas_replicas = pd.merge(df_motor_reprov_agrup, df_mesa, on='cnpj', how='left')
+
+    df_propostas_replicas = df_propostas_replicas[df_propostas_replicas['decisao'].notna()]
+
+    df_propostas_replicas.reset_index(drop=True, inplace=True)
+
+    # Filtrando apenas casos que o data_resolvido > primeira_recusa_motor
+    df_propostas_replicas_final = df_propostas_replicas[df_propostas_replicas['data_resolvido'] > df_propostas_replicas['primeira_recusa_motor']]
+
+
+    # Criando flag no df_resolvido
+
+    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final['issue_key'], on='issue_key', how='left', indicator=True)
+
+    df_resolvido['flag_proposta_replica'] = df_resolvido['_merge'].apply(lambda x: 1 if x == 'both' else 0)
+
+    df_resolvido = df_resolvido.drop(columns=['_merge'])
+
+
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
     df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
@@ -369,7 +488,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
 
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
-    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 500.000.000
+    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
     df_resolvido = df_resolvido.loc[
         (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000)
@@ -380,12 +499,11 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
-        'categoria_decisor',
-        'decisao', 'parecer', 'ramificacao_motor', 'tipo_proposta', 'data_criado',
-        'data_resolvido', 'data_atualizado', 'data_disponivel_mesa',
-        'atualizado_em', 'year', 'month', 'day'
+        'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
+        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica', 'data_criado',
+        'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
-    ].reset_index(drop=True)\
+    ].reset_index(drop=True)
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
