@@ -426,6 +426,55 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['categoria_ramificacao'] = df_resolvido['ramificacao_motor'].apply(categorizar_ramificacao)
 
 
+
+    # PROPOSTAS RÉPLICAS PARA A MESA
+
+    # -> Propostas decididas pelo MOTOR como REPROVADO
+
+    df_motor_reprov = df_resolvido[(df_resolvido['categoria_decisor'] == 'MOTOR') &
+                                (df_resolvido['decisao'] == 'REPROVADO')]
+
+    df_motor_reprov_agrup = df_motor_reprov.groupby('cnpj')['data_resolvido'].min().reset_index()
+
+    df_motor_reprov_agrup.rename(columns={'data_resolvido': 'primeira_recusa_motor'}, inplace=True)
+
+    df_motor_reprov_agrup['primeira_recusa_motor'] = pd.to_datetime(df_motor_reprov_agrup['primeira_recusa_motor'], errors='coerce')
+
+
+
+    # -> Propostas decididas pela MESA, apenas dos casos que tiveram alguma reprova pelo MOTOR
+
+    df_mesa = df_resolvido[(df_resolvido['categoria_decisor'] == 'MESA') & 
+                        (df_resolvido['cnpj'].isin(df_motor_reprov_agrup['cnpj']))]
+
+    df_mesa = df_mesa[['cnpj', 'categoria_decisor', 'decisao', 'data_resolvido', 'issue_key']]
+
+    df_mesa['data_resolvido'] = pd.to_datetime(df_mesa['data_resolvido'], errors='coerce')
+
+    df_mesa.reset_index(drop=True, inplace=True)
+
+
+    # -> Cruzando as bases
+
+    df_propostas_replicas = pd.merge(df_motor_reprov_agrup, df_mesa, on='cnpj', how='left')
+
+    df_propostas_replicas = df_propostas_replicas[df_propostas_replicas['decisao'].notna()]
+
+    df_propostas_replicas.reset_index(drop=True, inplace=True)
+
+    # Filtrando apenas casos que o data_resolvido > primeira_recusa_motor
+    df_propostas_replicas_final = df_propostas_replicas[df_propostas_replicas['data_resolvido'] > df_propostas_replicas['primeira_recusa_motor']]
+
+
+    # Criando flag no df_resolvido
+
+    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final['issue_key'], on='issue_key', how='left', indicator=True)
+
+    df_resolvido['flag_proposta_replica'] = df_resolvido['_merge'].apply(lambda x: 1 if x == 'both' else 0)
+
+    df_resolvido = df_resolvido.drop(columns=['_merge'])
+
+
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
     df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
@@ -439,7 +488,7 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
 
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
-    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 500.000.000
+    # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
     df_resolvido = df_resolvido.loc[
         (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000)
@@ -451,8 +500,8 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
-        'categoria_ramificacao', 'tipo_proposta', 'data_criado','data_resolvido', 'data_atualizado', 
-        'data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
+        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica', 'data_criado',
+        'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
 
