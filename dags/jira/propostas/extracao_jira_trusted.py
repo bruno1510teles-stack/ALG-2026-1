@@ -506,6 +506,10 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         ]
     ].reset_index(drop=True)
 
+
+    df_final = df_final.drop_duplicates()
+
+
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
 
