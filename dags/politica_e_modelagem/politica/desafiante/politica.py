@@ -18,10 +18,10 @@ def executa_politica (access_params=None,  **kwargs):
     ### Configurando configurações necessárias
     # Trino
     conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -49,6 +49,7 @@ def executa_politica (access_params=None,  **kwargs):
     cnpjs = df_politica_segue['cnpj_raiz'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     ids_query = f"({ids_query})"
+    print(ids_query)
 
     # Caso não retorne nenhum CNPJ como segue ele corrige para não dar erro na query. A partir disso a query retornará com as colunas mas com nenhum registro e o fluxo seguirá normalmente
     if ids_query == "()":
@@ -510,6 +511,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     print('Parte 8')
 
+    # Regra para contemplar a recusa do antifraude caso não tenha retornado dados do serasa
     df_resultado['decisao_final'] = np.where(
         (df_resultado['decisao_final'].isnull()) & (df_resultado['resposta'] == 'SEGUE'),
         'MESA',
@@ -519,6 +521,13 @@ def executa_politica (access_params=None,  **kwargs):
             df_resultado['decisao_final']
         )
     )
+
+    # Regra para derivar para mesa casos onde o limite solicitado seja maior que 300k
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['limite_solicitado'] > 300000),
+        'MESA',
+        df_resultado['decisao_final']
+    )    
 
 
     df_resultado.loc[df_resultado['decisao_final'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado, dados analisados fora da politica atual'
@@ -610,17 +619,39 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado['path_arquivos_minio'] = df_resultado.apply(gerando_path, axis = 1)
     df_resultado['url'] = 'https://minio-datalake.alpe.com.br/raw/browser/analise-credito/' + df_resultado['path_arquivos_minio'] + '/'
 
+
+    # Criando Regra para parâmetro de aprovação
+
+    df_resultado['parecer'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 60000),
+        'Motor - Aprovado, contudo, sem alçada. Direcionar para avaliação da mesa de crédito',
+        df_resultado['parecer']
+    )
+
+
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] <= 60000),
+        'APROVADO',
+        np.where(
+            (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 60000),
+            'MESA',
+            df_resultado['decisao_final']
+        )
+    )
+
+
     df_resultado['valor_aprovado'] = np.where(
-        df_resultado['decisao_final'] == 'APROVADO',
-        50000,
+        (df_resultado['decisao_final'] == 'APROVADO'),
+        df_resultado['limite_solicitado'],
         0
     )
+
+
+
 
     print('Parte 12')
 
     df_resultado = df_resultado.rename(columns={'documento_sem_formatacao':'cnpj_ec'})
-
-    print('Parte 13')
 
     resposta_motor_resumida = df_resultado[['issue_jira', 'decisao_final', 'cnpj_ec', 'parecer', 'ramificacao_final', 'url', 'valor_aprovado']].rename(columns={
     'cnpj_ec': 'cnpj_ec',
