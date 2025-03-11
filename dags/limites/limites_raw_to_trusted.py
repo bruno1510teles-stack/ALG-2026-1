@@ -62,10 +62,11 @@ def limites_raw_to_trusted(access_params=None, **kwargs):
 
     query_sacado = f"""
         select 
-            est.documento_sem_formatacao as cnpj_sacado, est.nome_fantasia as nome_sacado, est.uf, mun.descricao as nome_cidade
+            est.documento_sem_formatacao as cnpj_sacado, emp.razao_social as nome_sacado, est.uf, mun.descricao as nome_cidade
         from 
             deltalaketrusted.receita_federal.estabelecimentos est
-            left join deltalaketrusted.receita_federal.municipios mun on est.municipio = mun.codigo 
+            left join deltalaketrusted.receita_federal.empresas emp on est.cnpj_raiz  = emp.cnpj_raiz 
+            left join deltalaketrusted.receita_federal.municipios mun on est.municipio = mun.codigo
         where 
             est.documento_sem_formatacao IN ({cnpjs_str})
     """
