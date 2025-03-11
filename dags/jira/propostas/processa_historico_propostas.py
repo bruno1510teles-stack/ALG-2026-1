@@ -195,9 +195,9 @@ def processa_historico_propostas (access_params = None):
 
         # Conectando no MinIO
         client = Minio(
-            "api-raw.alpe.tech",
-            access_key = 'wexS623s469q4VfGcZ13',
-            secret_key = 'llwZzbv9Ol02ZhTWagbX7SlXp5wgIX6kY5Lve0We'
+            "api-raw.alpe.com.br",
+            access_key = 'B7q0avvSIpSdyGPXWnEC',
+            secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
         )
 
         # Nome do arquivo Parquet que você deseja criar
