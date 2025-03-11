@@ -256,13 +256,6 @@ def captura_proposta (access_params = None):
         BUCKET_SOURCE_RAW = "jira"
         FOLDER_DESTINATION_RAW = 'propostas'
 
-        # Conectando no MinIO
-        client = Minio(
-            "api-raw.alpe.tech",
-            access_key = 'wexS623s469q4VfGcZ13',
-            secret_key = 'llwZzbv9Ol02ZhTWagbX7SlXp5wgIX6kY5Lve0We'
-        )
-
         # Nome do arquivo Parquet que você deseja criar
         file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
 
