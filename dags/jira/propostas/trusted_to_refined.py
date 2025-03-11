@@ -15,7 +15,7 @@ from datetime import datetime, timezone, timedelta
 from airflow.utils.log.logging_mixin import LoggingMixin
 
 
-def jira_trusted_to_refined(access_params=None, **kwargs):
+def trusted_to_refined (access_params=None, **kwargs):
 
 
     # Conectando ao Trino para Leitura

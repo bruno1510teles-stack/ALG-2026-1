@@ -14,12 +14,10 @@ from time import sleep
 
 
 sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
-from captura_propostas_jira_raw import captura_propostas_jira_raw
-from extracao_jira_trusted import jira_raw_to_trusted
-from extracao_jira_refined import jira_trusted_to_refined
-#from propostas_boletos_vop import merge_propostas_boletos
-#from jira_notif import  enviar_notif
-
+from processa_historico_propostas import processa_historico_propostas
+from captura_proposta import captura_proposta
+from raw_to_trusted import raw_to_trusted
+from trusted_to_refined import trusted_to_refined
 
 
 ### Parâmetros de acesso
@@ -46,6 +44,8 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
+
+
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -53,6 +53,7 @@ def notificar_falha_teams(context):
         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
+
     
 
 # Definindo defaults
@@ -74,27 +75,33 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    captura_proposta_jira = PythonOperator(
-        task_id='captura_proposta_jira',
-        python_callable=captura_propostas_jira_raw,
+    processa_historico = PythonOperator(
+        task_id='processa_historico_propostas',
+        python_callable=processa_historico_propostas,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    # Definindo as tasks
-    jira_raw_to_trusted = PythonOperator(
-        task_id='extracao_jira_raw',
-        python_callable=jira_raw_to_trusted,
+    captura_proposta = PythonOperator(
+        task_id='captura_proposta',
+        python_callable=captura_proposta,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    extracao_jira_trusted_to_refined = PythonOperator(
-        task_id='extracao_jira_refined',
-        python_callable=jira_trusted_to_refined,
+    raw_to_trusted = PythonOperator(
+        task_id='raw_to_trusted',
+        python_callable=raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
+    trusted_to_refined = PythonOperator(
+        task_id='trusted_to_refined',
+        python_callable=trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta_jira >> jira_raw_to_trusted >> extracao_jira_trusted_to_refined
+    processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined

@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from logging import Logger
 
 
-def captura_propostas_jira_raw(access_params=None, **kwargs):
+def processa_historico_propostas (access_params = None):
 
 
     # Função para buscar a data de mudança de status para "Awaiting Execution"
@@ -181,12 +181,12 @@ def captura_propostas_jira_raw(access_params=None, **kwargs):
 
     # Resetando o índice
     df_jira = df_jira.reset_index(drop=True)
-    
+
 
     # Salvando Output
 
     logger = LoggingMixin().log 
-    
+
     try:
         logger.info("Iniciando salvamento das informações")
 
@@ -195,9 +195,9 @@ def captura_propostas_jira_raw(access_params=None, **kwargs):
 
         # Conectando no MinIO
         client = Minio(
-            "api-raw.alpe.com.br",
-            access_key = 'B7q0avvSIpSdyGPXWnEC',
-            secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+            "api-raw.alpe.tech",
+            access_key = 'wexS623s469q4VfGcZ13',
+            secret_key = 'llwZzbv9Ol02ZhTWagbX7SlXp5wgIX6kY5Lve0We'
         )
 
         # Nome do arquivo Parquet que você deseja criar

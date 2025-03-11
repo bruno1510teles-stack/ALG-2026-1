@@ -12,7 +12,7 @@ from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 
 
-def jira_raw_to_trusted(access_params=None, **kwargs):
+def raw_to_trusted(access_params=None, **kwargs):
 
     # Conectando no MinIO
     client = Minio(
