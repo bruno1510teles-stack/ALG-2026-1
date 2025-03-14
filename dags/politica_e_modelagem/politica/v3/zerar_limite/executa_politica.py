@@ -33,7 +33,7 @@ def execucao_politica(access_params=None,  **kwargs):
     resposta_motor = resposta_motor.rename(columns={'CNPJ':'cnpj_ec'})
 
     #DEFININDO O PARECER DO MOTOR
-    resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = '[Politica 3 - Zerar limite] - Criterio: vencido a mais que 30 dias'
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado | Vencido a mais que 30 dias'
 
 
     # Gerando Path
