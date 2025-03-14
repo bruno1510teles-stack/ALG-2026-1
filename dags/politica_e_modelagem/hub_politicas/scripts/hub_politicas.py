@@ -94,49 +94,26 @@ def aplicar_politica(access_params=None,  **kwargs):
 
         # Query para regra politica_v3
         query_politica_v3 = f"""
-        select 
-            bi.cnpj_sacado, sum(valor_face) as valor_vencido, 
-            coalesce(max(lim.limite_atribuido), 0) as limite_atribuido
-        from 
-            deltalaketrusted.payments.boletos_internos bi
-        left join deltalaketrusted.limites.limite lim 
-            on regexp_replace(bi.cnpj_sacado, '[.-]', '') = lim.cnpj_sacado
-        where 
-            status_titulo = 'VENCIDO' 
-            and data_vencimento <= current_date - interval '30' day 
-            and regexp_replace(bi.cnpj_sacado, '[./-]', '') = '{cnpj_sacado}'
-        group by 
-            bi.cnpj_sacado
-        """
-
+                                select 	cnpj_sacado, 
+		                                sum(vop_over_30) as valor_vencido
+                                from deltalakerefined.payments.vop_vendermais vv
+                                where vop_over_30 > 0
+                                and cnpj_sacado = '{cnpj_sacado}'
+                                group by cnpj_sacado
+                            """
 
         # Query para regra politica_v4
+        # Incluir o PEP no where futuramente
         query_politica_v4 = f"""
-        with 
-        is_matriz as (
-            select 
-            documento_sem_formatacao, is_matriz 
-            from deltalaketrusted.receita_federal.estabelecimentos 
-            where cnpj_raiz = substring('{cnpj_sacado}', 1, 8) and is_matriz = true),
-        sit_especial as (
-            select 
-                cnpj_raiz as cnpj_sacado_raiz,
-                documento_sem_formatacao as cnpj_completo,
-                razao_social as razao_social_sacado,
-                coalesce(situacao_cadastral, 'ATIVA') as situacao_cadastral,
-                situacao_especial,
-                tem_pep
-            from 
-                deltalakerefined.motor.pre_filtro
-            where 
-                cnpj_raiz = substring('{cnpj_sacado}', 1, 8)
-                and (situacao_cadastral <> 'ATIVA' or situacao_especial = 'RECUPERACAO JUDICIAL' or tem_pep = true))
-        select 
-            *
-        from 
-            sit_especial se
-            inner join is_matriz im on se.cnpj_completo = im.documento_sem_formatacao
-        """
+                                select 	dc.cnpj_raiz, 
+                                        dc.cnpj_sem_formatacao, 
+                                        dc.situacao_cadastral, 
+                                        dc.situacao_especial
+                                from deltalakerefined.receita_federal.dados_cadastrais dc
+                                where (dc.situacao_cadastral <> 'ATIVA' or dc.situacao_especial = 'RECUPERACAO JUDICIAL')
+                                and dc.flag_matriz = 'Sim'
+                                and dc.cnpj_raiz = '{cnpj_sacado}'
+                            """
 
 
         def listar_arquivos_minio(bucket_name):
