@@ -20,7 +20,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
 
     # Definindo bucket e caminho do arquivo
     BUCKET_SOURCE_RAW = "hemera"
-    FOLDER_DESTINATION_RAW = 'retorno'
+    FOLDER_DESTINATION_RAW = 'retorno/year=2025/month=02'
 
     # Listando os arquivos no diretório
     objects = list(client.list_objects(BUCKET_SOURCE_RAW, prefix=FOLDER_DESTINATION_RAW, recursive=True))
@@ -178,7 +178,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         df_agrupado, 
         partition_by=["year", "month"],
         storage_options=storage_options_trusted,
-        mode="overwrite"
+        mode="append"
     )
 
     print('Arquivo salvo com sucesso!')
