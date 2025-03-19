@@ -54,7 +54,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         if match:
             mes = match.group(1)
             # Criando a coluna 'data_ref'
-            df['data_ref'] = f"2024-{mes}"
+            df['data_ref'] = f"2025-{mes}"
 
         # Adicionar a coluna 'data_arquivo' ao DataFrame
         df['data_arquivo'] = data_arquivo
