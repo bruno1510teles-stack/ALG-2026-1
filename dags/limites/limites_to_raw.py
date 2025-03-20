@@ -57,7 +57,8 @@ def limites_to_raw(access_params=None, **kwargs):
         "urn-party-pgid-ciacor",
         "urn-party-pgid-ciatintas",
         "urn-party-pgid-discor",
-        "urn-party-pgid-megaleste"
+        "urn-party-pgid-megaleste",
+        "urn-party-pgid-belgo"
     ]
 
     # Lista de prefixos (pastas principais)
