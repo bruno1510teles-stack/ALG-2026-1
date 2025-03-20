@@ -11,6 +11,7 @@ from datetime import timedelta
 
 ### Importando scripts necessários
 from politica_e_modelagem.auxiliares.antifraude import antifraude
+from politica_e_modelagem.auxiliares.antifraude import antifraude_serasa
 from politica_e_modelagem.pre_filtro import pre_filtro
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.politica.desafiante import politica
@@ -41,7 +42,6 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -54,8 +54,6 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "retries": 3,
-    "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
 
@@ -151,6 +149,14 @@ with DAG(
         provide_context=True
     )
 
+    # Definindo o task de antifraude
+    anti_fraude_serasa = PythonOperator(
+        task_id="antifraude_serasa_task",
+        python_callable=antifraude_serasa.anti_fraude_serasa,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
     # Execução da política
     politica_desafiante = PythonOperator(
         task_id="politica_task",
@@ -174,4 +180,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> politica_desafiante >> enviar_kafka
+    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> anti_fraude_serasa >> politica_desafiante >> enviar_kafka
+
