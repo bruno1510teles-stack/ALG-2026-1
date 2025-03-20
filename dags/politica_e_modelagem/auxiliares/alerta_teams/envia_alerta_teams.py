@@ -25,8 +25,8 @@ def envia_alerta_teams (access_params=None,  **kwargs):
     base_enviar_alerta = base_analisar.loc[base_analisar['resolucao'] != "MESA"]
 
     def notificar_falha_teams(base_analisar):
-        url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
-
+        url = "https://yandehbr.webhook.office.com/webhookb2/aff1add1-1e5e-445d-9644-f7d9ab677641@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/cd64a656b86b4db6a8a64a74153a8555/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2M-crEG-kOlO8wQffCBWAHSBeR29YtNktVPx1gvoiR4M1"
+        
         # Verifica se há dados na base 'base_analisar'
         if not base_analisar.empty:
             # Pega a primeira linha da base (ajuste conforme necessário para iterar sobre outras linhas)
