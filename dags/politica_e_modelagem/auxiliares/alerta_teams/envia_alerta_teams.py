@@ -30,7 +30,7 @@ def envia_alerta_teams (access_params=None,  **kwargs):
         # Verifica se há dados na base 'base_analisar'
         if not base_analisar.empty:
             # Pega a primeira linha da base (ajuste conforme necessário para iterar sobre outras linhas)
-            issue = base_analisar['issue'].iloc[0]
+            issue = base_analisar['issue_jira'].iloc[0]
             valor_aprovado = base_analisar['valor_aprovado'].iloc[0]
             resolucao = base_analisar['resolucao'].iloc[0]
 
