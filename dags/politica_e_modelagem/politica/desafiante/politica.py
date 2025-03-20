@@ -870,17 +870,17 @@ def executa_politica (access_params=None,  **kwargs):
     # Criando Regra para parâmetro de aprovação
 
     df_resultado['parecer'] = np.where(
-        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 60000),
+        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 50000),
         'Motor - Aprovado, contudo, sem alçada. Direcionar para avaliação da mesa de crédito',
         df_resultado['parecer']
     )
 
 
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] <= 60000),
+        (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] <= 50000),
         'APROVADO',
         np.where(
-            (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 60000),
+            (df_resultado['decisao_final'] == 'APROVADO') & (df_resultado['limite_solicitado'] > 50000),
             'MESA',
             df_resultado['decisao_final']
         )

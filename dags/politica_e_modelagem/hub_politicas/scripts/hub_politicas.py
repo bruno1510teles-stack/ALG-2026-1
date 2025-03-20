@@ -191,10 +191,10 @@ def aplicar_politica(access_params=None,  **kwargs):
                 
                 
                 # (Desafiante): Verifica o 4º dígito do CNPJ
-                # if len(cnpj_sacado) > 3:
-                #     quarto_digito = cnpj_sacado[3]  # Pega o 4º dígito do CNPJ (índice 3)
-                #     if quarto_digito in ['2', '3', '4']:
-                #         return 'Desafiante'
+                if len(cnpj_sacado) > 3:
+                    quarto_digito = cnpj_sacado[3]  # Pega o 4º dígito do CNPJ (índice 3)
+                    if quarto_digito in ['2', '3', '4']:
+                        return 'Desafiante'
                 
                 # Regra para fornecedores específicos
                 if pgid in ['arcelor', 'belgo']:

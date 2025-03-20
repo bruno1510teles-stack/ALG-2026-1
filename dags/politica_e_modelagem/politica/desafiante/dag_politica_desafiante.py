@@ -175,8 +175,8 @@ with DAG(
 
     # Definindo o sleep para processo de dados no data lake
     aguarde = PythonOperator(
-        task_id="esperar_tempo_serasa_15min",
-        python_callable=lambda: sleep(1020),  # Espera por 1 minuto (ajustado de 15 minutos)
+        task_id="esperar_tempo_serasa_10seg",
+        python_callable=lambda: sleep(10),  # Espera por 10 segundos
     )
 
     # Definindo a ordem de execução das tasks
