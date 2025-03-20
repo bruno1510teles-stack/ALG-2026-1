@@ -200,7 +200,7 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
         print(df_antifraude_serasa_final)
 
-
+    print(base_analisar)
     df = pd.merge(base_analisar, df_antifraude_serasa_final[['cnpj_sem_formatacao', 'ramificacao_antifraude_serasa', 'resposta_antifraude_serasa']], 
               on = ['cnpj_sem_formatacao'], how = 'left')
 
