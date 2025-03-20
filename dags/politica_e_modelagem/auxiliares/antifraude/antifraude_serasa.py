@@ -69,15 +69,15 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
             ,h.occurrences
             ,pi2.value "cnpj_sem_formatacao"
             ,re.id
-        from postgres.exrp_dev_default.report_execution re
-            inner join postgres.exrp_dev_default.reports rs on rs.id = re.reports_id
-            inner join postgres.exrp_dev_default.report r on rs.id = r.reports_id
-            inner join postgres.exrp_dev_default.facts f on f.id = r.facts_id
-            inner join postgres.exrp_dev_default.inquiry_company_response icr on icr.id = f.inquiry_company_response_id
-            inner join postgres.exrp_dev_default.quantity q on q.id = icr.quantity_id
-            inner join postgres.exrp_dev_default.historical h on h.quantity_id = q.id	
-            inner join postgres.exrp_dev_default.report_involvement ri on ri.report_execution_id = re.id
-            inner join postgres.exrp_dev_default.party_identification pi2 on pi2.party_id = ri.party_id
+        from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = re.reports_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.report r on rs.id = r.reports_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.facts f on f.id = r.facts_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.inquiry_company_response icr on icr.id = f.inquiry_company_response_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.quantity q on q.id = icr.quantity_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.historical h on h.quantity_id = q.id	
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
         where pi2.value in ({cnpj_analisar_str})
         ),
         base_data as (
@@ -88,19 +88,19 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
                 ,substring(last_re.value,1,8) cnpj_raiz
                 ,re.reports_id
             from 
-                postgres.exrp_dev_default.report_execution re
-                inner join postgres.exrp_dev_default.report_content rc on rc.id = re.content_id
+                postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
                 inner join (
                     select 
                         min(re.id) re_id
                         ,rc.json_content
                         ,pi2.value
                         ,ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content desc) AS rn
-                    from postgres.exrp_dev_default.report_execution re
-                        inner join postgres.exrp_dev_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
-                        inner join postgres.exrp_dev_default.report_content rc on rc.id = re.content_id
-                        inner join postgres.exrp_dev_default.report_involvement ri on ri.report_execution_id = re.id
-                        inner join postgres.exrp_dev_default.party_identification pi2 on pi2.party_id = ri.party_id
+                    from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
                     where
                         re.resolution = 'DONE'
                     group by  
