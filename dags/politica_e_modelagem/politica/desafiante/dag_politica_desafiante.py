@@ -183,7 +183,7 @@ with DAG(
     # Enviando dados para o Kafka
     enviar_alerta_teams = PythonOperator(
         task_id="envia_msg_teams",
-        python_callable=envia_alerta_teams,
+        python_callable=envia_alerta_teams.envia_alerta_teams,
         op_kwargs={'access_params': access_params},
         provide_context=True,
     )
