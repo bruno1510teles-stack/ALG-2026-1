@@ -8,7 +8,7 @@ import os, re, pytz
 from confluent_kafka import Producer
 import json
 from datetime import datetime
-
+from airflow.models import Variable
 
 def execucao_politica(access_params=None,  **kwargs):
     BUCKET_SOURCE_REFINED = "motor"
@@ -270,19 +270,19 @@ def execucao_politica(access_params=None,  **kwargs):
             ,substring(last_re.value,1,8) cnpj_raiz
             ,re.reports_id
         from 
-            postgres.exrp_prd_default.report_execution re
-            inner join postgres.exrp_prd_default.report_content rc on rc.id = re.content_id
+            postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
             inner join (
                 select 
                     min(re.id) re_id
                     ,rc.json_content
                     ,pi2.value
                     ,ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content desc) AS rn
-                from postgres.exrp_prd_default.report_execution re
-                    inner join postgres.exrp_prd_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
-                    inner join postgres.exrp_prd_default.report_content rc on rc.id = re.content_id
-                    inner join postgres.exrp_prd_default.report_involvement ri on ri.report_execution_id = re.id
-                    inner join postgres.exrp_prd_default.party_identification pi2 on pi2.party_id = ri.party_id
+                from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
                 where
                     re.resolution = 'DONE'
                     and substring(pi2.value,1,8) in {ids_query}
@@ -313,20 +313,20 @@ def execucao_politica(access_params=None,  **kwargs):
             ,coalesce(s.balance, 0) valor_total
         from tipo_pendencia tp 
             inner join base_data bd on true
-            inner join postgres.exrp_prd_default.reports rs on rs.id = bd.reports_id
-            left join postgres.exrp_prd_default.report r on rs.id = r.reports_id
-            left join postgres.exrp_prd_default.negative_data nd on nd.id = r.negative_data_id
-            left join postgres.exrp_prd_default.negative_data_item ndi on ndi.id in (
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+            left join postgres.exrp_{Variable.get('STAGE')}_default.report r on rs.id = r.reports_id
+            left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data nd on nd.id = r.negative_data_id
+            left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data_item ndi on ndi.id in (
                     nd.pefin_id, 
                     nd.refin_id, 
                     nd.collection_records_id, 
                     nd.check_id,
                     nd.notary_id)
                     and ndi."_object_type" = tp.tipo
-            left join postgres.exrp_prd_default.facts f on f.id = r.facts_id
-            left join postgres.exrp_prd_default.bankrupts b on b.id = f.bankrupts_id and tp.tipo = 'BANKRUPTSPATICIPATION'
-            left join postgres.exrp_prd_default.judgement_filings jf on jf.id = f.judgement_filings_id and tp.tipo = 'JUDGEMENTFILINGS'
-            left join postgres.exrp_prd_default.summary s on s.id in (ndi.summary_id, b.summary_id, jf.summary_id)
+            left join postgres.exrp_{Variable.get('STAGE')}_default.facts f on f.id = r.facts_id
+            left join postgres.exrp_{Variable.get('STAGE')}_default.bankrupts b on b.id = f.bankrupts_id and tp.tipo = 'BANKRUPTSPATICIPATION'
+            left join postgres.exrp_{Variable.get('STAGE')}_default.judgement_filings jf on jf.id = f.judgement_filings_id and tp.tipo = 'JUDGEMENTFILINGS'
+            left join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id in (ndi.summary_id, b.summary_id, jf.summary_id)
     )
     ,total_restritivos_pj as (
         select 
@@ -368,12 +368,12 @@ def execucao_politica(access_params=None,  **kwargs):
             ,s.last_occurrence ano_mes_ultimo
             ,coalesce(s.balance, 0) valor_total
         from base_data bd
-            inner join postgres.exrp_prd_default.reports rs on rs.id = bd.reports_id
-            inner join postgres.exrp_prd_default.optional_features of2 on of2.id = rs.optional_features_id
-            inner join postgres.exrp_prd_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
-            inner join postgres.exrp_prd_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
-            inner join postgres.exrp_prd_default.debt d on d.person_id = p.id
-            inner join postgres.exrp_prd_default.summary s on s.id = d.summary_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.debt d on d.person_id = p.id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id = d.summary_id
     )
     ,qtde_cheque_pf as (
         select 
@@ -397,9 +397,9 @@ def execucao_politica(access_params=None,  **kwargs):
             ,s.score "Score Positivo PJ"
             ,case when s.message  = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' then 1 else 0 end as grande_empresa
         from base_data bd
-            inner join postgres.exrp_prd_default.reports rs on rs.id = bd.reports_id
-            inner join postgres.exrp_prd_default.optional_features of2 on of2.id = rs.optional_features_id
-            inner join postgres.exrp_prd_default.score s on s.id = of2.id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.id
     )
     ,consulta_mais_recente AS (
         select 
@@ -423,10 +423,10 @@ def execucao_politica(access_params=None,  **kwargs):
                 end documento_socio
                 ,p.percentage_capital percentual_capital
             from base_data bd
-                inner join postgres.exrp_prd_default.reports rs on rs.id = bd.reports_id
-                inner join postgres.exrp_prd_default.optional_features of2 on of2.id = rs.optional_features_id
-                inner join postgres.exrp_prd_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
-                inner join postgres.exrp_prd_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
+                inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
+                inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
         )t1
     )
     select 
