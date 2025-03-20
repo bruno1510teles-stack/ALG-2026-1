@@ -16,6 +16,7 @@ from politica_e_modelagem.pre_filtro import pre_filtro
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.politica.desafiante import politica
 from politica_e_modelagem.auxiliares.kafka import execucao_envio_kafka
+from politica_e_modelagem.auxiliares.alerta_teams import envia_alerta_teams
 
 
 ### Parâmetros de acesso
@@ -179,6 +180,14 @@ with DAG(
         python_callable=lambda: sleep(10),  # Espera por 10 segundos
     )
 
+    # Enviando dados para o Kafka
+    enviar_alerta_teams = PythonOperator(
+        task_id="envia_msg_teams",
+        python_callable=envia_alerta_teams,
+        op_kwargs={'access_params': access_params},
+        provide_context=True,
+    )
+
     # Definindo a ordem de execução das tasks
-    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> anti_fraude_serasa >> politica_desafiante >> enviar_kafka
+    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> anti_fraude_serasa >> politica_desafiante >> enviar_kafka >> enviar_alerta_teams
 
