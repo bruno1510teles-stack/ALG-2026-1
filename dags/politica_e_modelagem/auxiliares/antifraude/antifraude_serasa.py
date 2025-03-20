@@ -161,6 +161,8 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
     )
 
 
+    df_antifraude_serasa_final = df_antifraude_serasa_final.reset_index(drop=False)
+
     print('Tratando e gerando tabela final...')
 
 
