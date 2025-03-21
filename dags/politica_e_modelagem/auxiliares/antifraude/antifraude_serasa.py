@@ -56,8 +56,8 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
         print("Proposta não apta para passar pela Antifraude Serasa. Fechada na Pré-Filtro.")
 
         df = df_antifraude
-        df['cnpj_raiz'] = df['cnpj_sem_formatacao'].str.slice(0, 8).str.zfill(8)
-        df['documento_sem_formatacao'] = df['cnpj_sem_formatacao'].str.zfill(14)
+        df['cnpj_raiz'] = df['documento_sem_formatacao'].str.slice(0, 8).str.zfill(8)
+        df['documento_sem_formatacao'] = df['documento_sem_formatacao'].str.zfill(14)
         df['ramificacao_antifraude_serasa'] = np.nan
         df['resposta_antifraude_serasa'] = np.nan
 
