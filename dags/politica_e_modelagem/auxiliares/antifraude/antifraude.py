@@ -75,8 +75,8 @@ def anti_fraude(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': ['AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO', 'AF - ENDEREÇO IGUAL'],
-        'SEGUE': ['AF SEGUE']
+        'REPROVADO': ['AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
+        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL']
     }
     # Aplicar as respostas
     for response, values in response_map.items():
