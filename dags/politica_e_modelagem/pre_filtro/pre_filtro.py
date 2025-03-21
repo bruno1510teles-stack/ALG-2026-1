@@ -395,9 +395,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             ((df['is_mei'] == True) | (df['is_mei'] == 'True'), 'PF MEI'),
             (df['cnae_aceito'] == 'NAO', 'PF CNAE'),
             (df['nat_ju_aceita'] == 'NAO', 'PF NATUREZA JURIDICA'),
-            (df['is_spe_consorcio_construtora'], 'PF CONSORCIO/CONSTRUTORA/SPE'),
-            (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) | (df['tem_socio_pj'] == True), 'PF SOCIO PJ OU < 2 ANOS'),
-            (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS')
+            ((df['is_spe_consorcio_construtora']) | (df['cod_natureza_juridica'] == '2054') | (df['cod_natureza_juridica'] == '2046'), 'PF CONSORCIO/CONSTRUTORA/SPE/SA'),
+            (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS'),
+            ((df['tem_socio_pj'] == True), 'PF SOCIO PJ'),
+            (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) , 'PF SOCIO < 2 ANOS'),
         ]
         # Aplicar condições
         for condition, value in conditions:
