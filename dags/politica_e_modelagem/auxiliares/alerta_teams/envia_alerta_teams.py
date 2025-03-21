@@ -33,6 +33,8 @@ def envia_alerta_teams (access_params=None,  **kwargs):
             issue = base_analisar['issue_jira'].iloc[0]
             valor_aprovado = base_analisar['valor_aprovado'].iloc[0]
             resolucao = base_analisar['resolucao'].iloc[0]
+            ramificacao = base_analisar['ramificacao'].iloc[0]
+            parecer = base_analisar['parecer'].iloc[0]
 
             # Criando a mensagem personalizada
             mensagem = {
@@ -41,6 +43,8 @@ def envia_alerta_teams (access_params=None,  **kwargs):
                 Issue: {issue} processada com sucesso!
                 Valor Aprovado: {valor_aprovado}
                 Resolução: {resolucao}
+                Ramificação: {ramificacao}
+                Parecer: {parecer}
                 """
             }
         else:
