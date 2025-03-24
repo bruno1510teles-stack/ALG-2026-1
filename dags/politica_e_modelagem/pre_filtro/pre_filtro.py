@@ -332,10 +332,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         df.rename(columns={'cod_cnae_x': 'cod_cnae'}, inplace=True)
 
         ### Concatenando base principal(import)
-        df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'flag_mudanca_endereco', 'flag_mudanca_cidade', 'flag_mudanca_estado' , 'flag_endereco_igual', 'ramificacao_antifraude']], 
+        df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado', 'flag_mudanca_endereco', 'flag_mudanca_cidade', 'flag_mudanca_estado' , 'flag_endereco_igual', 'ramificacao_antifraude']], 
                     on = ['cnpj_raiz'], 
                     how = 'outer')
-        df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao', 'limite_solicitado']], on = ['cnpj_raiz'], how = 'left')
+        df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
 
         df = df.drop(columns=['documento_sem_formatacao'])

@@ -88,7 +88,7 @@ def anti_fraude(access_params=None,  **kwargs):
     print(base_analisar)
     # Juntando bases
     
-    df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid']], on = ['cnpj_sem_formatacao'], how = 'left')
+    df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_sem_formatacao'], how = 'left')
 
     print(f"Demonstrativo relação pré-filtro: {df.groupby(['issue_jira', 'cnpj_sem_formatacao', 'ramificacao_antifraude'])['cnpj_sem_formatacao'].size()}")
 
