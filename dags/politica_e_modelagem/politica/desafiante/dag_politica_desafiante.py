@@ -70,6 +70,7 @@ def processar_proposta(**kwargs):
     inad_alpe = conf.get('inad')
     pgid = conf.get('payee_pgid')
     nome_issue = conf.get('summary')
+    limite_solicitado = conf.get('requested_limit')
 
     # Criando um dicionário com os dados recebidos para simular o DataFrame
     dados = {
@@ -77,7 +78,8 @@ def processar_proposta(**kwargs):
         'CNPJ': [CNPJ],
         'inad_alpe': [inad_alpe],
         'pgid': [pgid],
-        'nome_issue': [nome_issue]
+        'nome_issue': [nome_issue],
+        'limite_solicitado' : [limite_solicitado]
     }
 
     print(dados)
