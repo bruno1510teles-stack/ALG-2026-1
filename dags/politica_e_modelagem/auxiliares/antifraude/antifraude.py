@@ -91,12 +91,23 @@ def anti_fraude(access_params=None,  **kwargs):
     df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_sem_formatacao'], how = 'left')
 
     # Tratando limite_solicitado para task seguinte
-    df['limite_solicitado'] = df['limite_solicitado'].apply(lambda x: x.replace('R$', '').replace('.', '').strip())
+
+    def limpar_simbolo(valor):
+        valor = valor.replace('R$', '').strip()
+
+        # Verifica se o valor contém vírgula (formato 'R$ 250.000,99' ou 'R$ 250,000')
+        if ',' in valor:
+            valor = valor.replace('.', '').replace(',', '.')
+        else:
+            valor = valor.replace('.', '')  # Remove pontos de milhar, se houver
+
+        return valor
+
+    df['limite_solicitado'] = df['limite_solicitado'].apply(limpar_simbolo)
 
     df['limite_solicitado'] = df['limite_solicitado'].replace('', '0')
 
     df['limite_solicitado'] = df['limite_solicitado'].astype(float)
-
 
     print(df)
 
