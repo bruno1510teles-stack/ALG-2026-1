@@ -767,7 +767,7 @@ def executa_politica (access_params=None,  **kwargs):
             (df_resultado['ramificacao_final'] == 'A8 | A3')
         ),
         "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
-        df_resultado['parecer']
+        np.nan
     )
 
 
