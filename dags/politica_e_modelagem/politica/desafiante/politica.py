@@ -773,7 +773,7 @@ def executa_politica (access_params=None,  **kwargs):
     # Regra caso a resposta do pré filtro seja diferente de "SEGUE" (morreu no pré filtro) - DECISÃO FINAL
     df_resultado['decisao_final'] = np.where(
         (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_pre_filtro'] != 'PF SEGUE'),
-        'REPROVADO',
+        df_resultado['resposta'],
         df_resultado['decisao_final']
     )
 
