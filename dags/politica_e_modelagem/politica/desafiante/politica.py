@@ -505,6 +505,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     # Tratando casos sem informações de pagamento
 
+    '''
     # Função para calcular a ramificação e a decisão final
     def aplica_regras_sem_hp(row):
         # Caso o porte seja 'CORPORATE'
@@ -528,6 +529,65 @@ def executa_politica (access_params=None,  **kwargs):
                     row['ramificacao'] = 'A8'
                     row['ramificacao_2'] = 'A3'
                     row['decisao_final'] = 'APROVADO'
+                elif row['score_positivo_pj'] > 316:
+                    row['ramificacao'] = 'B4'
+                    row['ramificacao_2'] = 'B1'
+                    row['decisao_final'] = 'MESA'
+                else:
+                    row['ramificacao'] = 'C5'
+                    row['ramificacao_2'] = 'C1'
+                    row['decisao_final'] = 'REPROVADO'
+            else:
+                # Caso tenha restritivo
+                if row['valor_total_restritivos'] < 500000:
+                    # Se o restritivo for menor que 500k
+                    if row['score_positivo_pj'] > 316:
+                        row['ramificacao'] = 'B5'
+                        row['ramificacao_2'] = 'B2'
+                        row['decisao_final'] = 'MESA'
+                    else:
+                        row['ramificacao'] = 'C6'
+                        row['ramificacao_2'] = 'C2'
+                        row['decisao_final'] = 'REPROVADO'
+                else:
+                    # Se o restritivo for maior que 500k
+                    row['ramificacao'] = 'D4'
+                    row['ramificacao_2'] = 'D1'
+                    row['decisao_final'] = 'REPROVADO'
+        return row
+
+    # Aplicar a função em cada linha do DataFrame 'sem_hp'
+    sem_hp = sem_hp.apply(aplica_regras_sem_hp, axis=1)
+    '''
+
+
+    # SOLICITAÇÃO GUSTAVO T. 24/03/25 - PARA CASOS APROVADOS QUE NÃO TENHA HISTORICO DE PAGAMENTO, DIRECIONAR PARA A MESA.
+    # Função para calcular a ramificação e a decisão final
+    def aplica_regras_sem_hp(row):
+        # Caso o porte seja 'CORPORATE'
+        if row['empresa_grande'] == 1:
+            row['ramificacao'] = 'B6'
+            row['ramificacao_2'] = 'B3'
+            row['decisao_final'] = 'MESA'
+        else:
+            # Verificar se há restritivo
+            if row['flag_restritivo'] == 0:
+                # Se não há restritivo, aplicar a lógica de score
+                if row['score_positivo_pj'] > 900:
+                    row['ramificacao'] = 'A6'
+                    row['ramificacao_2'] = 'A1'
+                    #row['decisao_final'] = 'APROVADO'             
+                    row['decisao_final'] = 'MESA'
+                elif row['score_positivo_pj'] > 700:
+                    row['ramificacao'] = 'A7'
+                    row['ramificacao_2'] = 'A2'
+                    #row['decisao_final'] = 'APROVADO'
+                    row['decisao_final'] = 'MESA'
+                elif row['score_positivo_pj'] > 600:
+                    row['ramificacao'] = 'A8'
+                    row['ramificacao_2'] = 'A3'
+                    #row['decisao_final'] = 'APROVADO'
+                    row['decisao_final'] = 'MESA'
                 elif row['score_positivo_pj'] > 316:
                     row['ramificacao'] = 'B4'
                     row['ramificacao_2'] = 'B1'
@@ -844,6 +904,19 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado.loc[df_resultado['decisao_final'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
     df_resultado.loc[df_resultado['decisao_final'] == 'APROVADO', 'parecer'] = 'Motor - Aprovado'
     df_resultado.loc[df_resultado['decisao_final'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
+
+
+    # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
+    df_resultado['parecer'] = np.where(
+        (df_resultado['decisao_final'] == 'MESA') & 
+        (
+            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
+            (df_resultado['ramificacao_final'] == 'A8 | A3')
+        ),
+        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
+        df_resultado['parecer']
+    )
 
 
     # Criação do mapeamento de pareceres
