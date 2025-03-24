@@ -79,6 +79,7 @@ def anti_fraude(access_params=None,  **kwargs):
         'REPROVADO': ['AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
         'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL']
     }
+
     # Aplicar as respostas
     for response, values in response_map.items():
         df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isin(values), 'resposta'] = response

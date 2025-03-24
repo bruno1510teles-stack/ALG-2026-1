@@ -723,6 +723,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     ## -> ANTIFRAUDE RECEITA
 
+    '''
     # Regra caso o CNPJ tenha caido no modelo de antifraude - RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
         (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
@@ -734,6 +735,21 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado['decisao_final'] = np.where(
         (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
         'REPROVADO',
+        df_resultado['decisao_final']
+    )'
+    '''
+
+    # Regra caso o CNPJ tenha caido no modelo de antifraude - RAMIFICAÇÃO FINAL
+    df_resultado['ramificacao_final'] = np.where(
+        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
+        df_resultado['ramificacao_antifraude'],
+        df_resultado['ramificacao_final']
+    )
+
+    # Regra caso o CNPJ tenha caido no modelo de antifraude - DECISÃO FINAL
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
+        'MESA',
         df_resultado['decisao_final']
     )
 
@@ -763,6 +779,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     ## -> ANTIFRAUDE SERASA
 
+    '''
     # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
         (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
@@ -774,6 +791,22 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado['decisao_final'] = np.where(
         (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
         'REPROVADO',
+        df_resultado['decisao_final']
+    )'
+    '''
+
+
+    # RAMIFICAÇÃO FINAL
+    df_resultado['ramificacao_final'] = np.where(
+        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
+        df_resultado['ramificacao_antifraude_serasa'],
+        df_resultado['ramificacao_final']
+    )
+
+    # DECISÃO FINAL
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
+        'MESA',
         df_resultado['decisao_final']
     )
 
