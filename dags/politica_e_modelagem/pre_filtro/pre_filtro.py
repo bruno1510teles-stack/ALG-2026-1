@@ -374,6 +374,10 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         
         df['ramificacao_pre_filtro'] = np.nan
 
+        # Tratando limite solicitado
+        df['limite_solicitado'] = df['limite_solicitado'].replace({'R$': '', '.': ''}, regex=True)
+        df['limite_solicitado'] = df['limite_solicitado'].astype(float)
+
         # Dicionário para mapear condições a valores de 'ramificacao_pre_filtro'
         conditions = [
             # Impedidos de Operar
