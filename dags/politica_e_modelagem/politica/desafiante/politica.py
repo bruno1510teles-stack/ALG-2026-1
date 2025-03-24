@@ -758,6 +758,19 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado['documento_sem_formatacao'] = df_resultado['cnpj_sem_formatacao'].apply(lambda x: str(x).zfill(14))
 
 
+    # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
+    df_resultado['parecer'] = np.where(
+        (df_resultado['decisao_final'] == 'MESA') & 
+        (
+            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
+            (df_resultado['ramificacao_final'] == 'A8 | A3')
+        ),
+        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
+        df_resultado['parecer']
+    )
+
+
     print('Tratando ramificação final e decisão final')
 
     ### Tratando ramificação final e decisão final
@@ -904,19 +917,6 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado.loc[df_resultado['decisao_final'] == 'MESA', 'parecer'] = 'Motor - Direcionar para avaliação da mesa de crédito'
     df_resultado.loc[df_resultado['decisao_final'] == 'APROVADO', 'parecer'] = 'Motor - Aprovado'
     df_resultado.loc[df_resultado['decisao_final'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
-
-
-    # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
-    df_resultado['parecer'] = np.where(
-        (df_resultado['decisao_final'] == 'MESA') & 
-        (
-            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
-            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
-            (df_resultado['ramificacao_final'] == 'A8 | A3')
-        ),
-        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
-        df_resultado['parecer']
-    )
 
 
     # Criação do mapeamento de pareceres
