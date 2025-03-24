@@ -91,9 +91,10 @@ def anti_fraude(access_params=None,  **kwargs):
     df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_sem_formatacao'], how = 'left')
 
     # Tratando limite_solicitado para task seguinte
-    df['limite_solicitado'] = df['limite_solicitado'].replace({'R$ ': '', '.': ''}, regex=True)
+    df['limite_solicitado'] = df['limite_solicitado'].replace({'R$': '', '.': ''}, regex=True)
     df['limite_solicitado'] = df['limite_solicitado'].str.strip()
-    df['limite_solicitado'] = df['limite_solicitado'].astype(float)
+    df['limite_solicitado'] = df['limite_solicitado'].replace('', np.nan)
+    df['limite_solicitado'] = pd.to_numeric(df['limite_solicitado'], errors='coerce')
 
 
     print(df)
