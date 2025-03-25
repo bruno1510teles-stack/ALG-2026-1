@@ -411,7 +411,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         response_map = {
             'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
             'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
-            'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS', 'PF BLOQUEIO ALPE'],
+            'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO < 2 ANOS', 'PF BLOQUEIO ALPE'],
             'SEGUE': ['PF SEGUE']
         }
         # Aplicar as respostas
