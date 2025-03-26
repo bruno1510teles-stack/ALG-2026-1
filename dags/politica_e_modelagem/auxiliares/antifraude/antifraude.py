@@ -76,9 +76,11 @@ def anti_fraude(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': ['AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
-        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL']
+        'REPROVADO': [],
+        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO']
     }
+
+    # FOI COLOCADO TUDO NO SEGUE, POIS OS CASOS ESTAVAM INDO PARA A MESA SEM COMPRAR O SERASA ATUALIZADO
 
     # Aplicar as respostas
     for response, values in response_map.items():
