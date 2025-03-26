@@ -11,10 +11,36 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from minio import Minio
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
-from logging import Logger
+import datetime
 
 
-def captura_propostas_jira_raw(access_params=None, **kwargs):
+def captura_proposta (access_params = None):
+
+
+    #Pegando ARQUIVO HISTÓRICO
+
+    # Conectando no MinIO
+    client = Minio(
+        "api-raw.alpe.com.br",
+        access_key = 'B7q0avvSIpSdyGPXWnEC',
+        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+    )
+
+    # Definindo bucket e caminho do arquivo
+    BUCKET_SOURCE_RAW = "jira"
+    FOLDER_DESTINATION_RAW = 'propostas'
+    file_name = 'base_jira_propostas.parquet'
+    file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
+
+
+    # Lendo o arquivo da Raw
+    response = client.get_object(BUCKET_SOURCE_RAW, file_path)
+    file_data = BytesIO(response.read())
+    df_historico_propostas = pd.read_parquet(file_data)
+
+    # Excluindo colunas de datas, ja que vamos concatenar com as novas propostas e teremos novas datas ref
+    df_historico_propostas = df_historico_propostas.drop(columns=['atualizado_em', 'year', 'month', 'day'])
+
 
 
     # Função para buscar a data de mudança de status para "Awaiting Execution"
@@ -41,9 +67,11 @@ def captura_propostas_jira_raw(access_params=None, **kwargs):
         
         return None
 
+
     # Configurações da API do Jira
     jira_url_base = "https://alpe.atlassian.net"
     jira_url_search = f"{jira_url_base}/rest/api/3/search"
+
     # Credenciais de acesso
     email = "felipe.ferraz@alpe.com.br"
     api_token = "ATATT3xFfGF0HVdx6POVBSFWH3BnpC0HyKvTF9EXgjLZ6rpwZuHnIAcI1UDeNTht79mL-O60ezlE4a2qKr4d-H_A3DmY7VCwATPRMABBMQns1ubEjMI_uFgCjEMPeUKkpVgb_-BZ5btV7yQQal1ZNmEm2dGZY_NTpUpOkHdC-SjK0iiBIj3EP80=037ADAA4"
@@ -54,8 +82,23 @@ def captura_propostas_jira_raw(access_params=None, **kwargs):
         "Accept": "application/json"
     }
 
+
+    def get_ultimo_dia_util():
+        hoje = datetime.datetime.now()
+        
+        # Se hoje for sábado(5) ou domingo(6), ajusta para sexta-feira
+        if hoje.weekday() >= 5:
+            ultimo_dia_util = hoje - datetime.timedelta(days=hoje.weekday() - 4)
+        else:
+            ultimo_dia_util = hoje - datetime.timedelta(days=1)
+
+        return ultimo_dia_util.strftime('%Y-%m-%d')
+
+    ultimo_dia_util = get_ultimo_dia_util()
+
+
     # JQL query e parâmetros de paginação
-    jql_query = 'project = cmgt' # and issue = "CMGT-49482"
+    jql_query = f'project = cmgt AND updated >= "{ultimo_dia_util}"'
     start_at = 0
     max_results = 100
     total_issues = 0
@@ -162,49 +205,62 @@ def captura_propostas_jira_raw(access_params=None, **kwargs):
     print(f"\nProcessamento concluído em {total_time:.2f} segundos.")
 
     # Convertendo os dados para DataFrame
-    df_jira = pd.DataFrame(issues_data)
+    df_propostas_ult_dia_util = pd.DataFrame(issues_data)
 
-    # Tratando JSON do parecer...
+    # Tratando parecer
     def extrair_parecer(parecer):
         try:
             return parecer['content'][0]['content'][0]['text']
         except (KeyError, IndexError, TypeError):
             return None
 
-    # Aplicando a função para criar uma nova coluna com o texto extraído
-    df_jira['parecer'] = df_jira['parecer'].apply(extrair_parecer)
+    df_propostas_ult_dia_util['parecer'] = df_propostas_ult_dia_util['parecer'].apply(extrair_parecer)
+
+
+
+    # Regra para atualizarmos as issues do df_propostas_ult_dia_util na base histórica
+
+    # Novas issues para atualização no histórico
+    issues_novas = df_propostas_ult_dia_util['issue_key'].unique()
+
+    # Excluindo as linhas antigas dessas issues no histórico
+    print('Linhas antes da exclusão das issues:')
+    print(len(df_historico_propostas))
+
+    df_historico_propostas = df_historico_propostas[~df_historico_propostas['issue_key'].isin(issues_novas)]
+
+    print('Linhas após exclusão das issues:')
+    print(len(df_historico_propostas))
+
+    # Inserindo as novas linhas (update das que ja apareciam na base e inserção das novas issues)
+    df_final = pd.concat([df_historico_propostas, df_propostas_ult_dia_util], ignore_index=True)
+
+    print('Quantidade de linhas no df final:')
+    print(len(df_final))
+
 
     # Atribuindo data atual
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df_jira['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df_jira['year'], df_jira['month'], df_jira['day'] = now.year, now.month, now.day
+    now = datetime.datetime.now(tz=timezone(timedelta(hours=-3)))
+    df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
 
-    # Resetando o índice
-    df_jira = df_jira.reset_index(drop=True)
-    
+    df_final = df_final.reset_index(drop=True)
+
 
     # Salvando Output
-
     logger = LoggingMixin().log 
-    
+
     try:
         logger.info("Iniciando salvamento das informações")
 
         BUCKET_SOURCE_RAW = "jira"
         FOLDER_DESTINATION_RAW = 'propostas'
 
-        # Conectando no MinIO
-        client = Minio(
-            "api-raw.alpe.com.br",
-            access_key = 'B7q0avvSIpSdyGPXWnEC',
-            secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
-        )
-
         # Nome do arquivo Parquet que você deseja criar
         file_out = f'base_jira_propostas.parquet'  # Alterando a extensão para .parquet
 
         # Convertendo o DataFrame para Parquet e armazenando em BytesIO
-        parquet_bytes = df_jira.to_parquet(index=False)
+        parquet_bytes = df_final.to_parquet(index=False)
         parquet_buffer = BytesIO(parquet_bytes)
 
         # Upload para o MinIO

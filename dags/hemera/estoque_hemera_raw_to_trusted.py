@@ -11,7 +11,7 @@ import re
 
 def hemera_raw_to_trusted(access_params=None, **kwargs):
 
-    mes_processo = ['01']
+    mes_processo = ['02']
 
     for mes in mes_processo:
         print(f"Rodando estoque para a data de fechamento: {mes}")

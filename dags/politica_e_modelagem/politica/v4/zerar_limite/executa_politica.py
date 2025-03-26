@@ -170,7 +170,7 @@ def execucao_politica(access_params=None,  **kwargs):
     resposta_motor = resposta_motor.rename(columns={'CNPJ':'cnpj_ec'})
 
     #DEFININDO O PARECER DO MOTOR
-    resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = '[Politica 4 - Zerar limite] | ' + resposta_motor['parecer'].astype(str)
+    resposta_motor.loc[resposta_motor['resposta_motor'] == 'REPROVADO', 'parecer'] = 'Motor - Recusado | ' + resposta_motor['parecer'].astype(str)
 
     resposta_motor.head()
 

@@ -12,7 +12,7 @@ from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
 
 
-def jira_raw_to_trusted(access_params=None, **kwargs):
+def raw_to_trusted(access_params=None, **kwargs):
 
     # Conectando no MinIO
     client = Minio(
@@ -369,19 +369,19 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     def categorizar_cargo_analista(nome):
         nome = nome.upper()
         if nome in lista_cargo_motor:
-            return 'MOTOR'
+            return '6 - MOTOR'
         elif nome in lista_cargo_assistente:
-            return 'ASSISTENTE'
+            return '1 - ASSISTENTE'
         elif nome in lista_cargo_junior:
-            return 'JÚNIOR'
+            return '2 - JÚNIOR'
         elif nome in lista_cargo_pleno:
-            return 'PLENO'
+            return '3 - PLENO'
         elif nome in lista_cargo_senior:
-            return 'SÊNIOR'
+            return '4 - SÊNIOR'
         elif nome in lista_cargo_gerente:
-            return 'GERENTE'
+            return '5 - GERENTE'
         elif nome in lista_cargo_outros:
-            return 'OUTROS'
+            return '7 - OUTROS'
         else:
             return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
 
@@ -396,28 +396,26 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
     lista_ramificacao_ruim = ['PF SOCIO < 2 ANOS', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF MESA', 'PF SOCIO PJ', 'PF FUNDACAO < 2 ANOS',
                             'REPROVADO', 'PF MEI', 'PF NATUREZA JURIDICA', 'PF CNAE', 'B - 6', 'B - 9', 'C5 | C1', 'PF BLOQUEIO ALPE',
                             'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
-                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'B - 12', 'A - A12']
+                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2']
 
-    lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 4', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5', 'B - 3',
-                            'A - B3', 'A - B2', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
+    lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
+                            'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
 
-    lista_ramificacao_bom = ['B - 1']
+    lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3']
 
-    lista_ramificacao_nan = ['NÃO ATRIBUIDA']
-
-    # CONFIRMAR RAMIFICAÇÕES B - 12 e A - A12
+    lista_ramificacao_nan = ['NÃO ATRIBUIDA', 'B - 12', 'A - A12']
 
     # FUNÇÃO ATRIBUIR CARGO
     def categorizar_ramificacao(nome):
         nome = nome.upper()
         if nome in lista_ramificacao_ruim:
-            return 'RUIM'
+            return '1 - RUIM'
         elif nome in lista_ramificacao_medio:
-            return 'MÉDIO'
+            return '2 - MÉDIO'
         elif nome in lista_ramificacao_bom:
-            return 'BOM'
+            return '3 - BOM'
         elif nome in lista_ramificacao_nan:
-            return 'NÃO ATRIBUIDA'
+            return '4 - NÃO ATRIBUIDA'
         else:
             return 'ADICIONAR NO DICIONARIO DE RAMIFICAÇÕES'
 
@@ -436,10 +434,11 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     df_motor_reprov_agrup = df_motor_reprov.groupby('cnpj')['data_resolvido'].min().reset_index()
 
+    df_motor_reprov_agrup = pd.merge(df_motor_reprov_agrup, df_resolvido[['cnpj','data_resolvido','ramificacao_motor']], on=['cnpj', 'data_resolvido'], how='left')
+
     df_motor_reprov_agrup.rename(columns={'data_resolvido': 'primeira_recusa_motor'}, inplace=True)
 
     df_motor_reprov_agrup['primeira_recusa_motor'] = pd.to_datetime(df_motor_reprov_agrup['primeira_recusa_motor'], errors='coerce')
-
 
 
     # -> Propostas decididas pela MESA, apenas dos casos que tiveram alguma reprova pelo MOTOR
@@ -468,12 +467,19 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
 
     # Criando flag no df_resolvido
 
-    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final['issue_key'], on='issue_key', how='left', indicator=True)
+    df_propostas_replicas_final = df_propostas_replicas_final[['issue_key', 'ramificacao_motor']]
+
+    df_propostas_replicas_final.rename(columns={'ramificacao_motor': 'ramificacao_proposta_replica'}, inplace=True)
+
+    df_propostas_replicas_final = df_propostas_replicas_final.drop_duplicates()
+
+    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final, on='issue_key', how='left', indicator=True)
 
     df_resolvido['flag_proposta_replica'] = df_resolvido['_merge'].apply(lambda x: 1 if x == 'both' else 0)
 
     df_resolvido = df_resolvido.drop(columns=['_merge'])
 
+    df_resolvido = df_resolvido.drop_duplicates()
 
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
@@ -500,10 +506,11 @@ def jira_raw_to_trusted(access_params=None, **kwargs):
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
         'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
-        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica', 'data_criado',
+        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
+
 
     # Configurações para acesso ao MinIO
     logger = LoggingMixin().log 
