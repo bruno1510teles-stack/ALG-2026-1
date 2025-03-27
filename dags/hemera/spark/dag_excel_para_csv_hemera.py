@@ -59,7 +59,7 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='excel_to_csv',
+    dag_id='hemera_excel_to_csv',
     start_date=pendulum.datetime(2023, 1, 1, tz=local_tz),  # Data inicial com timezone
     schedule_interval='0 14 * * 1-5',  # Segunda a sexta 14:00 
     catchup=False,
@@ -68,13 +68,13 @@ with DAG(
     max_active_runs=1
 ) as dag:
     
-    excel_to_csv = SparkKubernetesOperator(
-        task_id='excel_to_csv',
-        application_file='dags/hemera/spark/excel-to-csv-hemera-spark-app.yaml',
+    hemera_excel_to_csv = SparkKubernetesOperator(
+        task_id='hemera_excel_to_csv',
+        application_file='excel-to-csv.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
     )
  
     # Definindo a ordem de execução das tasks
-    excel_to_csv 
+    hemera_excel_to_csv 
