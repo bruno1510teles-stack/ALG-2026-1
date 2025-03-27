@@ -43,9 +43,9 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
         print(f"Erro ao conectar no MinIO: {e}")
         return
 
-        # Buckets e subpastas
+    # Buckets e subpastas
     SOURCE_BUCKET = "hemera"
-    DEST_BUCKET = "teste-ata"  # renomear para hemera-csv
+    DEST_BUCKET = "hemera-csv"  # renomear para hemera-csv
     SUBFOLDERS = ["estoque", "retorno", "aquisicao", "recompra"]
 
     ## Cria cliente do Minio
