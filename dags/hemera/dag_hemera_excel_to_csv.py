@@ -70,7 +70,7 @@ with DAG(
     
     excel_to_csv = SparkKubernetesOperator(
         task_id='excel_to_csv',
-        application_file='excel-to-csv.yaml',
+        application_file='excel-to-csv-hemera-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
