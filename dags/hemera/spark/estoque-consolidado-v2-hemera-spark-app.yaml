@@ -1,16 +1,16 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: estoque-diario-v2-hemera-spark-app
+  name: estoque-consolidado-v2-hemera-spark-app
   namespace: spark
 spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.78"
+  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.75-SNAPSHOT"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/estoque_diario_v2_hemera.py
+  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/estoque_consolidado_v2_hemera.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
