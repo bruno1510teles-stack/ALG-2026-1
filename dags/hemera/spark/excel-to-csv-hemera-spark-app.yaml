@@ -10,7 +10,7 @@ spec:
   image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.76-SNAPSHOT"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/excel_to_csv.py
+  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/scripts/excel_to_csv_hemera.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
