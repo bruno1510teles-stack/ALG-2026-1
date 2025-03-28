@@ -103,7 +103,7 @@ with DAG(
 
     estoque_diario = SparkKubernetesOperator(
         task_id='estoque_diario',
-        application_file='estoque-diario-hemera-spark-app.yaml',
+        application_file='estoque-diario-v2-hemera-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
