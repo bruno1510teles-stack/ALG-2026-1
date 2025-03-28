@@ -22,7 +22,7 @@ def estoque_diario_hemera(spark):
     print("Iniciando leitura dos arquivos")
 
     # Lendo arquivos
-    nome_bucket = "hemera-diario"
+    nome_bucket = "hemera-csv"
     caminho = 'estoque-csv'
     anos = ['2021','2022','2023','2024','2025']                         
     meses = [str(m).zfill(2) for m in range(1, 13)]
