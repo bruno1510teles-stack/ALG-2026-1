@@ -332,11 +332,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         df.rename(columns={'cod_cnae_x': 'cod_cnae'}, inplace=True)
 
         ### Concatenando base principal(import)
-        df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado', 'flag_mudanca_endereco', 'flag_mudanca_cidade', 'flag_mudanca_estado' , 'flag_endereco_igual', 'ramificacao_antifraude']], 
+        df = df.merge(base_analisar[['cnpj_raiz', 'CNPJ', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado', 'flag_mudanca_endereco', 'flag_mudanca_cidade', 'flag_mudanca_estado' , 'flag_endereco_igual', 'ramificacao_antifraude', 'resposta']], 
                     on = ['cnpj_raiz'], 
                     how = 'outer')
         df = df.merge(df_jira[['cnpj_raiz', 'analise_menor_60_dias', 'decisor', 'decisao']], on = ['cnpj_raiz'], how = 'left')
 
+        print('DF antes dos filtros:')
+        print(df)
 
         df = df.drop(columns=['documento_sem_formatacao'])
         df.rename(columns={'CNPJ': 'documento_sem_formatacao'}, inplace=True)
@@ -411,7 +413,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         response_map = {
             'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
             'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
-            'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO < 2 ANOS', 'PF BLOQUEIO ALPE'],
+            'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF SOCIO < 2 ANOS', 'PF BLOQUEIO ALPE'],
             'SEGUE': ['PF SEGUE']
         }
         # Aplicar as respostas
