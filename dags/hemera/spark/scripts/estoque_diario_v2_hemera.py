@@ -3,6 +3,7 @@ from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, t
 from pyspark.sql.types import DoubleType, DateType, IntegerType
 import os
 from datetime import datetime, timezone, timedelta
+import re
 
 
 def estoque_diario_hemera(spark):
