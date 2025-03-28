@@ -17,7 +17,7 @@ def retorno_diaria(spark):
     print("MInio ACessado")
 
     nome_bucket = "hemera-csv"
-    caminho = "retorno"
+    caminho = "retorno-csv"
     anos = ['2025','2024']
     meses = [str(m).zfill(2) for m in range(1, 13)]
 

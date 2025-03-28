@@ -16,7 +16,7 @@ def aquisicao_diaria(spark):
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
     nome_bucket = "hemera-csv"
-    caminho = "aquisicao"
+    caminho = "aquisicao-csv"
     anos = ['2024','2025']
     meses = [str(m).zfill(2) for m in range(1, 13)]
 
