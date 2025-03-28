@@ -29,7 +29,7 @@ def aquisicao_diaria(spark):
 
             try:
                 df_ano = spark.read \
-                    .option("delimiter", ";") \
+                    .option("delimiter", ",") \
                     .option("header", True) \
                     .option("allowMissingColumns", True) \
                     .option("encoding",'cp1252') \
