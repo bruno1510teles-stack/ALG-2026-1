@@ -72,7 +72,7 @@ def hemera_raw_to_trusted_retorno(spark, **kwargs):
     df_consolidado = df
     
     # Criar coluna 'data_fechamento' como o último dia do mês
-    df_consolidado = df_consolidado.withColumn("data_fechamento", date_format(col("data_arquivo"), "yyyy-MM-dd"))
+    df_consolidado = df_consolidado.withColumn("data_fechamento", last_day(col("data_arquivo")))
 
     # Selecionar e reorganizar as colunas
     colunas = ["data_fechamento"] + [col for col in df_consolidado.columns if col != "data_fechamento"]
