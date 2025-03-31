@@ -85,6 +85,7 @@ def aplicar_politica(access_params=None,  **kwargs):
         # Acessando o assignee corretamente dentro de fields
         key_jira = ticket['key']
         cnpj_sacado = ticket['fields'].get('customfield_13729')
+        cnpj_sacado_v4 = ticket['fields'].get('customfield_13729', '')[:8]
         pgid_cedente = ticket['fields'].get('customfield_13739')
         politica = ticket['fields'].get('customfield_13793', {}).get('value') if ticket['fields'].get('customfield_13793') else None
 
@@ -112,7 +113,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                                 from deltalakerefined.receita_federal.dados_cadastrais dc
                                 where (dc.situacao_cadastral <> 'ATIVA' or dc.situacao_especial = 'RECUPERACAO JUDICIAL')
                                 and dc.flag_matriz = 'Sim'
-                                and dc.cnpj_raiz = '{cnpj_sacado}'
+                                and dc.cnpj_raiz = '{cnpj_sacado_v4}'
                             """
 
 
