@@ -18,7 +18,7 @@ def recompra_diaria_csv(spark):
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
     nome_bucket = "hemera-csv"
-    caminho = "recompra"
+    caminho = "recompra-csv"
     anos = ['2025','2024']
     meses = [str(m).zfill(2) for m in range(1, 13)]
 
@@ -31,7 +31,7 @@ def recompra_diaria_csv(spark):
 
             try:
                 df_ano = spark.read \
-                    .option("delimiter", ";") \
+                    .option("delimiter", ",") \
                     .option("header", True) \
                     .option("allowMissingColumns", True) \
                     .option("encoding",'cp1252') \

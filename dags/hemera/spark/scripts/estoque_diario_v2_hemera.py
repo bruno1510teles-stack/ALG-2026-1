@@ -3,6 +3,7 @@ from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, t
 from pyspark.sql.types import DoubleType, DateType, IntegerType
 import os
 from datetime import datetime, timezone, timedelta
+import re
 
 
 def estoque_diario_hemera(spark):
@@ -22,8 +23,8 @@ def estoque_diario_hemera(spark):
     print("Iniciando leitura dos arquivos")
 
     # Lendo arquivos
-    nome_bucket = "hemera-diario"
-    caminho = 'estoque_csv'
+    nome_bucket = "hemera-csv"
+    caminho = 'estoque-csv'
     anos = ['2021','2022','2023','2024','2025']                         
     meses = [str(m).zfill(2) for m in range(1, 13)]
     
