@@ -117,6 +117,35 @@ def report_motor_desafiante (access_params=None):
     print(aprovadas_motor_sem_hp_50k_300k_mesa_decisao_len)
 
 
+    ## PROPOSTAS APROVADAS PELO MOTOR, PORÉM SEM PONTUALIDADE
+
+    aprovadas_motor_sem_hp_mesa = propostas[
+        propostas['ramificacao_motor'].isin(['A6 | A1', 'A7 | A2', 'A8 | A3']) &
+        (propostas['limite_pedido'] <= 50000) &
+        (propostas['parecer'] != 'Motor - Aprovado')
+    ]
+
+    aprovadas_motor_sem_hp_mesa_len = len(aprovadas_motor_sem_hp_mesa)
+
+    print('Propostas aprovadas pelo motor, porém enviadas para a mesa pois não temos info de pontualidade:')
+    print(aprovadas_motor_sem_hp_mesa_len)
+
+    ## -----------------------------------------------------------------------------------------------------------------------------------------
+
+    aprovadas_motor_sem_hp_mesa_decisao = propostas[
+        propostas['ramificacao_motor'].isin(['A6 | A1', 'A7 | A2', 'A8 | A3']) &
+        (propostas['limite_pedido'] <= 50000) &
+        (propostas['parecer'] != 'Motor - Aprovado') &
+        (propostas['categoria_decisor'] == 'MESA') &
+        (propostas['decisao'] == 'APROVADO')
+    ]
+
+    aprovadas_motor_sem_hp_mesa_decisao_len = len(aprovadas_motor_sem_hp_mesa_decisao)
+
+    print('Aprovadas pelas mesa após análise prévia do motor:')
+    print(aprovadas_motor_sem_hp_mesa_decisao_len)
+
+
 
     ## PROPOSTAS APROVADAS PELO MOTOR, PORÉM SEM ALÇADA (>50K e <300k) - COM PONTUALIDADE
 
@@ -186,19 +215,12 @@ def report_motor_desafiante (access_params=None):
     percent_aprov_300k_mesa = calcular_percentual(aprovadas_motor_env_mesa_300k_len, aprovadas_motor_env_mesa_300k_decisao_len)
     percent_aprov_sem_alcada_sem_hp = calcular_percentual(aprovadas_motor_sem_hp_50k_300k_mesa_len, aprovadas_motor_sem_hp_50k_300k_mesa_decisao_len)
     percent_aprov_sem_alcada_com_hp = calcular_percentual(aprovadas_motor_com_hp_50k_300k_mesa_len, aprovadas_motor_com_hp_50k_300k_mesa_decisao_len)
+    percent_aprov_sem_hp = calcular_percentual(aprovadas_motor_sem_hp_mesa_len, aprovadas_motor_sem_hp_mesa_decisao_len)
 
     percent_aprov_mesa_total = ((aprovadas_motor_env_mesa_300k_decisao_len + 
                                 aprovadas_motor_sem_hp_50k_300k_mesa_decisao_len +
-                                aprovadas_motor_com_hp_50k_300k_mesa_decisao_len) / aprovadas_totais_motor_len) * 100
-        
-
-    # Imprimir os resultados
-    print(f"Quantidade Propostas 300K Mesa : {aprovadas_motor_env_mesa_300k_decisao_len}")
-    print(f"Percentual 300K Mesa: {percent_aprov_300k_mesa}%")
-    print(f"Quantidade Propostas Sem Alçada Sem HP : {aprovadas_motor_sem_hp_50k_300k_mesa_len}")
-    print(f"Percentual Sem Alçada Sem HP: {percent_aprov_sem_alcada_sem_hp}%")
-    print(f"Quantidade Propostas Sem Alçada Cem HP : {aprovadas_motor_com_hp_50k_300k_mesa_len}")
-    print(f"Percentual Sem Alçada Com HP: {percent_aprov_sem_alcada_com_hp}%")
+                                aprovadas_motor_com_hp_50k_300k_mesa_decisao_len +
+                                aprovadas_motor_sem_hp_mesa_len) / aprovadas_totais_motor_len) * 100   
 
 
     # Função para formatar os resultados detalhados no formato desejado
@@ -216,11 +238,12 @@ def report_motor_desafiante (access_params=None):
 
     # Simulação de dados de resultados
     resultados = [
-        ("Aprovadas pelo Motor", aprovadas_motor_autom_len, "-"), 
+        ("Aprovadas pelo Motor", aprovadas_motor_autom_len, "-"),  # Colocando "-" para o percentual
         ("Aprovadas, porém sem alçada (>300K) -- Derivado Mesa", aprovadas_motor_env_mesa_300k_decisao_len, f"{percent_aprov_300k_mesa:.1f}%"),
         ("Aprovadas, porém sem alçada (>50K) e SEM HP -- Derivado Mesa", aprovadas_motor_sem_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_sem_hp:.1f}%"),
+        ("Aprovadas, limite solicitado <50K e SEM HP -- Derivado Mesa", aprovadas_motor_sem_hp_mesa_len, f"{percent_aprov_sem_hp:.1f}%"),
         ("Aprovadas, porém sem alçada (>50K) e COM HP -- Derivado Mesa", aprovadas_motor_com_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_com_hp:.1f}%"),
-        ("Total", aprovadas_totais_motor_len, f"{percent_aprov_mesa_total:.1f}%")
+        ("Total", aprovadas_totais_motor_len, f"{percent_aprov_mesa_total:.1f}%")  # Colocando "-" para o total de percentual
     ]
 
     # Gerando a tabela formatada
