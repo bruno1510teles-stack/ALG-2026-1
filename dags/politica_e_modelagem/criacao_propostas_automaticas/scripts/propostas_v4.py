@@ -78,8 +78,9 @@ def exporta_csv_politica_v4 (access_params=None,  **kwargs):
                         situacao_especial,
                         tem_pep
                     from deltalakerefined.motor.pre_filtro
-                    where cnpj_raiz in ({cnpjs_str})
+                    where cnpj_raiz in ('')
                     """
+    # Alterado, pois não estamos vencendo mais limites com a regra do PEP no momento, quando voltarmos substituir o '' por cnpjs_str
 
     pep_rj = execute_query(conn, query_pep_rj)
 
