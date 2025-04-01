@@ -91,7 +91,7 @@ def report_motor_desafiante (access_params=None):
     aprovadas_motor_sem_hp_50k_300k_mesa = propostas[
         propostas['ramificacao_motor'].isin(['A6 | A1', 'A7 | A2', 'A8 | A3']) &
         (propostas['limite_pedido'] <= 300000) &
-        (propostas['limite_pedido'] >= 50000) &
+        (propostas['limite_pedido'] > 50000) &
         (propostas['parecer'] != 'Motor - Aprovado')
     ]
 
@@ -105,7 +105,7 @@ def report_motor_desafiante (access_params=None):
     aprovadas_motor_sem_hp_50k_300k_mesa_decisao = propostas[
         propostas['ramificacao_motor'].isin(['A6 | A1', 'A7 | A2', 'A8 | A3']) &
         (propostas['limite_pedido'] <= 300000) &
-        (propostas['limite_pedido'] >= 50000) &
+        (propostas['limite_pedido'] > 50000) &
         (propostas['parecer'] != 'Motor - Aprovado') &
         (propostas['categoria_decisor'] == 'MESA') &
         (propostas['decisao'] == 'APROVADO')
@@ -152,7 +152,7 @@ def report_motor_desafiante (access_params=None):
     aprovadas_motor_com_hp_50k_300k_mesa = propostas[
         propostas['ramificacao_motor'].isin(['AA | AA', 'A1 | A1', 'A2 | A2', 'A3 | A1', 'A4 | A2', 'A5 | A3']) &
         (propostas['limite_pedido'] <= 300000) &
-        (propostas['limite_pedido'] >= 50000) &
+        (propostas['limite_pedido'] > 50000) &
         (propostas['parecer'] != 'Motor - Aprovado')
     ]
 
@@ -166,7 +166,7 @@ def report_motor_desafiante (access_params=None):
     aprovadas_motor_com_hp_50k_300k_mesa_decisao = propostas[
         propostas['ramificacao_motor'].isin(['AA | AA', 'A1 | A1', 'A2 | A2', 'A3 | A1', 'A4 | A2', 'A5 | A3']) &
         (propostas['limite_pedido'] <= 300000) &
-        (propostas['limite_pedido'] >= 50000) &
+        (propostas['limite_pedido'] > 50000) &
         (propostas['parecer'] != 'Motor - Aprovado') &
         (propostas['categoria_decisor'] == 'MESA') &
         (propostas['decisao'] == 'APROVADO')
