@@ -13,7 +13,7 @@ from io import BytesIO
 
 def hemera_trusted_to_refined(access_params=None,  **kwargs):
 
-    para_fechamento = ['2025-02-28']
+    para_fechamento = ['2025-03-31']
 
     df_final = pd.DataFrame()
 
