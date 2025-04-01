@@ -44,7 +44,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         file_data = BytesIO(response.read())
         
         # Assumindo que os arquivos são Excel
-        df = pd.read_excel(file_data)
+        df = pd.read_excel(file_data, engine="openpyxl")
 
         # Extraindo a data do nome do arquivo
         data_arquivo = extract_date_from_filename(file_path)
