@@ -20,7 +20,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
 
     # Definindo bucket e caminho do arquivo
     BUCKET_SOURCE_RAW = "hemera"
-    FOLDER_DESTINATION_RAW = 'recompra/year=2025/month=02'
+    FOLDER_DESTINATION_RAW = 'recompra/year=2025/month=03'
 
     # Listando os arquivos no diretório
     objects = list(client.list_objects(BUCKET_SOURCE_RAW, prefix=FOLDER_DESTINATION_RAW, recursive=True))
@@ -44,7 +44,7 @@ def hemera_raw_to_trusted(access_params=None, **kwargs):
         file_data = BytesIO(response.read())
         
         # Assumindo que os arquivos são Excel
-        df = pd.read_excel(file_data)
+        df = pd.read_excel(file_data, engine="openpyxl")
 
         # Extraindo a data do nome do arquivo
         data_arquivo = extract_date_from_filename(file_path)
