@@ -217,9 +217,9 @@ def report_motor_desafiante (access_params=None):
     # Simulação de dados de resultados
     resultados = [
         ("Aprovadas pelo Motor", aprovadas_motor_autom_len, "-"), 
-        ("Aprovadas, porém sem alçada (>300K)", aprovadas_motor_env_mesa_300k_decisao_len, f"{percent_aprov_300k_mesa:.1f}%"),
-        ("Aprovadas, porém sem alçada (>50K) e SEM HP", aprovadas_motor_sem_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_sem_hp:.1f}%"),
-        ("Aprovadas, porém sem alçada (>50K) e COM HP", aprovadas_motor_com_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_com_hp:.1f}%"),
+        ("Aprovadas, porém sem alçada (>300K) -- Derivado Mesa", aprovadas_motor_env_mesa_300k_decisao_len, f"{percent_aprov_300k_mesa:.1f}%"),
+        ("Aprovadas, porém sem alçada (>50K) e SEM HP -- Derivado Mesa", aprovadas_motor_sem_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_sem_hp:.1f}%"),
+        ("Aprovadas, porém sem alçada (>50K) e COM HP -- Derivado Mesa", aprovadas_motor_com_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_com_hp:.1f}%"),
         ("Total", aprovadas_totais_motor_len, f"{percent_aprov_mesa_total:.1f}%")
     ]
 
