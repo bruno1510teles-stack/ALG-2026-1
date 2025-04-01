@@ -81,4 +81,4 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
-    reporte >> reporte_desafiante
+    reporte_desafiante
