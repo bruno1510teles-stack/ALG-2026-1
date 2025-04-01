@@ -201,58 +201,33 @@ def report_motor_desafiante (access_params=None):
     print(f"Percentual Sem Alçada Com HP: {percent_aprov_sem_alcada_com_hp}%")
 
 
-    # Função para formatar os dados em uma tabela Markdown
-    def formatar_tabela():
-        mensagem = "\nRELATÓRIO DE APROVAÇÃO MOTOR DESAFIANTE\n"
-        mensagem += "\n"
-        mensagem += "| Descrição                                    | Propostas | (%) Aprovação Mesa |\n"
-        mensagem += "                                                                     \n"
-        
-        # Adicionando os dados na tabela
-        mensagem += f"| Aprovadas pelo Motor                         | {aprovadas_motor_autom_len} | - |\n"
-        mensagem += f"| Aprovadas, porém sem alçada (>300K)          | {aprovadas_motor_env_mesa_300k_decisao_len} | {percent_aprov_300k_mesa}% |\n"
-        mensagem += f"| Aprovadas, porém sem alçada (>50K) e SEM HP  | {aprovadas_motor_sem_hp_50k_300k_mesa_len} | {percent_aprov_sem_alcada_sem_hp}% |\n"
-        mensagem += f"| Aprovadas, porém sem alçada (>50K) e COM HP  | {aprovadas_motor_com_hp_50k_300k_mesa_len} | {percent_aprov_sem_alcada_com_hp}% |\n"
-        mensagem += "                                                                     \n"
-        mensagem += f"| Total                                        | {aprovadas_totais_motor_len} | - |\n"
+    # Função para formatar os resultados detalhados no formato desejado
+    def formatar_mensagem_detalhada(resultados):
+        # Cabeçalho da tabela
+        mensagem = "\n### RELATÓRIO DE APROVAÇÃO MOTOR DESAFIANTE\n"
+        mensagem += "| Descrição                                     | Propostas | (%) Aprovação Mesa |\n"
+        mensagem += "|----------------------------------------------|-----------|--------------------|\n"
+
+        # Adicionando os dados à tabela com alinhamento
+        for row in resultados:
+            mensagem += f"| {row[0]:<45} | {row[1]:>10} | {row[2]:>17} |\n"
         
         return mensagem
 
-    # Gerar a tabela formatada
-    tabela_formatada = formatar_tabela()
+    # Simulação de dados de resultados
+    resultados = [
+        ("Aprovadas pelo Motor", aprovadas_motor_autom_len, "-"), 
+        ("Aprovadas, porém sem alçada (>300K)", aprovadas_motor_env_mesa_300k_decisao_len, f"{percent_aprov_300k_mesa:.1f}%"),
+        ("Aprovadas, porém sem alçada (>50K) e SEM HP", aprovadas_motor_sem_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_sem_hp:.1f}%"),
+        ("Aprovadas, porém sem alçada (>50K) e COM HP", aprovadas_motor_com_hp_50k_300k_mesa_len, f"{percent_aprov_sem_alcada_com_hp:.1f}%"),
+        ("Total", aprovadas_totais_motor_len, f"{percent_aprov_mesa_total:.1f}%")
+    ]
+
+    # Gerando a tabela formatada
+    tabela_detalhada = formatar_mensagem_detalhada(resultados)
 
     # Imprimir a tabela (para visualizar antes de enviar)
-    print(tabela_formatada)
-
-
-    # Função para formatar os dados em uma tabela Markdown com largura ajustada
-    def formatar_tabela():
-        # Definir a largura das colunas (ajuste conforme necessário)
-        largura_descricao = 45
-        largura_quantidade = 10
-        largura_percentual = 15
-
-        mensagem = "\nRELATÓRIO DE APROVAÇÃO MOTOR DESAFIANTE\n"
-        mensagem += "\n"
-        # Cabeçalho da tabela com largura fixa
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}} |\n".format("Descrição", largura_descricao, "Propostas", largura_quantidade, "(%) Aprovação Mesa", largura_percentual)
-        mensagem += "                                                                     \n"
-        
-        # Adicionando os dados na tabela com alinhamento adequado
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}}    |\n".format("Aprovadas pelo Motor", largura_descricao, aprovadas_motor_autom_len, largura_quantidade, "-", largura_percentual)
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}.1f}%   |\n".format("Aprovadas, porém sem alçada (>300K)", largura_descricao, aprovadas_motor_env_mesa_300k_decisao_len, largura_quantidade, percent_aprov_300k_mesa, largura_percentual)
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}.1f}%   |\n".format("Aprovadas, porém sem alçada (>50K) e SEM HP", largura_descricao, aprovadas_motor_sem_hp_50k_300k_mesa_len, largura_quantidade, percent_aprov_sem_alcada_sem_hp, largura_percentual)
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}.1f}%   |\n".format("Aprovadas, porém sem alçada (>50K) e COM HP", largura_descricao, aprovadas_motor_com_hp_50k_300k_mesa_len, largura_quantidade, percent_aprov_sem_alcada_com_hp, largura_percentual)
-        mensagem += "                                                                     \n"
-        mensagem += "| {0:<{1}} | {2:>{3}} | {4:>{5}.1f}%   |\n".format("Total", largura_descricao, aprovadas_totais_motor_len, largura_quantidade, percent_aprov_mesa_total, largura_percentual)
-        
-        return mensagem
-
-    # Gerar a tabela formatada
-    tabela_formatada = formatar_tabela()
-
-    # Imprimir a tabela (para visualizar antes de enviar)
-    print(tabela_formatada)
+    print(tabela_detalhada)
 
 
     # Função para enviar a mensagem formatada ao webhook do Teams
@@ -276,6 +251,6 @@ def report_motor_desafiante (access_params=None):
 
     
     # Enviar a mensagem combinada para o webhook
-    enviar_para_webhook(tabela_formatada)
+    enviar_para_webhook(tabela_detalhada)
 
 
