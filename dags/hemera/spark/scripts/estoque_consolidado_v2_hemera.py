@@ -1,6 +1,6 @@
 # Importando Libs
 from pyspark.sql import SparkSession, functions as F
-from pyspark.sql.functions import lit, coalesce, col, last_day, when, to_date, concat, date_format,year,month, expr, sum, min, max, unix_timestamp, first, last, regexp_replace
+from pyspark.sql.functions import lit, coalesce, col, last_day, when, to_date, concat, date_format,year,month, expr, sum, min, max, unix_timestamp, lpad, last, regexp_replace
 from pyspark.sql.types import DoubleType, StringType
 import os
 import re
@@ -93,20 +93,15 @@ def estoque_consolidado(spark):
     # Filtrando as colunas desejadas
     df_consolidado = df_consolidado.select(*colunas_desejadas)
 
-    # Formatando NumeroTitulo
-    df_consolidado = df_consolidado.withColumn("numero_titulo", 
-                                               col("numero_titulo").cast(StringType())
-                                               .substr(1, 10))  # Alinhamento para 10 caracteres
+    # Garantir que numero_titulo e id_titulo contenham apenas números e tenham exatamente 10 caracteres
+    df_consolidado = df_consolidado.withColumn("numero_titulo", lpad(regexp_replace(col("numero_titulo"), r"[^\d]", ""), 10, "0"))
+    df_consolidado = df_consolidado.withColumn("id_titulo", lpad(col("id_titulo").cast(StringType()), 10, "0"))
 
     # Remover espaços em branco nas colunas de texto
     df_consolidado = df_consolidado.withColumn("nome_cedente", 
                                                regexp_replace(col("nome_cedente"), r'^\s+|\s+$', ''))
     df_consolidado = df_consolidado.withColumn("nome_sacado", 
                                                regexp_replace(col("nome_sacado"), r'^\s+|\s+$', ''))
-
-    # Garantir que numero_titulo contenha apenas números e tenha no máximo 10 caracteres
-    df_consolidado = df_consolidado.withColumn("numero_titulo", 
-                                           regexp_replace(col("numero_titulo"), r"[^\d]", ""))
 
     # Conversão das colunas para datetime
     df_consolidado = df_consolidado.withColumn("data_arquivo", 

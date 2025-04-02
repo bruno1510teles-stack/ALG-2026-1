@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession, functions as F
-from pyspark.sql.functions import lit, coalesce, col, to_date, when, input_file_name, regexp_extract, substring, last_day, date_format, StringType, sum, max, year, month
+from pyspark.sql.functions import lit, coalesce, col, lpad, when, input_file_name, regexp_extract, substring, last_day, date_format, StringType, sum, max, year, month
 from pyspark.sql.types import DoubleType, DateType
 from datetime import datetime, timezone, timedelta
 import re
@@ -108,7 +108,7 @@ def hemera_raw_to_trusted_retorno(spark, **kwargs):
     # Ajustar formatação das colunas
     df_agrupado = df_agrupado.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd")) \
                              .withColumn("data_lancamento", date_format(col("data_lancamento"), "yyyy-MM-dd")) \
-                             .withColumn("id_titulo", col("id_titulo").cast(StringType())) \
+                             .withColumn("id_titulo", lpad(col("id_titulo").cast(StringType()), 10, "0")) \
                              .withColumn("valor_retorno", col("valor_retorno").cast("double"))
 
     # Selecionar colunas finais na ordem correta
