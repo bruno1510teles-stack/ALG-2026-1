@@ -19,7 +19,8 @@ def get_coordenadas(contentId, connection):
         
         endereco = execute_query(conn=connection, query=getEndereco)
 
-        if not endereco:
+        print(endereco)
+        if endereco[0][0]:
             print("Endereço não fornecido")
             return None
         
