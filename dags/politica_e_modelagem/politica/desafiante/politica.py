@@ -844,6 +844,9 @@ def executa_politica (access_params=None,  **kwargs):
     df_resultado.loc[df_resultado['decisao_final'] == 'APROVADO', 'parecer'] = 'Motor - Aprovado'
     df_resultado.loc[df_resultado['decisao_final'] == 'mantido', 'parecer'] = 'Motor - Limite mantido'
 
+    print('DF com parecer:')
+    print(df_resultado)
+
 
     # Criação do mapeamento de pareceres
     parecer_map = {
