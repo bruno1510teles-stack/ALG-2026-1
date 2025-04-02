@@ -27,8 +27,8 @@ def notificar_falha_teams(context):
 default_args = {
     'owner': 'Felipe Ferraz',
     'start_date': days_ago(1),
-    "retries": 1,
-    "retry_delay": timedelta(minutes=1)#,
+    "retries": 3,
+    "retry_delay": timedelta(minutes=5)#,
     #"on_failure_callback": notificar_falha_teams
 } 
 
@@ -134,6 +134,7 @@ with DAG(
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
+        retries = 3, # Ajustando retries
         execution_timeout=timedelta(minutes=120)
     )
 
