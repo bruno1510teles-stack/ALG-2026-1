@@ -46,7 +46,12 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
     # Buckets e subpastas
     SOURCE_BUCKET = "hemera"
     DEST_BUCKET = "hemera-csv"
-    SUBFOLDERS = ["estoque-csv", "retorno-csv", "aquisicao-csv", "recompra-csv"]
+    SUBFOLDERS = {
+        "estoque": "estoque-csv",
+        "retorno": "retorno-csv",
+        "aquisicao": "aquisicao-csv",
+        "recompra": "recompra-csv"
+    }
 
     # Expressão regular para capturar a data no nome do arquivo
     DATE_PATTERN = re.compile(r"(\d{2}\.\d{2}\.\d{2})")
@@ -78,7 +83,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
             print(f"Não foram encontrados arquivos XLSX na subpasta {subfolder}.")
             return
 
-        # Verificar se o arquivo encontrado é d-1
+        # Verificar se o arquivo encontrado é de D-1
         yesterday = (datetime.now() - timedelta(days=1)).date()
         if latest_date.date() != yesterday:
             print(f"O arquivo {latest_obj.object_name} não é da data de ontem ({yesterday.strftime('%d/%m/%Y')}). Ignorando o processamento.")
@@ -119,10 +124,17 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
         df.to_csv(csv_buffer, index=False)
         csv_bytes = csv_buffer.getvalue().encode("utf-8")
 
-        # Nome do novo arquivo
-        dest_object_name = latest_obj.object_name.rsplit('.', 1)[0] + ".csv"
+        # Extrair caminho do arquivo original
+        path_parts = latest_obj.object_name.split("/")
 
-        # Fazer upload do CSV
+        # Construir o caminho no bucket de destino mantendo "year=YYYY/month=MM"
+        year_month_path = "/".join([p for p in path_parts if p.startswith("year=") or p.startswith("month=")])
+
+        # Mapear a subpasta para a estrutura correta no bucket de destino
+        dest_subfolder = SUBFOLDERS[subfolder]
+        dest_object_name = f"{dest_subfolder}/{year_month_path}/{latest_obj.object_name.rsplit('.', 1)[0]}.csv"
+
+        # Fazer upload do CSV para o destino correto
         try:
             client.put_object(
                 DEST_BUCKET,
@@ -136,7 +148,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
             print(f"Erro ao enviar o CSV para o bucket {DEST_BUCKET}: {e}")
 
     # Processar cada subpasta
-    for subfolder in SUBFOLDERS:
+    for subfolder in SUBFOLDERS.keys():
         process_subfolder(subfolder)
 
 if __name__ == "__main__":
