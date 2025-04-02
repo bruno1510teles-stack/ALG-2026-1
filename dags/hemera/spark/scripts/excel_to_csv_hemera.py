@@ -3,7 +3,7 @@ from minio import Minio
 from concurrent.futures import ThreadPoolExecutor
 import io 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import os
 import msoffcrypto
@@ -45,16 +45,8 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
 
     # Buckets e subpastas
     SOURCE_BUCKET = "hemera"
-    DEST_BUCKET = "hemera-csv"  # renomear para hemera-csv
+    DEST_BUCKET = "hemera-csv"
     SUBFOLDERS = ["estoque", "retorno", "aquisicao", "recompra"]
-
-    ## Cria cliente do Minio
-    #client = Minio(
-    #    endpoint=MINIO_ENDPOINT,
-    #    access_key=ACCESS_KEY,
-    #    secret_key=SECRET_KEY,
-    #    secure=USE_SSL
-    #)
 
     # Expressão regular para capturar a data no nome do arquivo
     DATE_PATTERN = re.compile(r"(\d{2}\.\d{2}\.\d{2})")
@@ -64,7 +56,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
         match = DATE_PATTERN.search(filename)
         if match:
             return datetime.strptime(match.group(1), "%d.%m.%y")
-        return None  # Retorna None se não encontrar uma data
+        return None
 
     def process_subfolder(subfolder):
         print(f"Processando subpasta: {subfolder}")
@@ -76,7 +68,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
 
         for obj in objects:
             if obj.object_name.lower().endswith(".xlsx"):
-                file_date = extract_date_from_filename(obj.object_name)  # Extraímos a data
+                file_date = extract_date_from_filename(obj.object_name)  
 
                 if file_date and (latest_date is None or file_date > latest_date):
                     latest_date = file_date
@@ -86,10 +78,10 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
             print(f"Não foram encontrados arquivos XLSX na subpasta {subfolder}.")
             return
 
-        # Verificar se o arquivo encontrado é da data atual
-        today = datetime.now().date()
-        if latest_date.date() != today:
-            print(f"O arquivo {latest_obj.object_name} não é da data de hoje ({today.strftime('%d/%m/%Y')}). Ignorando o processamento.")
+        # Verificar se o arquivo encontrado é d-1
+        yesterday = (datetime.now() - timedelta(days=1)).date()
+        if latest_date.date() != yesterday:
+            print(f"O arquivo {latest_obj.object_name} não é da data de ontem ({yesterday.strftime('%d/%m/%Y')}). Ignorando o processamento.")
             return
 
         print(f"Arquivo selecionado: {latest_obj.object_name} (Data no nome: {latest_date.strftime('%d/%m/%Y')})")
@@ -149,7 +141,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
-        .appName("aquisicao_diaria") \
+        .appName("execel_to_csv") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.driver.memory", "3g") \
