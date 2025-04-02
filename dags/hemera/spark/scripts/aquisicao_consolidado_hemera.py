@@ -99,7 +99,7 @@ def aquisicao_consolidado(spark, **kwargs):
         "data_ref", "id_titulo", "data_fechamento"
     ).agg(
         F.sum("valor_aquisicao").alias("valor_aquisicao"),  # Somando valores de aquisição
-        F.max("data_fechamento").alias("max_data_fechamento")  # Mantendo a última data de fechamento
+        F.max("data_fechamento").alias("data_fechamento")  # Mantendo a última data de fechamento
     )
 
     # Adicionar colunas de ano e mês
