@@ -46,7 +46,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
     # Buckets e subpastas
     SOURCE_BUCKET = "hemera"
     DEST_BUCKET = "hemera-csv"
-    SUBFOLDERS = ["estoque", "retorno", "aquisicao", "recompra"]
+    SUBFOLDERS = ["estoque-csv", "retorno-csv", "aquisicao-csv", "recompra-csv"]
 
     # Expressão regular para capturar a data no nome do arquivo
     DATE_PATTERN = re.compile(r"(\d{2}\.\d{2}\.\d{2})")
