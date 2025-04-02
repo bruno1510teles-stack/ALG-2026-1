@@ -231,6 +231,9 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
         df = df.reset_index(drop=True)
 
+        print('Validação dos campos de ramificação do serasa:')
+        print(df)
+
         # Tratando os casos que não retornaram informação das bases de antifraude serasa
         df.loc[df['ramificacao_antifraude_serasa'].isna(), 'ramificacao_antifraude_serasa'] = 'AF SERASA SEM INFO'
         df.loc[df['resposta_antifraude_serasa'].isna(), 'resposta_antifraude_serasa'] = 'MESA'

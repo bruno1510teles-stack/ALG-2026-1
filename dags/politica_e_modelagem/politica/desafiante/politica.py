@@ -984,6 +984,9 @@ def executa_politica (access_params=None,  **kwargs):
     'url' : 'path_arquivos_minio'
     })
 
+    print('Teste parecer final:')
+    print(resposta_motor_resumida)
+
 
     #depois do path
     resposta_motor_resumida = resposta_motor_resumida[['issue_jira', 'resolucao', 'cnpj_ec', 'valor_aprovado', 'parecer', 'ramificacao', 'path_arquivos_minio']]
