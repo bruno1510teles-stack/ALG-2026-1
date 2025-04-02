@@ -99,6 +99,9 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     # Aplicar a função na coluna 'valor_titulo'
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
+    fatura['valor_fatura_pos_sefaz'] = fatura['valor_fatura_pos_sefaz'].apply(ajustar_decimal)
+    fatura['valor_face_qprof'] = fatura['valor_face_qprof'].apply(ajustar_decimal)
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
