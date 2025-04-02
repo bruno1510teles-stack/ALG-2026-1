@@ -699,19 +699,6 @@ def executa_politica (access_params=None,  **kwargs):
 
     print('Tratando ramificação final e decisão final')
 
-    
-    # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
-    df_resultado['parecer'] = np.where(
-        (df_resultado['decisao_final'] == 'APROVADO') & 
-        (
-            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
-            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
-            (df_resultado['ramificacao_final'] == 'A8 | A3')
-        ),
-        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
-        np.nan
-    )
-
     ### Tratando ramificação final e decisão final
 
     # CASOS SEM INFORMAÇÃO NA POLITICA DESAFIANTE
@@ -936,6 +923,30 @@ def executa_politica (access_params=None,  **kwargs):
             'MESA',
             df_resultado['decisao_final']
         )
+    )
+
+        
+    # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
+    df_resultado['parecer'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') & 
+        (
+            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
+            (df_resultado['ramificacao_final'] == 'A8 | A3')
+        ),
+        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
+        np.nan
+    )
+
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') & 
+        (
+            (df_resultado['ramificacao_final'] == 'A6 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A7 | A2') | 
+            (df_resultado['ramificacao_final'] == 'A8 | A3')
+        ),
+        "MESA",
+        df_resultado['decisao_final']
     )
 
 
