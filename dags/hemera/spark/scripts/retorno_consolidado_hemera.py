@@ -84,7 +84,7 @@ def hemera_raw_to_trusted_retorno(spark, **kwargs):
         df_consolidado = df_consolidado.withColumn(coluna, col(coluna).cast("date"))
 
     # Agrupamento dos dados
-    df_agrupado = df_consolidado.groupBy("data_ref", "id_registro").agg(
+    df_agrupado = df_consolidado.groupBy("data_ref", "id_titulo").agg(
         sum("valor_pagamento").alias("valor_pagamento"),
         max("data_arquivo").alias("data_lancamento"),
         max("data_fechamento").alias("data_fechamento")
@@ -103,16 +103,16 @@ def hemera_raw_to_trusted_retorno(spark, **kwargs):
 
     # Renomear colunas
     df_agrupado = df_agrupado.withColumnRenamed("valor_pagamento", "valor_retorno") 
-    #                         .withColumnRenamed("ID_Registro_VX", "id_registro")
+    #                         .withColumnRenamed("id_titulo_VX", "id_titulo")
 
     # Ajustar formatação das colunas
     df_agrupado = df_agrupado.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd")) \
                              .withColumn("data_lancamento", date_format(col("data_lancamento"), "yyyy-MM-dd")) \
-                             .withColumn("id_registro", col("id_registro").cast(StringType())) \
+                             .withColumn("id_titulo", col("id_titulo").cast(StringType())) \
                              .withColumn("valor_retorno", col("valor_retorno").cast("double"))
 
     # Selecionar colunas finais na ordem correta
-    colunas_finais = ["data_fechamento", "data_ref", "id_registro", "valor_retorno", "data_lancamento", "year", "month", "atualizado_em"]
+    colunas_finais = ["data_fechamento", "data_ref", "id_titulo", "valor_retorno", "data_lancamento", "year", "month", "atualizado_em"]
     df_agrupado = df_agrupado.select(*colunas_finais)
 
     # Exibir soma total de 'valor_retorno'
