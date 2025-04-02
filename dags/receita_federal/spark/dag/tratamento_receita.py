@@ -144,7 +144,7 @@ with DAG(
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
         retries = 3, # Ajustando retries
-        retry_delay=timedelta(minutes=5) # Ajuste
+        retry_delay=timedelta(minutes=120) # Ajuste
     )
 
     cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
