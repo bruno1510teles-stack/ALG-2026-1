@@ -92,7 +92,7 @@ def retorno_diaria(spark):
         "SacadoCnpjCpf":"cnpj_sacado",     
         "SacadoNome":"nome_sacado",
         "TipoAtivo":"tipo_ativo",     
-        "ID_Registro_VX":"id_registro",               
+        "ID_Registro_VX":"id_titulo",               
         "DataVencimento":"data_vencimento",     
         "NumeroBoletoBanco":"numero_boleto_banco",     
         "NumeroTitulo":"numero_titulo",     
@@ -124,7 +124,7 @@ def retorno_diaria(spark):
     df = df.withColumn("atualizado_em", lit(atualizado_em))
 
     # Lista de colunas desejadas
-    colunas_desejadas = ["ocorrencia", "situacao", "cnpj_cedente", "nome_cedente", "cnpj_sacado", "nome_sacado","produto","tipo_ativo","id_registro",
+    colunas_desejadas = ["ocorrencia", "situacao", "cnpj_cedente", "nome_cedente", "cnpj_sacado", "nome_sacado","produto","tipo_ativo","id_titulo",
                         "data_vencimento", "numero_boleto_banco", "numero_titulo", "campo_chave", "valor_nominal","valor_pagamento","Abatimentos",
                         "Juros","data_arquivo","atualizado_em"
                         ]
