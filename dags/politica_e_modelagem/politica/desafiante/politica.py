@@ -909,6 +909,10 @@ def executa_politica (access_params=None,  **kwargs):
     # Aplica a função ao DataFrame
     df_resultado['parecer'] = df_resultado.apply(parecer_personalizado, axis=1)
 
+
+    print('Segunda validação do parecer')
+    print(df_resultado)
+
     # Criando Regra para parâmetro de aprovação
 
     df_resultado['parecer'] = np.where(
