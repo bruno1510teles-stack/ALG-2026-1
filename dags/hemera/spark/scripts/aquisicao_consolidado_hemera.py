@@ -96,7 +96,7 @@ def aquisicao_consolidado(spark, **kwargs):
 
     # Agrupamento com data_ref correta
     df_agrupado = df_consolidado.groupBy(
-        "data_ref", "id_titulo", "data_fechamento"
+        "data_ref", "id_titulo"
     ).agg(
         F.sum("valor_aquisicao").alias("valor_aquisicao"),  # Somando valores de aquisição
         F.max("data_fechamento").alias("data_fechamento")  # Mantendo a última data de fechamento
