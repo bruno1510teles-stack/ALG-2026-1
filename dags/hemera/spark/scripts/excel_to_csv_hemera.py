@@ -43,60 +43,62 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
         print(f"Erro ao conectar no MinIO: {e}")
         return
 
-    # Buckets e subpastas
+    # Buckets
     SOURCE_BUCKET = "hemera"
     DEST_BUCKET = "hemera-csv"
+    
+    # Mapeamento das subpastas no destino
     SUBFOLDERS = {
         "estoque": "estoque-csv",
         "retorno": "retorno-csv",
         "aquisicao": "aquisicao-csv",
         "recompra": "recompra-csv"
     }
-
-    # Expressão regular para capturar a data no nome do arquivo
+    
+    # Expressão regular para extrair a data do nome do arquivo (formato DD.MM.YY)
     DATE_PATTERN = re.compile(r"(\d{2}\.\d{2}\.\d{2})")
-
+    
     def extract_date_from_filename(filename):
-        """ Extrai e converte a data do formato DD.MM.YY para datetime. """
+        """Extrai e converte a data do formato DD.MM.YY para datetime."""
         match = DATE_PATTERN.search(filename)
         if match:
             return datetime.strptime(match.group(1), "%d.%m.%y")
         return None
-
+    
     def process_subfolder(subfolder):
         print(f"Processando subpasta: {subfolder}")
-
-        objects = client.list_objects(SOURCE_BUCKET, prefix=subfolder + "/", recursive=True)
-
+    
+        objects = client.list_objects(SOURCE_BUCKET, prefix=f"{subfolder}/", recursive=True)
+    
         latest_obj = None
         latest_date = None
-
+    
         for obj in objects:
             if obj.object_name.lower().endswith(".xlsx"):
                 file_date = extract_date_from_filename(obj.object_name)  
-
+    
                 if file_date and (latest_date is None or file_date > latest_date):
                     latest_date = file_date
                     latest_obj = obj
-
+    
         if latest_obj is None:
             print(f"Não foram encontrados arquivos XLSX na subpasta {subfolder}.")
             return
-
+    
         # Verificar se o arquivo encontrado é de D-1
         yesterday = (datetime.now() - timedelta(days=1)).date()
         if latest_date.date() != yesterday:
             print(f"O arquivo {latest_obj.object_name} não é da data de ontem ({yesterday.strftime('%d/%m/%Y')}). Ignorando o processamento.")
             return
-
+    
         print(f"Arquivo selecionado: {latest_obj.object_name} (Data no nome: {latest_date.strftime('%d/%m/%Y')})")
-
+    
         # Baixar o arquivo do bucket
         response = client.get_object(SOURCE_BUCKET, latest_obj.object_name)
         file_data = response.read()
         response.close()
         response.release_conn()
-
+    
         # Descriptografar o arquivo
         encrypted_file = io.BytesIO(file_data)
         decrypted_file = io.BytesIO()
@@ -108,7 +110,7 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
             print(f"Erro ao descriptografar {latest_obj.object_name}: {e}")
             return
         decrypted_file.seek(0)
-
+    
         # Ler XLSX
         try:
             if subfolder == "retorno":
@@ -118,22 +120,22 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
         except Exception as e:
             print(f"Erro ao ler o XLSX {latest_obj.object_name}: {e}")
             return
-
+    
         # Converter para CSV
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False)
         csv_bytes = csv_buffer.getvalue().encode("utf-8")
-
-        # Extrair caminho do arquivo original
+    
+        # Construir o caminho correto no bucket de destino
         path_parts = latest_obj.object_name.split("/")
-
-        # Construir o caminho no bucket de destino mantendo "year=YYYY/month=MM"
-        year_month_path = "/".join([p for p in path_parts if p.startswith("year=") or p.startswith("month=")])
-
-        # Mapear a subpasta para a estrutura correta no bucket de destino
+        year_folder = next((p for p in path_parts if p.startswith("year=")), "")
+        month_folder = next((p for p in path_parts if p.startswith("month=")), "")
+    
+        # Nome correto do arquivo no destino
         dest_subfolder = SUBFOLDERS[subfolder]
-        dest_object_name = f"{dest_subfolder}/{year_month_path}/{latest_obj.object_name.rsplit('.', 1)[0]}.csv"
-
+        file_name = latest_obj.object_name.split("/")[-1].replace(".xlsx", ".csv")
+        dest_object_name = f"{dest_subfolder}/{year_folder}/{month_folder}/{file_name}"
+    
         # Fazer upload do CSV para o destino correto
         try:
             client.put_object(
@@ -146,10 +148,11 @@ def hemera_raw_to_trusted(access_params=None, spark=None, **kwargs):
             print(f"Arquivo {dest_object_name} enviado para o bucket {DEST_BUCKET}.")
         except Exception as e:
             print(f"Erro ao enviar o CSV para o bucket {DEST_BUCKET}: {e}")
-
+    
     # Processar cada subpasta
     for subfolder in SUBFOLDERS.keys():
         process_subfolder(subfolder)
+
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
