@@ -35,7 +35,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
     # Base Boletos CCRED
     query_fatura = f"""
     select  
-        fp.id, fp.numero_nfe, fp.numero_pedido, fp.numero_cnpj_sacado as cnpj_sacado, s.nome_sacado, pc.cpf_cnpj_sem_formato as cnpj_cedente, pc.nome as nome_cedente ,date(fp.data_fatura) as data_fatura, 
+        fp.id, fp.numero_nfe, fp.numero_pedido, fp.numero_cnpj_sacado as cnpj_sacado, s.nome_sacado, pc.cpf_cnpj_sem_formato as cnpj_cedente, pc.nome as nome_cedente ,date(fp.created_date) as data_fatura, 
         fp.valor_faturado as valor_fatura, fp.status_fatura, sefaz.status as status_fatura_sefaz
     from 
         postgres.ccred_schema_{Variable.get('STAGE')}_default.fatura_pedido fp
