@@ -21,7 +21,7 @@ def aquisicao_consolidado(spark, **kwargs):
     nome_bucket = "hemera-diario"
     caminho = "aquisicao_diaria"
     anos = ['2024','2025']
-    meses = ['str(m).zfill(2) for m in range(1, 13)']
+    meses = [str(m).zfill(2) for m in range(1, 13)]
 
     df_list = []
 
