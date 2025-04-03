@@ -133,6 +133,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                 arquivos.append(obj.object_name)
             
             return arquivos
+        
 
         def verificar_cnpj_em_excel(bucket_name, arquivo, cnpj_sacado):
             # Função para verificar se o CNPJ está dentro de um arquivo Excel no bucket
@@ -173,16 +174,21 @@ def aplicar_politica(access_params=None,  **kwargs):
 
             # Se não for 'mesa', verifica as regras subsequentes
             if politica != 'Mesa':
+
+                print('Verifica V3')
                 # Regra politica_v3: executa a query e verifica o resultado
                 resultado_v3 = executar_query(conn, query_politica_v3)
                 if not resultado_v3.empty:
                     return 'V3'
                 
+
+                print('Verifica V4')
                 # Regra politica_v4: executa a query e verifica o resultado
                 resultado_v4 = executar_query(conn, query_politica_v4)
                 if not resultado_v4.empty:
                     return 'V4'
 
+                print('Verifica V5')
                 # (V5): Verifica se o CNPJ está em algum arquivo Excel no bucket "pre-aprovado-lote"
                 arquivos_excel = listar_arquivos_minio('pre-aprovado-lote')
 
@@ -191,12 +197,14 @@ def aplicar_politica(access_params=None,  **kwargs):
                         return 'V5'
                 
                 
+                print('Verifica Desafiante')
                 # (Desafiante): Verifica o 4º dígito do CNPJ
                 if len(cnpj_sacado) > 3:
                     quarto_digito = cnpj_sacado[3]  # Pega o 4º dígito do CNPJ (índice 3)
                     if quarto_digito in ['2', '3', '4']:
                         return 'Desafiante'
                 
+                print('Default')
                 # Regra para fornecedores específicos
                 if pgid in ['arcelor', 'belgo']:
                     return 'V2'
