@@ -20,8 +20,8 @@ def aquisicao_consolidado(spark, **kwargs):
     
     nome_bucket = "hemera-diario"
     caminho = "aquisicao_diaria"
-    anos = ['2024', '2025']
-    meses = [str(m).zfill(2) for m in range(1, 13)]
+    anos = ['2024','2025']
+    meses = ['str(m).zfill(2) for m in range(1, 13)']
 
     df_list = []
 
@@ -94,32 +94,18 @@ def aquisicao_consolidado(spark, **kwargs):
         regexp_replace(col("valor_aquisicao"), ",", ".").cast(DecimalType(10, 2))
     )
 
-    # Agrupamento com data_ref correta
-    df_agrupado = df_consolidado.groupBy(
-        "data_ref", "id_titulo"
-    ).agg(
-        F.sum("valor_aquisicao").alias("valor_aquisicao"),  # Somando valores de aquisição
-        F.max("data_fechamento").alias("data_fechamento")  # Mantendo a última data de fechamento
-    )
+    colunas_finais = ["data_fechamento", "data_ref", "id_titulo", "valor_aquisicao", "year", "month", "atualizado_em"]
 
-    # Adicionar colunas de ano e mês
-    df_agrupado = df_agrupado.withColumn("year", year(col("data_fechamento")))
-    df_agrupado = df_agrupado.withColumn("month", month(col("data_fechamento")))
+    df_final = df_consolidado.select(*colunas_finais)
 
-    # Adicionando colunas auxiliares
-    df_agrupado = df_agrupado.withColumn("year", col("year").cast(StringType()))
-    df_agrupado = df_agrupado.withColumn("month", col("month").cast(StringType()))
-    df_agrupado = df_agrupado.withColumn("atualizado_em", F.lit(now).cast(StringType()))
-    df_agrupado = df_agrupado.withColumn("data_ref", col("data_ref").cast("string"))
-
-    # Formatar colunas corretamente
-    df_agrupado = df_agrupado.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd"))
-    df_agrupado = df_agrupado.withColumn("id_titulo", F.expr("lpad(id_titulo, 10, '0')"))
-    df_agrupado = df_agrupado.withColumn("valor_aquisicao", col("valor_aquisicao").cast(DecimalType(10, 2)))
-    df_agrupado = df_agrupado.withColumn("atualizado_em", date_format(col("atualizado_em"), "yyyy-MM-dd HH:mm:ss"))
+    # Formatar as colunas conforme o script em Pandas:
+    df_final = df_final.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd"))
+    df_final = df_final.withColumn("id_titulo", F.expr("lpad(id_titulo, 10, '0')"))
+    df_final = df_final.withColumn("valor_aquisicao", col("valor_aquisicao").cast(DecimalType(10, 2)))
+    df_final = df_final.withColumn("atualizado_em", date_format(col("atualizado_em"), "yyyy-MM-dd HH:mm:ss"))
 
     # Mostrar resultado final
-    df_agrupado.show()
+    df_final.show()
 
     # Colocando configs refined
     hadoop_conf.unset("fs.s3a.access.key")
@@ -135,11 +121,11 @@ def aquisicao_consolidado(spark, **kwargs):
 
     # Salvando os dados
     print("Iniciando salvamento dos arquivos")
-    df_agrupado.write \
+    df_final.write \
         .partitionBy("year", "month") \
         .format("delta") \
         .option("mergeSchema", "true") \
-        .option("encoding", 'latin1') \
+        .option("encoding", 'utf-8') \
         .mode("overwrite") \
         .save("s3a://hemera-consolidado/aquisicao_consolidado/")
 
