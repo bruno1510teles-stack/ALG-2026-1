@@ -33,5 +33,6 @@ def get_coordenadas(contentId, connection):
         return coordenadas
     except Exception as e:
         print(f"Erro ao gerar coordenadas: {e}")
+        print(result)
         return None
     

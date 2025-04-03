@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession, functions as F
-from pyspark.sql.functions import lit, coalesce, col, to_date, when, format_number, substring, date_format,year,month, expr, sum, max
+from pyspark.sql.functions import lit, coalesce, col, to_date, lpad, format_number, substring, date_format,year,month, expr, sum, max
 from pyspark.sql.types import DoubleType
 import os
 from datetime import datetime, timezone, timedelta
@@ -119,7 +119,7 @@ def recompra_consolidado(spark):
     # Ajustar formatos de saída
     df_agrupado = df_agrupado.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd"))
     df_agrupado = df_agrupado.withColumn("data_lancamento", date_format(col("data_lancamento"), "yyyy-MM-dd"))
-    df_agrupado = df_agrupado.withColumn("id_titulo", col("id_titulo").cast("string").alias("id_titulo"))
+    df_agrupado = df_agrupado.withColumn("id_titulo", lpad(col("id_titulo").cast("string"), 10, "0"))
     df_agrupado = df_agrupado.withColumn("valor_recompra", col("valor_recompra").cast("double"))
     df_agrupado = df_agrupado.withColumn("year", col("year").cast("string"))
     df_agrupado = df_agrupado.withColumn("month", col("month").cast("string"))
