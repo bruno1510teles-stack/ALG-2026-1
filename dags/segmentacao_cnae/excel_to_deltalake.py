@@ -51,6 +51,10 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
 
     df = df.rename(columns={'Raíz CNPJ': 'raiz_cnpj'})
 
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df['year'], df['month'], df['day'] = now.year, now.month, now.day
+
     # Exportando dados para a camada Raw
     
     storage_options = {
