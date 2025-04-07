@@ -49,8 +49,6 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    "retries": 2,
-    "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
 
@@ -62,8 +60,7 @@ with DAG(
     dag_id='tratamento_depara_cnae',
     start_date=days_ago(1),
     default_args=default_args,
-    tags=['etl', 'cnae', 'raw','segmentacao'],
-    max_active_runs=1
+    tags=['etl', 'cnae', 'raw','segmentacao']
 ) as dag:
 
     # Definindo o task que processa limites_to_raw
