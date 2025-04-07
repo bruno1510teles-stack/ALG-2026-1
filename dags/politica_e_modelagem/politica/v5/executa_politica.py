@@ -476,6 +476,11 @@ def executa_politica (access_params=None,  **kwargs):
         colunas = ['cnpj_raiz', 'ramificacao_final', 'decisao_final', 'flag_decidido_pelo_motor']
         resultado_politica = pd.DataFrame(columns=colunas)
 
+        resultado_politica['cnpj_raiz'] = cnpjs
+        resultado_politica['ramificacao_final'] = 'B - 12'
+        resultado_politica['decisao_final'] = 'MESA'
+        resultado_politica['flag_decidido_pelo_motor'] = True
+
     else:
         resultado_politica['ramificacao_final'] = resultado_politica['ramificacao'] + ' | ' + resultado_politica['ramificacao_2']
 
