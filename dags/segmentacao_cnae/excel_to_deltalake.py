@@ -66,10 +66,10 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     }
 
     # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_RAW = "arquivos-python/depara_cnae/delta"
+    BUCKET_SOURCE_TRUSTED = "cnae/depara-cnae/delta"
 
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_RAW}", 
+        f"s3a://{BUCKET_SOURCE_TRUSTED}", 
         df, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
