@@ -82,6 +82,11 @@ def anti_fraude(access_params=None,  **kwargs):
 
     # FOI COLOCADO TUDO NO SEGUE, POIS OS CASOS ESTAVAM INDO PARA A MESA SEM COMPRAR O SERASA ATUALIZADO
 
+
+    print("DF Antifraude:")
+    print(df_antifraude)
+
+
     # Aplicar as respostas
     for response, values in response_map.items():
         df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isin(values), 'resposta'] = response
