@@ -58,9 +58,9 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     # Exportando dados para a camada Raw
     
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_raw'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_raw'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_raw']}",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
