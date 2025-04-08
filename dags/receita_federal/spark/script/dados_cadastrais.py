@@ -194,7 +194,7 @@ def dados_cadastrais_to_refined(spark):
         "pep_nome",
         "pep_funcao",
         "pep_nome_orgao",
-        "pep_documento"
+        "pep_documento",
         "data_inicio_exercicio",
         "data_fim_exercicio",
         "data_fim_carencia",
