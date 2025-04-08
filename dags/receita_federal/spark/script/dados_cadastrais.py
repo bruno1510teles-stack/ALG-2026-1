@@ -1,6 +1,7 @@
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import lit, col, when, to_date, date_format, current_timestamp, regexp_replace
+from pyspark.sql.functions import upper, col, length, to_date, date_format, current_timestamp, regexp_replace, trim, first, translate
+from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 from pyspark.sql.functions import row_number
 import os
@@ -44,84 +45,108 @@ def dados_cadastrais_to_refined(spark):
     print("Arquivos lidos")
 
         # Ajuste do formato dos documentos
-    pep = pep.withColumn("documento", regexp_replace(col("documento"), "[^0-9]", ""))
-    socios = socios.withColumn("documento_socio", regexp_replace(col("documento_socio"), "[^0-9]", ""))
-
+    pep = pep.withColumn("documento", F.regexp_replace(F.col("documento"), "[^0-9]", ""))
+    socios = socios.withColumn("documento_socio", F.regexp_replace(F.col("documento_socio"), "[^0-9]", ""))
+    
     # Criando uma janela para pegar o sócio mais recente por empresa
-    window_spec = Window.partitionBy("cnpj_raiz").orderBy(col("data_entrada_sociedade").desc())
-    socios = socios.withColumn("row_num", row_number().over(window_spec)).filter(col("row_num") == 1).drop("row_num")
-
-    # Criando uma janela para pegar o registro mais recente por documento na tabela PEP
-    window_spec_pep = Window.partitionBy("documento").orderBy(col("data_ref").desc())
-    pep = pep.withColumn("row_num_pep", row_number().over(window_spec_pep)).filter(col("row_num_pep") == 1).drop("row_num_pep")
+    window_spec = Window.partitionBy("cnpj_raiz").orderBy(F.col("data_entrada_sociedade").desc())
+    socios_mais_recente = socios.withColumn("row_num", F.row_number().over(window_spec)).filter(F.col("row_num") == 1).drop("row_num")
     
 
-     #Criação da tabela final
-    dados_cadastrais = (
-    estabelecimentos.alias("e")
-    .join(socios.alias("soci"), col("e.cnpj_raiz") == col("soci.cnpj_raiz"), "left")
-    .join(qualificacoes.alias("q"), col("soci.qualificacao_socio") == col("q.codigo"), "left")
-    .join(empresas.alias("emp"), col("e.cnpj_raiz") == col("emp.cnpj_raiz"), "left")
-    .join(simples.alias("s"), col("e.cnpj_raiz") == col("s.cnpj_raiz"), "left")
-    .join(cnae.alias("cnae"), col("e.cnae_principal") == col("cnae.codigo"), "left")
-    .join(natureza.alias("nat"), col("emp.natureza_juridica") == col("nat.codigo"), "left")
-    .join(municipio.alias("m"), col("e.municipio") == col("m.codigo"), "left")
-    .join(pep.alias("pep"), (col("soci.documento_socio") == col("pep.documento")) &
-                             (col("soci.nome_razao_social") == col("pep.nome")), "left")
-    .select(
-        # Informações da empresa
-        col("e.cnpj_raiz"),
-        col("e.documento_sem_formatacao").alias("cnpj_sem_formatacao"),
-        col("e.documento_formatado").alias("cnpj_formatado"),
-        when(col("e.is_matriz") == True, "Sim").otherwise("Nao").alias("flag_matriz"),
-        col("emp.razao_social"),
-        col("e.nome_fantasia"),
-        col("e.situacao_cadastral"),
-        to_date(col("e.data_situacao_cadastral"), "yyyy-MM-dd").alias("data_situacao_cadastral"),
-        to_date(col("e.data_inicio_atividade"), "yyyy-MM-dd").alias("data_fundacao"),
-        col("e.cnae_principal").alias("cnae_principal_codigo"),
-        col("cnae.descricao").alias("cnae_principal_descricao"),
-        col("e.logradouro"),
-        col("e.numero"),
-        col("e.complemento"),
-        col("e.bairro"),
-        col("e.cep"),
-        col("e.uf"),
-        col("m.descricao").alias("municipio"),
-        col("e.situacao_especial"), 
-        to_date(col("e.data_sitaucao_especial"), "yyyy-MM-dd").alias("data_situacao_especial"),
-        col("emp.natureza_juridica").alias("natureza_juridica_codigo"),
-        col("nat.descricao").alias("descricao_natureza_juridica"),
-        col("emp.porte_empresa"),
-        col("emp.capital_social_empresa").cast("double").alias("capital_social_empresa"),
-        when(col("s.is_simples") == True, "Sim").otherwise("Nao").alias("flag_simples"),
-        to_date(col("s.data_opcao_pelo_simples"), "yyyy-MM-dd").alias("data_opcao_pelo_simples"),
-        to_date(col("s.data_exclusao_simples"), "yyyy-MM-dd").alias("data_exclusao_simples"),
-        when(col("s.is_mei") == True, "Sim").otherwise("Nao").alias("is_mei"),
-        to_date(col("s.data_opcao_pelo_mei"), "yyyy-MM-dd").alias("data_opcao_pelo_mei"),
-        to_date(col("s.data_exclusao_mei"), "yyyy-MM-dd").alias("data_exclusao_mei"),
-        
-        # Informações dos sócios
-        col("soci.identificador_socio").alias("tipo_socio"),
-        col("soci.documento_socio").alias("documento_socio_mais_recente"),
-        col("soci.nome_razao_social").alias("socio_nome"),
-        col("soci.qualificacao_socio").alias("socio_qualificacao_codigo"),
-        col("q.descricao").alias("socio_qualificacao_descricao"),
-        to_date(col("soci.data_entrada_sociedade"), "yyyy-MM-dd").alias("data_entrada_sociedade"),
-        
-        # Informações PEP
-        col("pep.nome").alias("pep_nome"),
-        col("pep.funcao").alias("pep_funcao"),
-        col("pep.nome_orgao").alias("pep_nome_orgao"),
-        to_date(col("pep.data_inicio_exercicio"), "yyyy-MM-dd").alias("data_inicio_exercicio"),
-        to_date(col("pep.data_fim_exercicio"), "yyyy-MM-dd").alias("data_fim_exercicio"),
-        to_date(col("pep.data_fim_carencia"), "yyyy-MM-dd").alias("data_fim_carencia"),
-        
-        # Outras informações
-        col("e.data_ref").alias("data_ref"),
-        date_format(current_timestamp(), "yyyy-MM-dd").alias("Atualizado_em")
+    # Tratamento dos documentos: remove ponto e traço na base PEP
+    pep = pep.withColumn("documento_tratado", F.regexp_replace(F.col("documento"), "[\\.\\-]", ""))
+
+    # Padronização do nome para comparação (letras minúsculas)
+    pep = pep.withColumn("nome_lower", F.lower(F.col("nome")))
+    socios = socios.withColumn("nome_lower", F.lower(F.col("nome_razao_social")))
+
+    # Join com base PEP usando documento OU nome (ambos tratados)
+    socios_pep_joined = (
+        socios.alias("s")
+        .join(
+            pep.alias("p"),
+            (
+                (F.col("s.documento_socio") == F.col("p.documento_tratado")) &
+                (F.col("s.nome_lower") == F.col("p.nome_lower"))
+            ),
+            "left"
+        )
     )
-)
+
+    # Coluna de flag de PEP
+    socios_pep_joined = socios_pep_joined.withColumn("pep", F.when(F.col("p.nome").isNotNull(), "sim").otherwise("nao"))
+
+    # Agora podemos filtrar os sócios que são PEP corretamente
+    socios_pep = socios_pep_joined.filter(F.col("pep") == "sim").groupBy("cnpj_raiz").agg(
+        F.first("s.nome_razao_social").alias("pep_nome"),
+        F.first("p.funcao").alias("pep_funcao"),
+        F.first("p.nome_orgao").alias("pep_nome_orgao"),
+        F.first("p.documento").alias("pep_documento")
+    )
+    
+    # Criando a tabela final com os ajustes
+    dados_cadastrais = (
+        estabelecimentos.alias("e")
+        .join(socios_mais_recente.alias("soci"), F.col("e.cnpj_raiz") == F.col("soci.cnpj_raiz"), "left")
+        .join(socios_pep.alias("pep_info"), F.col("e.cnpj_raiz") == F.col("pep_info.cnpj_raiz"), "left")  # Junta sócios PEP
+        .join(qualificacoes.alias("q"), F.col("soci.qualificacao_socio") == F.col("q.codigo"), "left")
+        .join(empresas.alias("emp"), F.col("e.cnpj_raiz") == F.col("emp.cnpj_raiz"), "left")
+        .join(simples.alias("s"), F.col("e.cnpj_raiz") == F.col("s.cnpj_raiz"), "left")
+        .join(cnae.alias("cnae"), F.col("e.cnae_principal") == F.col("cnae.codigo"), "left")
+        .join(natureza.alias("nat"), F.col("emp.natureza_juridica") == F.col("nat.codigo"), "left")
+        .join(municipio.alias("m"), F.col("e.municipio") == F.col("m.codigo"), "left")
+        .select(
+            # Informações da empresa
+            F.col("e.cnpj_raiz"),
+            F.col("e.documento_sem_formatacao").alias("cnpj_sem_formatacao"),
+            F.col("e.documento_formatado").alias("cnpj_formatado"),
+            F.when(F.col("e.is_matriz") == True, "Sim").otherwise("Nao").alias("flag_matriz"),
+            F.col("emp.razao_social"),
+            F.col("e.nome_fantasia"),
+            F.col("e.situacao_cadastral"),
+            F.to_date(F.col("e.data_situacao_cadastral"), "yyyy-MM-dd").alias("data_situacao_cadastral"),
+            F.to_date(F.col("e.data_inicio_atividade"), "yyyy-MM-dd").alias("data_fundacao"),
+            F.col("e.cnae_principal").alias("cnae_principal_codigo"),
+            F.col("cnae.descricao").alias("cnae_principal_descricao"),
+            F.col("e.logradouro"),
+            F.col("e.numero"),
+            F.col("e.complemento"),
+            F.col("e.bairro"),
+            F.col("e.cep"),
+            F.col("e.uf"),
+            F.col("m.descricao").alias("municipio"),
+            F.col("e.situacao_especial"), 
+            F.to_date(F.col("e.data_sitaucao_especial"), "yyyy-MM-dd").alias("data_situacao_especial"),
+            F.col("emp.natureza_juridica").alias("natureza_juridica_codigo"),
+            F.col("nat.descricao").alias("descricao_natureza_juridica"),
+            F.col("emp.porte_empresa"),
+            F.col("emp.capital_social_empresa").cast("double").alias("capital_social_empresa"),
+            F.when(F.col("s.is_simples") == True, "Sim").otherwise("Nao").alias("flag_simples"),
+            F.to_date(F.col("s.data_opcao_pelo_simples"), "yyyy-MM-dd").alias("data_opcao_pelo_simples"),
+            F.to_date(F.col("s.data_exclusao_simples"), "yyyy-MM-dd").alias("data_exclusao_simples"),
+            F.when(F.col("s.is_mei") == True, "Sim").otherwise("Nao").alias("is_mei"),
+            F.to_date(F.col("s.data_opcao_pelo_mei"), "yyyy-MM-dd").alias("data_opcao_pelo_mei"),
+            F.to_date(F.col("s.data_exclusao_mei"), "yyyy-MM-dd").alias("data_exclusao_mei"),
+    
+            # Informações dos sócios
+            F.col("soci.identificador_socio").alias("tipo_socio"),
+            F.col("soci.documento_socio").alias("documento_socio_mais_recente"),
+            F.col("soci.nome_razao_social").alias("socio_nome"),
+            F.col("soci.qualificacao_socio").alias("socio_qualificacao_codigo"),
+            F.col("q.descricao").alias("socio_qualificacao_descricao"),
+            F.to_date(F.col("soci.data_entrada_sociedade"), "yyyy-MM-dd").alias("data_entrada_sociedade"),
+    
+            # Informações PEP
+            F.col("pep_info.pep_nome"),
+            F.col("pep_info.pep_funcao"),
+            F.col("pep_info.pep_nome_orgao"),
+            F.col("pep_info.pep_documento"),
+    
+            # Outras informações
+            F.col("e.data_ref"),
+            F.date_format(F.current_timestamp(), "yyyy-MM-dd").alias("Atualizado_em")
+        )
+    )
 
     # Lista de colunas esperadas na ordem correta
     colunas_ordenadas = [
@@ -169,6 +194,7 @@ def dados_cadastrais_to_refined(spark):
         "pep_nome",
         "pep_funcao",
         "pep_nome_orgao",
+        "pep_documento"
         "data_inicio_exercicio",
         "data_fim_exercicio",
         "data_fim_carencia",
