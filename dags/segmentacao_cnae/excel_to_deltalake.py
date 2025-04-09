@@ -111,6 +111,8 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     )
 
 
+    df['sub_segmento'] = df.apply(lambda row: 'MATCON - OUTROS' if row['segmento'] == 'MATCON' and row['sub_segmento'] == 'MATCON' else row['sub_segmento'], axis=1)
+
 
     df.rename(columns={'Raíz CNPJ': 'raiz_cnpj', 'CNPJ Completo': 'cnpj_completo', 'CNPJ SACADO': 'cnpj',
                    'NOME SACADO': 'nome_sacado', 'CNAE': 'cnae', 'SEÇÃO': 'secao',
