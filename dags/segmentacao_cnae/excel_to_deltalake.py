@@ -124,6 +124,8 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
 
+    df = df.reset_index()
+
     # Exportando dados para a camada Raw
     
     storage_options = {
