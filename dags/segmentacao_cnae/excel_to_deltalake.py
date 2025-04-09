@@ -38,6 +38,11 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
+    # Carregando Excel
+    response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
+    file_data = BytesIO(response.read())
+    df = pd.read_excel(file_data)
+
 
     # Conexão com o banco de dados
     conn = connect(
