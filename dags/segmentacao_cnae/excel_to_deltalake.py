@@ -4,6 +4,8 @@ from io import BytesIO
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
+from trino.dbapi import connect
+from trino.auth import BasicAuthentication
 
 def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
 
@@ -36,20 +38,82 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
 
-    # Carregando Excel
-    response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
-    file_data = BytesIO(response.read())
-    df = pd.read_excel(file_data)
+
+    # Conexão com o banco de dados
+    conn = connect(
+        host='trino.alpe.com.br',
+        port=443,
+        user='trinodados',
+        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        http_scheme="https",
+    )
+
+    def execute_query(conn, query):
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+        return pd.DataFrame(rows, columns=columns)
+
+
+    query_segmento = """ select 
+                                cnpj_sacado as "CNPJ SACADO",
+                                sum(case when nome_cedente = 'ARCELORMITTAL BRASIL S/A' or nome_cedente = 'BELGO BEKAERT ARAMES LTDA' 
+                                    or nome_cedente = 'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A'  then 1 else 0 end) as casos_matcon,
+                                sum(case when nome_cedente = 'CASAL COMERCIO E SERVICOS LTDA' or nome_cedente = 'CASA DO ADUBO S.A' 
+                                    or nome_cedente = 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA' or nome_cedente = 'AGRICHEM DO BRASIL S.A'  then 1 else 0 end) as casos_agro,
+                                sum(case when nome_cedente not in ( 'CASAL COMERCIO E SERVICOS LTDA', 'CASA DO ADUBO S.A', 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA',
+                                                                    'AGRICHEM DO BRASIL S.A', 'ARCELORMITTAL BRASIL S/A', 'BELGO BEKAERT ARAMES LTDA',
+                                                                    'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A') then 1 else 0 end) as casos_outros
+                            from deltalaketrusted.payments.boletos_internos
+                            group by cnpj_sacado
+                    """
+
+    if conn is not None:
+        segmento = execute_query(conn, query_segmento)
+        print("Dados carregados com sucesso.")
+    else:
+        print("A consulta não foi executada porque a conexão com o Trino falhou.")
+
+
+    df = pd.merge(df, segmento, on = 'CNPJ SACADO', how = 'left')
 
 
     df['Raíz CNPJ'] = df['Raíz CNPJ'].astype(str)
     df['CNPJ Completo'] = df['CNPJ Completo'].astype(str)
     df['CNAE'] = df['CNAE'].astype(str).str.replace('.0', '', regex=False)
 
-    # 8 Digitos Raiz CNPJ
+    # Tratando CNPJ
     df['Raíz CNPJ'] = df['Raíz CNPJ'].astype(str).str.zfill(8)
+    df['CNPJ Completo'] = df['CNPJ Completo'].astype(str).str.zfill(14)
 
-    df = df.rename(columns={'Raíz CNPJ': 'raiz_cnpj'})
+
+    # Criando segmento e sub_segmento
+    df['segmento'] = df.apply(
+        lambda row: 'MATCON' if row['casos_matcon'] > 0 else 
+                    ('AGRO' if row['casos_agro'] > 0 else 
+                    ('OUTROS' if row['casos_outros'] > 0 else 'MAPEAR NO SCRIPT')), 
+        axis=1
+    )
+
+
+    df['sub_segmento'] = df.apply(
+        lambda row: 'COMÉRCIO VAREJISTA' if row['segmento'] == 'MATCON' and row['Divisão Final'] in ['COMÉRCIO VAREJISTA', 'COMÉRCIO E REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS'] else
+                    ('COMÉRCIO ATACADISTA' if row['segmento'] == 'MATCON' and row['Divisão Final'] == 'COMÉRCIO POR ATACADO, EXCETO VEÍCULOS AUTOMOTORES E MOTOCICLETAS' else
+                    ('INCORPORAÇÃO' if row['segmento'] == 'MATCON' and row['Seção Final'] == 'CONSTRUÇÃO' else row['segmento'])),
+        axis=1
+    )
+
+
+
+    df.rename(columns={'Raíz CNPJ': 'raiz_cnpj', 'CNPJ Completo': 'cnpj_completo', 'CNPJ SACADO': 'cnpj',
+                   'NOME SACADO': 'nome_sacado', 'CNAE': 'cnae', 'SEÇÃO': 'secao',
+                   'DIVISÃO': 'divisao', 'Seção Final': 'secao_final', 'Divisão Final': 'divisao_final'}, inplace=True)
+    
+
+    df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
+
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
