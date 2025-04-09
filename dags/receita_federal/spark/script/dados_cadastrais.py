@@ -148,68 +148,6 @@ def dados_cadastrais_to_refined(spark):
         )
     )
 
-    # Lista de colunas esperadas na ordem correta
-    colunas_ordenadas = [
-        # Informações da empresa
-        "cnpj_raiz",
-        "cnpj_sem_formatacao",
-        "cnpj_formatado",
-        "flag_matriz",
-        "razao_social",
-        "nome_fantasia",
-        "situacao_cadastral",
-        "data_situacao_cadastral",
-        "data_fundacao",
-        "cnae_principal_codigo",
-        "cnae_principal_descricao",
-        "logradouro",
-        "numero",
-        "complemento",
-        "bairro",
-        "cep",
-        "uf",
-        "municipio",
-        "situacao_especial",
-        "data_situacao_especial",
-        "natureza_juridica_codigo",
-        "descricao_natureza_juridica",
-        "porte_empresa",
-        "capital_social_empresa",
-        "flag_simples",
-        "data_opcao_pelo_simples",
-        "data_exclusao_simples",
-        "is_mei",
-        "data_opcao_pelo_mei",
-        "data_exclusao_mei",
-
-        # Informações dos sócios
-        "tipo_socio",
-        "documento_socio_mais_recente",
-        "socio_nome_razao_social",
-        "socio_qualificacao_codigo",
-        "socio_qualificacao_descricao",
-        "data_entrada_sociedade",
-
-        # Informações PEP
-        "pep_nome",
-        "pep_funcao",
-        "pep_nome_orgao",
-        "pep_documento",
-        "data_inicio_exercicio",
-        "data_fim_exercicio",
-        "data_fim_carencia",
-
-        # Outras informações
-        "data_ref",
-        "Atualizado_em"
-    ]
-
-    # Verifica se todas as colunas existem no DataFrame
-    colunas_existentes = [col for col in colunas_ordenadas if col in dados_cadastrais.columns]
-
-    # Reorganiza o DataFrame apenas com as colunas existentes
-    dados_cadastrais = dados_cadastrais.select(colunas_existentes)
-
     # Salvando arquivos
     hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_REFINED_ACCESS_KEY'))
     hadoop_conf.set("fs.s3a.secret.key", os.getenv('MINIO_REFINED_SECRET_KEY'))
