@@ -187,10 +187,8 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
         query_liminar = f"""
         select
             distinct
-            pa.name, 
-            pi.type, 
             pi.value as cnpj_sem_formatacao, 
-            ns.*
+            ns.message
         from postgres.exrp_{Variable.get('STAGE')}_default.report r
         inner join postgres.exrp_{Variable.get('STAGE')}_default.negative_summary ns on r.negative_summary_id = ns.id
         inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on r.reports_id = rs.id
@@ -204,7 +202,6 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
         """
 
         liminar_serasa = execute_query(conn, query_liminar)
-        liminar_serasa = liminar_serasa[['cnpj_sem_formatacao', 'message']]
         print("Query liminar serasa carregada com sucesso!!")
 
         print(liminar_serasa)
