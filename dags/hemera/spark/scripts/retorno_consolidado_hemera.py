@@ -98,6 +98,9 @@ def hemera_raw_to_trusted_retorno(spark, **kwargs):
     df_agrupado = df_agrupado.withColumn("year", year(col("data_fechamento")).cast(StringType()))
     df_agrupado = df_agrupado.withColumn("month", month(col("data_fechamento")).cast(StringType()))
 
+    # Transformando coluna para double 
+    df_consolidado = df_consolidado.withColumn("valor_pagamento", col("valor_pagamento").cast("double"))
+
     # Filtragem para remover valores nulos e negativos
     df_agrupado = df_agrupado.filter(col("valor_pagamento") > 0)
 
