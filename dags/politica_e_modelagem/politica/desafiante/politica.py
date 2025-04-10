@@ -797,15 +797,22 @@ def executa_politica (access_params=None,  **kwargs):
 
     # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
-        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] == 'AF - CONSULTAS SERASA'),
+        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
         df_resultado['ramificacao_antifraude_serasa'],
         df_resultado['ramificacao_final']
     )
 
     # DECISÃO FINAL
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] == 'AF - CONSULTAS SERASA'),
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
         'MESA',
+        df_resultado['decisao_final']
+    )
+
+    # DECISÃO FINAL (CASO LIMINAR SERASA)
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['ramificacao_antifraude_serasa'] == 'AF - LIMINAR SERASA'),
+        'REPROVADO',
         df_resultado['decisao_final']
     )
 
