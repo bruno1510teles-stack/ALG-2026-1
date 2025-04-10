@@ -797,14 +797,14 @@ def executa_politica (access_params=None,  **kwargs):
 
     # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
-        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
+        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] == 'AF - CONSULTAS SERASA'),
         df_resultado['ramificacao_antifraude_serasa'],
         df_resultado['ramificacao_final']
     )
 
     # DECISÃO FINAL
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] != 'AF SERASA SEGUE'),
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude_serasa'] == 'AF - CONSULTAS SERASA'),
         'MESA',
         df_resultado['decisao_final']
     )
@@ -887,6 +887,7 @@ def executa_politica (access_params=None,  **kwargs):
         "C5 | C1": "Motor - Recusado, apontamento/score",
         "C6 | C2": "Motor - Recusado, apontamento/score",
         "D4 | D1": "Motor - Recusado, apontamento/score",
+        "AF - LIMINAR SERASA": 'Motor - Recusado, risco de fraude',
         #"AF - MUDANÇA ENDEREÇO": "Motor - Recusado, risco de fraude",
         #"AF - MUDANÇA CIDADE": "Motor - Recusado, risco de fraude",
         #"AF - MUDANÇA ESTADO": "Motor - Recusado, risco de fraude",
