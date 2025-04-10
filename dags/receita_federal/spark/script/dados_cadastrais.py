@@ -124,7 +124,7 @@ def dados_cadastrais_to_refined(spark):
             F.when(F.col("s.is_simples") == True, "Sim").otherwise("Nao").alias("flag_simples"),
             F.to_date(F.col("s.data_opcao_pelo_simples"), "yyyy-MM-dd").alias("data_opcao_pelo_simples"),
             F.to_date(F.col("s.data_exclusao_simples"), "yyyy-MM-dd").alias("data_exclusao_simples"),
-            F.when(F.col("s.is_mei") == True, "Sim").otherwise("Nao").alias("is_mei"),
+            F.when(F.col("s.is_mei") == True, "Sim").otherwise("Nao").alias("flag_mei"),
             F.to_date(F.col("s.data_opcao_pelo_mei"), "yyyy-MM-dd").alias("data_opcao_pelo_mei"),
             F.to_date(F.col("s.data_exclusao_mei"), "yyyy-MM-dd").alias("data_exclusao_mei"),
     
