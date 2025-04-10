@@ -181,6 +181,42 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
         df_antifraude_serasa_final = df_antifraude_serasa_final.reset_index(drop=False)
 
+        print(df_antifraude_serasa_final)
+
+
+        query_liminar = f"""
+        select
+            distinct
+            pa.name, 
+            pi.type, 
+            pi.value as cnpj_sem_formatacao, 
+            ns.*
+        from postgres.exrp_{Variable.get('STAGE')}_default.report r
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.negative_summary ns on r.negative_summary_id = ns.id
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on r.reports_id = rs.id
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_execution re on re.reports_id = rs.id
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.party pa on pa.id = ri.party_id
+        inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi on pi.party_id = pa.id
+        where pi.value in ({cnpj_analisar_str})
+        and type = 'CNPJ'
+
+        """
+
+        liminar_serasa = execute_query(conn, query_liminar)
+        liminar_serasa = liminar_serasa[['cnpj_sem_formatacao', 'message']]
+        print("Query liminar serasa carregada com sucesso!!")
+
+        print(liminar_serasa)
+
+
+        df_antifraude_serasa_final = pd.merge(df_antifraude_serasa_final, liminar_serasa,
+                                      on = 'cnpj_sem_formatacao', how = 'left')
+
+
+        print(df_antifraude_serasa_final)
+
+
         print('Tratando e gerando tabela final...')
 
 
@@ -203,7 +239,8 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
             # Criando condições filtro
             condicoes = [
-                (df_antifraude_serasa_final['flag_antifraude_consultas_serasa'] == 'Sim', 'AF - CONSULTAS SERASA')
+            (df_antifraude_serasa_final['message'] == 'NADA CONSTA', 'AF - LIMINAR SERASA'),
+            (df_antifraude_serasa_final['flag_antifraude_consultas_serasa'] == 'Sim', 'AF - CONSULTAS SERASA')
             ]
 
             for condition, value in condicoes:
@@ -213,7 +250,7 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
             # Criando Resposta
             response_map = {
-                'REPROVADO': ['AF - CONSULTAS SERASA'],
+                'REPROVADO': ['AF - CONSULTAS SERASA', 'AF - LIMINAR SERASA'],
                 'SEGUE': ['AF SERASA SEGUE']
             }
 
@@ -223,7 +260,9 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
 
             print(df_antifraude_serasa_final)
 
+        print('Base Analisar')
         print(base_analisar)
+
 
         df = pd.merge(base_analisar, df_antifraude_serasa_final[['cnpj_sem_formatacao', 'ramificacao_antifraude_serasa', 'resposta_antifraude_serasa']], 
                 on = ['cnpj_sem_formatacao'], how = 'left')
