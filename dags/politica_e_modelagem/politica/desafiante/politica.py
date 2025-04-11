@@ -921,6 +921,8 @@ def executa_politica (access_params=None,  **kwargs):
     print('Segunda validação do parecer')
     print(df_resultado)
 
+    '''
+    Comentado dia 11/04 - implementação de nova regra, logo abaixo.
     # Criando Regra para parâmetro de aprovação
 
     df_resultado['parecer'] = np.where(
@@ -938,23 +940,62 @@ def executa_politica (access_params=None,  **kwargs):
             'MESA',
             df_resultado['decisao_final']
         )
+    )'
+    '''
+
+
+    # REGRA COM HP -> APROVANDO APENAS CLIENTES COM LIM SOLICITADO ATÉ R$ 150.000
+
+    df_resultado['parecer'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') &
+        (df_resultado['limite_solicitado'] > 150000) &
+        (
+            (df_resultado['ramificacao_final'] == 'AA | AA') | 
+            (df_resultado['ramificacao_final'] == 'A1 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A2 | A2') |
+            (df_resultado['ramificacao_final'] == 'A3 | A1') |
+            (df_resultado['ramificacao_final'] == 'A4 | A2') |
+            (df_resultado['ramificacao_final'] == 'A5 | A3') 
+        ),
+        'Motor - Aprovado, contudo, sem alçada. Direcionar para avaliação da mesa de crédito',
+        df_resultado['parecer']
+    )
+
+    df_resultado['decisao_final'] = np.where(
+        (df_resultado['decisao_final'] == 'APROVADO') &
+        (df_resultado['limite_solicitado'] > 150000) &
+        (
+            (df_resultado['ramificacao_final'] == 'AA | AA') | 
+            (df_resultado['ramificacao_final'] == 'A1 | A1') | 
+            (df_resultado['ramificacao_final'] == 'A2 | A2') |
+            (df_resultado['ramificacao_final'] == 'A3 | A1') |
+            (df_resultado['ramificacao_final'] == 'A4 | A2') |
+            (df_resultado['ramificacao_final'] == 'A5 | A3') 
+        ),
+        "MESA",
+        df_resultado['decisao_final']
     )
 
         
     # Parecer para casos que foram aprovados pela politica, mas direcionados para a mesa, pois não tem historico de hp.
+
+    # REGRA SEM HP -> APROVANDO APENAS CLIENTES COM LIM SOLICITADO ATÉ R$ 100.000
+
     df_resultado['parecer'] = np.where(
-        (df_resultado['decisao_final'] == 'APROVADO') & 
+        (df_resultado['decisao_final'] == 'APROVADO') &
+        (df_resultado['limite_solicitado'] > 100000) &
         (
             (df_resultado['ramificacao_final'] == 'A6 | A1') | 
             (df_resultado['ramificacao_final'] == 'A7 | A2') | 
             (df_resultado['ramificacao_final'] == 'A8 | A3')
         ),
-        "Motor - Cliente pré aprovado por crédito, aguardando validação de fraude",
+        'Motor - Aprovado, contudo, sem alçada. Direcionar para avaliação da mesa de crédito',
         df_resultado['parecer']
     )
 
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'] == 'APROVADO') & 
+        (df_resultado['decisao_final'] == 'APROVADO') &
+        (df_resultado['limite_solicitado'] > 100000) &
         (
             (df_resultado['ramificacao_final'] == 'A6 | A1') | 
             (df_resultado['ramificacao_final'] == 'A7 | A2') | 
@@ -963,6 +1004,8 @@ def executa_politica (access_params=None,  **kwargs):
         "MESA",
         df_resultado['decisao_final']
     )
+
+
 
 
     df_resultado['valor_aprovado'] = np.where(
