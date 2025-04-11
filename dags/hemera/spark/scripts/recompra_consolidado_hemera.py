@@ -80,6 +80,9 @@ def recompra_consolidado(spark):
         'data_vencimento', 'numero_boleto_banco', 'valor_pagamento', 'data_arquivo', 'data_lancamento', 'data_ref']
     df_consolidado = df_consolidado.select(colunas_desejadas)
 
+    # Transformando coluna para double 
+    df_consolidado = df_consolidado.withColumn("valor_pagamento", col("valor_pagamento").cast("double"))
+
     # Filtrar valores maiores que zero
     df_consolidado = df_consolidado.filter(col("valor_pagamento") > 0)
 
