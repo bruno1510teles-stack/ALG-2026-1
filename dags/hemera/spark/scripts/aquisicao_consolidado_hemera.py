@@ -98,9 +98,9 @@ def aquisicao_consolidado(spark, **kwargs):
 
     df_final = df_consolidado.select(*colunas_finais)
 
-    # Formatar as colunas conforme o script em Pandas:
+    # Formatar as colunas:
     df_final = df_final.withColumn("data_fechamento", date_format(col("data_fechamento"), "yyyy-MM-dd"))
-    df_final = df_final.withColumn("id_titulo", F.expr("lpad(id_titulo, 10, '0')"))
+    df_final = df_final.withColumn("id_titulo", F.lpad(F.col("id_titulo").cast("string"), 10, "0"))
     df_final = df_final.withColumn("valor_aquisicao", col("valor_aquisicao").cast(DecimalType(10, 2)))
     df_final = df_final.withColumn("atualizado_em", date_format(col("atualizado_em"), "yyyy-MM-dd HH:mm:ss"))
 

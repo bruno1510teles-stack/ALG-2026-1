@@ -183,6 +183,9 @@ def estoque_consolidado(spark):
     df_final = df_final.withColumn("year", year(col("data_fechamento")).cast(StringType()))
     df_final = df_final.withColumn("month", month(col("data_fechamento")).cast(StringType()))
 
+    # Adicionando 0 na coluna id_titulo
+    df_final = df_final.withColumn("id_titulo", lpad(col("id_titulo").cast(StringType()), 10, "0"))
+
     # Adicionando data de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final = df_final.withColumn("atualizado_em", lit(now.strftime('%Y-%m-%d %H:%M:%S')))
