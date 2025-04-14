@@ -948,7 +948,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     df_resultado['parecer'] = np.where(
         (df_resultado['decisao_final'] == 'APROVADO') &
-        (df_resultado['limite_solicitado'] > 150000) &
+        (df_resultado['limite_solicitado'] > 100000) &
         (
             (df_resultado['ramificacao_final'] == 'AA | AA') | 
             (df_resultado['ramificacao_final'] == 'A1 | A1') | 
@@ -963,7 +963,7 @@ def executa_politica (access_params=None,  **kwargs):
 
     df_resultado['decisao_final'] = np.where(
         (df_resultado['decisao_final'] == 'APROVADO') &
-        (df_resultado['limite_solicitado'] > 150000) &
+        (df_resultado['limite_solicitado'] > 100000) &
         (
             (df_resultado['ramificacao_final'] == 'AA | AA') | 
             (df_resultado['ramificacao_final'] == 'A1 | A1') | 
