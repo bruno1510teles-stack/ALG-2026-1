@@ -188,6 +188,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                 if not resultado_v4.empty:
                     return 'V4'
 
+                '''
                 print('Verifica V5')
                 # (V5): Verifica se o CNPJ está em algum arquivo Excel no bucket "pre-aprovado-lote"
                 arquivos_excel = listar_arquivos_minio('pre-aprovado-lote')
@@ -195,7 +196,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                 for arquivo in arquivos_excel:
                     if verificar_cnpj_em_excel('pre-aprovado-lote', arquivo, cnpj_sacado):
                         return 'V5'
-                
+                '''
                 
                 print('Verifica Desafiante')
                 # (Desafiante): Verifica o 4º dígito do CNPJ
