@@ -10,8 +10,7 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.reporte_motor import report
-#from politica_e_modelagem.reporte_motor import report_desafiante
+from politica_e_modelagem.reporte_motor import report_desafiante_hora
 
 ### Parâmetros de acesso
 access_params = {          
@@ -48,7 +47,7 @@ def notificar_falha_teams(context):
 
 ### Definindo defaults
 default_args = {
-    "owner": "Felipe Ferraz",
+    "owner": "Vinicius Moraes",
     "retries": 2,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
@@ -57,18 +56,18 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='report_motor',
+    dag_id='report_motor_desafiante',
     start_date=days_ago(1),
-    schedule_interval='30 11 * * 1-5',
+    schedule_interval = '0 11-22 * * 1-5',
     default_args=default_args,
-    tags=['report', 'motor', 'credito'],
+    tags=['report', 'motor', 'credito', 'desafiante'],
     max_active_runs=1
 ) as dag:
 
     # Definindo task
     reporte = PythonOperator(
         task_id='envia_mensagem_teams',
-        python_callable=report.report_motor,
+        python_callable=report_desafiante_hora.report_motor_desafiante_hora_hora,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
