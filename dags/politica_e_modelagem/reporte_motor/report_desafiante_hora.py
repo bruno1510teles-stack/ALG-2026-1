@@ -36,10 +36,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
     # Definindo a consulta
     query_acomp_desafiante = f"""
                             select 	sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
-                                count(sub.issue_key) as "Propostas Entrantes",
-                                sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Propostas Derivadas Mesa",
-                                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Propostas Reprovadas Motor",
-                                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Propostas Aprovadas Motor",
+                                count(sub.issue_key) as "Entrantes",
+                                sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Derivadas Mesa",
+                                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
+                                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
                                 sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor"
                             from (
                                 select 	a.*,
@@ -73,10 +73,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
         print("A consulta não foi executada porque a conexão com o Trino falhou.")
 
 
-    propostas_totais = propostas_desafiante['Propostas Entrantes'].sum()
-    propostas_mesa = propostas_desafiante['Propostas Derivadas Mesa'].sum()
-    propostas_reprov_motor = propostas_desafiante['Propostas Reprovadas Motor'].sum()
-    propostas_aprov_motor = propostas_desafiante['Propostas Aprovadas Motor'].sum()
+    propostas_totais = propostas_desafiante['Entrantes'].sum()
+    propostas_mesa = propostas_desafiante['Derivadas Mesa'].sum()
+    propostas_reprov_motor = propostas_desafiante['Reprovadas Motor'].sum()
+    propostas_aprov_motor = propostas_desafiante['Aprovadas Motor'].sum()
 
     percent_mesa = (propostas_mesa / propostas_totais) * 100
     percent_reprov_motor = (propostas_reprov_motor / propostas_totais) * 100
@@ -90,10 +90,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     totais = {
     'Faixa Valor Solicitado': 'Total',
-    'Propostas Entrantes': propostas_desafiante['Propostas Entrantes'].sum(),
-    'Propostas Derivadas Mesa': propostas_desafiante['Propostas Derivadas Mesa'].sum(),
-    'Propostas Reprovadas Motor': propostas_desafiante['Propostas Reprovadas Motor'].sum(),
-    'Propostas Aprovadas Motor': propostas_desafiante['Propostas Aprovadas Motor'].sum(),
+    'Entrantes': propostas_desafiante['Entrantes'].sum(),
+    'Derivadas Mesa': propostas_desafiante['Derivadas Mesa'].sum(),
+    'Reprovadas Motor': propostas_desafiante['Reprovadas Motor'].sum(),
+    'Aprovadas Motor': propostas_desafiante['Aprovadas Motor'].sum(),
     'Valor Aprovado Motor': propostas_desafiante['Valor Aprovado Motor'].sum()
     }
 
@@ -121,11 +121,11 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     # Criar o markdown com o DataFrame ordenado e os percentuais
     markdown = (
-        "📊 Resumo Diário de Propostas - Política Desafiante - TESTE\n\n"
-        f"📅 Data Referência: {data_execucao}\n\n"
-        f"🧾 (%) MESA: {percent_mesa:.2f}%\n"
-        f"✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n"
-        f"❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n"
+        "📊 Resumo Diário de Propostas - Política Desafiante - TESTE\n\n\n\n"
+        f"📅 Data Referência: {data_execucao}\n\n\n\n"
+        f"🧾 (%) MESA: {percent_mesa:.2f}%\n\n"
+        f"✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n\n"
+        f"❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n\n"
         "```\n"
         + propostas_desafiante_sorted.to_string(index=False) +
         "\n```"
