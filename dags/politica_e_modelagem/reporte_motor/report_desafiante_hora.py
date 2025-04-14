@@ -129,14 +129,14 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     # Criar o markdown com o DataFrame ordenado e os percentuais
     markdown = (
-        "📊 Resumo Diário de Propostas - Política Desafiante - TESTE\n\n"
-        ".\n"
+        "📊 Resumo Diário de Propostas - Política Desafiante\n\n"
+        " \n"
         f"📅 Data Referência: {data_execucao}\n\n"
-        ".\n"
+        " \n"
         f"🧾 (%) MESA: {percent_mesa:.2f}%\n\n"
-        f"✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n\n"
-        f"❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n"
-        ".\n"
+        f" ✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n\n"
+        f" ❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n"
+        " \n"
         "```\n"
         + tabela_formatada +
         "\n```"
