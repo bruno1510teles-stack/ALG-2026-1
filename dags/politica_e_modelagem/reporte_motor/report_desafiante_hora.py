@@ -10,6 +10,7 @@ from io import BytesIO
 from requests.auth import HTTPBasicAuth
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
+from tabulate import tabulate
 
 def report_motor_desafiante_hora_hora (access_params=None):
 
@@ -119,15 +120,25 @@ def report_motor_desafiante_hora_hora (access_params=None):
     # Concatenar novamente com Total no final
     propostas_desafiante_sorted = pd.concat([propostas_desafiante_sorted, df_total], ignore_index=True)
 
+    tabela_formatada = tabulate(
+    propostas_desafiante_sorted.values.tolist(),
+    headers=propostas_desafiante_sorted.columns.tolist(),
+    tablefmt="pretty")
+
+    invisible_space = "\u200B"
+
     # Criar o markdown com o DataFrame ordenado e os percentuais
     markdown = (
-        "📊 Resumo Diário de Propostas - Política Desafiante - TESTE\n\n\n\n"
-        f"📅 Data Referência: {data_execucao}\n\n\n\n"
-        f"🧾 (%) MESA: {percent_mesa:.2f}%\n\n"
-        f"✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n\n"
-        f"❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n\n"
+        "📊 Resumo Diário de Propostas - Política Desafiante - TESTE\n\n"
+        f"{invisible_space}\n"
+        f"📅 Data Referência: {data_execucao}\n\n"
+        f"{invisible_space}\n"
+        f"🧾 (%) MESA: {percent_mesa:.2f}%\n"
+        f"✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n"
+        f"❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n"
+        f"{invisible_space}\n"
         "```\n"
-        + propostas_desafiante_sorted.to_string(index=False) +
+        + tabela_formatada +
         "\n```"
     )
 
