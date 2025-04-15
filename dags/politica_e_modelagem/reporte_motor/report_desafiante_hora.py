@@ -45,15 +45,15 @@ def report_motor_desafiante_hora_hora (access_params=None):
                             from (
                                 select 	a.*,
                                         CASE
-                                            WHEN  limite_pedido <= 50000 THEN '1 - Até 50K'
-                                            WHEN  limite_pedido > 50000 AND  limite_pedido <= 60000 THEN '2 - 50K - 60K'
-                                            WHEN  limite_pedido > 60000 AND  limite_pedido <= 70000 THEN '3 - 60K - 70K'
-                                            WHEN  limite_pedido > 70000 AND  limite_pedido <= 80000 THEN '4 - 70K - 80K'
-                                            WHEN  limite_pedido > 80000 AND  limite_pedido <= 90000 THEN '5 - 80K - 90K'
-                                            WHEN  limite_pedido > 90000 AND  limite_pedido <= 100000 THEN '6 - 90K - 100K'
-                                            WHEN  limite_pedido > 100000 AND  limite_pedido <= 110000 THEN '7 - 100K - 110K'
-                                            WHEN  limite_pedido > 110000 AND  limite_pedido <= 120000 THEN '8 - 110K - 120K'
-                                            WHEN  limite_pedido > 120000 AND  limite_pedido <= 130000 THEN '9 - 120K - 130K'
+                                            WHEN  limite_pedido <= 50000 THEN '01 - Até 50K'
+                                            WHEN  limite_pedido > 50000 AND  limite_pedido <= 60000 THEN '02 - 50K - 60K'
+                                            WHEN  limite_pedido > 60000 AND  limite_pedido <= 70000 THEN '03 - 60K - 70K'
+                                            WHEN  limite_pedido > 70000 AND  limite_pedido <= 80000 THEN '04 - 70K - 80K'
+                                            WHEN  limite_pedido > 80000 AND  limite_pedido <= 90000 THEN '05 - 80K - 90K'
+                                            WHEN  limite_pedido > 90000 AND  limite_pedido <= 100000 THEN '06 - 90K - 100K'
+                                            WHEN  limite_pedido > 100000 AND  limite_pedido <= 110000 THEN '07 - 100K - 110K'
+                                            WHEN  limite_pedido > 110000 AND  limite_pedido <= 120000 THEN '08 - 110K - 120K'
+                                            WHEN  limite_pedido > 120000 AND  limite_pedido <= 130000 THEN '09 - 120K - 130K'
                                             WHEN  limite_pedido > 130000 AND  limite_pedido <= 140000 THEN '10 - 130K - 140K'
                                             WHEN  limite_pedido > 140000 AND  limite_pedido <= 150000 THEN '11 - 140K - 150K'
                                             ELSE '12 - >150K'
@@ -79,9 +79,14 @@ def report_motor_desafiante_hora_hora (access_params=None):
     propostas_reprov_motor = propostas_desafiante['Reprovadas Motor'].sum()
     propostas_aprov_motor = propostas_desafiante['Aprovadas Motor'].sum()
 
-    percent_mesa = (propostas_mesa / propostas_totais) * 100
-    percent_reprov_motor = (propostas_reprov_motor / propostas_totais) * 100
-    percent_aprov_motor = (propostas_aprov_motor / propostas_totais) * 100
+    if propostas_totais > 0:
+        percent_mesa = (propostas_mesa / propostas_totais) * 100
+        percent_reprov_motor = (propostas_reprov_motor / propostas_totais) * 100
+        percent_aprov_motor = (propostas_aprov_motor / propostas_totais) * 100
+    else:
+        percent_mesa = 0
+        percent_reprov_motor = 0
+        percent_aprov_motor = 0
 
     print(percent_mesa)
     print(percent_reprov_motor)
