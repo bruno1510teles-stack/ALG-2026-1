@@ -56,7 +56,7 @@ default_args = {
 with DAG(
     dag_id='report_motor_desafiante',
     start_date=days_ago(1),
-    schedule_interval = '0 11-22 * * 1-5',
+    schedule_interval = '10 11-22 * * 1-5',
     default_args=default_args,
     tags=['report', 'motor', 'credito', 'desafiante'],
     max_active_runs=1
