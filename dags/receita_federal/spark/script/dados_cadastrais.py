@@ -108,6 +108,7 @@ def dados_cadastrais_to_refined(spark):
             F.to_date(F.col("e.data_inicio_atividade"), "yyyy-MM-dd").alias("data_fundacao"),
             F.col("e.cnae_principal").alias("cnae_principal_codigo"),
             F.col("cnae.descricao").alias("cnae_principal_descricao"),
+            F.col("e.cnae_secundaria").alias("cnae_secundaria"),
             F.col("e.logradouro"),
             F.col("e.numero"),
             F.col("e.complemento"),
