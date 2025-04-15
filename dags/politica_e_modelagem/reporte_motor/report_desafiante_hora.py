@@ -66,13 +66,60 @@ def report_motor_desafiante_hora_hora (access_params=None):
                     """
     
 
-    # Verifica se a conexão foi bem-sucedida antes de executar a consulta
+    query_acomp_desafiante_consolidado = f"""
+                            select 
+                        	sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
+                    		count(sub.issue_key) as "Propostas Entrantes",
+                    		sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Propostas Derivadas Mesa",
+                    		sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Propostas Reprovadas Motor",
+                    		sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Propostas Aprovadas Motor",
+                    		sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor",
+                    		sum(sub.vop) as VOP, 
+                    		sum(sub.vencido) as Vencido,
+                    		sum(sub.vop_over_30) as "Over 30"
+                    		
+                        from (
+                        select 	a.*,
+                    				CASE
+                    		            WHEN  limite_pedido <= 50000 THEN '01 - Até 50K'
+                    		            WHEN  limite_pedido > 50000 AND  limite_pedido <= 60000 THEN '02 - 50K - 60K'
+                    		            WHEN  limite_pedido > 60000 AND  limite_pedido <= 70000 THEN '03 - 60K - 70K'
+                    		            WHEN  limite_pedido > 70000 AND  limite_pedido <= 80000 THEN '04 - 70K - 80K'
+                    		            WHEN  limite_pedido > 80000 AND  limite_pedido <= 90000 THEN '05 - 80K - 90K'
+                    		            WHEN  limite_pedido > 90000 AND  limite_pedido <= 100000 THEN '06 - 90K - 100K'
+                    		            WHEN  limite_pedido > 100000 AND  limite_pedido <= 110000 THEN '07 - 100K - 110K'
+                    		            WHEN  limite_pedido > 110000 AND  limite_pedido <= 120000 THEN '08 - 110K - 120K'
+                    		            WHEN  limite_pedido > 120000 AND  limite_pedido <= 130000 THEN '09 - 120K - 130K'
+                    		            WHEN  limite_pedido > 130000 AND  limite_pedido <= 140000 THEN '10 - 130K - 140K'
+                    		            WHEN  limite_pedido > 140000 AND  limite_pedido <= 150000 THEN '11 - 140K - 150K'
+                    		            ELSE '12 - >150K'
+                    		        END AS faixa_valor_solicitado,
+                    		        coalesce (b.vop, 0) as vop, coalesce (b.vencido, 0) as vencido, coalesce(b.vop_over_30, 0) as vop_over_30 
+                    		from deltalaketrusted.jira.propostas as a
+                    		left join ( select cnpj_sacado, SUM(vop) as vop, sum(vencido) as vencido, sum (vop_over_30) as vop_over_30
+                                        from deltalakerefined.payments.vop_vendermais vv 
+                                        where date(safra_concessao) >= date '2025-04-01'
+                                        group by cnpj_sacado) as b
+							on a.cnpj = b.cnpj_sacado
+                    		where politica = 'DESAFIANTE'
+                            and date(data_criado) >= date '2025-04-14') as sub
+                            group by sub.faixa_valor_solicitado
+                            order by sub.faixa_valor_solicitado
+                    """
+
+    
+
+    # Verifica se a conexão foi bem-sucedida antes de executar a consulta reporte diário de propostas
     if conn is not None:
         propostas_desafiante = execute_query(conn, query_acomp_desafiante)
+        propostas_desafiante_consolidado = execute_query(conn, query_acomp_desafiante_consolidado)
     else:
         propostas_desafiante = None
+        propostas_desafiante_consolidado = None
         print("A consulta não foi executada porque a conexão com o Trino falhou.")
 
+
+    # Cálculos dos percentuais reporte diário de propostas
 
     propostas_totais = propostas_desafiante['Entrantes'].sum()
     propostas_mesa = propostas_desafiante['Derivadas Mesa'].sum()
@@ -94,6 +141,33 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
 
 
+    # Cálculos dos percentuais reporte consolidado de propostas
+
+    propostas_totais_consolidado = propostas_desafiante_consolidado['Entrantes'].sum()
+    propostas_mesa_consolidado = propostas_desafiante_consolidado['Derivadas Mesa'].sum()
+    propostas_reprov_motor_consolidado = propostas_desafiante_consolidado['Reprovadas Motor'].sum()
+    propostas_aprov_motor_consolidado = propostas_desafiante_consolidado['Aprovadas Motor'].sum()
+
+    if propostas_totais_consolidado > 0:
+        percent_mesa_consolidado = (propostas_mesa_consolidado / propostas_totais_consolidado) * 100
+        percent_reprov_motor_consolidado = (propostas_reprov_motor_consolidado / propostas_totais_consolidado) * 100
+        percent_aprov_motor_consolidado = (propostas_aprov_motor_consolidado / propostas_totais_consolidado) * 100
+    else:
+        percent_mesa_consolidado = 0
+        percent_reprov_motor_consolidado = 0
+        percent_aprov_motor_consolidado = 0
+
+    print(percent_mesa_consolidado)
+    print(percent_reprov_motor_consolidado)
+    print(percent_aprov_motor_consolidado)
+
+
+    print("Print do DF, antes da criação do markdown:")
+    print(propostas_desafiante_consolidado)
+    print(propostas_desafiante)
+
+
+    #Adiciona totais no reporte diário de propostas
     totais = {
     'Faixa Valor Solicitado': 'Total',
     'Entrantes': propostas_desafiante['Entrantes'].sum(),
@@ -107,47 +181,95 @@ def report_motor_desafiante_hora_hora (access_params=None):
     propostas_desafiante = pd.concat([propostas_desafiante, pd.DataFrame([totais])], ignore_index=True)
 
     propostas_desafiante['Valor Aprovado Motor'] = propostas_desafiante['Valor Aprovado Motor'].apply(
-        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
     )
-
 
     print("Print do DF, antes da criação do markdown:")
     print(propostas_desafiante)
 
 
-    # Separar total
-    df_total = propostas_desafiante[propostas_desafiante['Faixa Valor Solicitado'].str.strip().str.lower() == 'total']
-    df_main = propostas_desafiante[propostas_desafiante['Faixa Valor Solicitado'].str.strip().str.lower() != 'total']
+    #Adiciona totais no reporte consolidado de propostas
+    totais_consolidado = {
+        'Faixa Valor Solicitado': 'Total',
+        'Entrantes': propostas_desafiante_consolidado['Entrantes'].sum(),
+        'Derivadas Mesa': propostas_desafiante_consolidado['Derivadas Mesa'].sum(),
+        'Reprovadas Motor': propostas_desafiante_consolidado['Reprovadas Motor'].sum(),
+        'Aprovadas Motor': propostas_desafiante_consolidado['Aprovadas Motor'].sum(),
+        'Valor Aprovado Motor': propostas_desafiante_consolidado['Valor Aprovado Motor'].sum(),
+        'VOP': propostas_desafiante_consolidado['VOP'].sum(),
+        'Vencido': propostas_desafiante_consolidado['Vencido'].sum(),
+        'Over 30': propostas_desafiante_consolidado['Over 30'].sum()
 
-    # Ordenar faixas
-    propostas_desafiante_sorted = df_main.sort_values(by='Faixa Valor Solicitado', ascending=True)
+    }
 
-    # Concatenar novamente com Total no final
-    propostas_desafiante_sorted = pd.concat([propostas_desafiante_sorted, df_total], ignore_index=True)
+    # Adiciona a linha de totais ao final da tabela consolidada
+    propostas_desafiante_consolidado = pd.concat(
+        [propostas_desafiante_consolidado, pd.DataFrame([totais_consolidado])],
+        ignore_index=True
+    )
 
-    tabela_formatada = tabulate(
-    propostas_desafiante_sorted.values.tolist(),
-    headers=propostas_desafiante_sorted.columns.tolist(),
-    tablefmt="pretty")
+    propostas_desafiante_consolidado['Valor Aprovado Motor'] = propostas_desafiante_consolidado['Valor Aprovado Motor'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
 
+    propostas_desafiante_consolidado['VOP'] = propostas_desafiante_consolidado['VOP'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_desafiante_consolidado['Vencido'] = propostas_desafiante_consolidado['Vencido'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_desafiante_consolidado['Over 30'] = propostas_desafiante_consolidado['Over 30'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+
+    print(propostas_desafiante_consolidado)
+
+
+
+    # Ordena os DataFrames
+    propostas_desafiante_sorted = propostas_desafiante.copy()
+    propostas_desafiante_consolidado_sorted = propostas_desafiante_consolidado.copy()
+
+    tabela_formatada_1 = tabulate(
+        propostas_desafiante_sorted.values.tolist(),
+        headers=propostas_desafiante_sorted.columns.tolist(),
+        tablefmt="pretty"
+    )
+
+    tabela_formatada_2 = tabulate(
+        propostas_desafiante_consolidado_sorted.values.tolist(),
+        headers=propostas_desafiante_consolidado_sorted.columns.tolist(),
+        tablefmt="pretty"
+    )
+
+    # Markdown invisível para espaçamento no Teams
     invisible_space = "\u200B"
 
-    # Criar o markdown com o DataFrame ordenado e os percentuais
+    # Criar markdown final com percentuais separados por tabela
     markdown = (
-        "📊 Resumo Diário de Propostas - Política Desafiante\n\n"
+        "📊 **Resumo Diário de Propostas - Política Desafiante TESTE**\n\n"
         f"{invisible_space}\n"
-        " \n"
-        f"📅 Data Referência: {data_execucao}\n\n"
+        f"📅 **Data Referência:** {data_execucao}\n\n"  # use sua variável de data aqui
+        "---\n"
+        f"🧾 **% Derivadas para Mesa:** {percent_mesa:.2f}%\n"
+        f"✅ **% Aprovadas Motor:** {percent_aprov_motor:.2f}%\n"
+        f"❌ **% Reprovadas Motor:** {percent_reprov_motor:.2f}%\n\n"
+        "```\n" + tabela_formatada_1 + "\n```\n"
+        "---\n"
         f"{invisible_space}\n"
-        " \n"
-        f"🧾 (%) MESA: {percent_mesa:.2f}%\n\n"
-        f" ✅ (%) APROVADAS MOTOR: {percent_aprov_motor:.2f}%\n\n"
-        f" ❌ (%) REPROVADAS MOTOR: {percent_reprov_motor:.2f}%\n\n"
-        " \n"
-        "```\n"
-        + tabela_formatada +
-        "\n```"
+        "---\n"
+        "📊 **Resumo Consolidado de Propostas - Política Desafiante**\n\n"
+        f"🧾 **% Derivadas para Mesa:** {percent_mesa_consolidado:.2f}%\n"
+        f"✅ **% Aprovadas Motor:** {percent_aprov_motor_consolidado:.2f}%\n"
+        f"❌ **% Reprovadas Motor:** {percent_reprov_motor_consolidado:.2f}%\n\n"
+        "```\n" + tabela_formatada_2 + "\n```"
     )
+
+    # Exibir o markdown final
+    print(markdown)
 
 
     # Função para enviar a mensagem formatada ao webhook do Teams
