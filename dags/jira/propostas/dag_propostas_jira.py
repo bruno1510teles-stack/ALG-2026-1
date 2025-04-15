@@ -69,7 +69,7 @@ default_args = {
 with DAG(
     dag_id='processo_jira_propostas',
     start_date=days_ago(1),
-    schedule_interval='0 8-20 * * 1-5',
+    schedule_interval='0 11-23 * * 1-5',
     default_args=default_args,
     tags=['etl', 'jira', 'raw', 'trusted','refined'],
     max_active_runs=1
