@@ -266,7 +266,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     # Criar markdown final com percentuais separados por tabela
     markdown = (
-        "📊 Resumo Diário de Propostas - Política Desafiante TESTE\n\n"
+        "📊 Resumo Diário de Propostas - Política Desafiante\n\n"
         f"{invisible_space}\n"
         f"📅 Data Referência: {data_execucao}\n\n"  # use sua variável de data aqui
         "---\n"
