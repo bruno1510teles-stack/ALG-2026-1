@@ -207,7 +207,7 @@ def trusted_to_refined (access_params=None, **kwargs):
     def classificar_sla_dias(dias):
         if pd.isna(dias):
             return "SLA NÃO DEFINIDO"
-        elif dias == 0:
+        elif dias <= 0:
             return "01 - D = 0"
         elif dias == 1:
             return "02 - D + 1"
