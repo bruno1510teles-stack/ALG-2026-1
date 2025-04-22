@@ -73,9 +73,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
                             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
                             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
                             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor",
-                            sum(case when sub.categoria_decisor = 'MOTOR' then sub.vop else 0 end) as "VOP", 
-                            sum(case when sub.categoria_decisor = 'MOTOR' then sub.vencido else 0 end) as "Vencido",
-                            sum(case when sub.categoria_decisor = 'MOTOR' then sub.vop_over_30 else 0 end) as "Over 30"
+                            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop else 0 end) as "VOP", 
+                            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vencido else 0 end) as "Vencido",
+                            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop_over_30 else 0 end) as "Over 30"
                             
                         from (
                         select 	a.*,
