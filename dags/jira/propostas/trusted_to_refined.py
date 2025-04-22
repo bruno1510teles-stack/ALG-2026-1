@@ -11,8 +11,8 @@ from io import BytesIO
 from requests.auth import HTTPBasicAuth
 import json
 from deltalake import write_deltalake, DeltaTable
-from datetime import datetime, timezone, timedelta
 from airflow.utils.log.logging_mixin import LoggingMixin
+from datetime import datetime, time, timedelta, timezone
 
 
 def trusted_to_refined (access_params=None, **kwargs):
@@ -132,13 +132,63 @@ def trusted_to_refined (access_params=None, **kwargs):
             return "APROVADO"
         else:
             return "NÃO ATRIBUIDA"
-        
-    def classificar_sla_horas(diferenca_horas):
-        if pd.isna(diferenca_horas):  # Verifica se o valor é NaN
-            return "SLA NÃO DEFINIDO"
 
-        diferenca_horas = round(diferenca_horas, 2)  # Arredondar para 2 casas decimais
-        
+
+    # SLA DE DECISÃO
+
+    # Função que calcula horas úteis entre duas datas
+    def calcular_tempo_util(inicio_str, fim_str):
+        if pd.isna(inicio_str) or pd.isna(fim_str):
+            return None
+
+        inicio = pd.to_datetime(inicio_str)
+        fim = pd.to_datetime(fim_str)
+
+        if inicio.tzinfo is not None and fim.tzinfo is not None:
+            inicio = inicio.tz_convert(None)
+            fim = fim.tz_convert(None)
+
+        hora_trabalho_inicio = time(7, 0)
+        hora_trabalho_fim = time(20, 0)
+
+        if inicio > fim:
+            inicio, fim = fim, inicio
+
+        dias_uteis = pd.date_range(inicio.date(), fim.date(), freq='B')
+        total_horas = 0
+
+        for dia in dias_uteis:
+            dia_data = dia.date()
+            inicio_dia = datetime.combine(dia_data, hora_trabalho_inicio)
+            fim_dia = datetime.combine(dia_data, hora_trabalho_fim)
+
+            if dia_data == inicio.date():
+                inicio_dia = max(inicio, inicio_dia)
+            if dia_data == fim.date():
+                fim_dia = min(fim, fim_dia)
+
+            if inicio_dia < fim_dia:
+                diff = (fim_dia - inicio_dia).total_seconds() / 3600
+                total_horas += diff
+
+        return round(total_horas, 2)
+    
+
+    # Função para contar dias úteis entre duas datas
+    def calcular_dias_uteis(inicio, fim):
+        if pd.isna(inicio) or pd.isna(fim):
+            return None
+        inicio = pd.to_datetime(inicio)
+        fim = pd.to_datetime(fim)
+        if inicio > fim:
+            inicio, fim = fim, inicio
+        return len(pd.bdate_range(inicio.date(), fim.date())) - 1  # exclui o dia de início
+
+
+    def classificar_sla_horas(diferenca_horas):
+        if pd.isna(diferenca_horas):
+            return "SLA NÃO DEFINIDO"
+        diferenca_horas = round(diferenca_horas, 2)
         if diferenca_horas <= 2:
             return "01 - ATE 2 HORAS"
         elif diferenca_horas <= 4:
@@ -155,7 +205,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         
         
     def classificar_sla_dias(dias):
-        if pd.isna(dias):  # Verifica se o valor é NaN
+        if pd.isna(dias):
             return "SLA NÃO DEFINIDO"
         elif dias == 0:
             return "01 - D = 0"
@@ -167,20 +217,19 @@ def trusted_to_refined (access_params=None, **kwargs):
             return "04 - >= D + 3"
         
     
+    # Adiciona colunas de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
 
+    # Cálculo de horas e dias úteis
+    df['diferenca_horas_criado_resolvido'] = df.apply(lambda row: calcular_tempo_util(row['data_criado'], row['data_resolvido']), axis=1)
+    df['diferenca_dias_criado_resolvido'] = df.apply(lambda row: calcular_dias_uteis(row['data_criado'], row['data_resolvido']), axis=1)
 
-    # Criando df para verificar a diferença de dias
-    df['diferenca_dias_criado_resolvido'] = ( df['data_resolvido'] - df['data_criado']).dt.days.astype('Int64')
-    df['diferenca_horas_criado_resolvido'] = ( df['data_resolvido'] - df['data_criado']).dt.total_seconds() / 3600
+    df['diferenca_horas_disp_mesa_resolvido'] = df.apply(lambda row: calcular_tempo_util(row['data_disponivel_mesa'], row['data_resolvido']), axis=1)
+    df['diferenca_dias_disp_mesa_resolvido'] = df.apply(lambda row: calcular_dias_uteis(row['data_disponivel_mesa'], row['data_resolvido']), axis=1)
 
-    df['diferenca_dias_disp_mesa_resolvido'] = ( df['data_resolvido'] - df['data_disponivel_mesa']).dt.days.astype('Int64')
-    df['diferenca_horas_disp_mesa_resolvido'] = ( df['data_resolvido'] - df['data_disponivel_mesa']).dt.total_seconds() / 3600
-
-
-    # SLA Tempo Dias e Horas
+    # Classificações de SLA baseadas em horas e dias úteis
     df['sla_hora_criado_resolvido'] = df["diferenca_horas_criado_resolvido"].apply(classificar_sla_horas)
     df['sla_hora_disp_mesa_resolvido'] = df["diferenca_horas_disp_mesa_resolvido"].apply(classificar_sla_horas)
 
