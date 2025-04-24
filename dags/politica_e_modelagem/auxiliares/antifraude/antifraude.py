@@ -76,8 +76,8 @@ def anti_fraude(access_params=None,  **kwargs):
 
     # Criando Resposta
     response_map = {
-        'REPROVADO': [],
-        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO']
+        'REPROVADO': [ 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
+        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO']
     }
 
     # FOI COLOCADO TUDO NO SEGUE, POIS OS CASOS ESTAVAM INDO PARA A MESA SEM COMPRAR O SERASA ATUALIZADO
