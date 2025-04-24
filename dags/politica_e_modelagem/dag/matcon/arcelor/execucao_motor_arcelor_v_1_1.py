@@ -155,7 +155,7 @@ with DAG(
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
-        python_callable=pre_filtro_v_2.analise_pre_filtro,
+        python_callable=pre_filtro.analise_pre_filtro,
         op_kwargs={'access_params': access_params},
         provide_context=True,
         execution_timeout=timedelta(minutes=3)
