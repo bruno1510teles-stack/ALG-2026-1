@@ -106,15 +106,85 @@ def report_motor_desafiante_hora_hora (access_params=None):
                             order by sub.faixa_valor_solicitado
                     """
     
+    query_acomp_desafiante_consolidado_100k = f"""
+                select
+                sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
+                count(sub.issue_key) as "Entrantes",
+                sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Derivadas Mesa",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop else 0 end) as "VOP",
+                count(case when coalesce(sub.vop, 0) > 0 and sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else null end) as "Qtd VOP",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vencido else 0 end) as "Vencido",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop_over_30 else 0 end) as "Over 30"
+            
+            from (
+            select  a.*,
+                        CASE
+                            WHEN  limite_pedido <= 50000 THEN '01 - Até 50K'
+                            WHEN  limite_pedido > 50000 AND  limite_pedido <= 60000 THEN '02 - 50K - 60K'
+                            WHEN  limite_pedido > 60000 AND  limite_pedido <= 70000 THEN '03 - 60K - 70K'
+                            WHEN  limite_pedido > 70000 AND  limite_pedido <= 80000 THEN '04 - 70K - 80K'
+                            WHEN  limite_pedido > 80000 AND  limite_pedido <= 90000 THEN '05 - 80K - 90K'
+                            WHEN  limite_pedido > 90000 AND  limite_pedido <= 100000 THEN '06 - 90K - 100K'
+                            ELSE NULL
+                        END AS faixa_valor_solicitado,
+                        coalesce (b.vop, 0) as vop, coalesce (b.vencido, 0) as vencido, coalesce(b.vop_over_30, 0) as vop_over_30
+                from deltalaketrusted.jira.propostas as a
+                left join ( select cnpj_sacado, SUM(vop) as vop, sum(vencido) as vencido, sum (vop_over_30) as vop_over_30
+                            from deltalakerefined.payments.vop_vendermais vv
+                            where date(safra_concessao) >= date '2025-04-01'
+                            group by cnpj_sacado) as b
+                on a.cnpj = b.cnpj_sacado
+                where politica = 'DESAFIANTE'
+                and date(data_criado) >= date '2025-04-14') as sub
+                where sub.faixa_valor_solicitado is not NULL
+                group by sub.faixa_valor_solicitado
+                order by sub.faixa_valor_solicitado
+        """
+    
+    query_clientes_com_vop = f"""
+            select
+            b. nome_sacado as "NOME SACADO", 
+            b.cnpj_sacado as "CNPJ",
+                    round(coalesce(b.vop, 0), 2) as "VOP",
+                    round(coalesce(b.vencido, 0), 2) as "Vencido",
+                    round(coalesce(b.vop_over_30, 0), 2) as "Over 30"
+            from deltalaketrusted.jira.propostas as a
+            left join ( 
+                select 
+                nome_sacado,
+                cnpj_sacado, 
+                       SUM(vop) as vop, 
+                       sum(vencido) as vencido, 
+                       sum(vop_over_30) as vop_over_30
+                from deltalakerefined.payments.vop_vendermais vv
+                where date(safra_concessao) >= date '2025-04-01'
+                group by nome_sacado, cnpj_sacado
+            ) as b
+            on a.cnpj = b.cnpj_sacado
+            where politica = 'DESAFIANTE'
+              and date(data_criado) >= date '2025-04-14'
+              and a.categoria_decisor = 'MOTOR'
+              and a.decisao = 'APROVADO'
+              and coalesce(b.vop, 0) > 0
+            """
     
     # Verifica se a conexão foi bem-sucedida antes de executar a consulta reporte diário de propostas
     if conn is not None:
         propostas_desafiante = execute_query(conn, query_acomp_desafiante)
         propostas_desafiante_consolidado = execute_query(conn, query_acomp_desafiante_consolidado)
+        propostas_desafiante_consolidado_100k = execute_query(conn, query_acomp_desafiante_consolidado_100k)
+        propostas_clientes_com_vop = execute_query(conn, query_clientes_com_vop)
     else:
         propostas_desafiante = None
         propostas_desafiante_consolidado = None
+        propostas_desafiante_consolidado_100k = None
+        propostas_clientes_com_vop = None
         print("A consulta não foi executada porque a conexão com o Trino falhou.")
+
+ 
 
 
 
@@ -223,9 +293,75 @@ def report_motor_desafiante_hora_hora (access_params=None):
         lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
     )
 
+    # Adiciona totais no reporte consolidado de propostas até 100k
+    totais_100k = {
+        'Faixa Valor Solicitado': 'Total',
+        'Entrantes': propostas_desafiante_consolidado_100k['Entrantes'].sum(),
+        'Derivadas Mesa': propostas_desafiante_consolidado_100k['Derivadas Mesa'].sum(),
+        'Reprovadas Motor': propostas_desafiante_consolidado_100k['Reprovadas Motor'].sum(),
+        'Aprovadas Motor':  propostas_desafiante_consolidado_100k['Aprovadas Motor'].sum(),
+        'Valor Aprovado Motor': propostas_desafiante_consolidado_100k['Valor Aprovado Motor'].sum(),
+        'VOP': propostas_desafiante_consolidado_100k['VOP'].sum(),
+        'Qtd VOP': propostas_desafiante_consolidado_100k['Qtd VOP'].sum(),
+        'Vencido': propostas_desafiante_consolidado_100k['Vencido'].sum(),
+        'Over 30': propostas_desafiante_consolidado_100k['Over 30'].sum()
+    }
+
+    # Adiciona a linha de totais ao final da tabela consolidada
+    propostas_desafiante_consolidado_100k = pd.concat(
+        [propostas_desafiante_consolidado_100k, pd.DataFrame([totais_100k])],
+        ignore_index=True
+    )
+
+    propostas_desafiante_consolidado_100k['Valor Aprovado Motor'] = propostas_desafiante_consolidado_100k['Valor Aprovado Motor'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_desafiante_consolidado_100k['VOP'] = propostas_desafiante_consolidado_100k['VOP'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_desafiante_consolidado_100k['Vencido'] = propostas_desafiante_consolidado_100k['Vencido'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_desafiante_consolidado_100k['Over 30'] = propostas_desafiante_consolidado_100k['Over 30'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
 
 
-    # Separar total - Diaria
+    clientes_vop = {
+        'NOME SACADO': '',
+        'CNPJ': 'Total',
+        'VOP': propostas_clientes_com_vop['VOP'].sum(),
+        'Vencido': propostas_clientes_com_vop['Vencido'].sum(),
+        'Over 30': propostas_clientes_com_vop['Over 30'].sum()
+    }
+
+    # Adiciona a linha de totais ao final da tabela consolidada
+    propostas_clientes_com_vop = pd.concat(
+        [propostas_clientes_com_vop, pd.DataFrame([clientes_vop])],
+        ignore_index=True
+
+    )
+
+    propostas_clientes_com_vop['VOP'] = propostas_clientes_com_vop['VOP'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_clientes_com_vop['Vencido'] = propostas_clientes_com_vop['Vencido'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+    propostas_clientes_com_vop['Over 30'] = propostas_clientes_com_vop['Over 30'].apply(
+        lambda x: f"R$ {x:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.') if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00"
+    )
+
+
+
+
+
+    # 1) Separar total - Diária
     df_total = propostas_desafiante[propostas_desafiante['Faixa Valor Solicitado'].str.strip().str.lower() == 'total']
     df_main = propostas_desafiante[propostas_desafiante['Faixa Valor Solicitado'].str.strip().str.lower() != 'total']
 
@@ -236,18 +372,28 @@ def report_motor_desafiante_hora_hora (access_params=None):
     propostas_desafiante_sorted = pd.concat([propostas_desafiante_sorted, df_total], ignore_index=True)
 
 
-
-    # Separar total - Consolidada
+    # 2) Separar total - Consolidada
     df_total_consolidado = propostas_desafiante_consolidado[propostas_desafiante_consolidado['Faixa Valor Solicitado'].str.strip().str.lower() == 'total']
     df_main_consolidado = propostas_desafiante_consolidado[propostas_desafiante_consolidado['Faixa Valor Solicitado'].str.strip().str.lower() != 'total']
 
     # Ordenar faixas
     propostas_desafiante_consolidado_sorted = df_main_consolidado.sort_values(by='Faixa Valor Solicitado', ascending=True)
 
-    # Concatenar novamente com Total no final
+    # Garantir que o total consolidado apareça uma vez ao final
     propostas_desafiante_consolidado_sorted = pd.concat([propostas_desafiante_consolidado_sorted, df_total_consolidado], ignore_index=True)
 
+    # 3) Separar total - Até 100k
+    df_total_100k = propostas_desafiante_consolidado_100k[propostas_desafiante_consolidado_100k['Faixa Valor Solicitado'].str.strip().str.lower() == 'total']
+    df_main_100k = propostas_desafiante_consolidado_100k[propostas_desafiante_consolidado_100k['Faixa Valor Solicitado'].str.strip().str.lower() != 'total']
 
+    # Ordenar faixas
+    propostas_desafiante_consolidado_100k_sorted = df_main_100k.sort_values(by='Faixa Valor Solicitado', ascending=True)
+
+    # Concatenar novamente com Total no final
+    propostas_desafiante_consolidado_100k_sorted = pd.concat([propostas_desafiante_consolidado_100k_sorted, df_total_100k], ignore_index=True)
+
+    #Ordenar listagem de clientes com VOP
+    propostas_clientes_com_vop_sorted = propostas_clientes_com_vop.sort_values(by='CNPJ', ascending=True)
 
     tabela_formatada_1 = tabulate(
         propostas_desafiante_sorted.values.tolist(),
@@ -261,6 +407,18 @@ def report_motor_desafiante_hora_hora (access_params=None):
         tablefmt="pretty"
     )
 
+    tabela_formatada_3 = tabulate(
+        propostas_desafiante_consolidado_100k_sorted.values.tolist(),
+        headers=propostas_desafiante_consolidado_100k_sorted.columns.tolist(),
+        tablefmt="pretty"
+    )
+
+    tabela_formatada_4 = tabulate(
+        propostas_clientes_com_vop_sorted.values.tolist(),
+        headers=propostas_clientes_com_vop_sorted.columns.tolist(),
+        tablefmt="pretty"
+    )
+
     # Markdown invisível para espaçamento no Teams
     invisible_space = "\u200B"
 
@@ -268,21 +426,41 @@ def report_motor_desafiante_hora_hora (access_params=None):
     markdown = (
         "📊 Resumo Diário de Propostas - Política Desafiante\n\n"
         f"{invisible_space}\n"
-        f"📅 Data Referência: {data_execucao}\n\n"  # use sua variável de data aqui
+        f"📅 Data Referência: {data_execucao}\n\n"
         "---\n"
-        f"🧾 % Derivadas para Mesa: {percent_mesa:.2f}%\n"
-        f"✅ % Aprovadas Motor: {percent_aprov_motor:.2f}%\n"
-        f"❌ % Reprovadas Motor: {percent_reprov_motor:.2f}%\n\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa:.2f}%  \n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor:.2f}%  \n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor:.2f}%  \n\n"
         "```\n" + tabela_formatada_1 + "\n```\n"
         "---\n"
         f"{invisible_space}\n"
         "---\n"
         "📊 Resumo Consolidado\n\n"
-        f"🧾 % Derivadas para Mesa: {percent_mesa_consolidado:.2f}%\n"
-        f"✅ % Aprovadas Motor: {percent_aprov_motor_consolidado:.2f}%\n"
-        f"❌ % Reprovadas Motor: {percent_reprov_motor_consolidado:.2f}%\n\n"
-        "```\n" + tabela_formatada_2 + "\n```"
+        "---\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa_consolidado:.2f}%  \n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor_consolidado:.2f}%  \n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor_consolidado:.2f}%  \n\n"
+        "```\n" + tabela_formatada_2 + "\n```\n"
+        "---\n"
+        f"{invisible_space}\n"
+        "---\n"
+        "📊 Resumo Até 100k\n\n"
+        "---\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa_100k:.2f}%  \n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor_100k:.2f}%  \n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor_100k:.2f}%  \n\n"
+        "```\n" + tabela_formatada_3 + "\n```\n"
+        "---\n"
+        f"{invisible_space}\n"
+        "---\n"
+        "🗒️ Operacional\n\n"
+        f"🔎 Sacados com VOP: {totais_clientes_vop:.0f}\n\n"
+        "```\n" + tabela_formatada_4 + "\n```"
     )
+
+    # Exibir o markdown final
+    print(markdown)
+
 
     # Exibir o markdown final
     print(markdown)
