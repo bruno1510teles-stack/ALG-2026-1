@@ -230,7 +230,27 @@ def report_motor_desafiante_hora_hora (access_params=None):
     print(percent_reprov_motor_consolidado)
     print(percent_aprov_motor_consolidado)
 
+    # Cálculos dos percentuais reporte consolidado de propostas (até 100k)
+    propostas_totais_100k = propostas_desafiante_consolidado_100k['Entrantes'].sum()
+    propostas_mesa_100k = propostas_desafiante_consolidado_100k['Derivadas Mesa'].sum()
+    propostas_reprov_motor_100k = propostas_desafiante_consolidado_100k['Reprovadas Motor'].sum()
+    propostas_aprov_motor_100k = propostas_desafiante_consolidado_100k['Aprovadas Motor'].sum()
 
+    if propostas_totais_100k > 0:
+        percent_mesa_100k = (propostas_mesa_100k / propostas_totais_100k) * 100
+        percent_reprov_motor_100k = (propostas_reprov_motor_100k / propostas_totais_100k) * 100
+        percent_aprov_motor_100k = (propostas_aprov_motor_100k / propostas_totais_100k) * 100
+    else:
+        percent_mesa_100k         = 0
+        percent_reprov_motor_100k = 0
+        percent_aprov_motor_100k  = 0
+
+    print(percent_mesa_100k)         
+    print(percent_reprov_motor_100k)  
+    print(percent_aprov_motor_100k)   
+
+    totais_clientes_vop = propostas_clientes_com_vop['CNPJ'].count()
+    print(totais_clientes_vop)
 
     print("Print do DF, antes da criação do markdown:")
     print(propostas_desafiante_consolidado)
