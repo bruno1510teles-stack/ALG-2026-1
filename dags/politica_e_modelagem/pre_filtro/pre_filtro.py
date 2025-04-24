@@ -354,7 +354,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         df = df.merge(aux_nat_ju, on = ['cod_natureza_juridica'], how = 'left')
         
         # Criando função para verificar se é SPE, Consorcio ou Construtora
-        def spe_consorcio_construtora(data_frame):
+        def spe_consorcio(data_frame):
             # Verificação SPE
             is_spe = (data_frame['cod_natureza_juridica'] == '2062') & (
                 data_frame['razao_social'].str.startswith("SPE ") | 
@@ -366,13 +366,13 @@ def analise_pre_filtro(access_params=None,  **kwargs):
                 data_frame['razao_social'].str.endswith(" CONSORCIO")))
             
             # Verificação Construtora
-            is_construtora = (data_frame['cod_natureza_juridica'].isin(['2062', '2135']) &
-                            data_frame['cod_cnae'].isin(['3011301', '3011302', '3012100', '4120400', '4211101', '4212000', '4221901', '4221902', '4221904', '4222701', '4223500', '4299501']))
+            # is_construtora = (data_frame['cod_natureza_juridica'].isin(['2062', '2135']) &
+            #                 data_frame['cod_cnae'].isin(['3011301', '3011302', '3012100', '4120400', '4211101', '4212000', '4221901', '4221902', '4221904', '4222701', '4223500', '4299501']))
 
-            return (is_spe | is_consorcio | is_construtora)
+            return (is_spe | is_consorcio)# | is_construtora)
 
         # Aplicando Função
-        df['is_spe_consorcio_construtora'] = spe_consorcio_construtora(df)
+        df['is_spe_consorcio'] = spe_consorcio(df)
         
         df['ramificacao_pre_filtro'] = np.nan
 
@@ -397,7 +397,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             ((df['is_mei'] == True) | (df['is_mei'] == 'True'), 'PF MEI'),
             (df['cnae_aceito'] == 'NAO', 'PF CNAE'),
             (df['nat_ju_aceita'] == 'NAO', 'PF NATUREZA JURIDICA'),
-            ((df['is_spe_consorcio_construtora']) | (df['cod_natureza_juridica'] == '2054') | (df['cod_natureza_juridica'] == '2046'), 'PF CONSORCIO/CONSTRUTORA/SPE/SA'),
+            ((df['is_spe_consorcio']) | (df['cod_natureza_juridica'] == '2054') | (df['cod_natureza_juridica'] == '2046'), 'PF CONSORCIO/SPE/SA'),
             (df['idade'] < 2, 'PF FUNDACAO < 2 ANOS'),
             ((df['tem_socio_pj'] == True), 'PF SOCIO PJ'),
             (((df['idade_socio'].notna()) & (df['idade_socio'] < 2)) , 'PF SOCIO < 2 ANOS'),
@@ -411,9 +411,9 @@ def analise_pre_filtro(access_params=None,  **kwargs):
 
         # Criando Resposta
         response_map = {
-            'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS'],
+            'REPROVADO': ['PF CNPJ IRREGULAR', 'PF REPROVA < 60 DIAS', 'PF RJ', 'PF PEP', 'PF MEI', 'PF CNAE', 'PF NATUREZA JURIDICA', 'PF FUNDACAO < 2 ANOS', 'PF BLOQUEIO ALPE'],
             'mantido' : ['PF LIMITE SOLICITADO <= ATUAL', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA'],
-            'MESA': ['PF MESA', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF SOCIO < 2 ANOS', 'PF BLOQUEIO ALPE', 'PF SOCIO PJ'],
+            'MESA': ['PF MESA', 'PF CONSORCIO/SPE/SA', 'PF SOCIO < 2 ANOS', 'PF SOCIO PJ'],
             'SEGUE': ['PF SEGUE']
         }
         # Aplicar as respostas

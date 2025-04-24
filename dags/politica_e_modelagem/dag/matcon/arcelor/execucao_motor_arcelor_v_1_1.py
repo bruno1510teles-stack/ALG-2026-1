@@ -12,7 +12,7 @@ import requests
 ### Importando scripts necessários
 from politica_e_modelagem.auxiliares.jira import import_base_jira_agendado
 #from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
-from politica_e_modelagem.pre_filtro import pre_filtro_v_2
+from politica_e_modelagem.pre_filtro import pre_filtro
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
 from politica_e_modelagem.modelo.matcon.arcelor import execucao_modelo_arcelor_v_1_0
 from politica_e_modelagem.politica.matcon.arcelor import politica_arcelor_v_1_1
