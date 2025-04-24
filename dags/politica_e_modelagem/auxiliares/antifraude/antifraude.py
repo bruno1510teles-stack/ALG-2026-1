@@ -62,11 +62,10 @@ def anti_fraude(access_params=None,  **kwargs):
 
     # Criando condições filtro
     condicoes = [
-        (df_antifraude['flag_mudanca_endereco'] == 'Sim', 'AF - MUDANÇA ENDEREÇO'),
-        (df_antifraude['flag_mudanca_cidade'] == 'Sim', 'AF - MUDANÇA CIDADE'),
         (df_antifraude['flag_mudanca_estado'] == 'Sim', 'AF - MUDANÇA ESTADO'),
-        #(df_antifraude['flag_endereco_igual'] == 'Sim', 'AF - ENDEREÇO IGUAL') descomentar no futuro
-        (df_antifraude['flag_endereco_igual'] == 'Sim', 'AF SEGUE')
+        (df_antifraude['flag_mudanca_cidade'] == 'Sim', 'AF - MUDANÇA CIDADE'),
+        (df_antifraude['flag_mudanca_endereco'] == 'Sim', 'AF - MUDANÇA ENDEREÇO'),
+        (df_antifraude['flag_endereco_igual'] == 'Sim', 'AF - ENDEREÇO IGUAL')
     ]
 
     for condition, value in condicoes:
