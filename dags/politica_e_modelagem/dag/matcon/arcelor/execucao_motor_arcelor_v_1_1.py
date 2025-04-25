@@ -11,6 +11,7 @@ import requests
 
 ### Importando scripts necessários
 from politica_e_modelagem.auxiliares.jira import import_base_jira_agendado
+from politica_e_modelagem.auxiliares.antifraude import antifraude
 #from politica_e_modelagem.pre_filtro.matcon.arcelor import pre_filtro_arcelor_v_1_1
 from politica_e_modelagem.pre_filtro import pre_filtro
 from politica_e_modelagem.auxiliares.serasa import execucao_chamada_serasa
@@ -43,7 +44,7 @@ access_params = {
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
     }
 
-'''
+
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
 
@@ -60,15 +61,15 @@ def notificar_falha_teams(context):
             "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
         }
         requests.post(url, json=mensagem)
-'''
+
 
 
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1)
-    #"on_failure_callback": notificar_falha_teams
+    "retry_delay": timedelta(minutes=1),
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -137,7 +138,7 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='politica_v_2',
+    dag_id='politica_v_2', 
     start_date=days_ago(1),
     schedule_interval='*/30 * * * *',
     default_args=default_args,
@@ -151,7 +152,16 @@ with DAG(
         python_callable=import_base_jira_agendado.base_analisar,
         provide_context=True,  # Habilita o envio do contexto (incluindo conf)
         execution_timeout=timedelta(minutes=3)
-    )    
+    )
+
+    # Definindo o task de antifraude
+    anti_fraude = PythonOperator(
+        task_id="antifraude_task",
+        python_callable=antifraude.anti_fraude,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
     # Definindo o task de pre filtro
     pre_filtro = PythonOperator(
         task_id="pre_filtro_task",
@@ -204,4 +214,4 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    captura_proposta >> pre_filtro >> serasa >> aguarde >> modelo >> politica >> enviar_kafka
+    captura_proposta >> anti_fraude >> pre_filtro >> serasa >> aguarde >> modelo >> politica >> enviar_kafka
