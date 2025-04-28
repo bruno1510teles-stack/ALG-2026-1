@@ -189,6 +189,8 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df['year'], df['month'], df['day'] = now.year, now.month, now.day
+
+    df = df.drop_duplicates()
     
     df = df.reset_index(drop=True)
     
