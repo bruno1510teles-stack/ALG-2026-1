@@ -74,6 +74,8 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['limite_pedido'] = df_resolvido['limite_pedido'].fillna(0)
     df_resolvido['limite_aprovado'] = df_resolvido['limite_aprovado'].fillna(0)
 
+    # Se a decisão for 'REPROVADO', zera o limite aprovado
+    df_resolvido.loc[df_resolvido['decisao'] == 'REPROVADO', 'limite_aprovado'] = 0
 
     # Nome_Issue Maiusculo
     df_resolvido['nome_issue'] = df_resolvido['nome_issue'].str.upper()
