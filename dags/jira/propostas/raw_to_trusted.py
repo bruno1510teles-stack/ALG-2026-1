@@ -402,12 +402,14 @@ def raw_to_trusted(access_params=None, **kwargs):
     lista_ramificacao_ruim = ['PF SOCIO < 2 ANOS', 'PF CONSORCIO/CONSTRUTORA/SPE/SA', 'PF MESA', 'PF SOCIO PJ', 'PF FUNDACAO < 2 ANOS',
                             'REPROVADO', 'PF MEI', 'PF NATUREZA JURIDICA', 'PF CNAE', 'B - 6', 'B - 9', 'C5 | C1', 'PF BLOQUEIO ALPE',
                             'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
-                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2']
+                            'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2', 'AF - LIMINAR SERASA',
+                            'PF CONSORCIO/SPE/SA', 'TESTE', 'C6 | C2', 'D4 | D1', 'C2 | C2', 'C1 | C1', 'C4 | C2', 'D1 | D1', 'C3 | C1']
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
-                            'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8']
+                            'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8', 'AF - MUDANÇA ENDEREÇO', 'AF - CONSULTAS SERASA', 'AF - ENDEREÇO IGUAL',
+                            'AF - MUDANÇA ESTADO', 'AF - MUDANÇA CIDADE', 'B5 | B2', 'B2 | B2', 'B4 | B1', 'B4 | B2', 'B6 | B3', 'B3 | B1']
 
-    lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3']
+    lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3', 'A8 | A3', 'A1 | A1', 'A7 | A2', 'A6 | A1', 'A2 | A2', 'AA | AA', 'A4 | A2']
 
     lista_ramificacao_nan = ['NÃO ATRIBUIDA', 'B - 12', 'A - A12']
 
