@@ -70,6 +70,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['pgid'] = df_resolvido['pgid'].apply(verifica_pgid).str.upper()
 
 
+
     # Substituindo valores nulos por 0 nas colunas 'limite_pedido' e 'limite_aprovado'
     df_resolvido['limite_pedido'] = df_resolvido['limite_pedido'].fillna(0)
     df_resolvido['limite_aprovado'] = df_resolvido['limite_aprovado'].fillna(0)
@@ -102,7 +103,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         'EDER CAVALCANTE': 'OUTROS',
         'ELAINE FABIANA BARBOSA': 'OUTROS',
         'EMANUELLE CATORI': 'OUTROS',
-        'FATURAMENTO': 'OUTROS',
+        ('FATURAMENTO', 'CRÉDITO'): 'OUTROS',
         ('GLAUCIANE OLIVEIRA', 'GLAUCIELE OLIVEIRA', 'GLAUCIELE RODRIGUES') : 'GLAUCIELE OLIVEIRA',
         ('JOSE CARVALHO', 'JOSÉ CARVALHO', 'JOSE VICTOR', 'JOSE VITOR'): 'OUTROS',
         ('LARISSA - CRÉDITO', 'LARISSA FREIRE', 'LARISSA SOARES', 'LARISSA SOARES - CRÉDITO') : 'OUTROS',
@@ -119,14 +120,16 @@ def raw_to_trusted(access_params=None, **kwargs):
         'RAFAELA - ASUS': 'OUTROS',
         ('ROGERIO', 'ROGERIO FRIAS'): 'OUTROS',
         ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'OUTROS',
-        ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES') : 'TALITA LIANDRA',
+        ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES', 'TALITA') : 'TALITA LIANDRA',
         'THAIS DAS NEVES' : 'OUTROS',
         ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
         'VANESSA LINO': 'OUTROS',
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
         'JOEL DONIZETTI APARECIDO': 'OUTROS',
         'COMERCIAL CONEXÃO' : 'OUTROS',
-        ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO'): 'JESSICA PATTARO'
+        ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO'): 'JESSICA PATTARO',
+        ('LEONARDO BOFF', 'LEONARDO SILVA'): 'LEONARDO BOFF',
+        ('VANUZA SILVA', 'VANUZA VIAL'): 'VANUZA SILVA'
     }
 
     # Função para padronizar o nome
