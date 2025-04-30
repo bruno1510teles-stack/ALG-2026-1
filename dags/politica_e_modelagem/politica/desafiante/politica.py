@@ -900,13 +900,11 @@ def executa_politica (access_params=None,  **kwargs):
         "D4 | D1": "Motor - Recusado, apontamento/score",
         "AF - LIMINAR SERASA": 'Motor - Recusado, risco de fraude',
         #"AF - MUDANÇA ENDEREÇO": "Motor - Recusado, risco de fraude",
-        #"AF - MUDANÇA CIDADE": "Motor - Recusado, risco de fraude",
-        #"AF - MUDANÇA ESTADO": "Motor - Recusado, risco de fraude",
+        "AF - MUDANÇA CIDADE": "Motor - Recusado, risco de fraude",
+        "AF - MUDANÇA ESTADO": "Motor - Recusado, risco de fraude",
         #"AF - ENDEREÇO IGUAL": "Motor - Recusado, risco de fraude",
         #"AF - CONSULTAS SERASA": "Motor - Recusado, risco de fraude"
         "AF - MUDANÇA ENDEREÇO": 'Motor - Direcionar para avaliação da mesa de crédito',
-        "AF - MUDANÇA CIDADE": 'Motor - Direcionar para avaliação da mesa de crédito',
-        "AF - MUDANÇA ESTADO": 'Motor - Direcionar para avaliação da mesa de crédito',
         "AF - ENDEREÇO IGUAL": 'Motor - Direcionar para avaliação da mesa de crédito',
         "AF - CONSULTAS SERASA": 'Motor - Direcionar para avaliação da mesa de crédito'
     }
