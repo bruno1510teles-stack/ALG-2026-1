@@ -59,8 +59,8 @@ def alteracao_endereco(spark):
         how = "inner"
     )
 
-    df = df.join(
-        df_estabelecimentos,
+    df = df_estabelecimentos.join(
+        df,
         on = df["documento_sem_formatacao"] == df_estabelecimentos["documento_sem_formatacao"],
         how = "inner"
     ).drop(df_estabelecimentos["documento_sem_formatacao"])
