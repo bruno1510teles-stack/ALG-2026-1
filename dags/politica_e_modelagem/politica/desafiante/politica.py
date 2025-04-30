@@ -717,7 +717,7 @@ def executa_politica (access_params=None,  **kwargs):
         df_resultado['decisao_final']
     )
 
-
+ 
     ### -> CASOS DE REPROVA
 
     ## -> ANTIFRAUDE RECEITA
@@ -738,16 +738,20 @@ def executa_politica (access_params=None,  **kwargs):
     )'
     '''
 
-    # Regra caso o CNPJ tenha caido no modelo de antifraude - RAMIFICAÇÃO FINAL
+
+    # Lista de valores a serem ignorados
+    valores_ignorados_af = ['AF SEGUE', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO']
+
+    # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
-        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
+        (df_resultado['ramificacao_final'].isnull()) & (~df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
         df_resultado['ramificacao_antifraude'],
         df_resultado['ramificacao_final']
     )
 
-    # Regra caso o CNPJ tenha caido no modelo de antifraude - DECISÃO FINAL
+    # DECISÃO FINAL
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude'] != 'AF SEGUE'),
+        (df_resultado['decisao_final'].isnull()) & (~df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
         'MESA',
         df_resultado['decisao_final']
     )
