@@ -89,7 +89,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
             while True:
                 # Query para buscar os tickets da fila desejada, alterando o CNPJ em cada iteração
                 query = {
-                    "jql": f'project = CMGH AND "Payer Identification[Short text]" ~ "{cnpj}*" AND created >= -60d',
+                    "jql": f'project = CMGT AND "Payer Identification[Short text]" ~ "{cnpj}*" AND created >= -60d',
                     "fields": ["key",  # ISSUE_JIRA
                             "customfield_13808",  # LIMITE ALPE
                             "assignee",
