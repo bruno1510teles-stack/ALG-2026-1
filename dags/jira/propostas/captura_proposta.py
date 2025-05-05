@@ -84,15 +84,14 @@ def captura_proposta (access_params = None):
 
 
     def get_ultimo_dia_util():
-        hoje = datetime.datetime.now()
-        
-        # Se hoje for sábado(5) ou domingo(6), ajusta para sexta-feira
-        if hoje.weekday() >= 5:
-            ultimo_dia_util = hoje - datetime.timedelta(days=hoje.weekday() - 4)
-        else:
-            ultimo_dia_util = hoje - datetime.timedelta(days=1)
+        hoje = datetime.now()
+        dia = hoje - timedelta(days=1)
 
-        return ultimo_dia_util.strftime('%Y-%m-%d')
+        # Volta até encontrar um dia de semana (segunda a sexta)
+        while dia.weekday() >= 5:  # 5 = sábado, 6 = domingo
+            dia -= timedelta(days=1)
+
+        return dia.strftime('%Y-%m-%d')
 
     ultimo_dia_util = get_ultimo_dia_util()
 
