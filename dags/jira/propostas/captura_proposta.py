@@ -84,7 +84,7 @@ def captura_proposta (access_params = None):
 
 
     def get_ultimo_dia_util():
-        hoje = datetime.now()
+        hoje = datetime.datetime.now()
         dia = hoje - timedelta(days=1)
 
         # Volta até encontrar um dia de semana (segunda a sexta)
