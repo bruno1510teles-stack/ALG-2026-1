@@ -34,6 +34,8 @@ def anti_fraude(access_params=None,  **kwargs):
     base_analisar['cnpj_sem_formatacao'] = base_analisar['CNPJ'].str.zfill(14)
     cnpj_analisar = base_analisar['cnpj_sem_formatacao'].unique()
 
+
+    print(base_analisar)
     cnpj_analisar_str = ', '.join([f"'{cnpj}'" for cnpj in cnpj_analisar])
 
     def execute_query(conn, query):
@@ -65,7 +67,9 @@ def anti_fraude(access_params=None,  **kwargs):
         df_antifraude['ramificacao_antifraude'] = 'PF FUNDACAO < 2 ANOS'
         df_antifraude['resposta'] = 'REPROVADO'
 
+        print("df_antifraude")
         print(df_antifraude)
+        print("df_analisar")
         print(base_analisar)
 
     else:
@@ -84,7 +88,7 @@ def anti_fraude(access_params=None,  **kwargs):
 
         # Criando Resposta
         response_map = {
-            'REPROVADO': [ 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
+            'REPROVADO': ['PF FUNDACAO < 2 ANOS', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
             'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO']
         }
 
