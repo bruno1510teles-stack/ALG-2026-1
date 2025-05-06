@@ -114,6 +114,9 @@ def anti_fraude(access_params=None,  **kwargs):
     
     df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_sem_formatacao'], how = 'left')
 
+    print("df pós cruzamento")
+    print(df)
+
     df['limite_solicitado'] = df['limite_solicitado'].astype(str)
 
     # Tratando limite_solicitado para task seguinte
