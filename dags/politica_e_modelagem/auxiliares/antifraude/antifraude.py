@@ -68,7 +68,7 @@ def anti_fraude(access_params=None,  **kwargs):
     df_antifraude['ramificacao_antifraude'] = np.nan
 
     if df_antifraude.empty:
-        df_antifraude = base_analisar
+        df_antifraude = base_analisar[['cnpj_sem_formatacao']]
         df_antifraude['ramificacao_antifraude'] = 'PF FUNDACAO < 2 ANOS'
         df_antifraude['resposta'] = 'REPROVADO'
 
