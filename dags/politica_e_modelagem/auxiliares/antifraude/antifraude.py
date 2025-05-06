@@ -34,6 +34,11 @@ def anti_fraude(access_params=None,  **kwargs):
     base_analisar['cnpj_sem_formatacao'] = base_analisar['CNPJ'].str.zfill(14)
     cnpj_analisar = base_analisar['cnpj_sem_formatacao'].unique()
 
+    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
+    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
+    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
+    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
+    
 
     print(base_analisar)
     cnpj_analisar_str = ', '.join([f"'{cnpj}'" for cnpj in cnpj_analisar])
