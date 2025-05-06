@@ -65,6 +65,9 @@ def anti_fraude(access_params=None,  **kwargs):
         df_antifraude['ramificacao_antifraude'] = 'PF FUNDACAO < 2 ANOS'
         df_antifraude['resposta'] = 'REPROVADO'
 
+        print(df_antifraude)
+        print(base_analisar)
+
     else:
         # Criando condições filtro
         condicoes = [
