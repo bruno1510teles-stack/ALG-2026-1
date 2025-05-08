@@ -26,7 +26,6 @@ from hemera.spark.hemera_historico import retorno_consolidado_trusted
 
 ## Scripts Trusted to Refined
 from hemera.spark.hemera_historico import aquisicao_refined
-
 from hemera.spark.hemera_historico import recompra_refined
 from hemera.spark.hemera_historico import retorno_refined
 
@@ -178,6 +177,5 @@ with DAG(
         provide_context=True
     )
     
-
     # Definindo a ordem de execução das tasks
     aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined >> recompra_refined >> retorno_refined

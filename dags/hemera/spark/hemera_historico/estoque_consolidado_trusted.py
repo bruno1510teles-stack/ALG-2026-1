@@ -35,7 +35,8 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
     minio_raw = Minio(
     "api-raw.alpe.com.br",
     access_key = 'B7q0avvSIpSdyGPXWnEC',
-    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU',
+    secure = True
     )
 
 
