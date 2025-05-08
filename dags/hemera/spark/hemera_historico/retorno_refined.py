@@ -32,7 +32,7 @@ def retorno_trusted_to_refined (access_params=None, **kwargs):
 
     query_retorno = f"""
                         select *
-                        from deltalaketrusted.hemera_vini.retorno_consolidado
+                        from deltalaketrusted.hemera_trusted.retorno_consolidado
                     """
 
     df = execute_query(conn, query_retorno)

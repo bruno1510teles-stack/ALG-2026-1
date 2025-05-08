@@ -33,7 +33,7 @@ def recompra_trusted_to_refined (access_params=None, **kwargs):
 
     query_recompra = f"""
                         select *
-                        from deltalaketrusted.hemera_vini.recompra_consolidado
+                        from deltalaketrusted.hemera_trusted.recompra_consolidado
                     """
 
     df = execute_query(conn, query_recompra)

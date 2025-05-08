@@ -32,7 +32,7 @@ def aquisicao_trusted_to_refined (access_params=None, **kwargs):
 
     query_aquisicao = f"""
                         select *
-                        from deltalaketrusted.hemera_vini.aquisicao_consolidado
+                        from deltalaketrusted.hemera_trusted.aquisicao_consolidado
                     """
 
     df = execute_query(conn, query_aquisicao)
