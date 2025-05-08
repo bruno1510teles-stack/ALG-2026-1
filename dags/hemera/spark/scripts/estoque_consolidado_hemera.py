@@ -153,7 +153,6 @@ def estoque_consolidado(spark):
     df_final.write \
         .partitionBy("data_referencia", "data") \
         .format("delta") \
-        .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save("s3a://hemera/estoque_consolidado")
