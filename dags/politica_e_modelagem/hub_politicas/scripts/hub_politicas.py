@@ -202,7 +202,7 @@ def aplicar_politica(access_params=None,  **kwargs):
                 # (Desafiante): Verifica o 4º dígito do CNPJ
                 if len(cnpj_sacado) > 3:
                     quarto_digito = cnpj_sacado[3]  # Pega o 4º dígito do CNPJ (índice 3)
-                    if quarto_digito in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] and pgid in ['arcelor']:
+                    if quarto_digito in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] and pgid in ['arcelor']:
                         return 'Desafiante'
                 
                 print('Default')

@@ -34,6 +34,13 @@ def anti_fraude(access_params=None,  **kwargs):
     base_analisar['cnpj_sem_formatacao'] = base_analisar['CNPJ'].str.zfill(14)
     cnpj_analisar = base_analisar['cnpj_sem_formatacao'].unique()
 
+    pd.set_option('display.max_rows', None)  # Mostra todas as linhas
+    pd.set_option('display.max_columns', None)  # Mostra todas as colunas
+    pd.set_option('display.width', None)  # Ajusta a largura para que o DataFrame não quebre em várias linhas
+    pd.set_option('display.max_colwidth', None)  # Permite exibir o conteúdo completo de cada coluna
+    
+
+    print(base_analisar)
     cnpj_analisar_str = ', '.join([f"'{cnpj}'" for cnpj in cnpj_analisar])
 
     def execute_query(conn, query):
@@ -60,41 +67,55 @@ def anti_fraude(access_params=None,  **kwargs):
 
     df_antifraude['ramificacao_antifraude'] = np.nan
 
-    # Criando condições filtro
-    condicoes = [
-        (df_antifraude['flag_mudanca_estado'] == 'Sim', 'AF - MUDANÇA ESTADO'),
-        (df_antifraude['flag_mudanca_cidade'] == 'Sim', 'AF - MUDANÇA CIDADE'),
-        (df_antifraude['flag_mudanca_endereco'] == 'Sim', 'AF - MUDANÇA ENDEREÇO'),
-        (df_antifraude['flag_endereco_igual'] == 'Sim', 'AF - ENDEREÇO IGUAL')
-    ]
+    if df_antifraude.empty:
+        df_antifraude = base_analisar[['cnpj_sem_formatacao']]
+        df_antifraude['ramificacao_antifraude'] = 'PF FUNDACAO < 2 ANOS'
+        df_antifraude['resposta'] = 'REPROVADO'
 
-    for condition, value in condicoes:
-        df_antifraude.loc[condition & df_antifraude['ramificacao_antifraude'].isna(), 'ramificacao_antifraude'] = value
-    
-    df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isna(), 'ramificacao_antifraude'] = 'AF SEGUE'
+        print("df_antifraude")
+        print(df_antifraude)
+        print("df_analisar")
+        print(base_analisar)
 
-    # Criando Resposta
-    response_map = {
-        'REPROVADO': [ 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
-        'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO']
-    }
+    else:
+        # Criando condições filtro
+        condicoes = [
+            (df_antifraude['flag_mudanca_estado'] == 'Sim', 'AF - MUDANÇA ESTADO'),
+            (df_antifraude['flag_mudanca_cidade'] == 'Sim', 'AF - MUDANÇA CIDADE'),
+            (df_antifraude['flag_mudanca_endereco'] == 'Sim', 'AF - MUDANÇA ENDEREÇO'),
+            (df_antifraude['flag_endereco_igual'] == 'Sim', 'AF - ENDEREÇO IGUAL')
+        ]
 
-    # FOI COLOCADO TUDO NO SEGUE, POIS OS CASOS ESTAVAM INDO PARA A MESA SEM COMPRAR O SERASA ATUALIZADO
+        for condition, value in condicoes:
+            df_antifraude.loc[condition & df_antifraude['ramificacao_antifraude'].isna(), 'ramificacao_antifraude'] = value
+        
+        df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isna(), 'ramificacao_antifraude'] = 'AF SEGUE'
+
+        # Criando Resposta
+        response_map = {
+            'REPROVADO': ['PF FUNDACAO < 2 ANOS', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO'],
+            'SEGUE': ['AF SEGUE', 'AF - ENDEREÇO IGUAL', 'AF - MUDANÇA ENDEREÇO']
+        }
+
+        # FOI COLOCADO TUDO NO SEGUE, POIS OS CASOS ESTAVAM INDO PARA A MESA SEM COMPRAR O SERASA ATUALIZADO
 
 
-    print("DF Antifraude:")
-    print(df_antifraude)
+        print("DF Antifraude:")
+        print(df_antifraude)
 
 
-    # Aplicar as respostas
-    for response, values in response_map.items():
-        df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isin(values), 'resposta'] = response
+        # Aplicar as respostas
+        for response, values in response_map.items():
+            df_antifraude.loc[df_antifraude['ramificacao_antifraude'].isin(values), 'resposta'] = response
 
-    print(df_antifraude)
-    print(base_analisar)
+        print(df_antifraude)
+        print(base_analisar)
     # Juntando bases
     
     df = df_antifraude.merge(base_analisar[['cnpj_sem_formatacao', 'issue_jira', 'inad_alpe', 'pgid', 'limite_solicitado']], on = ['cnpj_sem_formatacao'], how = 'left')
+
+    print("df pós cruzamento")
+    print(df)
 
     df['limite_solicitado'] = df['limite_solicitado'].astype(str)
 

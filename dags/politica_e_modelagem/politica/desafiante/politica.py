@@ -740,7 +740,7 @@ def executa_politica (access_params=None,  **kwargs):
 
 
     # Lista de valores a serem ignorados
-    valores_ignorados_af = ['AF SEGUE', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO']
+    valores_ignorados_af = ['AF SEGUE', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO', 'PF FUNDACAO < 2 ANOS']
 
     # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
