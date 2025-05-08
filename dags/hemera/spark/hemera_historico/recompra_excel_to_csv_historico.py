@@ -35,7 +35,7 @@ def recompra_excel_to_csv_historico (access_params=None, **kwargs):
 
     # Configurações
     BUCKET_SOURCE = "hemera"
-    BUCKET_DESTINATION = "hemera-vini"
+    BUCKET_DESTINATION = "hemera-csv"
     BASE_FOLDER = "recompra"
     YEARS = [2020, 2021, 2022, 2023, 2024, 2025]
     MONTHS = [f"{m:02}" for m in range(1, 13)]
