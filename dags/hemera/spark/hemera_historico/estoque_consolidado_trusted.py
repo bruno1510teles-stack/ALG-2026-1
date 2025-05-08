@@ -19,9 +19,9 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
 
     # Configurações do Hadoop para acesso ao MinIO (S3 compatível)
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_conf.set("fs.s3a.access.key", 'vUXngpcSXbR21DVaqiFn') 
-    hadoop_conf.set("fs.s3a.secret.key", 'uwE7qzfhoYodtf56bDRg4BAoxzOGJp9O4rRRMDn2') 
-    hadoop_conf.set("fs.s3a.endpoint", 'api-raw.alpe.tech') 
+    hadoop_conf.set("fs.s3a.access.key", 'B7q0avvSIpSdyGPXWnEC') 
+    hadoop_conf.set("fs.s3a.secret.key", 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU') 
+    hadoop_conf.set("fs.s3a.endpoint", 'api-raw.alpe.com.br') 
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
     hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")  # ESSENCIAL
