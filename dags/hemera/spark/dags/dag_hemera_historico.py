@@ -23,13 +23,13 @@ from hemera.spark.hemera_historico import estoque_consolidado_trusted
 from hemera.spark.hemera_historico import recompra_consolidado_trusted
 from hemera.spark.hemera_historico import retorno_consolidado_trusted
 
-'''
-## Scripts Trusted to Refined
-from hemera.spark_vini.hemera_historico import aquisicao_refined
 
-from hemera.spark_vini.hemera_historico import recompra_refined
-from hemera.spark_vini.hemera_historico import retorno_refined
-'''
+## Scripts Trusted to Refined
+from hemera.spark.hemera_historico import aquisicao_refined
+
+from hemera.spark.hemera_historico import recompra_refined
+from hemera.spark.hemera_historico import retorno_refined
+
 
 ### Parâmetros de acesso
 access_params = {          
@@ -145,7 +145,7 @@ with DAG(
         provide_context=True
     )
 
-    '''
+    
     ## REFINED
 
     aquisicao_refined = PythonOperator(
@@ -155,14 +155,14 @@ with DAG(
         provide_context=True
     )
 
-    
+    '''
     estoque_consolid_trusted = PythonOperator(
         task_id="estoque_consolidado_trusted",
         python_callable=estoque_consolidado_trusted.estoque_consolidado_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    
+    '''
 
     recompra_refined = PythonOperator(
         task_id="recompra_refined",
@@ -177,8 +177,7 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    '''
+    
 
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted 
-    #>> aquisicao_refined >> recompra_refined >> retorno_refined
+    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined >> recompra_refined >> retorno_refined
