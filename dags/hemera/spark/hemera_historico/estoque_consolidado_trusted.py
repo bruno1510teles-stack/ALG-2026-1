@@ -330,12 +330,11 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
 
     print("Iniciando salvamento dos arquivos")
     df_join.write \
-        .partitionBy("data_referencia", "data_arquivo") \
         .format("delta") \
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
-        .save("s3a://hemera-trusted/estoque/delta")
+        .save("s3a://hemera-trusted/estoque")
 
     print("Arquivos Salvos")
 
