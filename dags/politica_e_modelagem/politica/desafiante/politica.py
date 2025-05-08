@@ -740,19 +740,19 @@ def executa_politica (access_params=None,  **kwargs):
 
 
     # Lista de valores a serem ignorados
-    valores_ignorados_af = ['AF SEGUE', 'AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO', 'PF FUNDACAO < 2 ANOS']
-
+    valores_ignorados_af = ['AF - MUDANÇA CIDADE', 'AF - MUDANÇA ESTADO']
+ 
     # RAMIFICAÇÃO FINAL
     df_resultado['ramificacao_final'] = np.where(
-        (df_resultado['ramificacao_final'].isnull()) & (~df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
+        (df_resultado['ramificacao_final'].isnull()) & (df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
         df_resultado['ramificacao_antifraude'],
         df_resultado['ramificacao_final']
     )
-
+ 
     # DECISÃO FINAL
     df_resultado['decisao_final'] = np.where(
-        (df_resultado['decisao_final'].isnull()) & (~df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
-        'MESA',
+        (df_resultado['decisao_final'].isnull()) & (df_resultado['ramificacao_antifraude'].isin(valores_ignorados_af)),
+        df_resultado['resposta'],
         df_resultado['decisao_final']
     )
 
