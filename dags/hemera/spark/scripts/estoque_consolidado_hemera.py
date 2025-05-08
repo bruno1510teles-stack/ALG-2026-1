@@ -36,19 +36,19 @@ def estoque_consolidado(spark):
 
     df = df.withColumn(
         "valor_aquisicao_vendermais",
-        F.when(F.col("produto") == "VenderMais" , F.col("valor_aquisicao_tratado"))
+        F.when(F.col("grupo") == "VenderMais" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
     df = df.withColumn(
         "valor_aquisicao_tradicional",
-        F.when(F.col("produto") == "Tradicional" , F.col("valor_aquisicao_tratado"))
+        F.when(F.col("grupo") == "Tradicional" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
     df = df.withColumn(
         "valor_aquisicao_conglomerado",
-        F.when(F.col("produto") == "Conglomerado" , F.col("valor_aquisicao_tratado"))
+        F.when(F.col("grupo") == "Conglomerado" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
