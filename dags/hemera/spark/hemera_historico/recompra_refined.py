@@ -99,5 +99,6 @@ def recompra_trusted_to_refined (access_params=None, **kwargs):
         storage_options=storage_options_refined,
         mode="overwrite"
     )
-
+ 
+ 
     print('Arquivo salvo com sucesso!')

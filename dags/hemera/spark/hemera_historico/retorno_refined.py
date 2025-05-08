@@ -96,6 +96,7 @@ def retorno_trusted_to_refined (access_params=None, **kwargs):
     }
 
 
+
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_REFINED = "hemera-refined"
     FOLDER_DESTINATION_REFINED = "retorno/delta"
