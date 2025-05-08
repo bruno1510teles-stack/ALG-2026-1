@@ -16,13 +16,14 @@ from hemera.spark.hemera_historico import estoque_excel_to_csv_historico
 from hemera.spark.hemera_historico import recompra_excel_to_csv_historico
 from hemera.spark.hemera_historico import retorno_excel_to_csv_historico
 
-'''
-## Scripts que tratam o consolidado - Trusted
-from hemera.spark_vini.hemera_historico import aquisicao_consolidado_trusted
-from hemera.spark_vini.hemera_historico import estoque_consolidado_trusted
-from hemera.spark_vini.hemera_historico import recompra_consolidado_trusted
-from hemera.spark_vini.hemera_historico import retorno_consolidado_trusted
 
+## Scripts que tratam o consolidado - Trusted
+from hemera.spark.hemera_historico import aquisicao_consolidado_trusted
+from hemera.spark.hemera_historico import estoque_consolidado_trusted
+from hemera.spark.hemera_historico import recompra_consolidado_trusted
+from hemera.spark.hemera_historico import retorno_consolidado_trusted
+
+'''
 ## Scripts Trusted to Refined
 from hemera.spark_vini.hemera_historico import aquisicao_refined
 
@@ -112,7 +113,7 @@ with DAG(
         provide_context=True
     )
 
-    '''
+
     ## TRUSTED
 
     aquisicao_consolid_trusted = PythonOperator(
@@ -144,6 +145,7 @@ with DAG(
         provide_context=True
     )
 
+    '''
     ## REFINED
 
     aquisicao_refined = PythonOperator(
@@ -178,5 +180,5 @@ with DAG(
     '''
 
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist 
-    #>> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined >> recompra_refined >> retorno_refined
+    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted 
+    #>> aquisicao_refined >> recompra_refined >> retorno_refined
