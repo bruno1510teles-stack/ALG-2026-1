@@ -241,6 +241,8 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
         how="left"
     )
 
+    # Tratando nome_sacado para validação.
+    df_join = df_join.withColumn("nome_sacado", trim(col("nome_sacado")))
 
     # Primeiro atualize grupo_temp com base em nome_sacado
     df_join = df_join.withColumn(
@@ -273,8 +275,8 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
     )
 
     # Substituir e renomear
-    df_join = df_join.withColumn("Grupo", coalesce(col("grupo_temp"), lit("Outros"))) \
-        .withColumn("Detalhe", coalesce(col("detalhe_temp"), lit("Outros"))) \
+    df_join = df_join.withColumn("Grupo", coalesce(col("grupo_temp"), lit("Tradicional"))) \
+        .withColumn("Detalhe", coalesce(col("detalhe_temp"), lit("Tradicional"))) \
         .drop("grupo_temp", "detalhe_temp")
 
     # Renomear para minúsculo
