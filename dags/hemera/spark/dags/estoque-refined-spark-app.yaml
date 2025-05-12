@@ -163,10 +163,10 @@ spec:
             mountPath: /scripts
   executor:
     deleteOnTermination: true
-    coreLimit: "4"
-    coreRequest: "4"
-    instances: 3
-    memory: "8g"
+    coreLimit: "3"
+    coreRequest: "3"
+    instances: 2
+    memory: "6g"
     labels:
       version: "3.5.1"
     volumeMounts:
