@@ -23,7 +23,7 @@ def estoque_consolidado(spark):
 
     # Lendo arquivos
     print("Lendo Arquivos")
-    df = spark.read.format("delta").load("s3a://trusted-hemera/estoque_diario")
+    df = spark.read.format("delta").load("s3a://hemera-trusted/estoque")
     print("Arquivos Lidos")
 
     print("Iniciando Tratamento Dados")
@@ -36,19 +36,19 @@ def estoque_consolidado(spark):
 
     df = df.withColumn(
         "valor_aquisicao_vendermais",
-        F.when(F.col("produto") == "VENDERMAIS" , F.col("valor_aquisicao_tratado"))
+        F.when(F.col("grupo") == "VenderMais" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
     df = df.withColumn(
         "valor_aquisicao_tradicional",
-        F.when(F.col("produto") == "TRADICIONAL" , F.col("valor_aquisicao_tratado"))
+        F.when(F.col("grupo") == "Tradicional" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
     df = df.withColumn(
-        "valor_aquisicao_blips",
-        F.when(F.col("produto") == "BLIPS" , F.col("valor_aquisicao_tratado"))
+        "valor_aquisicao_conglomerado",
+        F.when(F.col("grupo") == "Conglomerado" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
     )
 
@@ -57,7 +57,7 @@ def estoque_consolidado(spark):
         (F.sum("pdd_nota") + F.sum("pdd_vencido")).alias("pdd"),
         F.sum("valor_aquisicao_vendermais").alias("valor_aquisicao_vendermais"),
         F.sum("valor_aquisicao_tradicional").alias("valor_aquisicao_tradicional"),
-        F.sum("valor_aquisicao_blips").alias("valor_aquisicao_blips")
+        F.sum("valor_aquisicao_conglomerado").alias("valor_aquisicao_conglomerado")
     )
 
 
@@ -74,7 +74,7 @@ def estoque_consolidado(spark):
     # Definindo bucket e caminho do arquivo
     BUCKET_SOURCE_RAW = "auxiliares"
     FOLDER_DESTINATION_RAW = 'selic'
-    file_name = 'TAXA_SELIC.xlsx'
+    file_name = 'AUXILIAR_SELIC.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
     # Obtendo o arquivo do MinIO
@@ -89,14 +89,14 @@ def estoque_consolidado(spark):
     print('Dados da Selic coletados com sucesso!')
 
     selic = spark.createDataFrame(df_selic)
-    selic = selic.select("Data", "Selic/dia")
+    selic = selic.select("DATA", "SELIC_DIA")
 
     df = df.withColumn("data_arquivo", F.to_date(F.col("data_arquivo"), "yyyy-MM-dd"))
-    selic = selic.withColumn("Data", F.to_date(F.col("Data"), "yyyy-MM-dd"))
+    selic = selic.withColumn("DATA", F.to_date(F.col("DATA"), "yyyy-MM-dd"))
 
     print("Cruzando DF's")
     # Realizando join
-    df_final = df.join(selic, df["data_arquivo"] == selic["Data"], "inner")
+    df_final = df.join(selic, df["data_arquivo"] == selic["DATA"], "inner")
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     atualizado_em = now.strftime('%Y-%m-%d %X')  
@@ -108,8 +108,8 @@ def estoque_consolidado(spark):
         F.col("pdd"),
         F.col("valor_aquisicao_vendermais"),
         F.col("valor_aquisicao_tradicional"),
-        F.col("valor_aquisicao_blips"),
-        F.col("Selic/dia").alias("selic_dia"),
+        F.col("valor_aquisicao_conglomerado"),
+        F.col("SELIC_DIA").alias("selic_dia"),
         F.col("data_referencia"),
         F.col("atualizado_em")
     )
@@ -122,7 +122,7 @@ def estoque_consolidado(spark):
         .withColumn("pdd", col("pdd").cast(DoubleType())) \
         .withColumn("valor_aquisicao_vendermais", col("valor_aquisicao_vendermais").cast(DoubleType())) \
         .withColumn("valor_aquisicao_tradicional", col("valor_aquisicao_tradicional").cast(DoubleType())) \
-        .withColumn("valor_aquisicao_blips", col("valor_aquisicao_blips").cast(DoubleType())) \
+        .withColumn("valor_aquisicao_conglomerado", col("valor_aquisicao_conglomerado").cast(DoubleType())) \
         .withColumn("selic_dia", col("selic_dia").cast(DoubleType()))
 
     # Exibição
@@ -132,7 +132,7 @@ def estoque_consolidado(spark):
         format_number("pdd", 2).alias("pdd_formatado"),
         format_number("valor_aquisicao_vendermais", 2).alias("valor_aquisicao_vendermais_formatado"),
         format_number("valor_aquisicao_tradicional", 2).alias("valor_aquisicao_tradicional_formatado"),
-        format_number("valor_aquisicao_blips", 2).alias("valor_aquisicao_blips_formatado"),
+        format_number("valor_aquisicao_conglomerado", 2).alias("valor_aquisicao_conglomerado"),
         format_number("selic_dia", 10).alias("selic_dia_formatado")
     )
     df_final_exibicao.show()
@@ -153,7 +153,6 @@ def estoque_consolidado(spark):
     df_final.write \
         .partitionBy("data_referencia", "data") \
         .format("delta") \
-        .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save("s3a://hemera/estoque_consolidado")
