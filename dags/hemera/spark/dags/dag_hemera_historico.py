@@ -147,30 +147,29 @@ with DAG(
     
     ## REFINED
 
-    aquisicao_refined = PythonOperator(
+    aquisicao_refined_task = PythonOperator(
         task_id="aquisicao_refined",
         python_callable=aquisicao_refined.aquisicao_trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    '''
-    estoque_consolid_trusted = PythonOperator(
-        task_id="estoque_consolidado_trusted",
-        python_callable=estoque_consolidado_trusted.estoque_consolidado_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
+    estoque_refined_task = SparkKubernetesOperator(
+        task_id='estoque_refined',
+        application_file='estoque-refined-spark-app.yaml',
+        namespace='spark',
+        kubernetes_conn_id='kubernetes_default',
+        do_xcom_push=True,
     )
-    '''
 
-    recompra_refined = PythonOperator(
+    recompra_refined_task = PythonOperator(
         task_id="recompra_refined",
         python_callable=recompra_refined.recompra_trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    retorno_refined = PythonOperator(
+    retorno_refined_task = PythonOperator(
         task_id="retorno_refined",
         python_callable=retorno_refined.retorno_trusted_to_refined,
         op_kwargs={'access_params': access_params},
@@ -178,4 +177,4 @@ with DAG(
     )
     
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined >> recompra_refined >> retorno_refined
+    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task
