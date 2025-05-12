@@ -180,6 +180,12 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
         else:
             df_resultado_final = df_resultado_final.unionByName(df_final)
 
+    
+    # Adiciona zeros à esquerda até 10 caracteres
+    df_resultado_final = df_resultado_final.withColumn(
+        "id_titulo", lpad(col("id_titulo").cast("string"), 10, "0")
+    )
+
 
     print("Tratamento Concluído")
 
