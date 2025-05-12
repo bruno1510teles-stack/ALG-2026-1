@@ -30,6 +30,9 @@ from hemera.spark.hemera_historico import estoque_refined
 from hemera.spark.hemera_historico import recompra_refined
 from hemera.spark.hemera_historico import retorno_refined
 
+## Fechamento
+from hemera.spark.hemera_historico import fechamento_hemera
+
 
 ### Parâmetros de acesso
 access_params = {          
@@ -176,6 +179,15 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+
+    ## FECHAMENTO
+
+    fechamento = PythonOperator(
+        task_id="fechamento",
+        python_callable=fechamento_hemera.fechamento_hemera_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
     
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task
+    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task >> fechamento
