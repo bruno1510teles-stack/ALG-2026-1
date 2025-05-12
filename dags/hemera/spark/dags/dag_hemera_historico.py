@@ -26,6 +26,7 @@ from hemera.spark.hemera_historico import retorno_consolidado_trusted
 
 ## Scripts Trusted to Refined
 from hemera.spark.hemera_historico import aquisicao_refined
+from hemera.spark.hemera_historico import estoque_refined
 from hemera.spark.hemera_historico import recompra_refined
 from hemera.spark.hemera_historico import retorno_refined
 
