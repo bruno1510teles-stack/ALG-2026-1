@@ -221,7 +221,7 @@ def anti_fraude_serasa (access_params=None,  **kwargs):
         if df_antifraude_serasa_final.empty:
             print("Nenhum dado encontrado nas tabelas de antifraude serasa. O DataFrame está vazio.")
 
-            df_antifraude_serasa_final = base_analisar
+            df_antifraude_serasa_final = base_analisar[['cnpj_sem_formatacao']]
             df_antifraude_serasa_final['cnpj_raiz'] = df_antifraude_serasa_final['cnpj_sem_formatacao'].str.slice(0, 8).str.zfill(8)
             df_antifraude_serasa_final['documento_sem_formatacao'] = df_antifraude_serasa_final['cnpj_sem_formatacao'].str.zfill(14)
             df_antifraude_serasa_final['ramificacao_antifraude_serasa'] = np.nan
