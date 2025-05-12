@@ -93,7 +93,7 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
 
         # Valores base foto
         df_agrupado = df_completo.groupBy(
-        "data_referencia", "id_titulo", "cnpj_sacado", "nome_sacado", "cnpj_cedente", "nome_cedente"
+        "data_referencia", "id_titulo", "cnpj_sacado", "nome_sacado", "cnpj_cedente", "nome_cedente", "grupo"
         ).agg(
             spark_min("data_aquisicao").alias("data_aquisicao"),
             spark_min("data_vencimento").alias("data_vencimento"),
