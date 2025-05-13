@@ -7,6 +7,7 @@ from deltalake import write_deltalake
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
+import calendar
 
 def fechamento_hemera_refined(access_params=None,  **kwargs):
 
@@ -30,19 +31,28 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         return pd.DataFrame(rows, columns=columns)
 
 
-    # Lista de datas
-    para_fechamento = [
-        '2024-01-31', '2024-02-29', '2024-03-28', '2024-04-30', '2024-05-31',
-        '2024-06-28', '2024-07-31', '2024-08-30', '2024-09-30', '2024-10-31',
-        '2024-11-29', '2024-12-31', '2025-01-31', '2025-02-28', '2025-03-31',
-        '2025-04-30'
-    ]
+    # Data de hoje
+    hoje = datetime.today()
+
+    # Último dia do mês atual
+    ultimo_dia_mes_atual = calendar.monthrange(hoje.year, hoje.month)[1]
+    fim = datetime(hoje.year, hoje.month, ultimo_dia_mes_atual)
+
+    # Geração da lista completa de 'YYYY-MM'
+    para_fechamento = pd.date_range(start='2024-01-01', end=fim, freq='ME').strftime('%Y-%m').tolist()
 
 
     lista_dfs = []
 
-    for data_ref in para_fechamento:
-        print(f'\nIniciando coleta de Dados Hemera para a data: {data_ref}')
+    for mes_ano in para_fechamento:
+
+            # Derivar o último dia do mês automaticamente
+        ano, mes = map(int, mes_ano.split('-'))
+        ultimo_dia = calendar.monthrange(ano, mes)[1]
+        data_fechamento = f"{mes_ano}-{ultimo_dia:02d}"
+
+        print(f'\nIniciando coleta de Dados Hemera para a data: {data_fechamento}')
+
 
         query_hemera =  f"""
             WITH estoque_detalhado AS (
@@ -64,16 +74,16 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                     SELECT SUM(r.valor_recompra)
                     FROM deltalakerefined.hemera_refined.recompra r
                     WHERE r.id_titulo = ed.id_titulo 
-                    AND CAST(r.data_fechamento AS DATE) <= DATE '{data_ref}'
+                    AND CAST(r.data_fechamento AS DATE) <= DATE '{data_fechamento}'
                 ) AS valor_recompra_acumulada
             FROM 
                 estoque_detalhado ed
-            WHERE ed.data_fechamento = DATE '{data_ref}'
+            WHERE ed.data_referencia = '{mes_ano}'
         """
 
         hemera = execute_query(conn, query_hemera)
 
-        print(f"Data: {data_ref} — Linhas retornadas: {hemera.shape[0]}")
+        print(f"Data: {mes_ano} — Linhas retornadas: {hemera.shape[0]}")
         df_hemera = hemera.copy()
 
         print('Dados da hemera coletado com sucesso!')
@@ -460,7 +470,9 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
 
         # Filtrando as colunas desejadas
 
-        colunas_desejadas_analitico = ['produto', 'data_fechamento', 'cedente', 'cnpj_sacado', 'nome_sacado', 'data_referencia', 'cluster_pdd', # Info básica
+        df_hemera['anomes_fechamento'] = pd.to_datetime(df_hemera['data_fechamento']).dt.strftime('%Y-%m')
+
+        colunas_desejadas_analitico = ['produto', 'anomes_fechamento', 'data_fechamento', 'cedente', 'cnpj_sacado', 'nome_sacado', 'data_referencia', 'cluster_pdd', # Info básica
                                     'id_titulo', 'numero_titulo', # Info títulos                  
                                     'data_aquisicao', 'data_vencimento', 'data_lancamento_recompra', 
                                     'data_lancamento_retorno', 'data_baixa', 'data_inicial_funding', 'data_final_funding', # Datas
