@@ -39,7 +39,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
     fim = datetime(hoje.year, hoje.month, ultimo_dia_mes_atual)
 
     # Geração da lista completa de 'YYYY-MM'
-    para_fechamento = pd.date_range(start='2024-01-01', end=fim, freq='ME').strftime('%Y-%m').tolist()
+    para_fechamento = pd.date_range(start='2024-01-01', end=fim, freq='M').strftime('%Y-%m').tolist()
 
 
     lista_dfs = []
