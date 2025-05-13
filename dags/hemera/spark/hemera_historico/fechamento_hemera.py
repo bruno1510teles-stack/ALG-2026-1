@@ -64,9 +64,9 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                     rec.data_lancamento AS data_lancamento_recompra
                 FROM deltalakerefined.hemera_refined.estoque est
                     LEFT JOIN deltalakerefined.hemera_refined.retorno ret
-                        ON est.id_titulo = ret.id_titulo AND est.data_fechamento = CAST(ret.data_fechamento AS DATE)
+                        ON est.id_titulo = ret.id_titulo AND est.data_referencia = substr(CAST(ret.data_fechamento AS VARCHAR), 1, 7)
                     LEFT JOIN deltalakerefined.hemera_refined.recompra rec
-                        ON est.id_titulo = rec.id_titulo AND est.data_fechamento = CAST(rec.data_fechamento AS DATE)
+                        ON est.id_titulo = rec.id_titulo AND est.data_referencia = substr(CAST(rec.data_fechamento AS VARCHAR), 1, 7)
             )
             SELECT 
                 ed.*, 
