@@ -6,9 +6,9 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 import os
 import tempfile
-import msoffcrypto
 import re
 import numpy as np
+import msoffcrypto
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from pyspark.sql import SparkSession

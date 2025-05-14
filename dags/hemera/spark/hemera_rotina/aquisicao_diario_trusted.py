@@ -8,6 +8,7 @@ import os
 import tempfile
 import re
 import numpy as np
+import msoffcrypto
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 
