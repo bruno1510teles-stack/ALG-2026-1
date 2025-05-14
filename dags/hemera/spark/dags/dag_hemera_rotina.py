@@ -19,19 +19,17 @@ from hemera.spark.hemera_rotina import retorno_excel_to_csv_diario
 
 ## Scripts que tratam o consolidado - Trusted
 from hemera.spark.hemera_rotina import aquisicao_diario_trusted
-from hemera.spark.hemera_rotina import estoque_diario_trusted
 from hemera.spark.hemera_rotina import recompra_diario_trusted
 from hemera.spark.hemera_rotina import retorno_diario_trusted
 
 
 ## Scripts Trusted to Refined
 from hemera.spark.hemera_historico import aquisicao_refined
-from hemera.spark.hemera_historico import estoque_refined
 from hemera.spark.hemera_historico import recompra_refined
 from hemera.spark.hemera_historico import retorno_refined
 
 ## Fechamento
-## from hemera.spark.hemera_historico import fechamento_hemera
+from hemera.spark.hemera_historico import fechamento_hemera
 
 
 ### Parâmetros de acesso
@@ -180,17 +178,24 @@ with DAG(
         provide_context=True
     )
 
-    ## FECHAMENTO
+    ## Processo Fe
+    consolidado_hemera_produto = SparkKubernetesOperator(
+        task_id='consolidado_hemera_produto',
+        application_file='estoque-consolidado-hemera-spark-app.yaml',
+        namespace='spark',
+        kubernetes_conn_id='kubernetes_default',
+        do_xcom_push=True,
+    )
 
-    '''
+
+    ## FECHAMENTO
     fechamento = PythonOperator(
         task_id="fechamento",
         python_callable=fechamento_hemera.fechamento_hemera_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    '''
+
     
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_rotina >> estoque_excel_to_csv_rotina >> recompra_excel_to_csv_rotina >> retorno_excel_to_csv_rotina >> aquisicao_rotina_trusted >> estoque_rotina_trusted >> recompra_rotina_trusted >> retorno_rotina_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task 
-    #>> fechamento
+    aquisicao_excel_to_csv_rotina >> estoque_excel_to_csv_rotina >> recompra_excel_to_csv_rotina >> retorno_excel_to_csv_rotina >> aquisicao_rotina_trusted >> estoque_rotina_trusted >> recompra_rotina_trusted >> retorno_rotina_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task >> consolidado_hemera_produto >> fechamento

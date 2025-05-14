@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 import os
 import tempfile
-import msoffcrypto
 import re
 import numpy as np
 from trino.dbapi import connect
