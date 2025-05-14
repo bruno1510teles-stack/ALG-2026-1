@@ -75,7 +75,8 @@ default_args = {
     "owner": "Vinicius Moraes",
     #"on_failure_callback": notificar_falha_teams
 }
-
+ 
+ 
 # Definindo a DAG
 with DAG(
     dag_id='hemera_historico',
