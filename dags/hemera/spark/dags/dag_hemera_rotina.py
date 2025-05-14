@@ -16,12 +16,10 @@ from hemera.spark.hemera_rotina import estoque_excel_to_csv_diario
 from hemera.spark.hemera_rotina import recompra_excel_to_csv_diario
 from hemera.spark.hemera_rotina import retorno_excel_to_csv_diario
 
-
 ## Scripts que tratam o consolidado - Trusted
 from hemera.spark.hemera_rotina import aquisicao_diario_trusted
 from hemera.spark.hemera_rotina import recompra_diario_trusted
 from hemera.spark.hemera_rotina import retorno_diario_trusted
-
 
 ## Scripts Trusted to Refined
 from hemera.spark.hemera_historico import aquisicao_refined
