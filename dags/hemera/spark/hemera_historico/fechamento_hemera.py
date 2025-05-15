@@ -230,9 +230,8 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         condicao2 = df_hemera['estoque_valor_presente_final']  - df_hemera['valor_aquisicao_ok'] 
         condicao3 = df_hemera['valor_baixa'] - df_hemera['valor_aquisicao_ok'] 
         condicao4 = df_hemera['valor_retorno'] - df_hemera['estoque_valor_presente_inicial']
-        condicao5 = df_hemera['valor_retorno'] + df_hemera['valor_recompra_acumulada'] - df_hemera['estoque_valor_presente_inicial']
-        condicao6 = df_hemera['valor_recompra_acumulada'] - df_hemera['estoque_valor_presente_inicial']
-
+        condicao5 = df_hemera[['valor_retorno', 'valor_recompra_acumulada', 'valor_recompra']].max(axis=1) - df_hemera['estoque_valor_presente_inicial']
+        condicao6 = df_hemera[['valor_recompra_acumulada', 'valor_recompra']].max(axis=1) - df_hemera['estoque_valor_presente_inicial']
         # Aplicação do np.where com as variáveis
         df_hemera['spread_bruto_fidc'] = np.where(
             (df_hemera['estoque_valor_presente_final'] > 0) & (df_hemera['estoque_valor_presente_inicial'] > 0),
@@ -244,7 +243,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                     ((df_hemera['estoque_valor_presente_inicial'] == 0) | (df_hemera['estoque_valor_presente_inicial'].isna())) & ((df_hemera['estoque_valor_presente_final'] == 0) | (df_hemera['estoque_valor_presente_final'].isna())),
                     condicao3,
                     np.where(
-                        ((df_hemera['estoque_valor_presente_final'] == 0) | (df_hemera['estoque_valor_presente_final'].isna())) & ((df_hemera['valor_recompra_acumulada'] == 0) | (df_hemera['valor_recompra_acumulada'].isna())),
+                        ((df_hemera['estoque_valor_presente_final'] == 0) | (df_hemera['estoque_valor_presente_final'].isna())) & ((df_hemera['valor_recompra_acumulada'] == 0) | (df_hemera['valor_recompra_acumulada'].isna())) & ((df_hemera['valor_recompra'] == 0) | (df_hemera['valor_recompra'].isna())),
                         condicao4,
                         np.where(
                             (df_hemera['cnpj_cedente'] == '35.914.008/0001-48') & (df_hemera['data_aquisicao'] < pd.to_datetime('2024-10-18')),
@@ -254,7 +253,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                         )
                     )
                 )
-            )
+            )               
 
 
         df_hemera['spread_bruto_percentual'] = df_hemera['spread_bruto_fidc'] / df_hemera['valor_aquisicao']
