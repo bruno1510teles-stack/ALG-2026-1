@@ -80,6 +80,7 @@ def recompra_diario_trusted (access_params=None, **kwargs):
         print(f"📂 Total de arquivos carregados: {len(ALL_DATA)}")
     else:
         print("⚠️ Nenhum dado foi carregado.")
+        final_df = pd.DataFrame()
 
     print("📄 Arquivos carregados:")
     for df in ALL_DATA:
