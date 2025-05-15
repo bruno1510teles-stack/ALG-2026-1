@@ -72,13 +72,15 @@ default_args = {
     #"on_failure_callback": notificar_falha_teams
 }
 
+
 # Definindo a DAG
 with DAG(
     dag_id='hemera_rotina',
     start_date=days_ago(1),
+    schedule_interval='30 15 * * 1-5',
     schedule_interval=None,
     default_args=default_args,
-    tags=['hemera', 'historico'] 
+    tags=['hemera', 'rotina'] 
 ) as dag:
 
     aquisicao_excel_to_csv_rotina = PythonOperator(
