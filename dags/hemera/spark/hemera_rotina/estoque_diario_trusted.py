@@ -336,7 +336,7 @@ def estoque_diario_trusted (access_params=None, **kwargs):
 
     # Lendo dados atuais de estoque
     estoque_atual = spark.read.format("delta") \
-        .load("s3a://hemera-trusted/estoque")
+        .load("s3a://hemera-trusted/estoque/delta")
     
 
     # Obter datas únicas da coluna 'data_arquivo'
