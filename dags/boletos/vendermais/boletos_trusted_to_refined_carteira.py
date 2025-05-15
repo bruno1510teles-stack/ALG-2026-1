@@ -268,8 +268,40 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
             axis=1
         )
 
-        # 3ª a 6ª ROLAGEM: Vencido de 151 a 180 dias daqui a 5 meses / Vencido de 31 a 60 dias no mês seguinte
+
+        # 3ª ROLAGEM: Vencido de 61 a 90 dias 2 meses depois / Vencido de 31 a 60 dias no próximo mês
+        df['Atraso de 61 a 90 dias X2'] = df.groupby(['nome_sacado', 'nome_cedente'])['Atraso de 61 a 90 dias'].shift(-2)
+        df['3ª ROLAGEM'] = df.apply(
+            lambda row: float(row['Atraso de 61 a 90 dias X2']) / float(row['Atraso de 31 a 60 dias Próximo Mês']) if row['Atraso de 31 a 60 dias Próximo Mês'] != 0 else 0,
+            axis=1
+        )
+
+        
+        # 4ª ROLAGEM: Vencido de 91 a 120 dias 3 meses depois / Vencido de 61 a 90 dias 2 meses depois
+        df['Atraso de 91 a 120 dias X3'] = df.groupby(['nome_sacado', 'nome_cedente'])['Atraso de 91 a 120 dias'].shift(-3)
+        df['4ª ROLAGEM'] = df.apply(
+            lambda row: float(row['Atraso de 91 a 120 dias X3']) / float(row['Atraso de 61 a 90 dias X2']) if row['Atraso de 61 a 90 dias X2'] != 0 else 0,
+            axis=1
+        )
+
+        
+        # 5ª ROLAGEM: Vencido de 121 a 150 dias 4 meses depois / Vencido de 91 a 120 dias 3 meses depois
+        df['Atraso de 121 a 150 dias X4'] = df.groupby(['nome_sacado', 'nome_cedente'])['Atraso de 121 a 150 dias'].shift(-4)
+        df['5ª ROLAGEM'] = df.apply(
+            lambda row: float(row['Atraso de 121 a 150 dias X4']) / float(row['Atraso de 91 a 120 dias X3']) if row['Atraso de 91 a 120 dias X3'] != 0 else 0,
+            axis=1
+        )
+
+
+        # 6ª ROLAGEM: Vencido de 151 a 180 dias 5 meses depois / Vencido de 121 a 150 dias 4 meses depois
         df['Atraso de 151 a 180 dias X5'] = df.groupby(['nome_sacado', 'nome_cedente'])['Atraso de 151 a 180 dias'].shift(-5)
+        df['6ª ROLAGEM'] = df.apply(
+            lambda row: float(row['Atraso de 151 a 180 dias X5']) / float(row['Atraso de 121 a 150 dias X4']) if row['Atraso de 121 a 150 dias X4'] != 0 else 0,
+            axis=1
+        )
+        
+
+        # 3ª a 6ª ROLAGEM: Vencido de 151 a 180 dias daqui a 5 meses / Vencido de 31 a 60 dias no mês seguinte
         df['3ª a 6ª ROLAGEM'] = df.apply(
             lambda row: float(row['Atraso de 151 a 180 dias X5']) / float(row['Atraso de 31 a 60 dias Próximo Mês']) if row['Atraso de 31 a 60 dias Próximo Mês'] != 0 else 0,
             axis=1
@@ -282,7 +314,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         )
         
         # Substituir NaN por 0 para as colunas de rolagem
-        df[['1ª ROLAGEM', '2ª ROLAGEM', '3ª a 6ª ROLAGEM', 'MULT ROLAGEM']] = df[['1ª ROLAGEM', '2ª ROLAGEM', '3ª a 6ª ROLAGEM', 'MULT ROLAGEM']].fillna(0)
+        df[['1ª ROLAGEM', '2ª ROLAGEM', '3ª ROLAGEM', '4ª ROLAGEM', '5ª ROLAGEM', '6ª ROLAGEM', '3ª a 6ª ROLAGEM', 'MULT ROLAGEM']] = df[['1ª ROLAGEM', '2ª ROLAGEM', '3ª ROLAGEM', '4ª ROLAGEM', '5ª ROLAGEM', '6ª ROLAGEM', '3ª a 6ª ROLAGEM', 'MULT ROLAGEM']].fillna(0)
 
         return df
 
@@ -299,8 +331,8 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
         'Atraso acima de 180 dias', 'Over 30', 'Over 60', 'Over 90',
         'VAGAO OVER 1', 'VAGAO OVER 30', 'VAGAO OVER 60',
-        'VAGAO OVER 90', 'Total a Vencer Mês Anterior', 
-        'Atraso de 31 a 60 dias Próximo Mês', 
+        'VAGAO OVER 90', 'Total a Vencer Mês Anterior', 'Atraso de 61 a 90 dias X2', 'Atraso de 91 a 120 dias X3',  
+        'Atraso de 121 a 150 dias X4', 'Atraso de 31 a 60 dias Próximo Mês', 
         'Atraso de 151 a 180 dias X5'
     ]].reset_index(drop=True)
 
@@ -313,15 +345,21 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         'Total Vencido': 'carteira_vencida',
         'Total a Vencer Mês Anterior': 'carteira_em_dia_mes_anterior',
         'Atraso de 31 a 60 dias Próximo Mês' : 'Atraso de 31 a 60 dias mes posterior',
+
+        'Atraso de 61 a 90 dias X2' : 'Atraso de 61 a 90 dias mes X2',
+        'Atraso de 91 a 120 dias X3' : 'Atraso de 91 a 120 dias mes X3',
+        'Atraso de 121 a 150 dias X4' : 'Atraso de 121 a 150 dias mes X4',
+        
         'Atraso de 151 a 180 dias X5': 'Atraso de 151 a 180 dias mes X5'
     })
+
 
     def converter_para_datetime(df, colunas, formato='%Y-%m-%d'):
         for coluna in colunas:
             df[coluna] = pd.to_datetime(df[coluna], format=formato)
             df[coluna] = df[coluna].dt.date
         return df
-    
+
     colunas_para_converter_datetime = ['safra']
     df_final = converter_para_datetime(df_final, colunas_para_converter_datetime)
 
@@ -349,11 +387,13 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
     df_final.fillna(0, inplace=True)
 
+
     # Padronizando coluna valores
-    
+
     colunas_valores = ['carteira',	'carteira_em_dia',	'carteira_vencida',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
-                       'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
-                       'vagao_over_60',	'vagao_over_90',	'carteira_em_dia_mes_anterior',	'atraso_de_31_a_60_dias_mes_posterior',	'atraso_de_151_a_180_dias_mes_x5']
+                    'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
+                    'vagao_over_60',	'vagao_over_90',	'carteira_em_dia_mes_anterior',	'atraso_de_31_a_60_dias_mes_posterior', 'atraso_de_61_a_90_dias_mes_x2',
+                    'atraso_de_91_a_120_dias_mes_x3', 'atraso_de_121_a_150_dias_mes_x4',	'atraso_de_151_a_180_dias_mes_x5']
 
     df_final[colunas_valores] = df_final[colunas_valores].apply(pd.to_numeric, errors='coerce').round(2)
 
