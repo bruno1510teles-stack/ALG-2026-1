@@ -199,6 +199,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         df_hemera['data_aquisicao'] = pd.to_datetime(df_hemera['data_aquisicao'], errors='coerce')
         df_hemera['primeiro_dia_mes'] = df_hemera['data_fechamento'].apply(lambda x: x.replace(day=1))
         df_hemera['primeiro_dia_mes'] = pd.to_datetime(df_hemera['primeiro_dia_mes'], errors='coerce')
+        
         df_hemera['primeiro_dia_mes'] = df_hemera['primeiro_dia_mes'].dt.tz_localize(None)
         df_hemera['data_aquisicao'] = pd.to_datetime(df_hemera['data_aquisicao'])
         df_hemera['data_baixa'] = pd.to_datetime(df_hemera['data_baixa'])

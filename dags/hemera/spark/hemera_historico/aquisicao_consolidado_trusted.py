@@ -150,6 +150,7 @@ def aquisicao_consolidado_trusted (access_params=None, **kwargs):
         "Cnae":"cnae"
     }, inplace=True)
 
+
     print('Filtrando colunas...')
 
     colunas_finais = ['data_fechamento', 'data_arquivo', 'cnpj_cedente', 'nome_cedente', 'cnpj_sacado', 'nome_sacado', 'id_titulo', 'tipo_titulo', 'data_emissao',
