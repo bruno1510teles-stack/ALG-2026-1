@@ -230,6 +230,7 @@ def aplicar_politica(access_params=None,  **kwargs):
             'V5': 12711,
             'Desafiante': 12712
         }
+        
 
         # Função para atualizar a política no Jira
         def atualizar_politica_jira(issue, politica_atualizada):
