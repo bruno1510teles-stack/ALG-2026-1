@@ -297,7 +297,6 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         cur.close()
         conn.close()
 
-        print('Testando')
 
         ### Olhando para os CNAE's secundários também
         # Passo 1: Criar uma coluna com todos os CNAEs (principal + secundários)
