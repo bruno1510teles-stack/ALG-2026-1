@@ -14,6 +14,8 @@ from politica_e_modelagem.reporte_motor import report_desafiante_hora
 
 ## Teste de comentario para saber se vai espelhar essa dag em dev.
 
+
+
 ### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),

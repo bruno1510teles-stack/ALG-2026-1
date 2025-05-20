@@ -14,6 +14,8 @@ from tabulate import tabulate
 
 def report_motor_desafiante_hora_hora (access_params=None):
 
+
+
     data_execucao = datetime.today().date()
     data_ultima_semana = data_execucao - timedelta(days=7)
     
