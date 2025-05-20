@@ -80,6 +80,7 @@ def analise_pre_filtro(access_params=None,  **kwargs):
         all_tickets = []   # Lista para armazenar todos os tickets
         data = []   # Data para armazenar os resultados finais
 
+        print("TESTE NEW BRANCH")
 
         # Iterando sobre cada cnpj_raiz
         for cnpj in cnpjs_raiz:
