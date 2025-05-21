@@ -496,7 +496,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
         'NOME SACADO': '',
         'CNPJ': 'Total',
         'VOP': propostas_clientes_com_vop['VOP'].sum(),
-        'PRAZO MÉDIO': propostas_clientes_com_vop['PRAZO MÉDIO'].sum()
+        'PRAZO MÉDIO': propostas_clientes_com_vop['PRAZO MÉDIO'].mean()
     }
     
     # Adiciona a linha de totais ao final da tabela consolidada
