@@ -167,6 +167,20 @@ def retorno_consolidado_trusted (access_params=None, **kwargs):
         else:
             final_df[col] = final_df[col].fillna('')
 
+    def converter_para_datetime(df):
+        # Seleciona todas as colunas do tipo datetime (independente de timezone)
+        colunas_datetime = df.select_dtypes(include=['datetime', 'datetime64']).columns
+        
+        for coluna in colunas_datetime:
+            # Converte a coluna para datetime.date, removendo o tempo e o timezone
+            df[coluna] = pd.to_datetime(df[coluna]).dt.date
+        
+        return df
+
+    # Chamando a função para converter dinamicamente todas as colunas de data
+    final_df = converter_para_datetime(final_df).copy()
+
+    
 
     print('Salvando dados na Trusted...')
 
