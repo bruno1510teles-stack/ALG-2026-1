@@ -43,6 +43,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
+    '''
     cnae = SparkKubernetesOperator(
         task_id='cnae',
         application_file='cnae-spark-app.yaml',
@@ -127,7 +128,8 @@ with DAG(
         do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-
+    '''
+    
     pre_filtro = SparkKubernetesOperator(
         task_id='pre_filtro',
         application_file='pre-filtro-spark-app.yaml',
@@ -138,6 +140,7 @@ with DAG(
         execution_timeout=timedelta(minutes=120)
     )
 
+    '''
     dados_cadastrais = SparkKubernetesOperator(
         task_id='dados-cadastrais',
         application_file='dados-cadastrais-spark-app.yaml',
@@ -147,6 +150,7 @@ with DAG(
         retries = 3, # Ajustando retries
         retry_delay=timedelta(minutes=120) # Ajuste
     )
+    '''
 
     pre_filtro
 
