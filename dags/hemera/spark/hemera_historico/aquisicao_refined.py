@@ -46,7 +46,7 @@ def aquisicao_trusted_to_refined (access_params=None, **kwargs):
     df_consolidado = df[colunas_finais].copy()
 
 
-
+    df_consolidado['data_fechamento'] = pd.to_datetime(df_consolidado['data_fechamento'], errors='coerce')
     df_consolidado['data_fechamento'] = df_consolidado['data_fechamento'].dt.date
     df_consolidado['id_titulo'] = df_consolidado['id_titulo'].astype(str).str.zfill(10)
     df_consolidado['valor_aquisicao'] = pd.to_numeric(df_consolidado['valor_aquisicao'], errors='coerce').round(2)
