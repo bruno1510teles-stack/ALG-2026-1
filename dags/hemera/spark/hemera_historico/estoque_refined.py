@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 import re
 import os
 import pandas as pd
+from pyspark.sql.types import DateType
 
 
 def estoque_consolidado_refined (access_params=None, **kwargs):
@@ -171,7 +172,7 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
             ) \
             .drop("primeira_data") \
             .withColumnRenamed("ultima_data", "data_fechamento") \
-            .withColumn("data_fechamento", lit(data_fechamento))
+            .withColumn("data_fechamento", lit(data_fechamento).cast(DateType()))
 
 
         # Acumular os resultados
