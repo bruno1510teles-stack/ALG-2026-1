@@ -33,7 +33,7 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
 
     # Lendo dados
     df_estoque = spark.read.format("delta") \
-        .load("s3a://hemera-trusted/estoque/delta")
+        .load("s3a://hemera-trusted/estoque")
     
 
     df_estoque = df_estoque.withColumn(
