@@ -326,7 +326,7 @@ def cnaes_to_trusted(spark):
         .mode("overwrite") \
         .save("s3a://motor/pre_filtro")
 
-    dt = DeltaTable.forPath(spark, "s3a://motor/pre_filtro")
+    dt = DeltaTable.forPath(spark, "s3a://motor/pre_filtro_v2")
 
     dt.optimize().zorderBy("cnpj").execute()
 
