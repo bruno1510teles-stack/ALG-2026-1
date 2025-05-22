@@ -148,4 +148,6 @@ with DAG(
         retry_delay=timedelta(minutes=120) # Ajuste
     )
 
-    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
+    pre_filtro
+
+    #cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
