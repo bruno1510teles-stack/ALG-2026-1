@@ -337,7 +337,7 @@ def cnaes_to_trusted(spark):
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
-        .appName("PrefiltroToRefined") \
+        .appName("PrefiltroToRefined_teste") \
         .config("spark.sql.encoding", "latin1") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
