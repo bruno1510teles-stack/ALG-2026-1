@@ -337,13 +337,12 @@ def cnaes_to_trusted(spark):
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
-        .appName("PrefiltroToRefined_teste") \
+        .appName("PrefiltroToRefined") \
         .config("spark.sql.encoding", "latin1") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.driver.memory", "2g") \
-        .config("spark.executor.memory", "3g") \
-        .config("spark.executor.memoryOverhead", "1g") \
+        .config("spark.executor.memory", "4g") \
         .config("spark.executor.cores", "1") \
         .config("spark.sql.shuffle.partitions", "100") \
     .getOrCreate()
