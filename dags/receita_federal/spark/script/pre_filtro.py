@@ -302,10 +302,12 @@ def cnaes_to_trusted(spark):
     df_final = df_agrupado.select(colunas_finais)
 
 
-    print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
-    print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
-    row_count = df_final.count()
-    print(f"Número de linhas no DataFrame: {row_count}")
+    #print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
+    #print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
+    #row_count = df_final.count()
+    #print(f"Número de linhas no DataFrame: {row_count}")
+
+    print('Salvando arquivo...')
 
     # Tirando configs da trusted
     hadoop_conf.unset("fs.s3a.access.key")
@@ -346,9 +348,9 @@ if __name__ == "__main__":
         .config("spark.sql.encoding", "latin1") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-        .config("spark.driver.memory", "2g") \
-        .config("spark.executor.memory", "4g") \
-        .config("spark.executor.cores", "1") \
+        .config("spark.driver.memory", "4g") \
+        .config("spark.executor.memory", "8g") \
+        .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
     .getOrCreate()
 
