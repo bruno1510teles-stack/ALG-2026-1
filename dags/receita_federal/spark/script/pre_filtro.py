@@ -302,9 +302,9 @@ def cnaes_to_trusted(spark):
     df_final = df_agrupado.select(colunas_finais)
 
 
-    print(f"DataFrame carregado. Esquema: {resultado_tratamento.printSchema()}")
-    print(f"Primeiras linhas do DataFrame: {resultado_tratamento.show(5)}") 
-    row_count = resultado_tratamento.count()
+    print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
+    print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
+    row_count = df_final.count()
     print(f"Número de linhas no DataFrame: {row_count}") 
 
     # Salvando arquivos
@@ -315,7 +315,7 @@ def cnaes_to_trusted(spark):
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
 
-    resultado_tratamento = resultado_tratamento.withColumn(
+    df_final = df_final.withColumn(
         "cnpj_bucket", (hash(col("documento_sem_formatacao")) % 100).cast("int")
     )
 
