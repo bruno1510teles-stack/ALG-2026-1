@@ -49,7 +49,7 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    memory: "2g"
+    memory: "2048m"
     labels:
       version: "3.5.1"
     serviceAccount: spark-operator
@@ -163,7 +163,7 @@ spec:
     coreLimit: "1"
     coreRequest: "500m"
     instances: 1
-    memory: "4g"
+    memory: "4096m"
     labels:
       version: "3.5.1"
     volumeMounts:

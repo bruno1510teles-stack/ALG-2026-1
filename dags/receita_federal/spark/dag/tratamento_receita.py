@@ -136,7 +136,7 @@ with DAG(
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
-        retries = 3, # Ajustando retries
+        retries = 1, # Ajustando retries
         execution_timeout=timedelta(minutes=120)
     )
 
