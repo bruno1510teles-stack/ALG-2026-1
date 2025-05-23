@@ -205,7 +205,7 @@ def recompra_diario_trusted (access_params=None, **kwargs):
 
         query_recompra = f"""
                             select *
-                            from deltalaketrusted.hemera_vini.recompra_consolidado
+                            from deltalaketrusted.hemera_trusted.recompra_consolidado
                         """
 
         recompra_atual = execute_query(conn, query_recompra)
