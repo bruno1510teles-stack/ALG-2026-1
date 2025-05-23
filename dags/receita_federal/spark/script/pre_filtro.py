@@ -305,7 +305,12 @@ def cnaes_to_trusted(spark):
     print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
     print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
     row_count = df_final.count()
-    print(f"Número de linhas no DataFrame: {row_count}") 
+    print(f"Número de linhas no DataFrame: {row_count}")
+
+    # Tirando configs da trusted
+    hadoop_conf.unset("fs.s3a.access.key")
+    hadoop_conf.unset("fs.s3a.secret.key")
+    hadoop_conf.unset("fs.s3a.endpoint")
 
     # Salvando arquivos
     hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_REFINED_ACCESS_KEY'))
