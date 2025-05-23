@@ -178,29 +178,6 @@ def aquisicao_diario_trusted (access_params=None, **kwargs):
 
     final_df = final_df.reset_index(drop=True)
 
-    # Garantindo que não vou ter tidos de dados invalidos para o DeltaLake
-    for col in final_df.columns:
-        if pd.api.types.is_numeric_dtype(final_df[col]):
-            final_df[col] = final_df[col].fillna(0)
-        elif pd.api.types.is_datetime64_any_dtype(final_df[col]):
-            final_df[col] = final_df[col].fillna(pd.NaT)
-        else:
-            final_df[col] = final_df[col].fillna('')
-
-    def converter_para_datetime(df):
-        # Seleciona todas as colunas do tipo datetime (independente de timezone)
-        colunas_datetime = df.select_dtypes(include=['datetime', 'datetime64']).columns
-        
-        for coluna in colunas_datetime:
-            # Converte a coluna para datetime.date, removendo o tempo e o timezone
-            df[coluna] = pd.to_datetime(df[coluna]).dt.date
-        
-        return df
-
-    # Chamando a função para converter dinamicamente todas as colunas de data
-    final_df = converter_para_datetime(final_df).copy()
-
-
     # Coletando dados da camada Trusted para remoção das linhas que serão atualizadas
     # Conectando com o banco
     conn = connect(
@@ -257,9 +234,25 @@ def aquisicao_diario_trusted (access_params=None, **kwargs):
     print('Linhas após a inserção de novas linhas:')
     print(len(aquisicao_final))
 
-    # Voltando o campo de validação para o mesmo tipo de dados
-    aquisicao_final['data_arquivo'] = pd.to_datetime(aquisicao_final['data_arquivo']).dt.floor('D')
-    aquisicao_final['data_arquivo'] = aquisicao_final['data_arquivo'].dt.tz_localize('UTC', nonexistent='NaT', ambiguous='NaT')
+
+    # Garantindo que não vou ter tidos de dados invalidos para o DeltaLake
+    for col in aquisicao_final.columns:
+        if pd.api.types.is_numeric_dtype(aquisicao_final[col]):
+            aquisicao_final[col] = aquisicao_final[col].fillna(0)
+        elif pd.api.types.is_datetime64_any_dtype(aquisicao_final[col]):
+            aquisicao_final[col] = aquisicao_final[col].fillna(pd.NaT)
+        else:
+            aquisicao_final[col] = aquisicao_final[col].fillna('')
+
+    def converter_colunas_data(df):
+        for col in df.columns:
+            if 'data' in col.lower():
+                df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+        return df
+
+    # Chamando a função para converter dinamicamente todas as colunas de data
+    aquisicao_final = converter_colunas_data(aquisicao_final).copy()
+
 
     print(aquisicao_final)
 
