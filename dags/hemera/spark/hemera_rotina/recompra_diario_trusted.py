@@ -181,6 +181,31 @@ def recompra_diario_trusted (access_params=None, **kwargs):
 
         final_df = final_df[colunas_finais]
 
+        final_df = final_df.reset_index(drop=True)
+
+
+        # Garantindo que não vou ter tidos de dados invalidos para o DeltaLake
+        for col in final_df.columns:
+            if pd.api.types.is_numeric_dtype(final_df[col]):
+                final_df[col] = final_df[col].fillna(0)
+            elif pd.api.types.is_datetime64_any_dtype(final_df[col]):
+                final_df[col] = final_df[col].fillna(pd.NaT)
+            else:
+                final_df[col] = final_df[col].fillna('')
+
+        def converter_para_datetime(df):
+            # Seleciona todas as colunas do tipo datetime (independente de timezone)
+            colunas_datetime = df.select_dtypes(include=['datetime', 'datetime64']).columns
+            
+            for coluna in colunas_datetime:
+                # Converte a coluna para datetime.date, removendo o tempo e o timezone
+                df[coluna] = pd.to_datetime(df[coluna]).dt.date
+            
+            return df
+
+        # Chamando a função para converter dinamicamente todas as colunas de data
+        final_df = converter_para_datetime(final_df).copy()
+
 
         # Coletando dados da camada Trusted
         # Conectando com o banco
