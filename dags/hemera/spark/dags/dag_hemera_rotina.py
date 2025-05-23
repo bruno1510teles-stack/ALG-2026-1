@@ -77,9 +77,10 @@ default_args = {
 with DAG(
     dag_id='hemera_rotina',
     start_date=days_ago(1),
-    schedule_interval='30 15 * * 1-5',
+    schedule_interval='0 15,23 * * 1-5',  # 12h e 20h em UTC-3
     default_args=default_args,
-    tags=['hemera', 'rotina'] 
+    catchup=False, 
+    tags=['hemera', 'rotina']
 ) as dag:
  
     aquisicao_excel_to_csv_rotina = PythonOperator(
