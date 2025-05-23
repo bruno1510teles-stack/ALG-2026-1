@@ -316,7 +316,7 @@ def cnaes_to_trusted(spark):
 
 
     resultado_tratamento = resultado_tratamento.withColumn(
-        "cnpj_bucket", (hash(col("cnpj")) % 100).cast("int")
+        "cnpj_bucket", (hash(col("documento_sem_formatacao")) % 100).cast("int")
     )
 
     df_final.write \
