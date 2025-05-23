@@ -48,8 +48,8 @@ spec:
   driver:
     deleteOnTermination: true
     coreLimit: "1"
-    coreRequest: "500m"
-    memory: "2g"
+    coreRequest: "1g"
+    memory: "4g"
     labels:
       version: "3.5.1"
     serviceAccount: spark-operator
@@ -161,9 +161,9 @@ spec:
   executor:
     deleteOnTermination: true
     coreLimit: "1"
-    coreRequest: "500m"
+    coreRequest: "1g"
     instances: 1
-    memory: "4g"
+    memory: "6g"
     labels:
       version: "3.5.1"
     volumeMounts:
