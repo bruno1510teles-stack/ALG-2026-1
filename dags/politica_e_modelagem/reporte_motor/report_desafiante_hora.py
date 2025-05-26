@@ -91,10 +91,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
             count(case when coalesce(sub.vencido, 0) > 0 and sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else null end) as "Qtd Vencido",
         
             case 
-                when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end) > 0
+                when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                 then round(
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.0 /
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end), 2
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.00 /
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                 )
                 else 0
             end as "% Over 1 - Qtd",
@@ -112,10 +112,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
             count(case when coalesce(sub.vop_over_30, 0) > 0 and sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else null end) as "Qtd Over 30",
         
             case 
-                when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end) > 0
+                when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                 then round(
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.0 /
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end), 2
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.00 /
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                 )
                 else 0
             end as "% Over 30 - Qtd",
@@ -185,10 +185,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
                 count(case when coalesce(sub.vencido, 0) > 0 and sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else null end) as "Qtd Vencido",
             
                 case 
-                    when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end) > 0
+                    when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                     then round(
-                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.0 /
-                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end), 2
+                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.00 /
+                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                     )
                     else 0
                 end as "% Over 1 - Qtd",
@@ -206,10 +206,10 @@ def report_motor_desafiante_hora_hora (access_params=None):
                 count(case when coalesce(sub.vop_over_30, 0) > 0 and sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else null end) as "Qtd Over 30",
             
                 case 
-                    when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end) > 0
+                    when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                     then round(
-                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.0 /
-                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.cnpj end), 2
+                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.00 /
+                        count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                     )
                     else 0
                 end as "% Over 30 - Qtd",
@@ -410,15 +410,17 @@ def report_motor_desafiante_hora_hora (access_params=None):
     }
 
     # Calcula os percentuais no total
-    totais_consolidado['% Over 1 - Qtd'] = round(propostas_desafiante_consolidado.loc[propostas_desafiante_consolidado['Faixa Valor Solicitado'] != 'Total', 'Qtd Vencido'].sum() * 100
-    / totais_consolidado['Aprovadas Motor'] if totais_consolidado['Aprovadas Motor'] > 0 else 0, 2)
-    
-    totais_consolidado['% Over 1 - R$'] = round(totais_consolidado['Vencido'] * 100 / totais_consolidado['VOP Performado'] if totais_consolidado['VOP Performado'] > 0 else 0, 2)
-    
-    totais_consolidado['% Over 30 - Qtd'] = round(propostas_desafiante_consolidado.loc[propostas_desafiante_consolidado['Faixa Valor Solicitado'] != 'Total', 'Qtd Over 30'].sum() * 100
-    / totais_consolidado['Aprovadas Motor'] if totais_consolidado['Aprovadas Motor'] > 0 else 0, 2)
-    
-    totais_consolidado['% Over 30 - R$'] = round(totais_consolidado['Over 30'] * 100 / totais_consolidado['VOP Performado'] if totais_consolidado['VOP Performado'] > 0 else 0, 2)
+    df_validos = propostas_desafiante_consolidado[propostas_desafiante_consolidado['Faixa Valor Solicitado'] != 'Total']
+
+    soma_qtd_vop_performado = df_validos['Qtd VOP Performado'].sum()
+    soma_qtd_vencido = df_validos['Qtd Vencido'].sum()
+    soma_qtd_over30 = df_validos['Qtd Over 30'].sum()
+
+    totais_consolidado['% Over 1 - Qtd'] = round((soma_qtd_vencido / soma_qtd_vop_performado) * 100, 2) if soma_qtd_vop_performado > 0 else 0
+    totais_consolidado['% Over 1 - R$'] = round((totais_consolidado['Vencido'] / totais_consolidado['VOP Performado']) * 100, 2) if totais_consolidado['VOP Performado'] > 0 else 0
+    totais_consolidado['% Over 30 - Qtd'] = round((soma_qtd_over30 / soma_qtd_vop_performado) * 100, 2) if soma_qtd_vop_performado > 0 else 0
+    totais_consolidado['% Over 30 - R$'] = round((totais_consolidado['Over 30'] / totais_consolidado['VOP Performado']) * 100, 2) if totais_consolidado['VOP Performado'] > 0 else 0
+
 
     # Adiciona o total ao DataFrame
     propostas_desafiante_consolidado = pd.concat(
@@ -438,7 +440,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
     
     for col in percent_cols:
         propostas_desafiante_consolidado[col] = propostas_desafiante_consolidado[col].apply(
-            lambda x: f"{x:,.2f}".replace('.', ',') + '%' if pd.notnull(x) and isinstance(x, (int, float)) else "0,00%"
+            lambda x: f"{x:.2f}".replace('.', ',') + '%' if isinstance(x, (int, float)) else x
         )
 
     # Adiciona totais no reporte consolidado de propostas até 100k
@@ -460,15 +462,16 @@ def report_motor_desafiante_hora_hora (access_params=None):
     }
     
     # Calcula os percentuais no total
-    totais_100k['% Over 1 - Qtd'] = round(propostas_desafiante_consolidado_100k.loc[propostas_desafiante_consolidado_100k['Faixa Valor Solicitado'] != 'Total', 'Qtd Vencido'].sum() * 100
-    / totais_100k['Aprovadas Motor'] if totais_100k['Aprovadas Motor'] > 0 else 0, 2)
-    
-    totais_100k['% Over 1 - R$'] = round(totais_100k['Vencido'] * 100 / totais_100k['VOP Performado'] if totais_100k['VOP Performado'] > 0 else 0, 2)
-    
-    totais_100k['% Over 30 - Qtd'] = round(propostas_desafiante_consolidado_100k.loc[propostas_desafiante_consolidado_100k['Faixa Valor Solicitado'] != 'Total', 'Qtd Over 30'].sum() * 100
-    / totais_100k['Aprovadas Motor'] if totais_100k['Aprovadas Motor'] > 0 else 0, 2)
-    
-    totais_100k['% Over 30 - R$'] = round(totais_100k['Over 30'] * 100 / totais_100k['VOP Performado'] if totais_100k['VOP Performado'] > 0 else 0, 2)
+    df_validos_100k = propostas_desafiante_consolidado_100k[propostas_desafiante_consolidado_100k['Faixa Valor Solicitado'] != 'Total']
+
+    soma_qtd_vop_performado_100k = df_validos_100k['Qtd VOP Performado'].sum()
+    soma_qtd_vencido_100k = df_validos_100k['Qtd Vencido'].sum()
+    soma_qtd_over30_100k = df_validos_100k['Qtd Over 30'].sum()
+
+    totais_100k['% Over 1 - Qtd'] = round((soma_qtd_vencido_100k / soma_qtd_vop_performado_100k) * 100, 2) if soma_qtd_vop_performado_100k > 0 else 0
+    totais_100k['% Over 1 - R$'] = round((totais_100k['Vencido'] / totais_100k['VOP Performado']) * 100, 2) if totais_100k['VOP Performado'] > 0 else 0
+    totais_100k['% Over 30 - Qtd'] = round((soma_qtd_over30_100k / soma_qtd_vop_performado_100k) * 100, 2) if soma_qtd_vop_performado_100k > 0 else 0
+    totais_100k['% Over 30 - R$'] = round((totais_100k['Over 30'] / totais_100k['VOP Performado']) * 100, 2) if totais_100k['VOP Performado'] > 0 else 0
     
     
     
@@ -486,11 +489,11 @@ def report_motor_desafiante_hora_hora (access_params=None):
         )
     
     # Formatação dos valores percentuais para exibir vírgula decimal e %
-    percent_cols = ['% Over 1 - Qtd', '% Over 1 - R$', '% Over 30 - Qtd', '% Over 30 - R$']
+    percent_cols_100k = ['% Over 1 - Qtd', '% Over 1 - R$', '% Over 30 - Qtd', '% Over 30 - R$']
     
     for col in percent_cols:
         propostas_desafiante_consolidado_100k[col] = propostas_desafiante_consolidado_100k[col].apply(
-            lambda x: f"{x:,.2f}".replace('.', ',') + '%' if pd.notnull(x) and isinstance(x, (int, float)) else "0,00%"
+            lambda x: f"{x:.2f}".replace('.', ',') + '%' if isinstance(x, (int, float)) else x
         )
 
     clientes_vop = {
