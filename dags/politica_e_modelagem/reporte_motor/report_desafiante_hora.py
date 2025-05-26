@@ -93,7 +93,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
             case 
                 when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                 then round(
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.0 /
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vencido, 0) > 0 then sub.cnpj end) * 100.00 /
                     count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                 )
                 else 0
@@ -114,7 +114,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
             case 
                 when count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end) > 0
                 then round(
-                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.0 /
+                    count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 and coalesce(sub.vop_over_30, 0) > 0 then sub.cnpj end) * 100.00 /
                     count(distinct case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' and coalesce(sub.vop_performado, 0) > 0 then sub.cnpj end), 2
                 )
                 else 0
