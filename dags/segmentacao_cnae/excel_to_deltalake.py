@@ -10,9 +10,9 @@ from trino.auth import BasicAuthentication
 def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
 
     minio_raw = Minio(
-    "api-raw.alpe.com.br",
-    access_key = 'B7q0avvSIpSdyGPXWnEC',
-    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
         # Connection validation
@@ -33,10 +33,10 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
    # Conexão com o banco de dados
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
     
@@ -204,11 +204,11 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     # Exportando dados para a camada Raw
     
     storage_options = {
-            "AWS_ACCESS_KEY_ID": "d8jOuN46ckGNsr6zzpyw",
-            "AWS_SECRET_ACCESS_KEY": "gnyBdrsoDrRcM9ln0QO83Nw8I4TlOFDOI4J9QDKc",
-            "AWS_ENDPOINT_URL": "https://api-refined.alpe.com.br",
-            "AWS_REGION": "us-east-1",
-            "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
     # Definindo o caminho e salvando no MinIO

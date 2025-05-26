@@ -16,10 +16,10 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # CARREGANDO BASE FOTO, OU SEJA MINHA BASE ATUAL
     conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -44,9 +44,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # IMPORTA BASE QUE VAI SER ACUMULADA
     minio_raw = Minio(
-        "api-raw.alpe.com.br",
-        access_key = 'B7q0avvSIpSdyGPXWnEC',
-        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Connection validation
@@ -214,24 +214,6 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Inserindo Cidade e UF
 
-    conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-        http_scheme="https",
-    )
-
-    def execute_query(conn, query):
-        cur = conn.cursor()  # Abre o cursor
-        cur.execute(query)
-        rows = cur.fetchall()
-        columns = [desc[0] for desc in cur.description]
-        cur.close()  # Fecha o cursor após a execução
-
-        return pd.DataFrame(rows, columns=columns)
-
-
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
     cnpjs = base_final_merge['raiz_cnpj'].unique().tolist()
 
@@ -375,11 +357,11 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": 'nr0qPLaAcdCtt7lAV4oa',
-        "AWS_SECRET_ACCESS_KEY": 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch',
-        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.com.br",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
     # Definindo o caminho e salvando no MinIO
