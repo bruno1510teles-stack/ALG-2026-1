@@ -15,21 +15,13 @@ import time
 def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
 	
-	#conn = connect(
-	#	host=access_params['trino_endpoint'],
-	#	port=access_params['trino_port'],
-	#	user=access_params['trino_user'],
-	#	auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-	#	http_scheme="https"
-	#)
-
 	conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-        http_scheme="https",
-    )
+		host=access_params['trino_endpoint'],
+		port=access_params['trino_port'],
+		user=access_params['trino_user'],
+		auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+		http_scheme="https"
+	)
 
 	# Função para execução da query
 	def execute_query(conn, query):
@@ -161,13 +153,14 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 
 
 	# Configuração do cliente MinIO
+
 	minio_client = Minio(
 			"minio-api.alpenet.com.br",
 			access_key="pe4MdrBZnRqrLUatARfZ",
 			secret_key="d7RdWy02br3Q9Tsvmq8rOXDI9buAWlurPATmTFZh",
 			secure=True
 	)
-
+	
 	# Connection validation
 	try:
 		# Try to list the buckets

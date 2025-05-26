@@ -23,7 +23,7 @@ def estoque_consolidado(spark):
 
     # Lendo arquivos
     print("Lendo Arquivos")
-    df = spark.read.format("delta").load("s3a://hemera-trusted/estoque/delta")
+    df = spark.read.format("delta").load("s3a://hemera-trusted/estoque")
     print("Arquivos Lidos")
 
     print("Iniciando Tratamento Dados")

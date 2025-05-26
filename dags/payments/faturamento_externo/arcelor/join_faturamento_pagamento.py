@@ -14,10 +14,10 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     # Conectando com o banco de dados Trino
     conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -184,11 +184,11 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": 'nr0qPLaAcdCtt7lAV4oa',
-        "AWS_SECRET_ACCESS_KEY": 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch',
-        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.com.br",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
     # Definindo o caminho e salvando no MinIO
