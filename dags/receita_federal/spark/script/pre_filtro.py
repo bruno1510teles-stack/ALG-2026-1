@@ -71,10 +71,10 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Conexão com o Trino
     conn = connect(
-        host = os.getenv('TRINO_ENDPOINT'),
-        port = os.getenv('TRINO_PORT'),
-        user = os.getenv('TRINO_USER'),
-        auth=BasicAuthentication( os.getenv('TRINO_USER'), os.getenv('TRINO_PASSWORD')),
+        host='trino.alpe.com.br',
+        port=443,
+        user='vinicius_teixeira',
+        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
         http_scheme="https",
     )
 
