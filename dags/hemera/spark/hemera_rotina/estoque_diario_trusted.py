@@ -25,9 +25,9 @@ def estoque_diario_trusted (access_params=None, **kwargs):
 
     # Configurações do Hadoop para acesso ao MinIO (S3 compatível)
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_conf.set("fs.s3a.access.key", 'nr0qPLaAcdCtt7lAV4oa') 
-    hadoop_conf.set("fs.s3a.secret.key", 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch') 
-    hadoop_conf.set("fs.s3a.endpoint", 'api-trusted.alpe.com.br') 
+    hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
+    hadoop_conf.set("fs.s3a.secret.key", os.getenv('MINIO_TRUSTED_SECRET_KEY'))
+    hadoop_conf.set("fs.s3a.endpoint", os.getenv('MINIO_TRUSTED_ENDPOINT'))
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
     hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")  # ESSENCIAL
@@ -39,10 +39,11 @@ def estoque_diario_trusted (access_params=None, **kwargs):
 
 
     minio_raw = Minio(
-    "api-raw.alpe.com.br",
-    access_key = 'B7q0avvSIpSdyGPXWnEC',
-    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        os.getenv('MINIO_RAW_ENDPOINT'),
+        access_key = os.getenv('MINIO_RAW_ACCESS_KEY'),
+        secret_key = os.getenv('MINIO_RAW_SECRET_KEY'),
     )
+
 
     # Connection validation
     try:
@@ -336,7 +337,7 @@ def estoque_diario_trusted (access_params=None, **kwargs):
 
     # Lendo dados atuais de estoque
     estoque_atual = spark.read.format("delta") \
-        .load("s3a://hemera-trusted/estoque/delta")
+        .load("s3a://hemera-trusted/estoque")
     
 
     # Obter datas únicas da coluna 'data_arquivo'
@@ -385,7 +386,7 @@ def estoque_diario_trusted (access_params=None, **kwargs):
         .option("mergeSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
-        .save("s3a://hemera-trusted/estoque/delta")
+        .save("s3a://hemera-trusted/estoque")
 
     print("Arquivos Salvos")
 

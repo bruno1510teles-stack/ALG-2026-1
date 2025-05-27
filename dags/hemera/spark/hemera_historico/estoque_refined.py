@@ -11,6 +11,7 @@ from datetime import datetime, timezone, timedelta
 import re
 import os
 import pandas as pd
+from pyspark.sql.types import DateType
 
 
 def estoque_consolidado_refined (access_params=None, **kwargs):
@@ -19,9 +20,9 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
 
     # Configurações do Hadoop para acesso ao MinIO (S3 compatível)
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_conf.set("fs.s3a.access.key", 'nr0qPLaAcdCtt7lAV4oa') 
-    hadoop_conf.set("fs.s3a.secret.key", 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch') 
-    hadoop_conf.set("fs.s3a.endpoint", 'api-trusted.alpe.com.br') 
+    hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
+    hadoop_conf.set("fs.s3a.secret.key", os.getenv('MINIO_TRUSTED_SECRET_KEY'))
+    hadoop_conf.set("fs.s3a.endpoint", os.getenv('MINIO_TRUSTED_ENDPOINT'))
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
     hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
@@ -31,9 +32,10 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
     hadoop_conf.set("hadoop.security.authentication", "simple")
     hadoop_conf.set("hadoop.security.authorization", "false")
 
+
     # Lendo dados
     df_estoque = spark.read.format("delta") \
-        .load("s3a://hemera-trusted/estoque/delta")
+        .load("s3a://hemera-trusted/estoque")
     
 
     df_estoque = df_estoque.withColumn(
@@ -171,7 +173,7 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
             ) \
             .drop("primeira_data") \
             .withColumnRenamed("ultima_data", "data_fechamento") \
-            .withColumn("data_fechamento", lit(data_fechamento))
+            .withColumn("data_fechamento", lit(data_fechamento).cast(DateType()))
 
 
         # Acumular os resultados

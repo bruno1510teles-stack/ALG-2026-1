@@ -43,10 +43,10 @@ def execucao_politica(access_params=None,  **kwargs):
 
     # Conectando com o Trino
     conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 

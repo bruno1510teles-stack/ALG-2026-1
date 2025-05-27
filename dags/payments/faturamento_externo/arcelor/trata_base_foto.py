@@ -16,9 +16,9 @@ from deltalake import write_deltalake
 def trata_base_foto(access_params=None, **kwargs):
 
     minio_raw = Minio(
-        "api-raw.alpe.tech",
-        access_key = 'vUXngpcSXbR21DVaqiFn',
-        secret_key = 'uwE7qzfhoYodtf56bDRg4BAoxzOGJp9O4rRRMDn2'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Connection validation
@@ -275,9 +275,9 @@ def trata_base_foto(access_params=None, **kwargs):
     # DEPARA UNIDADE CONSOLIDADA ANTES DO MERGE
 
     minio_raw = Minio(
-        "api-raw.alpe.com.br",
-        access_key = 'B7q0avvSIpSdyGPXWnEC',
-        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Bucket and Folder_Destination
@@ -368,10 +368,10 @@ def trata_base_foto(access_params=None, **kwargs):
     # Inserindo Cidade e UF
 
     conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -530,11 +530,11 @@ def trata_base_foto(access_params=None, **kwargs):
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": 'nr0qPLaAcdCtt7lAV4oa',
-        "AWS_SECRET_ACCESS_KEY": 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch',
-        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.com.br",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
     # Definindo o caminho e salvando no MinIO
