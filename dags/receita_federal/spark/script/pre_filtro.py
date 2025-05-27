@@ -18,7 +18,7 @@ from pyspark.sql.functions import col, split, when, array, array_union, explode,
 from delta.tables import DeltaTable
 
 
-def cnaes_to_trusted(access_params=None, **kwargs):
+def cnaes_to_trusted(spark, **kwargs):
 
     spark.sparkContext.setLogLevel("ERROR")
 
