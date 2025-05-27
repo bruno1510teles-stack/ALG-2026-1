@@ -48,7 +48,7 @@ spec:
   driver:
     deleteOnTermination: true
     coreLimit: "1"
-    coreRequest: "1g"
+    coreRequest: "500m"
     memory: "4g"
     labels:
       version: "3.5.1"
@@ -161,7 +161,7 @@ spec:
   executor:
     deleteOnTermination: true
     coreLimit: "1"
-    coreRequest: "1g"
+    coreRequest: "500m"
     instances: 1
     memory: "6g"
     labels:
