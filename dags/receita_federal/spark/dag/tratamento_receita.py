@@ -7,7 +7,7 @@ import requests
 from datetime import timedelta
 
 
-    ### Parâmetros de acesso
+### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
     "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
