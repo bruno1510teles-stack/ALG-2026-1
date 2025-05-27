@@ -59,6 +59,26 @@ spec:
     annotations:
       sidecar.istio.io/inject: "false"
     env:
+      - name: TRINO_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_ENDPOINT
+      - name: TRINO_PORT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PORT
+      - name: TRINO_USER
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_USER
+      - name: TRINO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PASSWORD
       - name: MINIO_TRUSTED_ENDPOINT
         valueFrom:
           secretKeyRef:
@@ -172,6 +192,26 @@ spec:
     annotations:
       sidecar.istio.io.inject: "false"
     env:
+      - name: TRINO_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_ENDPOINT
+      - name: TRINO_PORT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PORT
+      - name: TRINO_USER
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_USER
+      - name: TRINO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PASSWORD
       - name: MINIO_TRUSTED_ENDPOINT
         valueFrom:
           secretKeyRef:
