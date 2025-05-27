@@ -63,6 +63,12 @@ def cnaes_to_trusted(spark, **kwargs):
     print("trusted_cnae ok")
 
 
+    print("TRINO_ENDPOINT:", os.getenv('TRINO_ENDPOINT'))
+    print("TRINO_PORT:", os.getenv('TRINO_PORT'))
+    print("TRINO_USER:", os.getenv('TRINO_USER'))
+    print("TRINO_PASSWORD:", "******" if os.getenv('TRINO_PASSWORD') else None)
+
+
     # Conexão com o Trino
     conn = connect(
         host = os.getenv('TRINO_ENDPOINT'),
