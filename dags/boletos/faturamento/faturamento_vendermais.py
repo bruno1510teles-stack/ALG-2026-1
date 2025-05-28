@@ -4,14 +4,12 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
 from deltalake import write_deltalake
-from deltalake.schema import field, schema
 from datetime import datetime, timezone, timedelta
 import os
 from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
-import pyarrow as pa
 
 def faturamento_to_trusted(access_params=None,  **kwargs):
 
@@ -47,7 +45,8 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                         max(date(data_faturamento)) AS data_fatura,
                         max(valor_pedido) AS valor_fatura,
                         max(status_pedido) AS status_fatura,
-                        max(status_nfe) AS status_fatura_sefaz
+                        max(status_nfe) AS status_fatura_sefaz,
+                        upper(max(pago)) as status_pago
                     from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
                     where status_pedido <> 'CANCELADO'
                     and descricao_situacao_titulo <> 'REJEITADO'
@@ -93,31 +92,11 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
     BUCKET_SOURCE_TRUSTED = "payments"
     FOLDER_DESTINATION_TRUSTED = "faturamento"
 
-    # Definindo o schema explicitamente
-    delta_schema = schema([
-        field("id", pa.int64()),
-        field("numero_nfe", pa.string()),
-        field("numero_pedido", pa.int64()),
-        field("cnpj_sacado", pa.string()),
-        field("nome_sacado", pa.string()),
-        field("cnpj_cedente", pa.string()),
-        field("nome_cedente", pa.string()),
-        field("data_fatura", pa.date32()),
-        field("valor_fatura", pa.decimal128(6, 2)),
-        field("status_fatura", pa.string()),
-        field("status_fatura_sefaz", pa.string()),
-        field("atualizado_em", pa.string()),
-        field("year", pa.int64()),
-        field("month", pa.int64()),
-        field("day", pa.int64())
-    ])
-
     # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
         fatura,
         partition_by=["year", "month", "day"],
-        schema=delta_schema,  # <- Schema explícito
         storage_options=storage_options,
         mode="overwrite"
     )
