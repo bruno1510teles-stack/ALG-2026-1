@@ -73,6 +73,8 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
 
+    fatura['valor_fatura'] = fatura['valor_fatura'].astype(float).round(2)
+
     # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     fatura['atualizado_em'] = now.strftime('%Y-%m-%d %X')
