@@ -4,7 +4,7 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
 from deltalake import write_deltalake
-from deltalake.schema import Field, Schema
+from deltalake.schema import field, schema
 from datetime import datetime, timezone, timedelta
 import os
 from airflow.models import Variable
@@ -93,26 +93,24 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
     BUCKET_SOURCE_TRUSTED = "payments"
     FOLDER_DESTINATION_TRUSTED = "faturamento"
 
-    # Define schema Delta Lake explicitamente
-    delta_schema = Schema(
-        fields=[
-            Field("id", pa.int64()),
-            Field("numero_nfe", pa.string()),
-            Field("numero_pedido", pa.int64()),
-            Field("cnpj_sacado", pa.string()),
-            Field("nome_sacado", pa.string()),
-            Field("cnpj_cedente", pa.string()),
-            Field("nome_cedente", pa.string()),
-            Field("data_fatura", pa.date32()),
-            Field("valor_fatura", pa.decimal128(6, 2)),  # <- Corrigido aqui
-            Field("status_fatura", pa.string()),
-            Field("status_fatura_sefaz", pa.string()),
-            Field("atualizado_em", pa.string()),
-            Field("year", pa.int64()),
-            Field("month", pa.int64()),
-            Field("day", pa.int64())
-        ]
-    )
+    # Definindo o schema explicitamente
+    delta_schema = schema([
+        field("id", pa.int64()),
+        field("numero_nfe", pa.string()),
+        field("numero_pedido", pa.int64()),
+        field("cnpj_sacado", pa.string()),
+        field("nome_sacado", pa.string()),
+        field("cnpj_cedente", pa.string()),
+        field("nome_cedente", pa.string()),
+        field("data_fatura", pa.date32()),
+        field("valor_fatura", pa.decimal128(6, 2)),
+        field("status_fatura", pa.string()),
+        field("status_fatura_sefaz", pa.string()),
+        field("atualizado_em", pa.string()),
+        field("year", pa.int64()),
+        field("month", pa.int64()),
+        field("day", pa.int64())
+    ])
 
     # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
