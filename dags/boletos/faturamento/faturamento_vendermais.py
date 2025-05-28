@@ -48,7 +48,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                         max(status_nfe) AS status_fatura_sefaz,
                         upper(max(pago)) as status_pago
                     from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
-                    where and (
+                    where (
                             pgid not in ('bariloche', 'ltcarol', 'hortmix', 'blow', 'ocean', 'philipmorris', 'caboclo',
                                         'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala')
                             or pgid is null
