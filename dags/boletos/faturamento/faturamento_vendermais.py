@@ -46,7 +46,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                         max(valor_pedido) AS valor_fatura,
                         max(status_pedido) AS status_fatura,
                         max(status_nfe) AS status_fatura_sefaz
-                    from postgres.ccred_schema_prd_default.vw_pedido_faturamento
+                    from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
                     where status_pedido <> 'CANCELADO'
                     and descricao_situacao_titulo <> 'REJEITADO'
                     and pago not in ('Rejeitado', 'Excluido')
