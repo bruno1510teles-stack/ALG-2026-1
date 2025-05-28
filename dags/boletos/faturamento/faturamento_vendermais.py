@@ -54,9 +54,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                             or pgid is null
                     )
                     -- and status_pedido <> 'CANCELADO'
-                    --and descricao_situacao_titulo <> 'REJEITADO'
-                    --and pago not in ('Rejeitado', 'Excluido')
-                    -- and pago not in ('Recompra antes do pagamento') -- Validar se esse filtro vai se manter
+                    -- and pago not in ('Rejeitado', 'Excluido', 'Recompra antes do pagamento')
                     group by faturamento_id 
                     """
     
