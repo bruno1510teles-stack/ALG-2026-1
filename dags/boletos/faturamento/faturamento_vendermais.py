@@ -45,7 +45,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         left join postgres.ccred_schema_{Variable.get('STAGE')}_default.status_nfe sefaz on sefaz.chave_nfe = fp.numero_nfe 
     where 
         fp.status_fatura <> 'CANCELADO'
-        and pc.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500)
+        and pc.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442)
     """
     fatura = execute_query(conn, query_fatura)
 
