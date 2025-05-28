@@ -4,12 +4,14 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from minio import Minio
 from deltalake import write_deltalake
+from deltalake.schema import Field, Schema
 from datetime import datetime, timezone, timedelta
 import os
 from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
+import pyarrow as pa
 
 def faturamento_to_trusted(access_params=None,  **kwargs):
 
@@ -63,27 +65,23 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print(f"Quantidade de linhas no DataFrame 'fatura': {fatura.shape[0]}")
 
-
-    # Função para ajustar os valores ao formato decimal(8, 2)
+    # Ajuste do decimal
     def ajustar_decimal(valor):
         if pd.isnull(valor):
-            return None  # Mantém valores nulos como estão
+            return None
         else:
-            # Limitar para no máximo 8 dígitos, com 2 casas decimais
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
-    # Aplicar a função na coluna 'valor_titulo'
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
-    # Atribuindo data
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
+    # Timestamp e partições
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
     fatura['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     fatura['year'], fatura['month'], fatura['day'] = now.year, now.month, now.day
+
     print("Tratamento dos dados concluído")
 
-
-    # Exportando dados para a camada Trusted
-    # # Conectando na Trusted        
+    # Configuração do Delta Lake
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
@@ -92,14 +90,36 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
-    # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_TRUSTED = "payments"
     FOLDER_DESTINATION_TRUSTED = "faturamento"
 
+    # Define schema Delta Lake explicitamente
+    delta_schema = Schema(
+        fields=[
+            Field("id", pa.int64()),
+            Field("numero_nfe", pa.string()),
+            Field("numero_pedido", pa.int64()),
+            Field("cnpj_sacado", pa.string()),
+            Field("nome_sacado", pa.string()),
+            Field("cnpj_cedente", pa.string()),
+            Field("nome_cedente", pa.string()),
+            Field("data_fatura", pa.date32()),
+            Field("valor_fatura", pa.decimal128(6, 2)),  # <- Corrigido aqui
+            Field("status_fatura", pa.string()),
+            Field("status_fatura_sefaz", pa.string()),
+            Field("atualizado_em", pa.string()),
+            Field("year", pa.int64()),
+            Field("month", pa.int64()),
+            Field("day", pa.int64())
+        ]
+    )
+
+    # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        fatura, 
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+        fatura,
         partition_by=["year", "month", "day"],
+        schema=delta_schema,  # <- Schema explícito
         storage_options=storage_options,
         mode="overwrite"
     )
