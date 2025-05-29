@@ -54,9 +54,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                             or pgid is null
                     )
                     -- and status_pedido <> 'CANCELADO'
-                    --and descricao_situacao_titulo <> 'REJEITADO'
-                    --and pago not in ('Rejeitado', 'Excluido')
-                    -- and pago not in ('Recompra antes do pagamento') -- Validar se esse filtro vai se manter
+                    -- and pago not in ('Rejeitado', 'Excluido', 'Recompra antes do pagamento')
                     group by faturamento_id 
                     """
     
@@ -72,6 +70,8 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
+
+    fatura['valor_fatura'] = fatura['valor_fatura'].astype(float).round(2)
 
     # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
