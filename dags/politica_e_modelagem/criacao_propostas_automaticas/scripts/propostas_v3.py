@@ -10,16 +10,17 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from io import BytesIO
 import re
 import time
+import os
 
 
 def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
 	
 	conn = connect(
-		host=access_params['trino_endpoint'],
-		port=access_params['trino_port'],
-		user=access_params['trino_user'],
-		auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+		host = os.getenv('TRINO_ENDPOINT'),
+		port = os.getenv('TRINO_PORT', '443'),
+		user = os.getenv('TRINO_USER'),
+		auth=BasicAuthentication(os.getenv('TRINO_USER'), os.getenv('TRINO_PASSWORD')),
 		http_scheme="https"
 	)
 
@@ -77,6 +78,8 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 					"""
 
 	boletos = execute_query(conn, query_boletos)
+
+	print(boletos)
 
 	# Query base limites
 	query_limites =  f""" 
@@ -152,6 +155,8 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
 
+
+	'''
 	# Configuração do cliente MinIO
 
 	minio_client = Minio(
@@ -220,3 +225,4 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	except Exception as e:
 		print(f"{e}")
 		exit(1)
+	'''
