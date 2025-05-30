@@ -10,16 +10,17 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from io import BytesIO
 import re
 import time
+from airflow.models import Variable
 
 
 def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
-	
+
 	conn = connect(
-		host=access_params['trino_endpoint'],
-		port=access_params['trino_port'],
-		user=access_params['trino_user'],
-		auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+		host=Variable.get("TRINO_ENDPOINT"),
+		port=Variable.get("TRINO_PORT"),
+		user=Variable.get("TRINO_USER"),
+		auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
 		http_scheme="https"
 	)
 
