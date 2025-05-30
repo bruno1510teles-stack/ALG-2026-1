@@ -190,7 +190,7 @@ spec:
       - name: "spark-scripts-volume"
         mountPath: "/scripts"
     annotations:
-      sidecar.istio.io.inject: "false"
+      sidecar.istio.io/inject: "false"
     env:
       - name: TRINO_ENDPOINT
         valueFrom:
