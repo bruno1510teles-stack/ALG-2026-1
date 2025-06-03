@@ -341,7 +341,7 @@ def cnaes_to_trusted(spark, **kwargs):
 
     dt = DeltaTable.forPath(spark, "s3a://motor/pre_filtro_v2")
 
-    dt.optimize().zorderBy("cnpj").execute()
+    dt.optimize().zorderBy("documento_sem_formatacao").execute()
 
     print("Arquivos Salvos")
 
