@@ -16,7 +16,6 @@ from trino.auth import BasicAuthentication
 import numpy as np
 from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col
 from delta.tables import DeltaTable
-from airflow.models import Variable
 
 
 def cnaes_to_trusted(spark, **kwargs):
@@ -72,10 +71,10 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Conexão com o Trino
     conn = connect(
-        host=Variable.get("TRINO_ENDPOINT"),
-        port=Variable.get("TRINO_PORT"),
-        user=Variable.get("TRINO_USER"),
-        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
+        host=os.getenv('TRINO_ENDPOINT'),
+        port=os.getenv('TRINO_PORT', '443'),
+        user=os.getenv('TRINO_USER'),
+        auth=BasicAuthentication(os.getenv('TRINO_USER'), os.getenv('TRINO_PASSWORD')),
         http_scheme="https"
 	)
 
