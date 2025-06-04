@@ -44,7 +44,7 @@ with DAG(
 
     pre_filtro = SparkKubernetesOperator(
         task_id='motor_pre_filtro',
-        application_file='pre-filtro-v2-app.yaml',
+        application_file='pre-filtro-v2-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
