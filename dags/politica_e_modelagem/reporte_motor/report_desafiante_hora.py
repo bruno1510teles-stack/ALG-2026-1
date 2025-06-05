@@ -26,7 +26,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
     conn = connect(
         host='trino.alpe.com.br',
         port=443,
-        user='trinodados',
+        user='beatriz_anjos',
         auth=BasicAuthentication('beatriz_anjos', '!?&>_Jf_Rv67>BR&!R*x'),
         http_scheme="https",
     )
