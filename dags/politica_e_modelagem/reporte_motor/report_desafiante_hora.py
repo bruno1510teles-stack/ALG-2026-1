@@ -496,11 +496,15 @@ def report_motor_desafiante_hora_hora (access_params=None):
             lambda x: f"{x:.2f}".replace('.', ',') + '%' if isinstance(x, (int, float)) else x
         )
 
+    media_prazo = propostas_clientes_com_vop['PRAZO MÉDIO'].mean()
+
+    prazo = int(media_prazo) if not np.isnan(media_prazo) else 0
+    
     clientes_vop = {
         'NOME SACADO': '',
         'CNPJ': 'Total',
         'VOP': propostas_clientes_com_vop['VOP'].sum(),
-        'PRAZO MÉDIO': int(round(propostas_clientes_com_vop['PRAZO MÉDIO'].fillna(0).mean()))
+        'PRAZO MÉDIO': prazo
     }
     
     # Adiciona a linha de totais ao final da tabela consolidada
