@@ -27,7 +27,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
         host='trino.alpe.com.br',
         port=443,
         user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        auth=BasicAuthentication('beatriz_anjos', '!?&>_Jf_Rv67>BR&!R*x'),
         http_scheme="https",
     )
 
