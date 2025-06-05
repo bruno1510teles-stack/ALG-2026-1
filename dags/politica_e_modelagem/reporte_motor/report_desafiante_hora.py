@@ -363,7 +363,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
     print(totais_clientes_vop)
 
     prazo_medio_real = propostas_clientes_com_vop[propostas_clientes_com_vop['CNPJ'] != 'Total']['PRAZO MÉDIO'].mean()
-    prazo_medio_real = round(prazo_medio_real)
+    prazo_medio_real = round(prazo_medio_real) if pd.notna(prazo_medio_real) else 0
     print(prazo_medio_real)
 
 
