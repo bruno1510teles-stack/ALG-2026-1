@@ -16,9 +16,9 @@ from trino.auth import BasicAuthentication
 def retorno_diario_trusted (access_params=None, **kwargs):
 
     minio_raw = Minio(
-    "api-raw.alpe.com.br",
-    access_key = 'B7q0avvSIpSdyGPXWnEC',
-    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Connection validation
@@ -163,15 +163,16 @@ def retorno_diario_trusted (access_params=None, **kwargs):
 
     final_df = final_df[colunas_finais]
 
+    final_df = final_df.reset_index(drop=True)
 
 
     # Coletando dados da camada Trusted
     # Conectando com o banco
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -219,9 +220,24 @@ def retorno_diario_trusted (access_params=None, **kwargs):
     print('Linhas após a inserção de novas linhas:')
     print(len(retorno_final))
 
-    # Voltando o campo de validação para o mesmo tipo de dados
-    retorno_final['data_arquivo'] = pd.to_datetime(retorno_final['data_arquivo']).dt.floor('D')
-    retorno_final['data_arquivo'] = retorno_final['data_arquivo'].dt.tz_localize('UTC', nonexistent='NaT', ambiguous='NaT')
+    # Garantindo que não vou ter tidos de dados invalidos para o DeltaLake
+    for col in retorno_final.columns:
+        if pd.api.types.is_numeric_dtype(retorno_final[col]):
+            retorno_final[col] = retorno_final[col].fillna(0)
+        elif pd.api.types.is_datetime64_any_dtype(retorno_final[col]):
+            retorno_final[col] = retorno_final[col].fillna(pd.NaT)
+        else:
+            retorno_final[col] = retorno_final[col].fillna('')
+
+    def converter_colunas_data(df):
+        for col in df.columns:
+            if 'data' in col.lower():
+                df[col] = pd.to_datetime(df[col], errors='coerce').dt.date
+        return df
+
+    # Chamando a função para converter dinamicamente todas as colunas de data
+    retorno_final = converter_colunas_data(retorno_final).copy()
+
 
     print(retorno_final)
 

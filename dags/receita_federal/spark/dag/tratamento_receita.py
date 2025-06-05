@@ -6,10 +6,13 @@ from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKu
 import requests
 from datetime import timedelta
 
+
 def notificar_falha_teams(context):
+
     task_id = context['task_instance'].task_id
     dag_id = context['task_instance'].dag_id
     execution_date = context['execution_date']
+
 
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
 
@@ -43,6 +46,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
+    '''
     cnae = SparkKubernetesOperator(
         task_id='cnae',
         application_file='cnae-spark-app.yaml',
@@ -127,17 +131,19 @@ with DAG(
         do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-
+    '''
+    
     pre_filtro = SparkKubernetesOperator(
         task_id='pre_filtro',
         application_file='pre-filtro-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
-        retries = 3, # Ajustando retries
+        retries = 1, # Ajustando retries
         execution_timeout=timedelta(minutes=120)
     )
 
+    '''
     dados_cadastrais = SparkKubernetesOperator(
         task_id='dados-cadastrais',
         application_file='dados-cadastrais-spark-app.yaml',
@@ -147,5 +153,8 @@ with DAG(
         retries = 3, # Ajustando retries
         retry_delay=timedelta(minutes=120) # Ajuste
     )
+    '''
 
-    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
+    pre_filtro
+
+    #cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais

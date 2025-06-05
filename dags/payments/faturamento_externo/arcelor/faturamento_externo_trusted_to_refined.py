@@ -18,7 +18,7 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
     # Coletando dados da camada Trusted
     # Conectando com o banco
 
-    '''
+    
     conn = connect(
         host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
@@ -26,8 +26,8 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
         auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
+    
     '''
-
     conn = connect(
         host='trino.alpe.com.br',
         port='443',
@@ -35,7 +35,7 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
         auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
         http_scheme="https",
     )
-
+    '''
 
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
@@ -216,9 +216,9 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
     # Exportando dados para a camada Refined
     # # Conectando na Refined
     storage_options = {
-        "AWS_ACCESS_KEY_ID": "fAI0FfaXtvj9oSyFBrZ7",
-        "AWS_SECRET_ACCESS_KEY": "GE2NyDWjrLIPo9WkmdIFBuPzJ2HZr1hEc63PEE4O",
-        "AWS_ENDPOINT_URL":"https://api-refined.alpe.com.br",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }

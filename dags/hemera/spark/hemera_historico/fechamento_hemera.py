@@ -14,10 +14,10 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
     # Coletando dados da camada Trusted
     # Conectando com o banco
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -142,12 +142,12 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
 
         print('Iniciando coleta de Dados da Selic')
 
-        # Trazendo base da selic
+        # Trazendo dados da SELIC
         client = Minio(
-            "api-raw.alpe.com.br",
-            access_key = 'B7q0avvSIpSdyGPXWnEC',
-            secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
-        )
+            access_params['endpoint_url_raw'],
+            access_key=access_params['aws_access_key_id_raw'],
+            secret_key=access_params['aws_secret_access_key_raw'],
+		)
 
 
         # Definindo bucket e caminho do arquivo

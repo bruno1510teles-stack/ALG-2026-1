@@ -10,11 +10,10 @@ import re
 def get_bases_licitacoes (access_params=None):
 
     minio_trusted = Minio(
-    "api-trusted.alpe.com.br",
-    access_key="nr0qPLaAcdCtt7lAV4oa",
-    secret_key="GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch"
+        access_params['endpoint_url_trusted'],
+        access_key=access_params['aws_access_key_id_trusted'],
+        secret_key=access_params['aws_secret_access_key_trusted'],
     )
-
 
     # Connection validation
     try:
@@ -118,11 +117,11 @@ def get_bases_licitacoes (access_params=None):
     # Exportando 
 
     storage_options = {
-        "AWS_ACCESS_KEY_ID": 'nr0qPLaAcdCtt7lAV4oa',
-        "AWS_SECRET_ACCESS_KEY": 'GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch',
-        "AWS_ENDPOINT_URL":"https://api-trusted.alpe.com.br",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
 

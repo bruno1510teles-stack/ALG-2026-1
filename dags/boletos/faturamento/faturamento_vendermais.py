@@ -34,44 +34,53 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     # Base Boletos CCRED
     query_fatura = f"""
-    select  
-        fp.id, fp.numero_nfe, fp.numero_pedido, fp.numero_cnpj_sacado as cnpj_sacado, s.nome_sacado, pc.cpf_cnpj_sem_formato as cnpj_cedente, pc.nome as nome_cedente ,date(fp.created_date) as data_fatura, 
-        fp.valor_faturado as valor_fatura, fp.status_fatura, sefaz.status as status_fatura_sefaz
-    from 
-        postgres.ccred_schema_{Variable.get('STAGE')}_default.fatura_pedido fp
-        inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.pedido p on fp.numero_pedido = p.id
-        inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.pessoa_cedente pc on p.cedente_id  = pc.id 
-        inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.sacado s on p.sacado_id = s.id
-        left join postgres.ccred_schema_{Variable.get('STAGE')}_default.status_nfe sefaz on sefaz.chave_nfe = fp.numero_nfe 
-    where 
-        fp.status_fatura <> 'CANCELADO'
-        and pc.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500)
-    """
+                    select
+                        faturamento_id AS id,
+                        max(chave_nfe) AS numero_nfe,
+                        max(pedido_id) AS numero_pedido,
+                        max(cnpj_sacado) AS cnpj_sacado,
+                        max(razao_social_sacado) AS nome_sacado,
+                        max(cnpj_cedente) AS cnpj_cedente,
+                        max(razao_social_cedente) AS nome_cedente,
+                        max(date(data_faturamento)) AS data_fatura,
+                        max(valor_pedido) AS valor_fatura,
+                        max(status_pedido) AS status_fatura,
+                        max(status_nfe) AS status_fatura_sefaz,
+                        upper(max(pago)) as status_pago
+                    from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
+                    where (
+                            pgid not in ('bariloche', 'ltcarol', 'hortmix', 'blow', 'ocean', 'philipmorris', 'caboclo',
+                                        'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala')
+                            or pgid is null
+                    )
+                    -- and status_pedido <> 'CANCELADO'
+                    -- and pago not in ('Rejeitado', 'Excluido', 'Recompra antes do pagamento')
+                    group by faturamento_id 
+                    """
+    
     fatura = execute_query(conn, query_fatura)
 
     print(f"Quantidade de linhas no DataFrame 'fatura': {fatura.shape[0]}")
 
-
-    # Função para ajustar os valores ao formato decimal(8, 2)
+    # Ajuste do decimal
     def ajustar_decimal(valor):
         if pd.isnull(valor):
-            return None  # Mantém valores nulos como estão
+            return None
         else:
-            # Limitar para no máximo 8 dígitos, com 2 casas decimais
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
-    # Aplicar a função na coluna 'valor_titulo'
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
-    # Atribuindo data
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
+    fatura['valor_fatura'] = fatura['valor_fatura'].astype(float).round(2)
+
+    # Timestamp e partições
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
     fatura['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     fatura['year'], fatura['month'], fatura['day'] = now.year, now.month, now.day
+
     print("Tratamento dos dados concluído")
 
-
-    # Exportando dados para a camada Trusted
-    # # Conectando na Trusted        
+    # Configuração do Delta Lake
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
@@ -80,13 +89,13 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
-    # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_TRUSTED = "payments"
     FOLDER_DESTINATION_TRUSTED = "faturamento"
 
+    # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        fatura, 
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+        fatura,
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"

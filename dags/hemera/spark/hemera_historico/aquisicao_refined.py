@@ -14,10 +14,10 @@ def aquisicao_trusted_to_refined (access_params=None, **kwargs):
     # Coletando dados da camada Trusted
     # Conectando com o banco
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
@@ -46,7 +46,7 @@ def aquisicao_trusted_to_refined (access_params=None, **kwargs):
     df_consolidado = df[colunas_finais].copy()
 
 
-
+    df_consolidado['data_fechamento'] = pd.to_datetime(df_consolidado['data_fechamento'], errors='coerce')
     df_consolidado['data_fechamento'] = df_consolidado['data_fechamento'].dt.date
     df_consolidado['id_titulo'] = df_consolidado['id_titulo'].astype(str).str.zfill(10)
     df_consolidado['valor_aquisicao'] = pd.to_numeric(df_consolidado['valor_aquisicao'], errors='coerce').round(2)

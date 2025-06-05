@@ -10,26 +10,24 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from io import BytesIO
 import re
 import time
+from airflow.models import Variable
 
 
 def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
-	
-	#conn = connect(
-	#	host=access_params['trino_endpoint'],
-	#	port=access_params['trino_port'],
-	#	user=access_params['trino_user'],
-	#	auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-	#	http_scheme="https"
-	#)
 
+	print(Variable.get("TRINO_ENDPOINT"))
+	print(Variable.get("TRINO_PORT"))
+	print(Variable.get("TRINO_USER"))
+	print(Variable.get("TRINO_PASSWORD"))
+	
 	conn = connect(
-        host='trino.alpe.com.br',
-        port='443',
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
-        http_scheme="https",
-    )
+		host = Variable.get("TRINO_ENDPOINT"),
+		port = Variable.get("TRINO_PORT"),
+		user = Variable.get("TRINO_USER"),
+		auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
+		http_scheme="https"
+	)
 
 	# Função para execução da query
 	def execute_query(conn, query):
@@ -85,6 +83,8 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 					"""
 
 	boletos = execute_query(conn, query_boletos)
+
+	print(boletos)
 
 	# Query base limites
 	query_limites =  f""" 
@@ -160,14 +160,17 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
 
+
+	'''
 	# Configuração do cliente MinIO
+
 	minio_client = Minio(
 			"minio-api.alpenet.com.br",
 			access_key="pe4MdrBZnRqrLUatARfZ",
 			secret_key="d7RdWy02br3Q9Tsvmq8rOXDI9buAWlurPATmTFZh",
 			secure=True
 	)
-
+	
 	# Connection validation
 	try:
 		# Try to list the buckets
@@ -227,3 +230,4 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	except Exception as e:
 		print(f"{e}")
 		exit(1)
+	'''

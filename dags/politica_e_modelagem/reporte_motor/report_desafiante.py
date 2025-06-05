@@ -16,10 +16,10 @@ def report_motor_desafiante (access_params=None):
 
     # Conexão com o banco de dados
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='trinodados',
-        auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 

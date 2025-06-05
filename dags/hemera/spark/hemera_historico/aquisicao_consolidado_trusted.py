@@ -13,9 +13,9 @@ import re
 def aquisicao_consolidado_trusted (access_params=None, **kwargs):
 
     minio_raw = Minio(
-    "api-raw.alpe.com.br",
-    access_key = 'B7q0avvSIpSdyGPXWnEC',
-    secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Connection validation
@@ -170,6 +170,19 @@ def aquisicao_consolidado_trusted (access_params=None, **kwargs):
             final_df[col] = final_df[col].fillna(pd.NaT)
         else:
             final_df[col] = final_df[col].fillna('')
+
+    def converter_para_datetime(df):
+        # Seleciona todas as colunas do tipo datetime (independente de timezone)
+        colunas_datetime = df.select_dtypes(include=['datetime', 'datetime64']).columns
+        
+        for coluna in colunas_datetime:
+            # Converte a coluna para datetime.date, removendo o tempo e o timezone
+            df[coluna] = pd.to_datetime(df[coluna]).dt.date
+        
+        return df
+
+    # Chamando a função para converter dinamicamente todas as colunas de data
+    final_df = converter_para_datetime(final_df).copy()
 
 
     print('Salvando dados na Trusted...')
