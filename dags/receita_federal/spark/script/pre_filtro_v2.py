@@ -170,6 +170,7 @@ def cnaes_to_trusted(spark, **kwargs):
         COALESCE(s.tem_socio_pj, FALSE) AS tem_socio_pj,
         COALESCE(sim.is_mei, FALSE) AS is_mei,
         COALESCE(tp.tem_pep, FALSE) AS tem_pep,
+        COALESCE(est.is_matriz, FALSE) AS is_matriz,
         est.situacao_especial,
         est.data_ref AS data_ref_receita
     FROM estabelecimentos est
@@ -235,6 +236,7 @@ def cnaes_to_trusted(spark, **kwargs):
         first("tem_socio_pj").alias("tem_socio_pj"),
         first("is_mei").alias("is_mei"),
         first("tem_pep").alias("tem_pep"),
+        first("is_matriz").alias("is_matriz"),
         first("situacao_especial").alias("situacao_especial"),
         first("data_ref_receita").alias("data_ref_receita"),
         when(spark_max("cnae_aceito_flag") == 1, "SIM").otherwise("NAO").alias("cnae_aceito")
@@ -300,7 +302,7 @@ def cnaes_to_trusted(spark, **kwargs):
     colunas_finais = [
     'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
     'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
-    'situacao_cadastral','idade_socio','tem_socio_pj','is_mei','is_spe','is_consorcio',
+    'situacao_cadastral','idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio',
     'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
     'nat_ju_aceita','analise_menor_60_dias','decisao','atualizado_em'
     ]
@@ -338,10 +340,6 @@ def cnaes_to_trusted(spark, **kwargs):
         .option("overwriteSchema", "true") \
         .mode("overwrite") \
         .save("s3a://motor/pre_filtro_v2")
-
-    dt = DeltaTable.forPath(spark, "s3a://motor/pre_filtro_v2")
-
-    dt.optimize().execute()
 
     print("Arquivos Salvos")
 
