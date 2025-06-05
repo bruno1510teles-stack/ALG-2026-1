@@ -111,7 +111,7 @@ def cnaes_to_trusted(spark, **kwargs):
                 true as analise_menor_60_dias,
                 max(decisao) as decisao
         FROM deltalaketrusted.jira.propostas
-        WHERE cast(data_criado AS date) >= current_date - INTERVAL '60' day
+        WHERE try_cast(data_criado AS date) >= current_date - INTERVAL '60' day
         group by cnpj
     """
     propostas_aux = execute_query(conn, query_propostas)
