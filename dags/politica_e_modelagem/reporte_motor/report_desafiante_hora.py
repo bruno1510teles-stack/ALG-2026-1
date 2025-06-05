@@ -70,7 +70,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
             left join deltalakerefined.payments.vop_vendermais vv
                 on a.cnpj = vv.cnpj_sacado
             where a.politica = 'DESAFIANTE'
-            and date(a.data_criado) = date(timestamp '{data_execucao}')
+            and TRY_CAST (a.data_criado AS DATE) = DATE(timestamp '{data_execucao}')
         ) as sub
         group by sub.faixa_valor_solicitado
     """
@@ -159,11 +159,11 @@ def report_motor_desafiante_hora_hora (access_params=None):
                     sum(vencido) as vencido,
                     sum(vop_over_30) as vop_over_30
                 from deltalakerefined.payments.vop_vendermais
-                where date(safra_concessao) >= date '2025-04-01'
+                where TRY_CAST(safra_concessao AS DATE) >= DATE '2025-04-01'
                 group by cnpj_sacado
             ) as b on a.cnpj = b.cnpj_sacado
             where politica = 'DESAFIANTE'
-            and date(data_criado) >= date '2025-04-14'
+            and TRY_CAST(data_criado AS DATE) >= DATE '2025-04-14'
         ) as sub
         where sub.faixa_valor_solicitado is not null
         group by sub.faixa_valor_solicitado
@@ -248,11 +248,11 @@ def report_motor_desafiante_hora_hora (access_params=None):
                         sum(vencido) as vencido,
                         sum(vop_over_30) as vop_over_30
                     from deltalakerefined.payments.vop_vendermais
-                    where date(safra_concessao) >= date '2025-04-01'
+                    where TRY_CAST(safra_concessao AS DATE) >= DATE '2025-04-01'
                     group by cnpj_sacado
                 ) as b on a.cnpj = b.cnpj_sacado
                 where politica = 'DESAFIANTE'
-                and date(data_criado) >= date '2025-04-14'
+                and TRY_CAST(data_criado AS DATE) >= DATE '2025-04-14'
             ) as sub
             where sub.faixa_valor_solicitado is not null
             group by sub.faixa_valor_solicitado
@@ -274,12 +274,12 @@ def report_motor_desafiante_hora_hora (access_params=None):
                         sum(vop) as vop,
                         avg(prazo_medio) as prazo_medio
                     from deltalakerefined.payments.vop_vendermais vv
-                    where date(safra_concessao) >= date '2025-04-01'
+                    where TRY_CAST(safra_concessao AS DATE) >= DATE '2025-04-01'
                     group by nome_sacado, cnpj_sacado
                 ) as b
                 on a.cnpj = b.cnpj_sacado
                 where politica = 'DESAFIANTE'
-                and date(data_criado) >= date(timestamp '{data_ultima_semana}')
+                AND TRY_CAST(data_criado AS DATE) >= DATE(timestamp '{data_ultima_semana}')
                 and a.categoria_decisor = 'MOTOR'
                 and a.decisao = 'APROVADO'
                 and coalesce(b.vop, 0) > 0
