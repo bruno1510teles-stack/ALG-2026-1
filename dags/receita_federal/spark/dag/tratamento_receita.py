@@ -137,9 +137,9 @@ with DAG(
         task_id='pre_filtro',
         application_file='pre-filtro-spark-app.yaml',
         namespace='spark',
+        watch=True,
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
-        deferrable=True,
         execution_timeout=timedelta(minutes=120)
     )
 
