@@ -51,4 +51,4 @@ with DAG(
         execution_timeout=timedelta(minutes=120)
     )
 
-    pre_filtro 
+    pre_filtro
