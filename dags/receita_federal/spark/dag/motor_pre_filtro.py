@@ -28,7 +28,7 @@ def notificar_falha_teams(context):
 default_args = {
     'owner': 'Felipe Ferraz',
     'start_date': days_ago(1),
-    "on_failure_callback": notificar_falha_teams
+    #"on_failure_callback": notificar_falha_teams
 } 
 
 

@@ -16,6 +16,8 @@ from trino.auth import BasicAuthentication
 import numpy as np
 from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col
 from delta.tables import DeltaTable
+import threading
+import time
 
 
 def cnaes_to_trusted(spark, **kwargs):
@@ -334,14 +336,31 @@ def cnaes_to_trusted(spark, **kwargs):
         "cnpj_bucket", (hash(col("documento_sem_formatacao")) % 100).cast("int")
     )
 
-    df_final.write \
-        .partitionBy("data_ref_receita", "cnpj_bucket") \
-        .format("delta") \
-        .option("overwriteSchema", "true") \
-        .mode("overwrite") \
-        .save("s3a://motor/pre_filtro_v2")
 
-    print("Arquivos Salvos")
+    def keep_alive_logger(interval=60):
+        """Thread para imprimir mensagens de keep-alive."""
+        while not done_flag.is_set():
+            print("[INFO] Processando escrita no Delta... ainda rodando.")
+            time.sleep(interval)
+
+    done_flag = threading.Event()
+    logger_thread = threading.Thread(target=keep_alive_logger)
+    logger_thread.start()
+
+
+    try:
+        df_final.write \
+            .partitionBy("data_ref_receita", "cnpj_bucket") \
+            .format("delta") \
+            .option("overwriteSchema", "true") \
+            .mode("overwrite") \
+            .save("s3a://motor/pre_filtro_v2")
+
+        print("[INFO] Arquivos Salvos com sucesso.")  
+    finally:
+        done_flag.set()
+        logger_thread.join()
+
 
     spark.stop()
 
