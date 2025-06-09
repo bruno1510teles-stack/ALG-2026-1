@@ -124,7 +124,7 @@ def cnaes_to_trusted(spark, **kwargs):
         cnpj_raiz, case when limite_atribuido > 0 then true else false end as limite_alpe, NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, situacao_sacado, limite_atribuido
     from (
         select 
-            pc.chave as cnpj_raiz,
+            pc.chave as cnpj_raiz_lim,
             lc.id is not null as limite_alpe,
             sum(limite_atribuido) as limite_atribuido,
             sum(limite_disponivel) as limite_disponivel,
@@ -327,7 +327,7 @@ def cnaes_to_trusted(spark, **kwargs):
     # Cruzando com informações de limite
     df_agrupado = df_agrupado.join(
         aux_limite_info_spark,
-        df_agrupado["cnpj_raiz"] == aux_limite_info_spark["cnpj_raiz"],
+        df_agrupado["cnpj_raiz"] == aux_limite_info_spark["cnpj_raiz_lim"],
         how="left"
     )
 
