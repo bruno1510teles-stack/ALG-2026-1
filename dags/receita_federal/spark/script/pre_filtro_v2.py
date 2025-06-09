@@ -119,11 +119,36 @@ def cnaes_to_trusted(spark, **kwargs):
     propostas_aux = execute_query(conn, query_propostas)
 
 
+    query_info_limite = f"""
+    select 
+        cnpj_raiz as cnpj_raiz_lim, 
+        case when limite_atribuido > 0 then true else false end as limite_alpe, 
+        NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, 
+        situacao_sacado, 
+        limite_atribuido
+    from (
+        select 
+            pc.chave as cnpj_raiz,
+            lc.id is not null as limite_alpe,
+            sum(limite_atribuido) as limite_atribuido,
+            sum(limite_disponivel) as limite_disponivel,
+            pl.status as situacao_sacado
+        from postgres.ccred_schema_prd_default.participante_chave pc
+        inner join postgres.ccred_schema_prd_default.limite_config lc on lc.participante_chave_sacado_id = pc.id
+        inner join postgres.ccred_schema_prd_default.participante_limite pl on pl.limite_config_id = lc.id	    
+        group by
+            pc.chave, lc.id is not null, pl.status)
+    """
+
+    limite_info = execute_query(conn, query_info_limite)
+
+
     # Transformar DFSs Pandas em Spark
 
     aux_nat_ju_spark = spark.createDataFrame(aux_nat_ju)
     aux_cnae_spark = spark.createDataFrame(aux_cnae)
     aux_propostas_spark = spark.createDataFrame(propostas_aux)
+    aux_limite_info_spark = spark.createDataFrame(limite_info)
 
 
     # Executar consulta SQL usando as tabelas temporárias
@@ -268,6 +293,13 @@ def cnaes_to_trusted(spark, **kwargs):
         )
     )
 
+    # IS SA
+    df_agrupado = df_agrupado.withColumn(
+        "is_sa",
+        (col("cod_natureza_juridica") == "2054") |
+        (col("cod_natureza_juridica") == "2046")
+    )
+
     # IS CONSORCIO
     df_agrupado = df_agrupado.withColumn(
         "is_consorcio",
@@ -296,6 +328,14 @@ def cnaes_to_trusted(spark, **kwargs):
         how="left"
     )
 
+    # Cruzando com informações de limite
+    df_agrupado = df_agrupado.join(
+        aux_limite_info_spark,
+        df_agrupado["cnpj_raiz"] == aux_limite_info_spark["cnpj_raiz_lim"],
+        how="left"
+    )
+
+
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     atualizado_em = now.strftime('%Y-%m-%d %X')  
     df_agrupado = df_agrupado.withColumn("atualizado_em", lit(atualizado_em))
@@ -304,13 +344,16 @@ def cnaes_to_trusted(spark, **kwargs):
     colunas_finais = [
     'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
     'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
-    'situacao_cadastral','idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio',
+    'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
+    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio',
     'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
     'nat_ju_aceita','analise_menor_60_dias','decisao','atualizado_em'
     ]
 
-    df_final = df_agrupado.select(colunas_finais)
+    df_filtrado = df_agrupado.select(colunas_finais)
 
+    # Filtrando apenas oq for is matriz True para salvar no Minio
+    df_final = df_filtrado.filter(df_filtrado["is_matriz"] == True)
 
     #print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
     #print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
