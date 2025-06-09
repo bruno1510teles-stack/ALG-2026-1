@@ -121,10 +121,14 @@ def cnaes_to_trusted(spark, **kwargs):
 
     query_info_limite = f"""
     select 
-        cnpj_raiz, case when limite_atribuido > 0 then true else false end as limite_alpe, NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, situacao_sacado, limite_atribuido
+        cnpj_raiz as cnpj_raiz_lim, 
+        case when limite_atribuido > 0 then true else false end as limite_alpe, 
+        NULLIF(limite_disponivel, 0) / NULLIF(limite_atribuido, 0) AS pcto_limite_utilizado, 
+        situacao_sacado, 
+        limite_atribuido
     from (
         select 
-            pc.chave as cnpj_raiz_lim,
+            pc.chave,
             lc.id is not null as limite_alpe,
             sum(limite_atribuido) as limite_atribuido,
             sum(limite_disponivel) as limite_disponivel,
