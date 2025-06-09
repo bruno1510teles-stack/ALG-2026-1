@@ -18,7 +18,6 @@ from pyspark.sql.functions import col, split, when, array, array_union, explode,
 from delta.tables import DeltaTable
 import threading
 import time
-from airflow.models import Variable
 
 
 def cnaes_to_trusted(spark, **kwargs):
