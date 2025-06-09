@@ -128,7 +128,7 @@ def cnaes_to_trusted(spark, **kwargs):
         limite_atribuido
     from (
         select 
-            pc.chave,
+            pc.chave as cnpj_raiz,
             lc.id is not null as limite_alpe,
             sum(limite_atribuido) as limite_atribuido,
             sum(limite_disponivel) as limite_disponivel,
