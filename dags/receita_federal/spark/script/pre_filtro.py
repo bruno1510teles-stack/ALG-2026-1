@@ -18,7 +18,6 @@ from pyspark.sql.functions import col, split, when, array, array_union, explode,
 from delta.tables import DeltaTable
 import threading
 import time
-from airflow.models import Variable
 
 
 def cnaes_to_trusted(spark, **kwargs):
@@ -130,9 +129,9 @@ def cnaes_to_trusted(spark, **kwargs):
             sum(limite_atribuido) as limite_atribuido,
             sum(limite_disponivel) as limite_disponivel,
             pl.status as situacao_sacado
-        from postgres.ccred_schema_{Variable.get('STAGE')}_default.participante_chave pc
-        inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.limite_config lc on lc.participante_chave_sacado_id = pc.id
-        inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.participante_limite pl on pl.limite_config_id = lc.id	    
+        from postgres.ccred_schema_prd_default.participante_chave pc
+        inner join postgres.ccred_schema_prd_default.limite_config lc on lc.participante_chave_sacado_id = pc.id
+        inner join postgres.ccred_schema_prd_default.participante_limite pl on pl.limite_config_id = lc.id	    
         group by
             pc.chave, lc.id is not null, pl.status)
     """
