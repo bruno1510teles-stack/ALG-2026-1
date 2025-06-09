@@ -355,9 +355,6 @@ def cnaes_to_trusted(spark, **kwargs):
     # Filtrando apenas oq for is matriz True para salvar no Minio
     df_final = df_filtrado.filter(df_filtrado["is_matriz"] == True)
 
-    print(f"Total linhas antes do filtro: {df_filtrado.count()} | Total linhas depois do filtro: {df_final.count()}")
-
-
     #print(f"DataFrame carregado. Esquema: {df_final.printSchema()}")
     #print(f"Primeiras linhas do DataFrame: {df_final.show(5)}") 
     #row_count = df_final.count()
