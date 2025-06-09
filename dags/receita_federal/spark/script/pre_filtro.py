@@ -64,6 +64,9 @@ def cnaes_to_trusted(spark, **kwargs):
     trusted_cnae.createOrReplaceTempView("cnae")
     print("trusted_cnae ok")
 
+    
+    print(spark.conf.get("fs.s3a.endpoint", "configuração não definida"))
+
 
     print("TRINO_ENDPOINT:", os.getenv('TRINO_ENDPOINT'))
     print("TRINO_PORT:", os.getenv('TRINO_PORT', '443'))
@@ -373,6 +376,9 @@ def cnaes_to_trusted(spark, **kwargs):
     hadoop_conf.set("fs.s3a.endpoint", os.getenv('MINIO_REFINED_ENDPOINT'))
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
+
+    print('ENDPOINT REFINED:')
+    print("ENDPOINT REFINED:", os.getenv('MINIO_REFINED_ENDPOINT'))
 
 
     df_final = df_final.withColumn(
