@@ -183,7 +183,7 @@ spec:
     coreLimit: "1"
     coreRequest: "500m"
     instances: 1
-    memory: "8g"
+    memory: "12g"
     labels:
       version: "3.5.1"
     volumeMounts:
