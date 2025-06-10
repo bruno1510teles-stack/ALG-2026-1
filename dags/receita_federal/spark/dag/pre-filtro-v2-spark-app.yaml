@@ -182,8 +182,8 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    instances: 1
-    memory: "12g"
+    instances: 2
+    memory: "8g"
     labels:
       version: "3.5.1"
     volumeMounts:
