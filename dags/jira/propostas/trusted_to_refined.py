@@ -34,6 +34,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         columns = [desc[0] for desc in cur.description]
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
+    
 
     # Definindo a consulta
     query_jira_trusted = """
@@ -54,6 +55,7 @@ def trusted_to_refined (access_params=None, **kwargs):
     print(df.columns.tolist())
 
 
+
     # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
 
     # Convertendo a coluna de data para datetime
@@ -70,6 +72,54 @@ def trusted_to_refined (access_params=None, **kwargs):
 
     # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
     df['analista_responsavel'] = df['analista_responsavel'].fillna('NA')
+
+
+
+    # LOGICA GERENTE RESPONSAVEL, PRIMEIRO GERENTE QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
+
+    # Atribuindo o gerente responsável, pegando o primeiro gerente de cada grupo de raiz_cnpj
+    df['gerente_responsavel'] = df_sorted.groupby('raiz_cnpj')['gerente_tratado'].transform('first')
+
+    # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
+    df['gerente_responsavel'] = df['gerente_responsavel'].fillna('NA')
+
+
+
+    # GERANDO O CARGO DO ANALISTA RESPONSAVEL
+
+    # LISTA DE NOMES POR CARGO
+    lista_cargo_motor = ['MOTOR']
+    lista_cargo_assistente = ['ANA BEATRIZ RODRIGUES ANDRADE']
+    lista_cargo_junior = ['LARISSA FREIRE SOARES', 'VANESSA SOUZA']
+    lista_cargo_pleno = ['LEANDRO QUINTINO DA ANUNCIACAO', 'DIANA TIEMI YAMAMOTO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA']
+    lista_cargo_senior = ['CLAUDIA CINARE RODRIGUES ETO', 'ROSEMEIRE DIAS FERREIRA', 'JOSE CARVALHO', 'ALEXANDRE DE MEDEIROS']
+    lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
+    lista_cargo_outros = ['OUTROS', 'NA']
+
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_cargo_analista(nome):
+        nome = nome.upper()
+        if nome in lista_cargo_motor:
+            return '6 - MOTOR'
+        elif nome in lista_cargo_assistente:
+            return '1 - ASSISTENTE'
+        elif nome in lista_cargo_junior:
+            return '2 - JÚNIOR'
+        elif nome in lista_cargo_pleno:
+            return '3 - PLENO'
+        elif nome in lista_cargo_senior:
+            return '4 - SÊNIOR'
+        elif nome in lista_cargo_gerente:
+            return '5 - GERENTE'
+        elif nome in lista_cargo_outros:
+            return '7 - OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df['cargo_analista_responsavel'] = df['analista_responsavel'].apply(categorizar_cargo_analista)
 
 
     # Criando Funções para formatar DataFrame
@@ -172,7 +222,7 @@ def trusted_to_refined (access_params=None, **kwargs):
                 total_horas += diff
 
         return round(total_horas, 2)
-    
+
 
     # Função para contar dias úteis entre duas datas
     def calcular_dias_uteis(inicio, fim):
@@ -216,7 +266,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         elif dias >= 3:
             return "04 - >= D + 3"
         
-    
+
     # Adiciona colunas de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
@@ -267,7 +317,8 @@ def trusted_to_refined (access_params=None, **kwargs):
         'sla_hora_disp_mesa_resolvido', 'sla_dias_criado_resolvido',
         'sla_dias_disp_mesa_resolvido', 'faixa_valor_solicitado',
         'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional','analista_tratado',
-        'analista_responsavel', 'atualizado_em', 'year', 'month', 'day',
+        'analista_responsavel','cargo_analista_responsavel','gerente_responsavel',
+        'atualizado_em', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
 
