@@ -51,7 +51,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                     from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
                     where (
                             pgid not in ('bariloche', 'ltcarol', 'hortmix', 'blow', 'ocean', 'philipmorris', 'caboclo',
-                                        'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala')
+                                        'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala', 'ultracheese')
                             or pgid is null
                     )
                     """
