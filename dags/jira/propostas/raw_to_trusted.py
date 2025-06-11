@@ -507,7 +507,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
     df_resolvido = df_resolvido.loc[
-        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])) & 
+        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000)
     ]
 

@@ -104,4 +104,6 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
+    #processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
+
+    captura_proposta >> raw_to_trusted >> trusted_to_refined
