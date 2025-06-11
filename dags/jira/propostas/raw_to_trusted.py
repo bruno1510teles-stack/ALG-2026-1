@@ -266,20 +266,22 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     # TRATANDO DECISAO
     def formata_decisao(decisor_func):
-        if decisor_func == 'Approved':
+        if decisor_func == 'Aprovado':
             return "APROVADO"
-        elif decisor_func == 'Reproved':
+        elif decisor_func == 'Cancelado':
+            return "CANCELADO"
+        elif decisor_func == 'Mantido':
             return "REPROVADO"
         elif decisor_func == 'Duplicado':
             return "DUPLICADO"
-        elif decisor_func == 'Ineligible':
+        elif decisor_func == 'Inelegível':
             return "INELEGÍVEL"
-        elif decisor_func == 'Canceled':
-            return "CANCELADO"
-        elif decisor_func == 'Não será feito':
+        elif decisor_func == 'Reprovado':
             return "REPROVADO"
+        elif decisor_func == 'Não será feito':
+            return "NÃO ATRIBUIDA"
         elif decisor_func == 'Concluído':
-            return "APROVADO"
+            return "NÃO ATRIBUIDA"
         else:
             return "NÃO ATRIBUIDA"
 
