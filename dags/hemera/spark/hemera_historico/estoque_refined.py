@@ -206,7 +206,7 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
     print("Iniciando salvamento dos arquivos")
     df_resultado_final.write \
         .format("delta") \
-        .option("mergeSchema", "true") \
+        .option("overwriteSchema", "true") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
         .save("s3a://hemera-refined/estoque/delta")
