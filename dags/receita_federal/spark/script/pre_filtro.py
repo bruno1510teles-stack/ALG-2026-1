@@ -348,7 +348,7 @@ def cnaes_to_trusted(spark, **kwargs):
     'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
     'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
     'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
-    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio',
+    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio', 'is_sa',
     'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
     'nat_ju_aceita','analise_menor_60_dias','decisao','atualizado_em'
     ]
