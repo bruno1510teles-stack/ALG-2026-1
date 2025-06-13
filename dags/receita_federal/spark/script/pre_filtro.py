@@ -14,7 +14,7 @@ import pandas as pd
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
-from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col
+from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col, substring
 from delta.tables import DeltaTable
 import threading
 import time
@@ -348,7 +348,7 @@ def cnaes_to_trusted(spark, **kwargs):
     'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
     'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
     'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
-    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio',
+    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio', 'is_sa',
     'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
     'nat_ju_aceita','analise_menor_60_dias','decisao','atualizado_em'
     ]
@@ -382,7 +382,7 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     df_final = df_final.withColumn(
-        "cnpj_bucket", (hash(col("documento_sem_formatacao")) % 100).cast("int")
+        "cnpj_bucket", substring(col("documento_sem_formatacao"), 1, 3)
     )
 
 
@@ -391,6 +391,7 @@ def cnaes_to_trusted(spark, **kwargs):
         while not done_flag.is_set():
             print("[INFO] Processando escrita no Delta... ainda rodando.")
             time.sleep(interval)
+
 
     done_flag = threading.Event()
     logger_thread = threading.Thread(target=keep_alive_logger)
