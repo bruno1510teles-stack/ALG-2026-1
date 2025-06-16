@@ -102,7 +102,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
 
     final_df['problema'] = final_df['status'].str.strip().str.lower().isin([
-        'risco inadimplência',
+        'risco inadimplencia',
         'em cobrança'
     ]).map({True: 'SIM', False: 'NÃO'})
 
