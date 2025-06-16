@@ -106,6 +106,9 @@ def trata_safras_problema (access_params=None, **kwargs):
         cols.remove("safra")
         final_df = final_df[["safra"] + cols]
 
+    # safra em formato date
+    final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
+
     final_df = final_df.drop(columns=["source_file"])
 
     final_df['cnpj'] = final_df['cnpj'].str.replace(r'[./-]', '', regex=True)
