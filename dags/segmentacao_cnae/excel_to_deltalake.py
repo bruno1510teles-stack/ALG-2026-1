@@ -155,7 +155,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     segmento['cnpj_completo'] = segmento['CNPJ SACADO'].astype(str).str.replace(r'[./-]', '', regex=True)
     
 
-    df = pd.merge(df_merge, segmento[['cnpj_completo', 'casos_matcon', 'casos_agro', 'casos_outros']], on ='cnpj_completo', how = 'left')
+    df = pd.merge(df_merge, segmento[['cnpj_completo', 'cedente']], on ='cnpj_completo', how = 'left')
     
     
     # Criando segmento e sub_segmento
