@@ -95,13 +95,11 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     query_segmento = f""" 
             select 
                 cnpj_sacado as "CNPJ SACADO", 
-                sum(case when cedente in ('belgo' , 'gonvarri' , 'arcelor', 'aperam') then 1 else 0 end) as casos_matcon,
-                sum(case when cedente in ('agrichem', 'cadubo' , 'asusimplementos') then 1 else 0 end) as casos_agro,
-                sum(case when cedente not in('belgo' , 'gonvarri' , 'arcelor', 'agrichem', 'cadubo' , 'asusimplementos', 'aperam')  then 1 else 0 end) as casos_outros
+                max(cedente) as cedente
             from 
                 deltalaketrusted.limites.limite 
             group by
-                cnpj_sacado 
+                cnpj_sacado
                     """
     
 
@@ -162,9 +160,9 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
     # Criando segmento e sub_segmento
     df['segmento'] = df.apply(
-        lambda row: 'MATCON' if row['casos_matcon'] > 0 else
-                    ('AGRO' if row['casos_agro'] > 0 else
-                    ('OUTROS' if row['casos_outros'] > 0 else 'OUTROS')),
+        lambda row: 'MATCON' if row['cedente'] in ('belgo' , 'gonvarri' , 'arcelor', 'aperam') else
+                    ('AGRO' if row['cedente'] in ('agrichem', 'cadubo' , 'asusimplementos') else
+                    'OUTROS'),
         axis=1
     )
     
