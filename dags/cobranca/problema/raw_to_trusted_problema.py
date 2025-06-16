@@ -80,6 +80,7 @@ def trata_safras_problema (access_params=None, **kwargs):
     else:
         print("⚠️ Nenhum dado foi carregado.")
 
+    final_df = final_df.drop(columns=["source_file"])
 
     # Tratando dados para trusted
 
@@ -95,42 +96,42 @@ def trata_safras_problema (access_params=None, **kwargs):
     # Aplica normalização às colunas
     final_df.columns = [normalize_column(c) for c in final_df.columns]
 
+
+    final_df['cnpj'] = final_df['cnpj'].str.replace(r'[./-]', '', regex=True)
+    final_df['raiz_cnpj'] = final_df['cnpj'].str[:8]
+
+
+    final_df['problema'] = final_df['status'].str.strip().str.lower().isin([
+        'risco inadimplência',
+        'em cobrança'
+    ]).map({True: 'SIM', False: 'NÃO'})
+
+
     # Colunas que aparentam ser datas e precisam de conversão
     date_cols = [col for col in final_df.columns if "data" in col]
     for col in date_cols:
         final_df[col] = pd.to_datetime(final_df[col], errors="coerce", dayfirst=True)
 
-    # Reorganiza colunas: safra primeiro, depois o resto
-    cols = final_df.columns.tolist()
-    if "safra" in cols:
-        cols.remove("safra")
-        final_df = final_df[["safra"] + cols]
 
     # safra em formato date
     final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
-
-    final_df = final_df.drop(columns=["source_file"])
-
-    final_df['cnpj'] = final_df['cnpj'].str.replace(r'[./-]', '', regex=True)
-    final_df['raiz_cnpj'] = final_df['cnpj'].str[:8]
 
     # Normalizando campos string
     final_df['resumo'] = final_df['resumo'].str.upper()
     final_df['status'] = final_df['status'].str.upper()
 
-    # Reorganiza ordem das colunas
-    cols = final_df.columns.tolist()
-    cols.remove('raiz_cnpj')
-    cnpj_index = cols.index('cnpj')
-    cols.insert(cnpj_index + 1, 'raiz_cnpj')
-    final_df = final_df[cols]
+    final_df = final_df[['safra', 'cnpj','raiz_cnpj', 'problema']]
 
-    print("✅ Dados tratados")
+    final_df = final_df.drop_duplicates().reset_index(drop=True)
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     final_df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     final_df['year'] = now.year
     final_df['month'] = now.month
+
+    final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
+
+    print("✅ Dados tratados")
 
 
     print('Salvando dados na Trusted...')
