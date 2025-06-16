@@ -178,7 +178,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     df['sub_segmento'] = df.apply(lambda row: 'MATCON - OUTROS' if row['segmento'] == 'MATCON' and row['sub_segmento'] == 'MATCON' else row['sub_segmento'], axis=1)
     
     
-    df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
+    #df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
     
     # Setando 'OUTROS' para secao_final e divisao_final quando cnae == 8888888
     df.loc[df['cnae'] == '8888888', ['secao_final', 'divisao_final']] = 'OUTROS'
