@@ -131,8 +131,17 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
 
-    print("✅ Dados tratados")
+    #priorizar o SIM no campo problema
+    df_agrupado = final_df.groupby(['safra', 'cnpj', 'raiz_cnpj'], as_index=False).agg({
+        'problema': 'max',
+        'atualizado_em': 'max',
+        'year': 'max',
+        'month': 'max'
+    })
 
+    df_agrupado = df_agrupado.reset_index(drop=True)
+
+    print("✅ Dados tratados")
 
     print('Salvando dados na Trusted...')
 
@@ -151,7 +160,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-        final_df, 
+        df_agrupado, 
         partition_by=["year", "month"],
         storage_options=storage_options_trusted,
         mode="overwrite"
