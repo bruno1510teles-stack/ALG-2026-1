@@ -92,17 +92,16 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
     
     
-    query_segmento = f""" select 
-                                cnpj_sacado as "CNPJ SACADO",
-                                sum(case when nome_cedente = 'ARCELORMITTAL BRASIL S/A' or nome_cedente = 'BELGO BEKAERT ARAMES LTDA' 
-                                    or nome_cedente = 'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A'  then 1 else 0 end) as casos_matcon,
-                                sum(case when nome_cedente = 'CASAL COMERCIO E SERVICOS LTDA' or nome_cedente = 'CASA DO ADUBO S.A' 
-                                    or nome_cedente = 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA' or nome_cedente = 'AGRICHEM DO BRASIL S.A'  then 1 else 0 end) as casos_agro,
-                                sum(case when nome_cedente not in ( 'CASAL COMERCIO E SERVICOS LTDA', 'CASA DO ADUBO S.A', 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA',
-                                                                    'AGRICHEM DO BRASIL S.A', 'ARCELORMITTAL BRASIL S/A', 'BELGO BEKAERT ARAMES LTDA',
-                                                                    'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A') then 1 else 0 end) as casos_outros
-                            from deltalaketrusted.payments.boletos_internos
-                            group by cnpj_sacado
+    query_segmento = f""" 
+            select 
+                cnpj_sacado as "CNPJ SACADO", 
+                sum(case when cedente in ('belgo' , 'gonvarri' , 'arcelor', 'aperam') then 1 else 0 end) as casos_matcon,
+                sum(case when cedente in ('agrichem', 'cadubo' , 'asusimplementos') then 1 else 0 end) as casos_agro,
+                sum(case when cedente not in('belgo' , 'gonvarri' , 'arcelor', 'agrichem', 'cadubo' , 'asusimplementos', 'aperam')  then 1 else 0 end) as casos_outros
+            from 
+                deltalaketrusted.limites.limite 
+            group by
+                cnpj_sacado 
                     """
     
 
