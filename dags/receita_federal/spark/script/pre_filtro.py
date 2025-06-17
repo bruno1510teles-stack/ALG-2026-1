@@ -4,6 +4,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
+from pyspark.sql.types import IntegerType
 from pyspark.sql import Window
 from minio import Minio
 from io import BytesIO
@@ -14,7 +15,7 @@ import pandas as pd
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
-from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col, substring
+from pyspark.sql.functions import split, when, array, array_union, explode, trim, first, max as spark_max, hash, col, substring, udf
 from delta.tables import DeltaTable
 import threading
 import time
@@ -381,8 +382,20 @@ def cnaes_to_trusted(spark, **kwargs):
     print("ENDPOINT REFINED:", os.getenv('MINIO_REFINED_ENDPOINT'))
 
 
+    # Função para calcular bucket com base nos 4 últimos dígitos do CNPJ
+    def cnpj_bucket_alt(cnpj: str, num_buckets: int = 256) -> int:
+        if cnpj is None or len(cnpj) < 4:
+            return None
+        return int(cnpj[-4:]) % num_buckets
+    
+
+    # Registra a UDF
+    bucket_udf = udf(lambda cnpj: cnpj_bucket_alt(cnpj), IntegerType())
+
+
+    # Aplica a UDF para criar a coluna cnpj_bucket (substituindo o substring original)
     df_final = df_final.withColumn(
-        "cnpj_bucket", substring(col("documento_sem_formatacao"), 1, 3)
+        "cnpj_bucket", bucket_udf(col("documento_sem_formatacao"))
     )
 
 
@@ -423,7 +436,7 @@ if __name__ == "__main__":
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "8g") \
-        .config("spark.executor.cores", "1") \
+        .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
     .getOrCreate()
 
