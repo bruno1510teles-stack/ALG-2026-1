@@ -383,10 +383,10 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     # Função para calcular bucket com base nos 4 últimos dígitos do CNPJ
-    def cnpj_bucket_alt(cnpj: str, num_buckets: int = 256) -> int:
-        if cnpj is None or len(cnpj) < 4:
+    def cnpj_bucket_alt(cnpj_raiz: str, num_buckets: int = 200) -> int:
+        if cnpj_raiz is None or len(cnpj_raiz) < 8:
             return None
-        return int(cnpj[-4:]) % num_buckets
+        return int(cnpj_raiz) % num_buckets
     
 
     # Registra a UDF
@@ -395,7 +395,7 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Aplica a UDF para criar a coluna cnpj_bucket (substituindo o substring original)
     df_final = df_final.withColumn(
-        "cnpj_bucket", bucket_udf(col("documento_sem_formatacao"))
+        "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
     )
 
 
@@ -436,7 +436,7 @@ if __name__ == "__main__":
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "8g") \
-        .config("spark.executor.cores", "1") \
+        .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
     .getOrCreate()
 
