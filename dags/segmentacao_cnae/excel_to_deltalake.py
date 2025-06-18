@@ -76,17 +76,15 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
     
     query_sacados = f"""
-            select
-                substring(s.numero_cnpj_sacado, 1,8) as raiz_cnpj,
-                s.numero_cnpj_sacado,
-                s.numero_cnpj_sacado_formatado,
-                s.nome_sacado,
-                e.cnae_principal
-            from
-                postgres.ccred_schema_prd_default.sacado s
+            select 
+                substring(cnpj_sacado, 1, 8) as raiz_cnpj,
+                cnpj_sacado as numero_cnpj_sacado, 
+                nome_sacado, e.cnae_principal 
+            from 
+                deltalaketrusted.limites.limite l
             inner join
                 deltalaketrusted.receita_federal.estabelecimentos e
-                on s.numero_cnpj_sacado = e.documento_sem_formatacao
+                on l.cnpj_sacado = e.documento_sem_formatacao
     
     """
     
@@ -112,7 +110,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
 
     #Tratamento sacados
-    sacados.rename(columns={'numero_cnpj_sacado': 'cnpj_completo', 'numero_cnpj_sacado_formatado': 'cnpj','cnae_principal': 'cnae'}, inplace=True)
+    sacados.rename(columns={'numero_cnpj_sacado': 'cnpj_completo', 'cnae_principal': 'cnae'}, inplace=True)
     sacados['cnpj_completo'] = sacados['cnpj_completo'].astype(str).str.zfill(14)
     sacados['cnae'] = sacados['cnae'].fillna('').astype(str).str.replace('.0', '', regex=False).str.zfill(7)
     
