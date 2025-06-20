@@ -19,6 +19,7 @@ from pyspark.sql.functions import split, when, array, array_union, explode, trim
 from delta.tables import DeltaTable
 import threading
 import time
+import hashlib
 
 
 def cnaes_to_trusted(spark, **kwargs):
@@ -381,7 +382,7 @@ def cnaes_to_trusted(spark, **kwargs):
     print('ENDPOINT REFINED:')
     print("ENDPOINT REFINED:", os.getenv('MINIO_REFINED_ENDPOINT'))
 
-
+    '''
     # Função para calcular bucket com base nos 4 últimos dígitos do CNPJ
     def cnpj_bucket_alt(cnpj_raiz: str, num_buckets: int = 200) -> int:
         if cnpj_raiz is None or len(cnpj_raiz) < 8:
@@ -394,6 +395,26 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     # Aplica a UDF para criar a coluna cnpj_bucket (substituindo o substring original)
+    df_final = df_final.withColumn(
+        "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
+    )
+    '''
+
+
+    # ✅ Função de hash estável baseada em MD5
+    def stable_hash_bucket(cnpj_raiz: str, num_buckets: int = 256) -> int:
+        if not cnpj_raiz or len(cnpj_raiz) < 8:
+            return None
+        # Remove caracteres não numéricos e pega os 8 primeiros dígitos (raiz)
+        cnpj_clean = ''.join(filter(str.isdigit, cnpj_raiz))[:8]
+        # Gera hash MD5 e transforma em inteiro
+        hash_int = int(hashlib.md5(cnpj_clean.encode()).hexdigest(), 16)
+        return hash_int % num_buckets
+
+    # ✅ Registra a UDF no Spark
+    bucket_udf = udf(lambda cnpj: stable_hash_bucket(cnpj), IntegerType())
+
+    # ✅ Aplica a UDF no DataFrame
     df_final = df_final.withColumn(
         "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
     )
