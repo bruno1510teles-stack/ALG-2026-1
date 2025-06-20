@@ -1,17 +1,22 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import pendulum
 import requests
-from datetime import timedelta
+import pendulum
+import sys
+from datetime import datetime, timezone, timedelta
+from time import sleep
 
 
-### Importando scripts necessários
-from jira.laudos import atualizacao_tabela
-from jira.laudos import cruzamento_tabelas
+sys.path.append('/opt/airflow/dags/repo/dags/jira/laudos')
+from atualizacao_tabela import get_laudos
+from cruzamento_tabelas import get_laudos_com_propostas
+
 
 
 ### Parâmetros de acesso
@@ -71,7 +76,7 @@ with DAG(
     # Definindo o task que atualiza a tabela laudos
     atualizando_tabela_de_laudos = PythonOperator(
         task_id='atualizar_laudos',
-        python_callable=atualizacao_tabela.get_laudos,
+        python_callable= get_laudos,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
@@ -79,7 +84,7 @@ with DAG(
     # Definindo o task que cruza a tabela laudos com a tabela propostas
     cruzando_tabelas = PythonOperator(
         task_id='cruzar_laudos_com_propostas',
-        python_callable=cruzamento_tabelas.get_laudos_com_propostas,
+        python_callable=get_laudos_com_propostas,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
