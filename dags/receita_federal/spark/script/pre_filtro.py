@@ -438,7 +438,7 @@ def cnaes_to_trusted(spark, **kwargs):
             .format("delta") \
             .option("overwriteSchema", "true") \
             .mode("overwrite") \
-            .save("s3a://motor/pre_filtro_v2")
+            .save("s3a://motor/pre_filtro_v3")
 
         print("[INFO] Arquivos Salvos com sucesso.")  
     finally:
