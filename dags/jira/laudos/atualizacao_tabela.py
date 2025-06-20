@@ -26,6 +26,11 @@ def get_laudos (access_params=None, **kwargs):
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
         cur.execute(query)
+
+        if cur.description is None:
+           cur.close()
+           return None
+        
         rows = cur.fetchall()
         columns = [desc[0] for desc in cur.description]
         cur.close()  # Fecha o cursor após a execução
@@ -36,6 +41,7 @@ def get_laudos (access_params=None, **kwargs):
     CALL minioraw.system.sync_partition_metadata('motor', 'laudos', 'FULL')
 
     """
+    # Executando apenas para sincronizar
     laudo = execute_query (conn, query_laudo)
 
                             
