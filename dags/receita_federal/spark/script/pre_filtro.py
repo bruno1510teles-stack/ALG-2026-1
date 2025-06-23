@@ -401,20 +401,21 @@ def cnaes_to_trusted(spark, **kwargs):
     '''
 
 
-    # ✅ Função de hash estável baseada em MD5
-    def stable_hash_bucket(cnpj_raiz: str, num_buckets: int = 256) -> int:
-        if not cnpj_raiz or len(cnpj_raiz) < 8:
+    def stable_hash_bucket(cnpj_raiz: str, num_buckets: int = 200) -> int:
+        if not cnpj_raiz:
             return None
-        # Remove caracteres não numéricos e pega os 8 primeiros dígitos (raiz)
-        cnpj_clean = ''.join(filter(str.isdigit, cnpj_raiz))[:8]
-        # Gera hash MD5 e transforma em inteiro
-        hash_int = int(hashlib.md5(cnpj_clean.encode()).hexdigest(), 16)
-        return hash_int % num_buckets
+        try:
+            cnpj_str = str(cnpj_raiz)
+            cnpj_clean = ''.join([c for c in cnpj_str if c.isdigit()])[:8]
+            if len(cnpj_clean) < 8:
+                return None
+            hash_int = int(hashlib.md5(cnpj_clean.encode()).hexdigest(), 16)
+            return hash_int % num_buckets
+        except Exception as e:
+            return None
 
-    # ✅ Registra a UDF no Spark
     bucket_udf = udf(lambda cnpj: stable_hash_bucket(cnpj), IntegerType())
 
-    # ✅ Aplica a UDF no DataFrame
     df_final = df_final.withColumn(
         "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
     )
