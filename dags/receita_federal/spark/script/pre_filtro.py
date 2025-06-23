@@ -462,6 +462,7 @@ if __name__ == "__main__":
         .config("spark.shuffle.compress", "true") \
         .config("spark.shuffle.spill.compress", "true") \
         .config("spark.shuffle.file.buffer", "64k") \
+        .config("spark.local.dir", "/tmp/spark") \
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
