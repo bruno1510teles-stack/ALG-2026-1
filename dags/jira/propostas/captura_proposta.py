@@ -110,7 +110,7 @@ def captura_proposta (access_params = None):
             "startAt": start_at,
             "maxResults": max_results,
             "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743",
-                        "customfield_13798", "customfield_13793", "customfield_13742", "customfield_13753", "customfield_13721", "priority", "updated"]
+                        "customfield_13798", "customfield_13793", "customfield_13811", "customfield_13742", "customfield_13753", "customfield_13721", "priority", "updated"]
         }
 
         # Requisição para API do Jira
@@ -148,6 +148,7 @@ def captura_proposta (access_params = None):
             'nome_issue': issue['fields'].get('summary', None),
             'nome_vendedor_alpe': issue['fields'].get('customfield_13743', None),
             'nome_vendedor_fn': issue['fields'].get('customfield_13742', None),
+            'cdb_dba': issue['fields'].get('customfield_13811', None),
             'filial_fn': issue['fields'].get('customfield_13798', None),
             'prioridade': issue['fields'].get('priority', {}).get('name') if issue['fields'].get('priority') else None,
             'status': issue['fields'].get('status', {}).get('name', None),
