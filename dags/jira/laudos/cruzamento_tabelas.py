@@ -52,7 +52,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
             )
 
             SELECT 
-                l.data_hora,
+                l.data_hora as data_execucao_laudo,
                 l.chave_unica,
                 l.nome_filtro,
                 l.valor_aprovado,
@@ -85,23 +85,45 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
     def ajustar_decimal(valor):
         if pd.isnull(valor):
             return None  # Mantém valores nulos como estão
-        else:
-            # Limitar para no máximo 8 dígitos, com 2 casas decimais
-            return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-
+        valor_str = str(valor).strip().replace(',', '.')  # Normaliza string
+        if valor_str == '':
+           return None # Trata string vazia como None
+        try:
+            return Decimal(valor_str).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        except Exception:
+            # Caso algum valor ainda não seja convertido, retorna None ou erro
+            return None
+            
     if cruzamento_tabelas is not None and not cruzamento_tabelas.empty:
-        # Aplica o ajuste decimal nas colunas
-        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].apply(ajustar_decimal).astype(float).round(2)
-        cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].apply(ajustar_decimal).astype(float).round(2)
-        cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].apply(ajustar_decimal).astype(float).round(2)
+        # Aplicar a função nas colunas desejadas
+        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].apply(ajustar_decimal)
+        cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].apply(ajustar_decimal)
+        cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].apply(ajustar_decimal)
+        cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].apply(ajustar_decimal)
+        cruzamento_tabelas['restritivo_pf'] = cruzamento_tabelas['restritivo_pf'].apply(ajustar_decimal)
+        cruzamento_tabelas['total_restritivo'] = cruzamento_tabelas['total_restritivo'].apply(ajustar_decimal)
 
-    # Atribuindo data
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+        # Converter para float e arredondar para 2 casas decimais
+        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].astype(float).round(2)
+        cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].astype(float).round(2)
+        cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].astype(float).round(2)
+        cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].astype(float).round(2)
+        cruzamento_tabelas['restritivo_pf'] = cruzamento_tabelas['restritivo_pf'].astype(float).round(2)
+        cruzamento_tabelas['total_restritivo'] = cruzamento_tabelas['total_restritivo'].astype(float).round(2)
 
-    cruzamento_tabelas['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    cruzamento_tabelas['year'], cruzamento_tabelas['month'], cruzamento_tabelas['day'] = now.year, now.month, now.day
-    print("Tratamento dos dados concluído")
 
+        #Tratamento score para inteiro com suporte a nulos
+        cruzamento_tabelas['score'] = pd.to_numeric(cruzamento_tabelas['score'], errors='coerce').astype('Int64')
+
+        # Converte data_hora para date
+        cruzamento_tabelas['data_execucao_laudo'] = pd.to_datetime(cruzamento_tabelas['data_execucao_laudo'], errors='coerce').dt.date
+
+        # Timestamp e partições
+        now = datetime.now(tz=timezone(timedelta(hours=-3)))
+
+        cruzamento_tabelas['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+        cruzamento_tabelas['year'], cruzamento_tabelas['month'], cruzamento_tabelas['day'] = now.year, now.month, now.day
+        print("Tratamento dos dados concluído")
 
     # Exportando dados para a camada refined
     # # Conectando na refined        
