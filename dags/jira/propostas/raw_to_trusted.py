@@ -10,6 +10,8 @@ import json
 from airflow.utils.log.logging_mixin import LoggingMixin
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
+import unicodedata
+import string
 
 
 def raw_to_trusted(access_params=None, **kwargs):
@@ -245,6 +247,23 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     # Aplicando a função de categorizar no DataFrame
     df_resolvido['categoria_decisor'] = df_resolvido['decisor'].apply(categorizar_decisor)
+
+
+    def tratar_cdb_dba(valor):
+        if pd.isnull(valor):
+            return "NAO ATRIBUIDA"
+        
+        # Remove acentos
+        valor = unicodedata.normalize("NFKD", str(valor)).encode("ASCII", "ignore").decode("utf-8")
+        
+        # Remove pontuação
+        valor = valor.translate(str.maketrans('', '', string.punctuation))
+        
+        # Transforma em maiúsculo
+        return valor.upper()
+
+    # Aplica a função na coluna
+    df['cdb_dba'] = df['cdb_dba'].apply(tratar_cdb_dba)
 
 
 
