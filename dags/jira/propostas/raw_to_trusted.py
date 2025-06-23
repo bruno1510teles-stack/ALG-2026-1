@@ -513,7 +513,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_final = df_resolvido[[
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
-        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
+        'nome_vendedor_fn', 'filial_fn', 'cdb_dba', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
         'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
