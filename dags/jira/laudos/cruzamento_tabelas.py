@@ -52,8 +52,16 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
             )
 
             SELECT 
-                l.*,
+                l.data_hora,
+                l.chave_unica,
+                l.nome_filtro,
+                l.valor_aprovado,
+                l.score,
+                l.restritivo_pj,
+                l.restritivo_pf,
+                l.total_restritivo,
                 p.issue_key,
+                p.politica,
                 p.cnpj,
                 p.raiz_cnpj,
                 p.limite_pedido,
@@ -65,6 +73,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 p.cargo_analista,
                 p.decisao,
                 p.parecer,
+                p.ramificacao_motor,
                 p.tipo_proposta
             FROM laudos_filtrados l
             INNER JOIN propostas_filtradas p
