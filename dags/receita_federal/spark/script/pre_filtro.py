@@ -463,6 +463,8 @@ if __name__ == "__main__":
         .config("spark.shuffle.spill.compress", "true") \
         .config("spark.shuffle.file.buffer", "64k") \
         .config("spark.local.dir", "/tmp/spark") \
+        .config("spark.driver.extraJavaOptions", "-Divy.cache.dir=/tmp -Divy.home=/tmp") \
+        .config("spark.executor.extraJavaOptions", "-Divy.cache.dir=/tmp -Divy.home=/tmp") \
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
