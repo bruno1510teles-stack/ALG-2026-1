@@ -263,7 +263,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         return valor.upper()
 
     # Aplica a função na coluna
-    df['cdb_dba'] = df['cdb_dba'].apply(tratar_cdb_dba)
+    df_resolvido['cdb_dba'] = df_resolvido['cdb_dba'].apply(tratar_cdb_dba)
 
 
 
