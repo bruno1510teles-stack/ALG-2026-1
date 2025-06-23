@@ -20,10 +20,10 @@ def trusted_to_refined (access_params=None, **kwargs):
 
     # Conexão com o Trino
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='vinicius_teixeira',
-        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
 
