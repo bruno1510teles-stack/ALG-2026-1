@@ -7,7 +7,7 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.85-SNAPSHOT"
+  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.86-SNAPSHOT"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/pre_filtro.py
@@ -24,9 +24,9 @@ spec:
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.hadoop.security.authentication": "simple"
     "spark.hadoop.security.authorization": "false"
-    "spark.jars.ivy": "/tmp/.ivy2"
-    "spark.driver.extraJavaOptions": "-Divy.cache.dir=/tmp/.ivy2 -Divy.home=/tmp/.ivy2"
-    "spark.executor.extraJavaOptions": "-Divy.cache.dir=/tmp/.ivy2 -Divy.home=/tmp/.ivy2"
+    "spark.jars.packages": ""
+    "spark.jars.ivy": ""
+    "spark.jars.ivySettings": ""
   driver:
     deleteOnTermination: true
     coreLimit: "1"
