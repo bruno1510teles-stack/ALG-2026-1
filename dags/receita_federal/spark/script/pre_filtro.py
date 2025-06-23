@@ -459,6 +459,9 @@ if __name__ == "__main__":
         .config("spark.executor.memory", "8g") \
         .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
+        .config("spark.shuffle.compress", "true") \
+        .config("spark.shuffle.spill.compress", "true") \
+        .config("spark.shuffle.file.buffer", "64k") \
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
