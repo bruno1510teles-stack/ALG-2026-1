@@ -77,7 +77,6 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     # Conexão com o Trino
-    # Conexão com o Trino
     conn = connect(
         host=os.getenv('TRINO_ENDPOINT'),
         port=os.getenv('TRINO_PORT', '443'),
@@ -465,6 +464,8 @@ if __name__ == "__main__":
         .config("spark.shuffle.spill.compress", "true") \
         .config("spark.shuffle.file.buffer", "64k") \
         .config("spark.local.dir", "/tmp/spark") \
+        .config("spark.driver.extraJavaOptions", "-Divy.cache.dir=/tmp -Divy.home=/tmp") \
+        .config("spark.executor.extraJavaOptions", "-Divy.cache.dir=/tmp -Divy.home=/tmp") \
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
