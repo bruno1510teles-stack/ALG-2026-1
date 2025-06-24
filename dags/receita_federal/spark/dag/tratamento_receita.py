@@ -30,8 +30,8 @@ def notificar_falha_teams(context):
 default_args = {
     'owner': 'Felipe Ferraz',
     'start_date': days_ago(1),
-    "retries": 3,
-    "retry_delay": timedelta(minutes=5)#,
+    #"retries": 3,
+    #"retry_delay": timedelta(minutes=5)#,
     #"on_failure_callback": notificar_falha_teams
 } 
 
