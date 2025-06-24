@@ -46,7 +46,7 @@ def faturamento_to_refined(access_params=None,  **kwargs):
         CONCAT(cnpj_sacado, cnpj_cedente, numero_nfe) as chave,
         SUM(valor_fatura) AS valor_fatura, 
         SUM(CASE WHEN status_fatura_sefaz <> 'CANCELED' OR status_fatura_sefaz IS NULL THEN valor_fatura ELSE 0 END) AS valor_fatura_pos_sefaz,
-        SUM(CASE WHEN status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
+        SUM(CASE WHEN status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') and (status_fatura_sefaz not in ('CANCELED') or status_fatura_sefaz is null) THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
     FROM 
         deltalaketrusted.payments.faturamento ft
     GROUP BY
