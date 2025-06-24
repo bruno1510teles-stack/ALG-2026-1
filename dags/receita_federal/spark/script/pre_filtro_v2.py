@@ -4,6 +4,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
+from pyspark.sql.types import IntegerType
 from pyspark.sql import Window
 from minio import Minio
 from io import BytesIO
@@ -14,10 +15,11 @@ import pandas as pd
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
-from pyspark.sql.functions import col, split, when, array, array_union, explode, trim, first, max as spark_max, hash, col
+from pyspark.sql.functions import split, when, array, array_union, explode, trim, first, max as spark_max, hash, col, substring, udf
 from delta.tables import DeltaTable
 import threading
 import time
+import hashlib
 
 
 def cnaes_to_trusted(spark, **kwargs):
@@ -64,6 +66,9 @@ def cnaes_to_trusted(spark, **kwargs):
     trusted_cnae.createOrReplaceTempView("cnae")
     print("trusted_cnae ok")
 
+    
+    print(spark.conf.get("fs.s3a.endpoint", "configuração não definida"))
+
 
     print("TRINO_ENDPOINT:", os.getenv('TRINO_ENDPOINT'))
     print("TRINO_PORT:", os.getenv('TRINO_PORT', '443'))
@@ -72,13 +77,14 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     # Conexão com o Trino
+    # Conexão com o Trino
     conn = connect(
         host=os.getenv('TRINO_ENDPOINT'),
         port=os.getenv('TRINO_PORT', '443'),
         user=os.getenv('TRINO_USER'),
         auth=BasicAuthentication(os.getenv('TRINO_USER'), os.getenv('TRINO_PASSWORD')),
         http_scheme="https"
-	)
+    )
 
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
@@ -374,9 +380,45 @@ def cnaes_to_trusted(spark, **kwargs):
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
 
+    print('ENDPOINT REFINED:')
+    print("ENDPOINT REFINED:", os.getenv('MINIO_REFINED_ENDPOINT'))
+
+    '''
+    # Função para calcular bucket com base nos 4 últimos dígitos do CNPJ
+    def cnpj_bucket_alt(cnpj_raiz: str, num_buckets: int = 200) -> int:
+        if cnpj_raiz is None or len(cnpj_raiz) < 8:
+            return None
+        return int(cnpj_raiz) % num_buckets
+    
+
+    # Registra a UDF
+    bucket_udf = udf(lambda cnpj: cnpj_bucket_alt(cnpj), IntegerType())
+
+
+    # Aplica a UDF para criar a coluna cnpj_bucket (substituindo o substring original)
+    df_final = df_final.withColumn(
+        "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
+    )
+    '''
+
+
+    def stable_hash_bucket(cnpj_raiz: str, num_buckets: int = 200) -> int:
+        if not cnpj_raiz:
+            return None
+        try:
+            cnpj_str = str(cnpj_raiz)
+            cnpj_clean = ''.join([c for c in cnpj_str if c.isdigit()])[:8]
+            if len(cnpj_clean) < 8:
+                return None
+            hash_int = int(hashlib.md5(cnpj_clean.encode()).hexdigest(), 16)
+            return hash_int % num_buckets
+        except Exception as e:
+            return None
+
+    bucket_udf = udf(lambda cnpj: stable_hash_bucket(cnpj), IntegerType())
 
     df_final = df_final.withColumn(
-        "cnpj_bucket", (hash(col("documento_sem_formatacao")) % 100).cast("int")
+        "cnpj_bucket", bucket_udf(col("cnpj_raiz"))
     )
 
 
@@ -385,6 +427,7 @@ def cnaes_to_trusted(spark, **kwargs):
         while not done_flag.is_set():
             print("[INFO] Processando escrita no Delta... ainda rodando.")
             time.sleep(interval)
+
 
     done_flag = threading.Event()
     logger_thread = threading.Thread(target=keep_alive_logger)
@@ -416,9 +459,12 @@ if __name__ == "__main__":
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "8g") \
-        .config("spark.executor.cores", "1") \
-        .config("spark.executor.instances", "2") \
+        .config("spark.executor.cores", "2") \
         .config("spark.sql.shuffle.partitions", "100") \
+        .config("spark.shuffle.compress", "true") \
+        .config("spark.shuffle.spill.compress", "true") \
+        .config("spark.shuffle.file.buffer", "64k") \
+        .config("spark.local.dir", "/tmp/spark") \
     .getOrCreate()
 
     spark.sparkContext.setLogLevel("ERROR")
