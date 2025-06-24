@@ -75,12 +75,12 @@ with DAG(
     max_active_runs=1
 ) as dag:
     
-    # processa_historico = PythonOperator(
-    #     task_id='processa_historico_propostas',
-    #     python_callable=processa_historico,
-    #     op_kwargs={'access_params': access_params},
-    #     provide_context=True
-    # )
+    processa_historico = PythonOperator(
+         task_id='processa_historico_propostas',
+         python_callable=processa_historico,
+         op_kwargs={'access_params': access_params},
+         provide_context=True
+    )
 
     captura_proposta = PythonOperator(
         task_id='captura_proposta',
@@ -104,6 +104,6 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    #processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
+    processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
 
-    captura_proposta >> raw_to_trusted >> trusted_to_refined
+    #captura_proposta >> raw_to_trusted >> trusted_to_refined
