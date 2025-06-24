@@ -14,7 +14,7 @@ from time import sleep
 
 
 sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
-#from processa_historico_propostas import processa_historico_propostas
+from processa_historico_propostas import processa_historico_propostas
 from captura_proposta import captura_proposta
 from raw_to_trusted import raw_to_trusted
 from trusted_to_refined import trusted_to_refined
@@ -75,15 +75,13 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    '''
     processa_historico = PythonOperator(
         task_id='processa_historico_propostas',
         python_callable=processa_historico_propostas,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    '''
-
+    
     captura_proposta = PythonOperator(
         task_id='captura_proposta',
         python_callable=captura_proposta,
@@ -106,7 +104,6 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    # processa_historico >> 
-    captura_proposta >> raw_to_trusted >> trusted_to_refined
+    processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
 
     

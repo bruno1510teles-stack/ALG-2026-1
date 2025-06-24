@@ -61,30 +61,40 @@ def processa_historico_propostas (access_params = None):
     total_issues = 0
     issues_list = []
 
-    # Paginação para carregar todas as issues
+
+    # Paginação para carregar no máximo 10.000 issues
+    max_total_issues = 5000 # Apenas para DEV, para termos testes mais rapidos
+
+
     while True:
         params = {
             "jql": jql_query,
             "startAt": start_at,
             "maxResults": max_results,
-            "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743",
-                        "customfield_13798", "customfield_13793", "customfield_13811", "customfield_13742", "customfield_13753", "customfield_13721", "priority", "updated"]
+            "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", 
+                    "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743", "customfield_13798", 
+                    "customfield_13793", "customfield_13811", "customfield_13742", "customfield_13753", "customfield_13721", 
+                    "priority", "updated"]
         }
 
-        # Requisição para API do Jira
         response = requests.post(jira_url_search, headers=headers, auth=HTTPBasicAuth(email, api_token), data=json.dumps(params))
 
-        # Verifica se a requisição foi bem-sucedida
         if response.status_code == 200:
             data = response.json()
             issues = data['issues']
+            
+            if not issues:
+                break
+
             issues_list.extend(issues)
             total_issues += len(issues)
             print(f"Total de issues carregadas até agora: {total_issues}")
-            
-            if len(issues) == 0:
+
+            # Interrompe ao atingir o máximo
+            if total_issues >= max_total_issues:
+                issues_list = issues_list[:max_total_issues]  # Garante o corte exato
                 break
-            
+
             start_at += max_results
         else:
             print(f"Erro: {response.status_code}")
