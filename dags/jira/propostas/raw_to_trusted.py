@@ -73,6 +73,24 @@ def raw_to_trusted(access_params=None, **kwargs):
 
 
 
+    def tratar_cdb_dba(valor):
+        if pd.isnull(valor):
+            return "NAO ATRIBUIDA"
+        
+        # Remove acentos
+        valor = unicodedata.normalize("NFKD", str(valor)).encode("ASCII", "ignore").decode("utf-8")
+        
+        # Remove pontuação
+        valor = valor.translate(str.maketrans('', '', string.punctuation))
+        
+        # Transforma em maiúsculo
+        return valor.upper()
+
+    # Aplica a função na coluna
+    df_resolvido['cdb_dba'] = df_resolvido['cdb_dba'].apply(tratar_cdb_dba)
+
+
+
     # Substituindo valores nulos por 0 nas colunas 'limite_pedido' e 'limite_aprovado'
     df_resolvido['limite_pedido'] = df_resolvido['limite_pedido'].fillna(0)
     df_resolvido['limite_aprovado'] = df_resolvido['limite_aprovado'].fillna(0)
@@ -126,7 +144,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         'THAIS DAS NEVES' : 'OUTROS',
         ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
         'VANESSA LINO': 'OUTROS',
-        ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS'): 'WILMA SANTOS',
+        ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS', 'WILMA'): 'WILMA SANTOS',
         'JOEL DONIZETTI APARECIDO': 'OUTROS',
         'COMERCIAL CONEXÃO' : 'OUTROS',
         ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO'): 'JESSICA PATTARO',
@@ -229,7 +247,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     outros = [
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
         'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU', 'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO',
-        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'CARLOS MAGNO LOPES FERRO'
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'CARLOS MAGNO LOPES FERRO', 'WILMA CARLA DA ROCHA SANTOS'
     ]
 
     # Função para atribuir categorias
@@ -247,23 +265,6 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     # Aplicando a função de categorizar no DataFrame
     df_resolvido['categoria_decisor'] = df_resolvido['decisor'].apply(categorizar_decisor)
-
-
-    def tratar_cdb_dba(valor):
-        if pd.isnull(valor):
-            return "NAO ATRIBUIDA"
-        
-        # Remove acentos
-        valor = unicodedata.normalize("NFKD", str(valor)).encode("ASCII", "ignore").decode("utf-8")
-        
-        # Remove pontuação
-        valor = valor.translate(str.maketrans('', '', string.punctuation))
-        
-        # Transforma em maiúsculo
-        return valor.upper()
-
-    # Aplica a função na coluna
-    df_resolvido['cdb_dba'] = df_resolvido['cdb_dba'].apply(tratar_cdb_dba)
 
 
 
@@ -285,20 +286,22 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     # TRATANDO DECISAO
     def formata_decisao(decisor_func):
-        if decisor_func == 'Approved':
+        if decisor_func == 'Aprovado':
             return "APROVADO"
-        elif decisor_func == 'Reproved':
+        elif decisor_func == 'Cancelado':
+            return "CANCELADO"
+        elif decisor_func == 'Mantido':
             return "REPROVADO"
         elif decisor_func == 'Duplicado':
             return "DUPLICADO"
-        elif decisor_func == 'Ineligible':
+        elif decisor_func == 'Inelegível':
             return "INELEGÍVEL"
-        elif decisor_func == 'Canceled':
-            return "CANCELADO"
-        elif decisor_func == 'Não será feito':
+        elif decisor_func == 'Reprovado':
             return "REPROVADO"
+        elif decisor_func == 'Não será feito':
+            return "NÃO ATRIBUIDA"
         elif decisor_func == 'Concluído':
-            return "APROVADO"
+            return "NÃO ATRIBUIDA"
         else:
             return "NÃO ATRIBUIDA"
 
@@ -524,7 +527,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
     df_resolvido = df_resolvido.loc[
-        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO'])) & 
+        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000)
     ]
 
