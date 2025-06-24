@@ -10,6 +10,8 @@ import json
 from airflow.utils.log.logging_mixin import LoggingMixin
 from deltalake import write_deltalake, DeltaTable
 from datetime import datetime, timezone, timedelta
+import unicodedata
+import string
 
 
 def raw_to_trusted(access_params=None, **kwargs):
@@ -68,6 +70,24 @@ def raw_to_trusted(access_params=None, **kwargs):
             return pgid
 
     df_resolvido['pgid'] = df_resolvido['pgid'].apply(verifica_pgid).str.upper()
+
+
+
+    def tratar_cdb_dba(valor):
+        if pd.isnull(valor):
+            return "NAO ATRIBUIDA"
+        
+        # Remove acentos
+        valor = unicodedata.normalize("NFKD", str(valor)).encode("ASCII", "ignore").decode("utf-8")
+        
+        # Remove pontuação
+        valor = valor.translate(str.maketrans('', '', string.punctuation))
+        
+        # Transforma em maiúsculo
+        return valor.upper()
+
+    # Aplica a função na coluna
+    df_resolvido['cdb_dba'] = df_resolvido['cdb_dba'].apply(tratar_cdb_dba)
 
 
 
@@ -515,7 +535,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_final = df_resolvido[[
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
         'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
-        'nome_vendedor_fn', 'filial_fn', 'prioridade', 'status', 'decisor','analista_tratado',
+        'nome_vendedor_fn', 'filial_fn', 'cdb_dba', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
         'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
