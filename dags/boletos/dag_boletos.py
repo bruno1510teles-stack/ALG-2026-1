@@ -20,6 +20,7 @@ from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
 from boletos.tradicional import vop_visao_safra_tradicional
 
+from boletos.yandeh import boletos_raw_to_trusted_yandeh
 
 ### Parâmetros de acesso
 access_params = {          
@@ -82,7 +83,15 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
- 
+
+    # Definindo o task que processa boletos raw_to_trusted yandeh
+    raw_to_trusted_yandeh = PythonOperator(
+        task_id='raw_to_trusted_yandeh',
+        python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+
     # Definindo o task que processa boletos trusted_to_refined_carteira
     trusted_to_refined_carteira = PythonOperator(
         task_id='trusted_to_refined_carteira',
@@ -139,4 +148,4 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
+    raw_to_trusted >> raw_to_trusted_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
