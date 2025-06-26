@@ -43,8 +43,8 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
             
     from 
         
-        ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo bt 
-        left join ccred_schema_{Variable.get('STAGE')}_default.instrucao_titulo it on bt.numero_titulo = it.numero_titulo
+        postgres.ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo bt 
+        left join postgres.ccred_schema_{Variable.get('STAGE')}_default.instrucao_titulo it on bt.numero_titulo = it.numero_titulo
 
         
     where 
