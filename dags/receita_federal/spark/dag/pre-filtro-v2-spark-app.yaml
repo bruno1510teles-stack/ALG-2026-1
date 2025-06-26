@@ -1,41 +1,20 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: pre-filtro-spark
+  name: pre-filtro-spark-app
   namespace: spark
 spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.78"
+  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.87-SNAPSHOT"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/pre_filtro.py
+  mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/pre_filtro_v2.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
       - https://artifactory.alpenet.com.br/artifactory/maven-local/
-    packages:
-      - io.delta:delta-core_2.12:2.4.0
-      - io.delta:delta-storage:2.4.0
-      # - io.delta:delta-spark_2.12:3.2.0
-      - org.apache.spark:spark-catalyst_2.12:3.5.1
-      - org.apache.hadoop:hadoop-aws:3.3.4
-      - org.apache.hadoop:hadoop-common:3.3.4
-      - org.apache.hadoop:hadoop-hdfs:3.3.4
-      - software.amazon.awssdk:sdk-core:2.25.24
-      - software.amazon.awssdk:s3-transfer-manager:2.25.24
-      - software.amazon.awssdk:auth:2.25.24
-      - software.amazon.awssdk:identity-spi:2.25.24
-      - software.amazon.awssdk:s3:2.25.24
-      - software.amazon.awssdk:aws-core:2.25.24
-      - software.amazon.awssdk:utils:2.25.24
-      - software.amazon.awssdk:regions:2.25.24
-      - software.amazon.awssdk:aws-json-protocol:2.25.24
-      - software.amazon.awssdk:json-utils:2.25.24
-      - software.amazon.awssdk:third-party-jackson-core:2.25.24
-      - software.amazon.awssdk:http-client-spi:2.25.24
-      - io.trino:trino-jdbc:443
     pyFiles:
       - local:///app/dependencies/trino-python-conect-core-1.0.0.zip
   restartPolicy:
@@ -45,11 +24,12 @@ spec:
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.hadoop.security.authentication": "simple"
     "spark.hadoop.security.authorization": "false"
+    "spark.jars.packages": ""
   driver:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    memory: "2g"
+    memory: "4g"
     labels:
       version: "3.5.1"
     serviceAccount: spark-operator
@@ -59,6 +39,26 @@ spec:
     annotations:
       sidecar.istio.io/inject: "false"
     env:
+      - name: TRINO_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_ENDPOINT
+      - name: TRINO_PORT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PORT
+      - name: TRINO_USER
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_USER
+      - name: TRINO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PASSWORD
       - name: MINIO_TRUSTED_ENDPOINT
         valueFrom:
           secretKeyRef:
@@ -115,7 +115,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "master"
+            value: "new_develop"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -162,16 +162,36 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    instances: 1
-    memory: "4g"
+    instances: 2
+    memory: "8g"
     labels:
       version: "3.5.1"
     volumeMounts:
       - name: "spark-scripts-volume"
         mountPath: "/scripts"
     annotations:
-      sidecar.istio.io.inject: "false"
+      sidecar.istio.io/inject: "false"
     env:
+      - name: TRINO_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_ENDPOINT
+      - name: TRINO_PORT
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PORT
+      - name: TRINO_USER
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_USER
+      - name: TRINO_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: spark-secrets
+            key: TRINO_PASSWORD
       - name: MINIO_TRUSTED_ENDPOINT
         valueFrom:
           secretKeyRef:
@@ -228,7 +248,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "master"
+            value: "new_develop"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
