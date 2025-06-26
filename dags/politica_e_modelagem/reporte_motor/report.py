@@ -7,7 +7,7 @@ def report_motor(access_params=None):
     def executar_query_trino_simples():
         query = """
         SELECT 
-            cast(cast(data_resolvido as date) as varchar) as data, 
+            cast(try(cast(data_resolvido as date)) as varchar) as data, 
             politica, 
             decisao, 
             count(*) as qtde
@@ -15,13 +15,13 @@ def report_motor(access_params=None):
             deltalaketrusted.jira.propostas 
         WHERE 
             decisor = 'MOTOR' 
-                AND cast(data_resolvido as date) = 
+                AND try(cast(data_resolvido as date)) =
                 CASE 
                     WHEN EXTRACT(DOW FROM current_date) = 1 THEN current_date - INTERVAL '3' DAY 
                     ELSE current_date - INTERVAL '1' DAY 
                 END
         GROUP BY  
-            cast(cast(data_resolvido as date) as varchar), politica, decisao
+            cast(try(cast(data_resolvido as date)) as varchar), politica, decisao
         union all
         SELECT 
             'Total Geral' as data,
@@ -32,13 +32,13 @@ def report_motor(access_params=None):
             deltalaketrusted.jira.propostas 
         WHERE 
             decisor = 'MOTOR' 
-            AND cast(data_resolvido as date) = 
+            AND try(cast(data_resolvido as date)) =  
             CASE 
                 WHEN EXTRACT(DOW FROM current_date) = 1 THEN current_date - INTERVAL '3' DAY 
                 ELSE current_date - INTERVAL '1' DAY 
             END
         GROUP BY  
-            cast(data_resolvido as date)
+            cast(try(cast(data_resolvido as date)) as varchar)
         order by
             data
         """
@@ -58,7 +58,7 @@ def report_motor(access_params=None):
     def executar_query_trino_detalhada():
         query = """
         SELECT 
-            cast(cast(data_resolvido as date) as varchar) as data, 
+            cast(try(cast(data_resolvido as date)) as varchar) as data,  
             politica, 
             decisao, 
             ramificacao_motor, 
@@ -70,13 +70,13 @@ def report_motor(access_params=None):
             deltalaketrusted.jira.propostas 
         WHERE 
             decisor = 'MOTOR' 
-                AND cast(data_resolvido as date) = 
+                AND try(cast(data_resolvido as date)) = 
                 CASE 
                     WHEN EXTRACT(DOW FROM current_date) = 1 THEN current_date - INTERVAL '3' DAY 
                     ELSE current_date - INTERVAL '1' DAY 
                 END
         GROUP BY  
-            cast(cast(data_resolvido as date) as varchar), politica, decisao, ramificacao_motor, parecer
+            cast(try(cast(data_resolvido as date)) as varchar), politica, decisao, ramificacao_motor, parecer
         union all
         SELECT 
             'Total Geral' as data, 
@@ -91,22 +91,22 @@ def report_motor(access_params=None):
             deltalaketrusted.jira.propostas 
         WHERE 
             decisor = 'MOTOR' 
-                AND cast(data_resolvido as date) = 
+                AND try(cast(data_resolvido as date)) = 
                 CASE 
                     WHEN EXTRACT(DOW FROM current_date) = 1 THEN current_date - INTERVAL '3' DAY 
                     ELSE current_date - INTERVAL '1' DAY 
                 END
         GROUP BY  
-            cast(cast(data_resolvido as date) as varchar)
+            cast(try(cast(data_resolvido as date)) as varchar)
         order by
             qtde desc
         """
         # Executar a query no Trino
         conn = connect(
-            host='trino.alpe.com.br',
-            port='443',
-            user='trinodados',
-            auth=BasicAuthentication('trinodados', 'hosgzPvuhyXkP<j}RyT+'),
+            host=access_params['trino_endpoint'],
+            port=access_params['trino_port'],
+            user=access_params['trino_user'],
+            auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
             http_scheme="https",
         )
         cur = conn.cursor()

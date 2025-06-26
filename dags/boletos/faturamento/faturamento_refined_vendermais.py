@@ -10,6 +10,7 @@ from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
+import numpy as np
 
 def faturamento_to_refined(access_params=None,  **kwargs):
 
@@ -43,9 +44,9 @@ def faturamento_to_refined(access_params=None,  **kwargs):
         numero_nfe, 
         data_fatura, 
         CONCAT(cnpj_sacado, cnpj_cedente, numero_nfe) as chave,
-        SUM(valor_fatura) AS valor_fatura_total, 
+        SUM(valor_fatura) AS valor_fatura, 
         SUM(CASE WHEN status_fatura_sefaz <> 'CANCELED' OR status_fatura_sefaz IS NULL THEN valor_fatura ELSE 0 END) AS valor_fatura_pos_sefaz,
-        SUM(CASE WHEN status_fatura <> 'CANCELADO' and status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
+        SUM(CASE WHEN status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') and (status_fatura_sefaz not in ('CANCELED') or status_fatura_sefaz is null) THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
     FROM 
         deltalaketrusted.payments.faturamento ft
     GROUP BY
@@ -89,6 +90,7 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     fatura = execute_query(conn, query_fatura)
 
+
     print(f"Quantidade de linhas no DataFrame 'fatura': {fatura.shape[0]}")
 
 
@@ -101,10 +103,10 @@ def faturamento_to_refined(access_params=None,  **kwargs):
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
     # Aplicar a função na coluna 'valor_titulo'
-    fatura['valor_fatura_total'] = fatura['valor_fatura_total'].apply(ajustar_decimal)
-    fatura['valor_fatura_oficial'] = fatura['valor_fatura_oficial'].apply(ajustar_decimal)
-    fatura['valor_fatura_pos_sefaz'] = fatura['valor_fatura_pos_sefaz'].apply(ajustar_decimal)
-    fatura['valor_face_qprof'] = fatura['valor_face_qprof'].apply(ajustar_decimal)
+    fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal).astype(float).round(2)
+    fatura['valor_fatura_pos_sefaz'] = fatura['valor_fatura_pos_sefaz'].apply(ajustar_decimal).astype(float).round(2)
+    fatura['valor_fatura_oficial'] = fatura['valor_fatura_oficial'].apply(ajustar_decimal).astype(float).round(2)
+    fatura['valor_face_qprof'] = fatura['valor_face_qprof'].apply(ajustar_decimal).astype(float).round(2)
 
     fatura['valor_fatura_total'] = fatura['valor_fatura_total'].astype(float).round(2)
     fatura['valor_fatura_oficial'] = fatura['valor_fatura_oficial'].astype(float).round(2)

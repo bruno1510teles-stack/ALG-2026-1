@@ -28,8 +28,8 @@ def get_laudos (access_params=None, **kwargs):
         cur.execute(query)
 
         if cur.description is None:
-           cur.close()
-           return None
+            cur.close()
+            return None
         
         rows = cur.fetchall()
         columns = [desc[0] for desc in cur.description]

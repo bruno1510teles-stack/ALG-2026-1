@@ -70,7 +70,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
             left join deltalakerefined.payments.vop_vendermais vv
                 on a.cnpj = vv.cnpj_sacado
             where a.politica = 'DESAFIANTE'
-            and TRY_CAST (a.data_criado AS DATE) = DATE(timestamp '{data_execucao}')
+            and TRY_CAST(a.data_criado AS DATE) = DATE(timestamp '{data_execucao}')
         ) as sub
         group by sub.faixa_valor_solicitado
     """
@@ -279,7 +279,7 @@ def report_motor_desafiante_hora_hora (access_params=None):
                 ) as b
                 on a.cnpj = b.cnpj_sacado
                 where politica = 'DESAFIANTE'
-                AND TRY_CAST(data_criado AS DATE) >= DATE(timestamp '{data_ultima_semana}')
+                and TRY_CAST(data_criado AS DATE) >= DATE(timestamp '{data_ultima_semana}')
                 and a.categoria_decisor = 'MOTOR'
                 and a.decisao = 'APROVADO'
                 and coalesce(b.vop, 0) > 0
@@ -495,6 +495,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
         propostas_desafiante_consolidado_100k[col] = propostas_desafiante_consolidado_100k[col].apply(
             lambda x: f"{x:.2f}".replace('.', ',') + '%' if isinstance(x, (int, float)) else x
         )
+    media_prazo = propostas_clientes_com_vop['PRAZO MÉDIO'].mean()
+
+    prazo = int(media_prazo) if not np.isnan(media_prazo) else 0
 
     media_prazo = propostas_clientes_com_vop['PRAZO MÉDIO'].mean()
 

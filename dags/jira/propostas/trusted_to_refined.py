@@ -36,7 +36,6 @@ def trusted_to_refined (access_params=None, **kwargs):
         return pd.DataFrame(rows, columns=columns)
     
 
-
     # Definindo a consulta
     query_jira_trusted = """
         SELECT *
@@ -57,7 +56,10 @@ def trusted_to_refined (access_params=None, **kwargs):
 
 
 
-    # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
+    # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE APROVADA
+
+    # CRIANDO RAIZ CNPJ 8
+    df['raiz_cnpj'] = df['raiz_cnpj'].astype(str).str[:8]
 
     # Convertendo a coluna de data para datetime
     df['data_resolvido'] = pd.to_datetime(df['data_resolvido'])
@@ -68,11 +70,69 @@ def trusted_to_refined (access_params=None, **kwargs):
     # Ordenando o DataFrame pela raiz_cnpj e data_resolvido
     df_sorted = df_aprovado.sort_values(by=['raiz_cnpj', 'data_resolvido'], ascending=[True, True])
 
-    # Atribuindo o analista responsável, pegando o primeiro analista de cada grupo de raiz_cnpj
-    df['analista_responsavel'] = df_sorted.groupby('raiz_cnpj')['analista_tratado'].transform('first')
+    df_analista_responsavel = df_sorted.groupby('raiz_cnpj')['analista_tratado'].first().reset_index()
+
+    # Renomeia a coluna para analista_responsavel
+    df_analista_responsavel = df_analista_responsavel.rename(columns={'analista_tratado': 'analista_responsavel'})
+
+    # Cruzando nova coluna
+    df = df.merge(df_analista_responsavel, on='raiz_cnpj', how='left')
 
     # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
-    df['analista_responsavel'] = df['analista_responsavel'].fillna('NA')
+    df['analista_responsavel'] = df['analista_responsavel'].fillna('NÃO ATRIBUIDA')
+
+
+
+    # LOGICA GERENTE RESPONSAVEL, PRIMEIRO GERENTE QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE APROVADA
+
+    df_gerente_responsavel = df_sorted.groupby('raiz_cnpj')['gerente_tratado'].first().reset_index()
+
+    # Renomeia a coluna para analista_responsavel
+    df_gerente_responsavel = df_gerente_responsavel.rename(columns={'gerente_tratado': 'gerente_responsavel'})
+
+    # Cruzando nova coluna
+    df = df.merge(df_gerente_responsavel, on='raiz_cnpj', how='left')
+
+    # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
+    df['gerente_responsavel'] = df['gerente_responsavel'].fillna('NÃO ATRIBUIDA')
+
+
+
+    # GERANDO O CARGO DO ANALISTA RESPONSAVEL
+
+    # LISTA DE NOMES POR CARGO
+    lista_cargo_motor = ['MOTOR']
+    lista_cargo_assistente = ['ANA BEATRIZ RODRIGUES ANDRADE']
+    lista_cargo_junior = ['LARISSA FREIRE SOARES', 'VANESSA SOUZA']
+    lista_cargo_pleno = ['LEANDRO QUINTINO DA ANUNCIACAO', 'DIANA TIEMI YAMAMOTO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA']
+    lista_cargo_senior = ['CLAUDIA CINARE RODRIGUES ETO', 'ROSEMEIRE DIAS FERREIRA', 'JOSE CARVALHO', 'ALEXANDRE DE MEDEIROS']
+    lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
+    lista_cargo_outros = ['OUTROS', 'NA']
+
+
+    # FUNÇÃO ATRIBUIR CARGO
+    def categorizar_cargo_analista(nome):
+        nome = nome.upper()
+        if nome in lista_cargo_motor:
+            return '6 - MOTOR'
+        elif nome in lista_cargo_assistente:
+            return '1 - ASSISTENTE'
+        elif nome in lista_cargo_junior:
+            return '2 - JÚNIOR'
+        elif nome in lista_cargo_pleno:
+            return '3 - PLENO'
+        elif nome in lista_cargo_senior:
+            return '4 - SÊNIOR'
+        elif nome in lista_cargo_gerente:
+            return '5 - GERENTE'
+        elif nome in lista_cargo_outros:
+            return '7 - OUTROS'
+        else:
+            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
+
+
+    # Aplicando a função de categorizar no DataFrame
+    df['cargo_analista_responsavel'] = df['analista_responsavel'].apply(categorizar_cargo_analista)
 
 
 

@@ -16,15 +16,10 @@ from airflow.models import Variable
 def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	# Conectando com o Trino
 
-	print(Variable.get("TRINO_ENDPOINT"))
-	print(Variable.get("TRINO_PORT"))
-	print(Variable.get("TRINO_USER"))
-	print(Variable.get("TRINO_PASSWORD"))
-	
 	conn = connect(
-		host = Variable.get("TRINO_ENDPOINT"),
-		port = Variable.get("TRINO_PORT"),
-		user = Variable.get("TRINO_USER"),
+		host=Variable.get("TRINO_ENDPOINT"),
+		port=Variable.get("TRINO_PORT"),
+		user=Variable.get("TRINO_USER"),
 		auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
 		http_scheme="https"
 	)

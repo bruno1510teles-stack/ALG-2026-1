@@ -14,8 +14,7 @@ from datetime import datetime, timedelta, timezone
 from logging import Logger
 
 
-def processa_historico_propostas (access_params = None):
-
+def processa_historico (access_params = None):
 
     # Função para buscar a data de mudança de status para "Awaiting Execution"
     def get_data_disponivel(issue_key, jira_url_base, email, api_token, headers):

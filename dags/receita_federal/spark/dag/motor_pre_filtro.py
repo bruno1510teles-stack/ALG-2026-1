@@ -26,7 +26,7 @@ def notificar_falha_teams(context):
 
 
 default_args = {
-    'owner': 'Vinicius Moraes',
+    'owner': 'Felipe Ferraz',
     'start_date': days_ago(1),
     #"on_failure_callback": notificar_falha_teams
 } 
@@ -34,7 +34,7 @@ default_args = {
 
 with DAG(
     dag_id='tratamento_motor_pre_filtro',
-    #schedule_interval='0 8 * * 1-5',  # 8h UTC = 5h BRT
+    schedule_interval='0 8 * * 1-5',  # 8h UTC = 5h BRT
     start_date=datetime(2024, 1, 1),
     catchup=False,
     default_args=default_args,
