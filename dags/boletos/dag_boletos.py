@@ -85,7 +85,7 @@ with DAG(
     )
 
     # Definindo o task que processa boletos raw_to_trusted yandeh
-    raw_to_trusted = PythonOperator(
+    raw_to_trusted_yandeh = PythonOperator(
         task_id='raw_to_trusted_yandeh',
         python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
         op_kwargs={'access_params': access_params},
@@ -148,4 +148,4 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
+    raw_to_trusted >> raw_to_trusted_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
