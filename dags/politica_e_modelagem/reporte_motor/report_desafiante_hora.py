@@ -499,10 +499,6 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     prazo = int(media_prazo) if not np.isnan(media_prazo) else 0
 
-    media_prazo = propostas_clientes_com_vop['PRAZO MÉDIO'].mean()
-
-    prazo = int(media_prazo) if not np.isnan(media_prazo) else 0
-    
     clientes_vop = {
         'NOME SACADO': '',
         'CNPJ': 'Total',

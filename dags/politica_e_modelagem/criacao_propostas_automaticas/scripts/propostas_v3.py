@@ -79,8 +79,6 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 
 	boletos = execute_query(conn, query_boletos)
 
-	print(boletos)
-
 	# Query base limites
 	query_limites =  f""" 
 						select 	cnpj_sacado,
@@ -155,8 +153,6 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	exporta_csv_pgid = exporta_csv.groupby('bucket_pgid')
 
 
-
-	'''
 	# Configuração do cliente MinIO
 
 	minio_client = Minio(
@@ -225,4 +221,3 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	except Exception as e:
 		print(f"{e}")
 		exit(1)
-	'''

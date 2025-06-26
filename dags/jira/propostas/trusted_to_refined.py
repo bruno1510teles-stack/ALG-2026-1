@@ -18,7 +18,7 @@ from datetime import datetime, time, timedelta, timezone
 def trusted_to_refined (access_params=None, **kwargs):
 
 
-    # Conexão com o Trino
+    # Conectando ao Trino para Leitura
     conn = connect(
         host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
@@ -109,53 +109,6 @@ def trusted_to_refined (access_params=None, **kwargs):
     lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
     lista_cargo_outros = ['OUTROS', 'NA']
 
-
-    # FUNÇÃO ATRIBUIR CARGO
-    def categorizar_cargo_analista(nome):
-        nome = nome.upper()
-        if nome in lista_cargo_motor:
-            return '6 - MOTOR'
-        elif nome in lista_cargo_assistente:
-            return '1 - ASSISTENTE'
-        elif nome in lista_cargo_junior:
-            return '2 - JÚNIOR'
-        elif nome in lista_cargo_pleno:
-            return '3 - PLENO'
-        elif nome in lista_cargo_senior:
-            return '4 - SÊNIOR'
-        elif nome in lista_cargo_gerente:
-            return '5 - GERENTE'
-        elif nome in lista_cargo_outros:
-            return '7 - OUTROS'
-        else:
-            return 'ADICIONAR NO DICIONARIO DE NOMES DE ANALISTAS'
-
-
-    # Aplicando a função de categorizar no DataFrame
-    df['cargo_analista_responsavel'] = df['analista_responsavel'].apply(categorizar_cargo_analista)
-
-
-
-    # LOGICA GERENTE RESPONSAVEL, PRIMEIRO GERENTE QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE
-
-    # Atribuindo o gerente responsável, pegando o primeiro gerente de cada grupo de raiz_cnpj
-    df['gerente_responsavel'] = df_sorted.groupby('raiz_cnpj')['gerente_tratado'].transform('first')
-
-    # Preenchendo com 'NA' para as linhas que não têm analista responsável (onde for NaN)
-    df['gerente_responsavel'] = df['gerente_responsavel'].fillna('NA')
-
-
-
-    # GERANDO O CARGO DO ANALISTA RESPONSAVEL
-
-    # LISTA DE NOMES POR CARGO
-    lista_cargo_motor = ['MOTOR']
-    lista_cargo_assistente = ['ANA BEATRIZ RODRIGUES ANDRADE']
-    lista_cargo_junior = ['LARISSA FREIRE SOARES', 'VANESSA SOUZA']
-    lista_cargo_pleno = ['LEANDRO QUINTINO DA ANUNCIACAO', 'DIANA TIEMI YAMAMOTO', 'CAROLINE FREIHAT HENRIQUE DE ALCANTARA SANTANA']
-    lista_cargo_senior = ['CLAUDIA CINARE RODRIGUES ETO', 'ROSEMEIRE DIAS FERREIRA', 'JOSE CARVALHO', 'ALEXANDRE DE MEDEIROS']
-    lista_cargo_gerente = ['ROGERIO DE CAMPOS FRIAS']
-    lista_cargo_outros = ['OUTROS', 'NA']
 
     # FUNÇÃO ATRIBUIR CARGO
     def categorizar_cargo_analista(nome):
