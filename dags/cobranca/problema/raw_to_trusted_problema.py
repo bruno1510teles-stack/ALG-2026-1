@@ -17,9 +17,9 @@ import unicodedata
 def trata_safras_problema (access_params=None, **kwargs):
 
     minio_raw = Minio(
-        "api-raw.alpe.com.br",
-        access_key = 'B7q0avvSIpSdyGPXWnEC',
-        secret_key = 'PhMhRQSQ6YJU8fn2qKhDLM017cQPrlCz1YbM8IwU'
+        access_params['endpoint_url_raw'],
+        access_key=access_params['aws_access_key_id_raw'],
+        secret_key=access_params['aws_secret_access_key_raw'],
     )
 
     # Connection validation
@@ -80,7 +80,6 @@ def trata_safras_problema (access_params=None, **kwargs):
     else:
         print("⚠️ Nenhum dado foi carregado.")
 
-    final_df = final_df.drop(columns=["source_file"])
 
     # Tratando dados para trusted
 
@@ -101,10 +100,10 @@ def trata_safras_problema (access_params=None, **kwargs):
     final_df['raiz_cnpj'] = final_df['cnpj'].str[:8]
 
 
-    final_df['problema'] = final_df['status'].str.strip().str.lower().isin([
-        'risco inadimplencia',
-        'em cobrança'
-    ]).map({True: 'SIM', False: 'NÃO'})
+    final_df['problema'] = final_df['status'].str.strip().str.lower().str.contains(
+        r'inadimpl[eê]ncia|em cobran[çc]a|irrecuper[aá]vel', 
+        regex=True, na=False
+    ).map({True: 'SIM', False: 'NÃO'})
 
 
     # Colunas que aparentam ser datas e precisam de conversão
@@ -160,7 +159,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-        df_agrupado, 
+        final_df, 
         partition_by=["year", "month"],
         storage_options=storage_options_trusted,
         mode="overwrite"

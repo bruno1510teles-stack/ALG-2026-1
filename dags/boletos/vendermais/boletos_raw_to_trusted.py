@@ -68,7 +68,7 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
 		and bt.excluido != true
 		and bt.codigo_estagio_titulo in (5, 6)
 		and bt.data_efetivacao is not null
-		and bt.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442))
+		and bt.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442)
 		and coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)) <= cast('2024-04-30' as date)
 union 
 select 
@@ -108,7 +108,7 @@ select
 		and bt.excluido != true
 		and bt.codigo_estagio_titulo in (5, 6)
 		and bt.data_efetivacao is not null
-		and bt.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442))
+		and bt.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442)
 		and coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)) > cast('2024-04-30' as date)
     """
     boleto = execute_query(conn, query_boleto)

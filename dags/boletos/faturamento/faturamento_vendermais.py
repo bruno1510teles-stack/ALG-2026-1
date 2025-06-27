@@ -10,6 +10,7 @@ from airflow.models import Variable
 import logging
 from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
+import numpy as np
 
 def faturamento_to_trusted(access_params=None,  **kwargs):
 

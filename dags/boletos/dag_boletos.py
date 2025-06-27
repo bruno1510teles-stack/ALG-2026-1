@@ -20,7 +20,6 @@ from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
 from boletos.tradicional import vop_visao_safra_tradicional
 
-
 ### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -82,7 +81,7 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
- 
+
     # Definindo o task que processa boletos trusted_to_refined_carteira
     trusted_to_refined_carteira = PythonOperator(
         task_id='trusted_to_refined_carteira',

@@ -28,9 +28,9 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Configurações do Hadoop para acesso ao MinIO (S3 compatível)
     hadoop_conf = spark.sparkContext._jsc.hadoopConfiguration()
-    hadoop_conf.set("fs.s3a.access.key", "nr0qPLaAcdCtt7lAV4oa") 
-    hadoop_conf.set("fs.s3a.secret.key", "GRA8FxnVMy7pGDvKP1wZK2nPOC3vP7F1AvH2u3Ch") 
-    hadoop_conf.set("fs.s3a.endpoint", "api-trusted.alpe.com.br") 
+    hadoop_conf.set("fs.s3a.access.key", os.getenv('MINIO_TRUSTED_ACCESS_KEY'))
+    hadoop_conf.set("fs.s3a.secret.key", os.getenv('MINIO_TRUSTED_SECRET_KEY'))
+    hadoop_conf.set("fs.s3a.endpoint", os.getenv('MINIO_TRUSTED_ENDPOINT'))
     hadoop_conf.set("fs.s3a.connection.ssl.enabled", "true")
     hadoop_conf.set("fs.s3a.path.style.access", "true")
     hadoop_conf.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
@@ -78,11 +78,11 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Conexão com o Trino
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='vinicius_teixeira',
-        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
-        http_scheme="https",
+        host=os.getenv('TRINO_ENDPOINT'),
+        port=os.getenv('TRINO_PORT', '443'),
+        user=os.getenv('TRINO_USER'),
+        auth=BasicAuthentication(os.getenv('TRINO_USER'), os.getenv('TRINO_PASSWORD')),
+        http_scheme="https"
     )
 
     def execute_query(conn, query):
@@ -471,5 +471,3 @@ if __name__ == "__main__":
     spark.sparkContext.setLogLevel("ERROR")
 
     cnaes_to_trusted(spark)
-
-

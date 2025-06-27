@@ -76,33 +76,28 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
     
     query_sacados = f"""
-            select
-                substring(s.numero_cnpj_sacado, 1,8) as raiz_cnpj,
-                s.numero_cnpj_sacado,
-                s.numero_cnpj_sacado_formatado,
-                s.nome_sacado,
-                e.cnae_principal
-            from
-                postgres.ccred_schema_prd_default.sacado s
+            select 
+                substring(cnpj_sacado, 1, 8) as raiz_cnpj,
+                cnpj_sacado as numero_cnpj_sacado, 
+                nome_sacado, e.cnae_principal 
+            from 
+                deltalaketrusted.limites.limite l
             inner join
                 deltalaketrusted.receita_federal.estabelecimentos e
-                on s.numero_cnpj_sacado = e.documento_sem_formatacao
+                on l.cnpj_sacado = e.documento_sem_formatacao
     
     """
     
     
     
-    query_segmento = f""" select 
-                                cnpj_sacado as "CNPJ SACADO",
-                                sum(case when nome_cedente = 'ARCELORMITTAL BRASIL S/A' or nome_cedente = 'BELGO BEKAERT ARAMES LTDA' 
-                                    or nome_cedente = 'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A'  then 1 else 0 end) as casos_matcon,
-                                sum(case when nome_cedente = 'CASAL COMERCIO E SERVICOS LTDA' or nome_cedente = 'CASA DO ADUBO S.A' 
-                                    or nome_cedente = 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA' or nome_cedente = 'AGRICHEM DO BRASIL S.A'  then 1 else 0 end) as casos_agro,
-                                sum(case when nome_cedente not in ( 'CASAL COMERCIO E SERVICOS LTDA', 'CASA DO ADUBO S.A', 'ASUS INDÚSTRIA DE MÁQUINAS AGRÍCOLAS LTDA',
-                                                                    'AGRICHEM DO BRASIL S.A', 'ARCELORMITTAL BRASIL S/A', 'BELGO BEKAERT ARAMES LTDA',
-                                                                    'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A') then 1 else 0 end) as casos_outros
-                            from deltalaketrusted.payments.boletos_internos
-                            group by cnpj_sacado
+    query_segmento = f""" 
+            select 
+                cnpj_sacado as "CNPJ SACADO", 
+                max(cedente) as cedente
+            from 
+                deltalaketrusted.limites.limite 
+            group by
+                cnpj_sacado
                     """
     
 
@@ -115,7 +110,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
 
     #Tratamento sacados
-    sacados.rename(columns={'numero_cnpj_sacado': 'cnpj_completo', 'numero_cnpj_sacado_formatado': 'cnpj','cnae_principal': 'cnae'}, inplace=True)
+    sacados.rename(columns={'numero_cnpj_sacado': 'cnpj_completo', 'cnae_principal': 'cnae'}, inplace=True)
     sacados['cnpj_completo'] = sacados['cnpj_completo'].astype(str).str.zfill(14)
     sacados['cnae'] = sacados['cnae'].fillna('').astype(str).str.replace('.0', '', regex=False).str.zfill(7)
     
@@ -158,14 +153,14 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     segmento['cnpj_completo'] = segmento['CNPJ SACADO'].astype(str).str.replace(r'[./-]', '', regex=True)
     
 
-    df = pd.merge(df_merge, segmento[['cnpj_completo', 'casos_matcon', 'casos_agro', 'casos_outros']], on ='cnpj_completo', how = 'left')
+    df = pd.merge(df_merge, segmento[['cnpj_completo', 'cedente']], on ='cnpj_completo', how = 'left')
     
     
     # Criando segmento e sub_segmento
     df['segmento'] = df.apply(
-        lambda row: 'MATCON' if row['casos_matcon'] > 0 else
-                    ('AGRO' if row['casos_agro'] > 0 else
-                    ('OUTROS' if row['casos_outros'] > 0 else 'OUTROS')),
+        lambda row: 'MATCON' if row['cedente'] in ('belgo' , 'gonvarri' , 'arcelor', 'aperam') else
+                    ('AGRO' if row['cedente'] in ('agrichem', 'cadubo' , 'asusimplementos') else
+                    'OUTROS'),
         axis=1
     )
     
@@ -181,7 +176,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     df['sub_segmento'] = df.apply(lambda row: 'MATCON - OUTROS' if row['segmento'] == 'MATCON' and row['sub_segmento'] == 'MATCON' else row['sub_segmento'], axis=1)
     
     
-    df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
+    #df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
     
     # Setando 'OUTROS' para secao_final e divisao_final quando cnae == 8888888
     df.loc[df['cnae'] == '8888888', ['secao_final', 'divisao_final']] = 'OUTROS'

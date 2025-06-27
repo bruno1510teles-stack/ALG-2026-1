@@ -7,7 +7,7 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "artifactory.alpenet.com.br/docker-snapshot/alpe/etl-bureau-to-trusted:1.0.87-SNAPSHOT"
+  image: "artifactory.alpenet.com.br/docker-release/alpe/etl-bureau-to-trusted:1.0.87"
   imagePullSecrets: ["artifactory-docker"]
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/receita_federal/spark/script/pre_filtro_v2.py
@@ -115,7 +115,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "new_develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
@@ -248,7 +248,7 @@ spec:
           - name: GIT_SYNC_REPO
             value: "https://bitbucket.org/timefinanceiro/airflow-dags.git"
           - name: GIT_SYNC_BRANCH
-            value: "new_develop"
+            value: "master"
           - name: GIT_SYNC_ROOT
             value: /scripts
           - name: GIT_SYNC_DEST
