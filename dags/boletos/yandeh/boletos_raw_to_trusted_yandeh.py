@@ -39,7 +39,7 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
         distinct bt.numero_sequencial_titulo, bt.codigo_filial, bt.codigo_empresa, bt.numero_titulo, bt.codigo_cedente, bt.codigo_sacado, bt.status_titulo, bt.status_liquidez,
         bt.codigo_situacao_titulo, to_char(date(bt.data_emissao), 'yyyy-mm-dd') as data_emissao, to_char(date(bt.data_efetivacao), 'yyyy-mm-dd') as data_efetivacao, 
         to_char(date(bt.data_vencimento), 'yyyy-mm-dd') as data_vencimento, to_char(date(bt.data_baixa), 'yyyy-mm-dd') as data_baixa, bt.valor_face, bt.valor_titulo, bt.valor_baixado, bt.valor_desagio,
-        case when it.tipo_instrucao = 1 then 'NC' else 'COBRAR' end as tipo_instrucao
+        case when it.tipo_instrucao = 1 then 'NC' else 'COBRAR' end as tipo_instrucao, bt.sacado_id
             
     from 
         
