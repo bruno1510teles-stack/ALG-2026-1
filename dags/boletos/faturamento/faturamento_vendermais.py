@@ -36,21 +36,21 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
     query_fatura = f"""
                     select
                         faturamento_id AS id,
-                        max(chave_nfe) AS numero_nfe,
-                        max(pedido_id) AS numero_pedido,
-                        max(cnpj_sacado) AS cnpj_sacado,
-                        max(razao_social_sacado) AS nome_sacado,
-                        max(cnpj_cedente) AS cnpj_cedente,
-                        max(razao_social_cedente) AS nome_cedente,
-                        max(date(data_faturamento)) AS data_fatura,
-                        max(valor_pedido) AS valor_fatura,
-                        max(status_pedido) AS status_fatura,
-                        max(status_nfe) AS status_fatura_sefaz,
-                        upper(max(pago)) as status_pago
+                        chave_nfe AS numero_nfe,
+                        pedido_id AS numero_pedido,
+                        cnpj_sacado AS cnpj_sacado,
+                        razao_social_sacado AS nome_sacado,
+                        cnpj_cedente AS cnpj_cedente,
+                        razao_social_cedente AS nome_cedente,
+                        date(data_faturamento) AS data_fatura,
+                        valor_face AS valor_fatura,
+                        upper(status_pedido) AS status_fatura,
+                        upper(status_nfe) AS status_fatura_sefaz,
+                        upper(pago) as status_pago
                     from postgres.ccred_schema_{Variable.get('STAGE')}_default.vw_pedido_faturamento
                     where (
                             pgid not in ('bariloche', 'ltcarol', 'hortmix', 'blow', 'ocean', 'philipmorris', 'caboclo',
-                                        'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala')
+                                        'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala', 'ultracheese')
                             or pgid is null
                     )
                     -- and status_pedido <> 'CANCELADO'
@@ -69,9 +69,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         else:
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
-    fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
-
-    fatura['valor_fatura'] = fatura['valor_fatura'].astype(float).round(2)
+    fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal).astype(float).round(2)
 
     # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
