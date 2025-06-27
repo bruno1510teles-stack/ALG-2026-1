@@ -94,7 +94,7 @@ with DAG(
     )
 
     # Definindo o task que processa boletos raw_to_refined yandeh
-    max_dias_vencidos = PythonOperator(
+    max_dias_vencidos_yandeh = PythonOperator(
         task_id='max_dias_vencidos',
         python_callable=max_dias_vencidos.boletos_trusted_to_refined,
         op_kwargs={'access_params': access_params},
