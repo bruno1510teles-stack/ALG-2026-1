@@ -53,9 +53,6 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                                         'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala', 'ultracheese')
                             or pgid is null
                     )
-                    -- and status_pedido <> 'CANCELADO'
-                    -- and pago not in ('Rejeitado', 'Excluido', 'Recompra antes do pagamento')
-                    group by faturamento_id 
                     """
     
     fatura = execute_query(conn, query_fatura)
