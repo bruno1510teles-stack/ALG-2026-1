@@ -78,7 +78,7 @@ def faturamento_to_refined(access_params=None,  **kwargs):
         coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
         coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
         coalesce(bol.data_efetivacao, ft.data_fatura) as data,
-        coalesce(ft.valor_fatura_total,0) as valor_fatura_total,
+        coalesce(ft.valor_fatura_total,0) as valor_fatura,
         coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
         coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
         coalesce(bol.valor_face_qprof, 0) as valor_face_qprof
@@ -102,11 +102,13 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     # Aplicar a função na coluna 'valor_titulo'
     fatura['valor_fatura_total'] = fatura['valor_fatura_total'].apply(ajustar_decimal)
+    fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal)
     fatura['valor_fatura_oficial'] = fatura['valor_fatura_oficial'].apply(ajustar_decimal)
     fatura['valor_fatura_pos_sefaz'] = fatura['valor_fatura_pos_sefaz'].apply(ajustar_decimal)
     fatura['valor_face_qprof'] = fatura['valor_face_qprof'].apply(ajustar_decimal)
 
     fatura['valor_fatura_total'] = fatura['valor_fatura_total'].astype(float).round(2)
+    fatura['valor_fatura'] = fatura['valor_fatura'].astype(float).round(2)
     fatura['valor_fatura_oficial'] = fatura['valor_fatura_oficial'].astype(float).round(2)
     fatura['valor_fatura_pos_sefaz'] = fatura['valor_fatura_pos_sefaz'].astype(float).round(2)
     fatura['valor_face_qprof'] = fatura['valor_face_qprof'].astype(float).round(2)
