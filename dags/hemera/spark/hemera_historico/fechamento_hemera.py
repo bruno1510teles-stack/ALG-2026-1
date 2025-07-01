@@ -34,9 +34,21 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
     # Data de hoje
     hoje = datetime.today()
 
-    # Último dia do mês atual
-    ultimo_dia_mes_atual = calendar.monthrange(hoje.year, hoje.month)[1]
-    fim = datetime(hoje.year, hoje.month, ultimo_dia_mes_atual)
+    if hoje.day == 1:
+        if hoje.month == 1:
+            ano = hoje.year - 1
+            mes = 12
+        else:
+            ano = hoje.year
+            mes = hoje.month - 1
+    else:
+        ano = hoje.year
+        mes = hoje.month
+
+    ultimo_dia_mes = calendar.monthrange(ano, mes)[1]
+    fim = datetime(ano, mes, ultimo_dia_mes)
+
+    print(f"Ultimo fechamento considerado: {fim.date()}")
 
     # Geração da lista completa de 'YYYY-MM'
     para_fechamento = pd.date_range(start='2024-01-01', end=fim, freq='M').strftime('%Y-%m').tolist()
@@ -121,7 +133,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                 inner join postgres.ccred_schema_prd_default.desconto_titulo dt on cb.id = dt.credito_boleto_id
                 inner join postgres.ccred_schema_prd_default.sacado s on bt.sacado_id = s.id
             where 
-                dt.tipo_desconto_id in (1,2,3)
+                dt.tipo_desconto_id in (1,2,3,14)
                 and LPAD(bt.numero_titulo , 10, '0') IN ({titulos_str})
             group by
                 concat(lpad(bt.numero_titulo,10, '0'),s.numero_cnpj_sacado_formatado)
