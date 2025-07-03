@@ -20,6 +20,9 @@ from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
 from boletos.tradicional import vop_visao_safra_tradicional
 
+from boletos.yandeh import boletos_raw_to_trusted_yandeh
+from boletos.yandeh import max_dias_vencidos
+
 ### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
@@ -57,8 +60,8 @@ def notificar_falha_teams(context):
 default_args = {
     "owner": "Felipe Ferraz",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1),
-    "on_failure_callback": notificar_falha_teams
+    "retry_delay": timedelta(minutes=1)#,
+    #"on_failure_callback": notificar_falha_teams
 }
 
 
@@ -78,6 +81,22 @@ with DAG(
     raw_to_trusted = PythonOperator(
         task_id='raw_to_trusted',
         python_callable=boletos_raw_to_trusted.boletos_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+
+    # Definindo o task que processa boletos raw_to_trusted yandeh
+    raw_to_trusted_yandeh = PythonOperator(
+        task_id='raw_to_trusted_yandeh',
+        python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+
+    # Definindo o task que processa boletos raw_to_refined yandeh
+    max_dias_vencidos_yandeh = PythonOperator(
+        task_id='max_dias_vencidos',
+        python_callable=max_dias_vencidos.boletos_trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
@@ -138,4 +157,4 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
+    raw_to_trusted >> raw_to_trusted_yandeh >> max_dias_vencidos_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
