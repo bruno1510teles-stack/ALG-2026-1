@@ -157,4 +157,4 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> raw_to_trusted_yandeh >> max_dias_vencidos >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
+    raw_to_trusted >> raw_to_trusted_yandeh >> max_dias_vencidos_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task

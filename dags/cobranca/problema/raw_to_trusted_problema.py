@@ -100,10 +100,10 @@ def trata_safras_problema (access_params=None, **kwargs):
     final_df['raiz_cnpj'] = final_df['cnpj'].str[:8]
 
 
-    final_df['problema'] = final_df['status'].str.strip().str.lower().isin([
-        'risco inadimplencia',
-        'em cobrança'
-    ]).map({True: 'SIM', False: 'NÃO'})
+    final_df['problema'] = final_df['status'].str.strip().str.lower().str.contains(
+        r'inadimpl[eê]ncia|em cobran[çc]a|irrecuper[aá]vel', 
+        regex=True, na=False
+    ).map({True: 'SIM', False: 'NÃO'})
 
 
     # Colunas que aparentam ser datas e precisam de conversão

@@ -60,28 +60,23 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print(f"Quantidade de linhas no DataFrame 'fatura': {fatura.shape[0]}")
 
-
-    # Função para ajustar os valores ao formato decimal(8, 2)
+    # Ajuste do decimal
     def ajustar_decimal(valor):
         if pd.isnull(valor):
-            return None  # Mantém valores nulos como estão
+            return None
         else:
-            # Limitar para no máximo 8 dígitos, com 2 casas decimais
             return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
 
-    # Aplicar a função na coluna 'valor_titulo'
     fatura['valor_fatura'] = fatura['valor_fatura'].apply(ajustar_decimal).astype(float).round(2)
 
-    # Atribuindo data
+    # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
-
     fatura['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     fatura['year'], fatura['month'], fatura['day'] = now.year, now.month, now.day
+
     print("Tratamento dos dados concluído")
 
-
-    # Exportando dados para a camada Trusted
-    # # Conectando na Trusted        
+    # Configuração do Delta Lake
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
@@ -90,13 +85,13 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
-    # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_TRUSTED = "payments"
     FOLDER_DESTINATION_TRUSTED = "faturamento"
 
+    # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        fatura, 
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+        fatura,
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"

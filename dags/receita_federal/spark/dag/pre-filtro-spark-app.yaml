@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: pre-filtro-spark-app
+  name: pre-filtro-spark
   namespace: spark
 spec:
   type: Python
@@ -49,7 +49,7 @@ spec:
     deleteOnTermination: true
     coreLimit: "1"
     coreRequest: "500m"
-    memory: "4g"
+    memory: "2g"
     labels:
       version: "3.5.1"
     serviceAccount: spark-operator
@@ -163,7 +163,7 @@ spec:
     coreLimit: "1"
     coreRequest: "500m"
     instances: 1
-    memory: "8g"
+    memory: "4g"
     labels:
       version: "3.5.1"
     volumeMounts:

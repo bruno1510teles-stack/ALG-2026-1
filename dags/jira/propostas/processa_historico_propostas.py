@@ -60,7 +60,11 @@ def processa_historico (access_params = None):
     total_issues = 0
     issues_list = []
 
-    # Paginação para carregar todas as issues
+
+    # Paginação para carregar no máximo 10.000 issues
+    max_total_issues = 5000 # Apenas para DEV, para termos testes mais rapidos
+
+
     while True:
         params = {
             "jql": jql_query,
@@ -72,20 +76,24 @@ def processa_historico (access_params = None):
                     "priority", "updated"]
         }
 
-        # Requisição para API do Jira
         response = requests.post(jira_url_search, headers=headers, auth=HTTPBasicAuth(email, api_token), data=json.dumps(params))
 
-        # Verifica se a requisição foi bem-sucedida
         if response.status_code == 200:
             data = response.json()
             issues = data['issues']
+            
+            if not issues:
+                break
+
             issues_list.extend(issues)
             total_issues += len(issues)
             print(f"Total de issues carregadas até agora: {total_issues}")
-            
-            if len(issues) == 0:
+
+            # Interrompe ao atingir o máximo
+            if total_issues >= max_total_issues:
+                issues_list = issues_list[:max_total_issues]  # Garante o corte exato
                 break
-            
+
             start_at += max_results
         else:
             print(f"Erro: {response.status_code}")
