@@ -39,7 +39,7 @@ def recompra_trusted_to_refined (access_params=None, **kwargs):
     df = execute_query(conn, query_recompra)
  
 
-    df_agrupado = df.groupby(['data_arquivo', 'id_titulo', 'data_fechamento']).agg(
+    df_agrupado = df.groupby(['id_titulo', 'data_fechamento']).agg(
                             valor_pagamento=('valor_pagamento', 'sum'),  
                             data_lancamento=('data_lancamento', 'max')
                             ).reset_index()
