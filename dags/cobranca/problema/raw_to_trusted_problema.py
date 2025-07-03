@@ -75,15 +75,15 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     # Empilha todos os DataFrames
     if ALL_DATA:
-        final_df = pd.concat(ALL_DATA, ignore_index=True)
+        df = pd.concat(ALL_DATA, ignore_index=True)
         print("✅ Dados empilhados com sucesso!")
     else:
         print("⚠️ Nenhum dado foi carregado.")
 
 
-    # Tratando dados para trusted
-
-    print(final_df)
+    print('Tratando dados para trusted...')
+    print('Quantidade de linhas após empilhamento:')
+    print(len(df))
 
     # Padroniza nome das colunas
     def normalize_column(col):
@@ -93,52 +93,63 @@ def trata_safras_problema (access_params=None, **kwargs):
         return col
 
     # Aplica normalização às colunas
-    final_df.columns = [normalize_column(c) for c in final_df.columns]
+    df.columns = [normalize_column(c) for c in df.columns]
 
 
-    final_df['cnpj'] = final_df['cnpj'].str.replace(r'[./-]', '', regex=True)
-    final_df['raiz_cnpj'] = final_df['cnpj'].str[:8]
+    df['cnpj'] = df['cnpj'].str.replace(r'[./-]', '', regex=True)
+    df['raiz_cnpj'] = df['cnpj'].str[:8]
 
 
-    final_df['problema'] = final_df['status'].str.strip().str.lower().str.contains(
+    df['problema'] = df['status'].str.strip().str.lower().str.contains(
         r'inadimpl[eê]ncia|em cobran[çc]a|irrecuper[aá]vel', 
         regex=True, na=False
     ).map({True: 'SIM', False: 'NÃO'})
 
 
     # Colunas que aparentam ser datas e precisam de conversão
-    date_cols = [col for col in final_df.columns if "data" in col]
+    date_cols = [col for col in df.columns if "data" in col]
     for col in date_cols:
-        final_df[col] = pd.to_datetime(final_df[col], errors="coerce", dayfirst=True)
-
+        df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
 
     # safra em formato date
-    final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
+    df['safra'] = df['safra'].astype(str)
 
     # Normalizando campos string
-    final_df['resumo'] = final_df['resumo'].str.upper()
-    final_df['status'] = final_df['status'].str.upper()
+    df['status'] = df['status'].str.upper()
 
-    final_df = final_df[['safra', 'cnpj','raiz_cnpj', 'problema']]
 
-    final_df = final_df.drop_duplicates().reset_index(drop=True)
+    df = df[['safra', 'cnpj','raiz_cnpj', 'status', 'problema']].drop_duplicates().reset_index(drop=True)
 
-    now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    final_df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    final_df['year'] = now.year
-    final_df['month'] = now.month
+    # Ano mes e Chave para Power BI
+    df["ano_mes"] = pd.to_datetime(df["safra"]).dt.strftime("%Y%m")
 
-    final_df['safra'] = pd.to_datetime(final_df['safra'], errors='coerce').dt.date
-
-    #priorizar o SIM no campo problema
-    df_agrupado = final_df.groupby(['safra', 'cnpj', 'raiz_cnpj'], as_index=False).agg({
-        'problema': 'max',
-        'atualizado_em': 'max',
-        'year': 'max',
-        'month': 'max'
+    # Priorizar status de Problema SIM e evitar dois tipos de status para cada cnpj em um fechamento especifico
+    df_agrupado = df.groupby(['safra', 'ano_mes', 'cnpj', 'raiz_cnpj'], as_index=False).agg({
+        'problema': 'max'
     })
 
-    df_agrupado = df_agrupado.reset_index(drop=True)
+    df_agrupado['chave_is_problema'] = df_agrupado['ano_mes'] + df_agrupado['cnpj']
+
+    # Cruzando com base raiz para pegar o status daquele problema
+    df_final = pd.merge(df_agrupado, df, on=['problema', 'safra', 'cnpj', 'ano_mes', 'raiz_cnpj'], how='left')
+
+    df_final = df_final.groupby(['safra', 'ano_mes', 'cnpj', 'raiz_cnpj', 'problema', 'chave_is_problema'], as_index=False).agg({
+        'status': 'max',
+    }).drop_duplicates().reset_index(drop=True)
+
+
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_final['year'] = now.year
+    df_final['month'] = now.month
+
+
+    df_final = df_final.reset_index(drop=True)
+
+    print(df_final)
+
+    print('Quantidade de linhas para exportar:')
+    print(len(df_final))
 
     print("✅ Dados tratados")
 
@@ -159,7 +170,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-        final_df, 
+        df_final, 
         partition_by=["year", "month"],
         storage_options=storage_options_trusted,
         mode="overwrite"
