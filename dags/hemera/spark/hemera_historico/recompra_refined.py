@@ -38,6 +38,7 @@ def recompra_trusted_to_refined (access_params=None, **kwargs):
 
     df = execute_query(conn, query_recompra)
  
+    df["data_lancamento"] = pd.to_datetime(df["data_lancamento"], errors="coerce")
 
     df_agrupado = df.groupby(['id_titulo', 'data_fechamento']).agg(
                             valor_pagamento=('valor_pagamento', 'sum'),  
