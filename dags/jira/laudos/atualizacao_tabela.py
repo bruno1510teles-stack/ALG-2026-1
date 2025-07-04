@@ -38,7 +38,7 @@ def get_laudos (access_params=None, **kwargs):
 
     # Definindo a consulta
     query_laudo = """
-    CALL minioraw.system.sync_partition_metadata('motor', 'laudos', 'FULL')
+    CALL minioraw.system.sync_partition_metadata('motor', 'laudos_alpe', 'FULL')
 
     """
     # Executando apenas para sincronizar

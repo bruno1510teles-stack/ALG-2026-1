@@ -36,7 +36,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
             WITH laudos_rankeados AS (
                 SELECT *,
                     ROW_NUMBER() OVER (PARTITION BY ticket_jira ORDER BY try_cast(data_hora AS timestamp) DESC) AS rn
-                FROM minioraw.motor.laudos
+                FROM minioraw.motor.laudos_alpe
                 WHERE resolucao = 'MESA'
                 AND try_cast(try_cast(data_hora AS timestamp) AS date) >= DATE '2025-04-14'
             ),
