@@ -331,6 +331,13 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
             df_hemera['taxa_funding'] * df_hemera['valor_aquisicao']
         )
 
+        # Incluindo campo valor_funding_simulado (Solicitação Alexia)
+        df_hemera['valor_funding_simulado'] = np.where(
+            (df_hemera['data_vencimento'] + pd.Timedelta(days=60)) < df_hemera['data_fechamento'],
+            0,
+            df_hemera['taxa_funding'] * df_hemera['estoque_valor_presente_inicial'])
+
+
         df_hemera['spread_liquido_fidc_valor'] = df_hemera['spread_bruto_fidc'] - df_hemera['valor_funding'] - df_hemera['delta_pdd']
         df_hemera['spread_liquido_fidc_percentual'] = (df_hemera['spread_liquido_fidc_valor'] / df_hemera['valor_nominal'])
         df_hemera['descritivo_pdd'] = np.where(
@@ -451,6 +458,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
             0
         )
 
+
         # Condições baseadas na lógica do Excel
         condicoes = [
             (df_hemera['produto'] == "TRADICIONAL"),
@@ -491,7 +499,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                                     'estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
                                     'delta_pdd', 'pdd_final', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada','valor_baixa','valor_nominal_original', # Valores
                                     'valor_descontado_nota_fn', 'multa_e_juros', 'valor_aquisicao', 'spread_bruto_fidc', 
-                                    'spread_bruto_percentual', 'valor_funding', 'spread_liquido_fidc_valor', 
+                                    'spread_bruto_percentual', 'valor_funding', 'valor_funding_simulado', 'spread_liquido_fidc_valor', 
                                     'spread_alpe_inter', 'taxa_selic_inicio', 'taxa_selic_final', 'taxa_funding', # Percentuais
                                     'spread_liquido_fidc_percentual', 'prazo_operacao', 'prazo_medio_ponderado', 'atualizado_em'] # Prazo
 
@@ -530,7 +538,8 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         colunas_valores = ['estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
                         'delta_pdd', 'pdd_final', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada', 'valor_baixa', 
                         'valor_nominal_original', 'valor_descontado_nota_fn', 'multa_e_juros', 
-                        'valor_aquisicao', 'spread_bruto_fidc', 'spread_liquido_fidc_valor', 'valor_funding', 'prazo_operacao', 'prazo_medio_ponderado']
+                        'valor_aquisicao', 'spread_bruto_fidc', 'spread_liquido_fidc_valor', 'valor_funding', 'valor_funding_simulado',
+                        'prazo_operacao', 'prazo_medio_ponderado']
 
         df_analitico[colunas_valores] = df_analitico[colunas_valores].apply(pd.to_numeric, errors='coerce').round(2)
 
