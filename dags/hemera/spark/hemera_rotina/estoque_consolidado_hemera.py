@@ -155,7 +155,7 @@ def estoque_consolidado(spark):
         .format("delta") \
         .option("encoding", 'latin1') \
         .mode("overwrite") \
-        .save("s3a://hemera/estoque_consolidado")
+        .save("s3a://hemera-refined/estoque_consolidado")
 
     print("Arquivos Salvos")
 
