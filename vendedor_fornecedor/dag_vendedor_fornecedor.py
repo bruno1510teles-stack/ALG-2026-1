@@ -75,10 +75,9 @@ with DAG(
     # Definindo o task que processa a tabela vendedor_fornecedor
     vendedor_fornecedor = PythonOperator(
         task_id='vendedor_fornecedor',
-        python_callable= vendedor_fornecedor_to_trusted
-,
+        python_callable= vendedor_fornecedor_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
-
-vendedor_fornecedor
+    # Definindo a ordem de execução das tasks
+    vendedor_fornecedor
