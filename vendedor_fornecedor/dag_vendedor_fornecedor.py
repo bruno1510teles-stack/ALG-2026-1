@@ -82,4 +82,4 @@ with DAG(
     )
 
 # Nenhuma outra task definida ainda
-# vendedor_fornecedor >>
+vendedor_fornecedor
