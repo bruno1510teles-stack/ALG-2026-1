@@ -16,12 +16,14 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='beatriz_anjos',
-        auth=BasicAuthentication('beatriz_anjos', '!?&>_Jf_Rv67>BR&!R*x'),
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
         http_scheme="https",
     )
+
+
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
         cur.execute(query)
