@@ -73,7 +73,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 p.cargo_analista,
                 p.decisao,
                 p.parecer,
-                l.ramificacao_motor as ramificacao_motor,
+                l.ramificacao as ramificacao_motor,
                 p.tipo_proposta
             FROM laudos_filtrados l
             INNER JOIN propostas_filtradas p
