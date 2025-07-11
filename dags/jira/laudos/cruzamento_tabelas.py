@@ -16,13 +16,12 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host='trino.alpe.com.br',
+        port=443,
+        user='beatriz_anjos',
+        auth=BasicAuthentication('beatriz_anjos', '!?&>_Jf_Rv67>BR&!R*x'),
         http_scheme="https",
     )
-
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
         cur.execute(query)
@@ -96,7 +95,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
             
     if cruzamento_tabelas is not None and not cruzamento_tabelas.empty:
         # Aplicar a função nas colunas desejadas
-        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].apply(ajustar_decimal)
+        cruzamento_tabelas['valor_aprovado_motor'] = cruzamento_tabelas['valor_aprovado_motor'].apply(ajustar_decimal)
         cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].apply(ajustar_decimal)
         cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].apply(ajustar_decimal)
         cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].apply(ajustar_decimal)
@@ -104,7 +103,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
         cruzamento_tabelas['total_restritivo'] = cruzamento_tabelas['total_restritivo'].apply(ajustar_decimal)
 
         # Converter para float e arredondar para 2 casas decimais
-        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].astype(float).round(2)
+        cruzamento_tabelas['valor_aprovado_motor'] = cruzamento_tabelas['valor_aprovado_motor'].astype(float).round(2)
         cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].astype(float).round(2)
         cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].astype(float).round(2)
         cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].astype(float).round(2)
