@@ -13,8 +13,8 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 
-sys.path.append('/opt/airflow/dags/repo/dags/vendedor-fornecedor/vendedor-fornecedor/vendedor_arcelor.py')
-import vendedor_fornecedor.vendedor_fornecedor_to_trusted as vendedor_fornecedor_to_trusted
+sys.path.append('/opt/airflow/dags/repo/dags/vendedor_fornecedor')
+from vendedor_fornecedor_to_trusted import vendedor_fornecedor_to_trusted
 
 
 
@@ -81,5 +81,4 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
-# Nenhuma outra task definida ainda
 vendedor_fornecedor
