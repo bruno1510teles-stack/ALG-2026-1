@@ -23,6 +23,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
         http_scheme="https",
     )
 
+
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
         cur.execute(query)
@@ -55,13 +56,13 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 l.data_hora as data_execucao_laudo,
                 l.chave_unica,
                 l.nome_filtro,
-                l.valor_aprovado,
+                l.valor_aprovado as valor_aprovado_motor,
                 l.score,
                 l.restritivo_pj,
                 l.restritivo_pf,
                 l.total_restritivo,
                 p.issue_key,
-                p.politica,
+                l.politica,
                 p.cnpj,
                 p.raiz_cnpj,
                 p.limite_pedido,
@@ -73,7 +74,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 p.cargo_analista,
                 p.decisao,
                 p.parecer,
-                p.ramificacao_motor,
+                l.ramificacao as ramificacao_motor,
                 p.tipo_proposta
             FROM laudos_filtrados l
             INNER JOIN propostas_filtradas p
@@ -96,7 +97,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
             
     if cruzamento_tabelas is not None and not cruzamento_tabelas.empty:
         # Aplicar a função nas colunas desejadas
-        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].apply(ajustar_decimal)
+        cruzamento_tabelas['valor_aprovado_motor'] = cruzamento_tabelas['valor_aprovado_motor'].apply(ajustar_decimal)
         cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].apply(ajustar_decimal)
         cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].apply(ajustar_decimal)
         cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].apply(ajustar_decimal)
@@ -104,7 +105,7 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
         cruzamento_tabelas['total_restritivo'] = cruzamento_tabelas['total_restritivo'].apply(ajustar_decimal)
 
         # Converter para float e arredondar para 2 casas decimais
-        cruzamento_tabelas['valor_aprovado'] = cruzamento_tabelas['valor_aprovado'].astype(float).round(2)
+        cruzamento_tabelas['valor_aprovado_motor'] = cruzamento_tabelas['valor_aprovado_motor'].astype(float).round(2)
         cruzamento_tabelas['limite_pedido'] = cruzamento_tabelas['limite_pedido'].astype(float).round(2)
         cruzamento_tabelas['limite_aprovado'] = cruzamento_tabelas['limite_aprovado'].astype(float).round(2)
         cruzamento_tabelas['restritivo_pj'] = cruzamento_tabelas['restritivo_pj'].astype(float).round(2)
