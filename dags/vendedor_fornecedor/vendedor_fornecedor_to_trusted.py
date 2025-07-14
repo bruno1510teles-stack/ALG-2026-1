@@ -16,10 +16,10 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Conectando com o banco
 	conn = connect(
-		host='trino.alpe.com.br',
+		host='trino.alpe.tech',
 		port=443,
 		user='beatriz_anjos',
-		auth=BasicAuthentication('beatriz_anjos', '!?&>_Jf_Rv67>BR&!R*x'),
+		auth=BasicAuthentication('beatriz_anjos', '[qRo!?0IpB&9P&-]*{SU'),
 		http_scheme="https",
 	)
 
@@ -40,7 +40,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 						WHEN regexp_like(lower(si.branch_name), 'balc[aã]o.*bras[ií]lia') THEN 'DBA Brasília'
 						ELSE si.branch_name
 					END AS branch_name_ajustado
-				FROM postgres.knkt_fndt_prd_default.seller_info si
+				FROM postgres.knkt_fndt_{Variable.get('STAGE')}_default.seller_info si
 			),
 			
 			base_instructions AS (
@@ -48,7 +48,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 					i.*,
 					bsi.branch_name_ajustado,
 					bsi.seller_code
-				FROM postgres.knkt_fndt_prd_default.instruction i
+				FROM postgres.knkt_fndt_{Variable.get('STAGE')}_default.instruction i
 				INNER JOIN base_seller_info bsi ON i.seller_id = bsi.id
 			)
 			
@@ -80,11 +80,11 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 				nfe.status AS nfe_status
 			
 			FROM base_instructions i
-			LEFT JOIN postgres.knkt_fndt_prd_default.invoice_internal_payment_instruction_association iipia 
+			LEFT JOIN postgres.knkt_fndt_{Variable.get('STAGE')}_default.invoice_internal_payment_instruction_association iipia 
 				ON iipia.internal_payment_instruction_id = i.id
-			LEFT JOIN postgres.knkt_fndt_prd_default.invoice_nota_fiscal_eletronica infe 
+			LEFT JOIN postgres.knkt_fndt_{Variable.get('STAGE')}_default.invoice_nota_fiscal_eletronica infe 
 				ON infe.invoice_id = iipia.invoice_id
-			LEFT JOIN postgres.knkt_fndt_prd_default.nota_fiscal_eletronica nfe 
+			LEFT JOIN postgres.knkt_fndt_{Variable.get('STAGE')}_default.nota_fiscal_eletronica nfe 
 				ON nfe.id = infe.nota_fiscal_eletronica_id
 			LEFT JOIN minioraw.planejamento_comercial.vendedor_am v 
 				ON i.seller_code = v.salespersoncode
@@ -94,22 +94,22 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	api_arcelor = execute_query(conn, query_arcelor)
 
 	# Filtra o DataFrame para remover linhas onde 'numero_nfe' está vazio ou nulo 
-	df_api_arcelor = df_api_arcelor.loc[df_api_arcelor['numero_nfe'].notna()]
+	api_arcelor = api_arcelor.loc[api_arcelor['numero_nfe'].notna()]
 
-	df_api_arcelor.loc[:, 'escritorio_vendas'] = df_api_arcelor['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
+	api_arcelor.loc[:, 'escritorio_vendas'] = api_arcelor['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
 
-	df_api_arcelor.loc[:, 'numero_nfe'] = df_api_arcelor['numero_nfe'].astype(str).str.strip()
+	api_arcelor.loc[:, 'numero_nfe'] = api_arcelor['numero_nfe'].astype(str).str.strip()
 
 	# Remove acentos e caracteres especiais de 'vendedor_arcelor'
-	df_api_arcelor.loc[:, 'vendedor_arcelor'] = (
-		df_api_arcelor['vendedor_arcelor']
+	api_arcelor.loc[:, 'vendedor_arcelor'] = (
+		api_arcelor['vendedor_arcelor']
 		.apply(lambda x: unidecode(x) if pd.notna(x) else x)
 		.str.replace(r'[^\w\s/]', '', regex=True)
 	)
 
 	# Remove acentos e caracteres especiais de 'escritorio_vendas'
-	df_api_arcelor.loc[:, 'escritorio_vendas'] = (
-		df_api_arcelor['escritorio_vendas']
+	api_arcelor.loc[:, 'escritorio_vendas'] = (
+		api_arcelor['escritorio_vendas']
 		.apply(lambda x: unidecode(x) if pd.notna(x) else x)
 		.str.replace(r'[^\w\s/]', '', regex=True)
 	)
@@ -123,37 +123,37 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Padroniza as colunas para string e strip
 	for col in ['cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas']:
-		df_api_arcelor.loc[:, col] = df_api_arcelor[col].astype(str).str.strip()
+		api_arcelor.loc[:, col] = api_arcelor[col].astype(str).str.strip()
 
 	#Trata código vendedor arcelor
 	# Aplica a máscara considerando valores em minúsculas
-	mask_cod_vazio = df_api_arcelor['cod_vendedor_arcelor'].str.lower().isin(valores_vazios)
-	df_api_arcelor.loc[mask_cod_vazio, 'cod_vendedor_arcelor'] = 'Nao Atribuido'
+	mask_cod_vazio = api_arcelor['cod_vendedor_arcelor'].str.lower().isin(valores_vazios)
+	api_arcelor.loc[mask_cod_vazio, 'cod_vendedor_arcelor'] = 'Nao Atribuido'
 	#===================================
 
 	# Trata nome vendedor_arcelor
-	mask_nome_vazio = df_api_arcelor['vendedor_arcelor'].str.lower().isin(valores_vazios)
-	df_api_arcelor.loc[mask_nome_vazio, 'vendedor_arcelor'] = 'Nao Atribuido'
+	mask_nome_vazio = api_arcelor['vendedor_arcelor'].str.lower().isin(valores_vazios)
+	api_arcelor.loc[mask_nome_vazio, 'vendedor_arcelor'] = 'Nao Atribuido'
 	#===================================
 
 	# Trata código e nome vendedor_arcelor
 	mask_nome_cod_vazios = mask_nome_vazio & mask_cod_vazio
 	# Atualiza as duas colunas juntas para 'Não Atribuído' onde ambos estão vazios
-	df_api_arcelor.loc[mask_nome_cod_vazios, ['vendedor_arcelor', 'cod_vendedor_arcelor']] = 'Nao Atribuido'
+	api_arcelor.loc[mask_nome_cod_vazios, ['vendedor_arcelor', 'cod_vendedor_arcelor']] = 'Nao Atribuido'
 	#===================================
 
 	# Onde nome está vazio e código NÃO está vazio, nome vira 'Não Atribuído'
 	mask_nome_vazio_cod_ok = mask_nome_vazio & (~mask_cod_vazio)
-	df_api_arcelor.loc[mask_nome_vazio_cod_ok, 'vendedor_arcelor'] = 'Nao Atribuido'
+	api_arcelor.loc[mask_nome_vazio_cod_ok, 'vendedor_arcelor'] = 'Nao Atribuido'
 
 	#===================================
 	# Trata escritorio_vendas
-	mask_esc_vazio = df_api_arcelor['escritorio_vendas'].str.lower().isin(valores_vazios)
-	df_api_arcelor.loc[mask_esc_vazio, 'escritorio_vendas'] = 'Nao Atribuido'
+	mask_esc_vazio = api_arcelor['escritorio_vendas'].str.lower().isin(valores_vazios)
+	api_arcelor.loc[mask_esc_vazio, 'escritorio_vendas'] = 'Nao Atribuido'
 	#===================================
 
 	# Trata vendedor_alpe 
-	df_api_arcelor.loc[:, 'vendedor_alpe'] = df_api_arcelor['vendedor_alpe'].apply(
+	api_arcelor.loc[:, 'vendedor_alpe'] = api_arcelor['vendedor_alpe'].apply(
 		lambda x: 'Nao Atribuido' if pd.isna(x) or str(x).strip().lower() in valores_vazios else str(x).strip()
 	)
 	#===================================
@@ -165,15 +165,15 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			return 'Nao Atribuido'
 		return unidecode(nome_str).title()
 
-	df_api_arcelor.loc[:,'vendedor_arcelor'] = df_api_arcelor['vendedor_arcelor'].apply(normalizar_nome_condicional)
+	api_arcelor.loc[:,'vendedor_arcelor'] = api_arcelor['vendedor_arcelor'].apply(normalizar_nome_condicional)
 
 	# Dicionário com nome mais longo por código, ignorando registros 'Não Atribuído'
 	nomes_padronizados = (
-		df_api_arcelor[
-			df_api_arcelor['cod_vendedor_arcelor'].notna() &
-			(df_api_arcelor['cod_vendedor_arcelor'].str.strip().str.lower() != 'nao atribuido') &
-			df_api_arcelor['vendedor_arcelor'].notna() &
-			(df_api_arcelor['vendedor_arcelor'].str.strip().str.lower() != 'nao atribuido')
+		api_arcelor[
+			api_arcelor['cod_vendedor_arcelor'].notna() &
+			(api_arcelor['cod_vendedor_arcelor'].str.strip().str.lower() != 'nao atribuido') &
+			api_arcelor['vendedor_arcelor'].notna() &
+			(api_arcelor['vendedor_arcelor'].str.strip().str.lower() != 'nao atribuido')
 		]
 		.groupby('cod_vendedor_arcelor')['vendedor_arcelor']
 		.apply(lambda x: max(x, key=len))
@@ -181,17 +181,17 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	)
 
 	# Atualiza os nomes direto no consolidado_venda com base no dicionário, mantendo 'Não Atribuído'
-	df_api_arcelor.loc[:,'vendedor_arcelor'] = df_api_arcelor.apply(
+	api_arcelor.loc[:,'vendedor_arcelor'] = api_arcelor.apply(
 		lambda r: nomes_padronizados.get(r['cod_vendedor_arcelor'], r['vendedor_arcelor'])
 		if r['vendedor_arcelor'] != 'Nao Atribuido' else 'Nao Atribuido',
 		axis=1
 	)
 
 	#Identificar origem para o concat
-	df_api_arcelor = df_api_arcelor.assign(origem='df_api_arcelor')
+	api_arcelor = api_arcelor.assign(origem='api_arcelor')
 
 	# Mantém somente as colunas necessárias no DataFrame final
-	df_api_arcelor = df_api_arcelor[['numero_nfe', 'cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas', 'vendedor_alpe', 'origem']]
+	api_arcelor = api_arcelor[['numero_nfe', 'cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas', 'vendedor_alpe', 'origem']]
 
 	#Base consolidado_venda
 	query_consolidado_venda = f"""
@@ -344,7 +344,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	query_venda_historico = f"""
 			WITH base_padronizada AS (
 				SELECT
-					nota_fical_completa,
+					nota_fiscal_completa,
 					vendedor_am,
 					filial_consolidada,
 					vendedor_alpe
@@ -352,7 +352,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			)
 			
 			SELECT DISTINCT
-				bp.nota_fical_completa AS numero_nfe,
+				bp.nota_fiscal_completa AS numero_nfe,
 				bp.vendedor_am AS vendedor_arcelor,
 				bp.filial_consolidada AS escritorio_vendas,
 			
@@ -430,7 +430,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	concatenado.loc[mask_cod_vazio, 'cod_vendedor_arcelor'] = 'Nao Atribuido'
 
 	# Mapeia prioridade: menor número = maior prioridade
-	prioridade = {'df_api_arcelor': 0, 'df_consolidado_venda': 1, 'df_consolidado_venda_historico': 2}
+	prioridade = {'api_arcelor': 0, 'consolidado_venda': 1, 'consolidado_venda_historico': 2}
 	concatenado['prioridade'] = concatenado['origem'].map(prioridade)
 
 	# Ordena pela prioridade
@@ -454,7 +454,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 				substr(cnpj_sacado, 1,8) as raiz_cnpj,
 				nome_sacado,
 				numero_nfe,
-				valor_fatura,
+				valor_fatura_total,
 				valor_fatura_pos_sefaz,
 				valor_fatura_oficial,
 				valor_face_qprof
@@ -499,7 +499,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	final = pd.merge(faturamento_arcelor, localizacao, on='cnpj_sacado', how='left', suffixes=('_faturamento_arcelor', '_localizacao'))
 
-	print(f"Quantidade de linhas df_api_arcelor_regional: {faturamento_arcelor.shape[0]}")
+	print(f"Quantidade de linhas faturamento_arcelor: {faturamento_arcelor.shape[0]}")
 	print(f"Quantidade de linhas após cruzamento: {final.shape[0]}")
 
 	# Tratamentos final
@@ -519,7 +519,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	final[colunas] = final[colunas].astype(str).apply(lambda x: x.str.strip())
 
-	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
+	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura_total','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
 
 	# 1. Define colunas que serão tratadas
 	colunas_para_tratar = ['cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas']
