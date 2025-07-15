@@ -344,7 +344,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	query_venda_historico = f"""
 			WITH base_padronizada AS (
 				SELECT
-					nota_fical_completa,
+					nota_fiscal_completa,
 					vendedor_am,
 					filial_consolidada,
 					vendedor_alpe
@@ -352,7 +352,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			)
 			
 			SELECT DISTINCT
-				bp.nota_fical_completa AS numero_nfe,
+				bp.nota_fiscal_completa AS numero_nfe,
 				bp.vendedor_am AS vendedor_arcelor,
 				bp.filial_consolidada AS escritorio_vendas,
 			
