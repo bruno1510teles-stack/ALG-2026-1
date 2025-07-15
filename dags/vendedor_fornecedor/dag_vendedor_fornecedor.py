@@ -66,7 +66,7 @@ default_args = {
 with DAG(
     dag_id='vendedor_fornecedor',
     start_date=days_ago(1),
-    schedule_interval='0 8 * * *',
+    schedule_interval = '0 11-23 * * 1-5',
     default_args=default_args,
     tags=['etl', 'vendedor_fornecedor', 'trusted'],
     max_active_runs=1
