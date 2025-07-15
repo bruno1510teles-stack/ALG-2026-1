@@ -344,7 +344,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	query_venda_historico = f"""
 			WITH base_padronizada AS (
 				SELECT
-					nota_fiscal_completa,
+					nota_fical_completa,
 					vendedor_am,
 					filial_consolidada,
 					vendedor_alpe
@@ -352,7 +352,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			)
 			
 			SELECT DISTINCT
-				bp.nota_fiscal_completa AS numero_nfe,
+				bp.nota_fical_completa AS numero_nfe,
 				bp.vendedor_am AS vendedor_arcelor,
 				bp.filial_consolidada AS escritorio_vendas,
 			
@@ -474,7 +474,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	faturamento_arcelor = pd.merge(concatenado, faturamento, on='numero_nfe', how='outer', suffixes=('_concatenado', '_faturamento'))
 
-	print(f"Quantidade de linhas df_concatenado: {concatenado.shape[0]}")
+	print(f"Quantidade de linhas concatenado: {concatenado.shape[0]}")
 	print(f"Quantidade de linhas após cruzamento: {faturamento_arcelor.shape[0]}")
 
 	cnpjs = faturamento_arcelor['cnpj_sacado'].unique()
@@ -519,6 +519,17 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	final[colunas] = final[colunas].astype(str).apply(lambda x: x.str.strip())
 
+	final = final[~(
+    # Condição 1: existe um número de nota fiscal (numero_nfe não está vazio)
+    final['numero_nfe'].notna() &
+
+    # Condição 2: o valor da fatura está vazio (NaN)
+    final['valor_fatura_total'].isna() &
+
+    # Condição 3: a origem é uma das duas fontes que queremos filtrar
+    final['origem'].isin(['df_consolidado_venda', 'df_consolidado_venda_historico'])
+)]
+
 	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura_total','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
 
 	# 1. Define colunas que serão tratadas
@@ -531,7 +542,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	mascara_nome_valido = ~final['nome_cedente'].astype(str).str.strip().str.lower().isin(valores_vazios) # Identifica cedentes com nome válido (não vazio, nulo ou inválido)
 
 	# Cria uma máscara onde o nome do cedente contém o termo "ARCELORMITTAL"
-	mascara_arcelor = final['nome_cedente'] .astype(str).str.upper().str.contains('ARCELORMITTAL', na=False)  # Verifica se contém "ARCELORMITTAL"; ignora NaNs
+	mascara_arcelor = final['nome_cedente'].astype(str).str.strip().str.upper().replace(['NAN', 'NONE'], '').str.contains('ARCELORMITTAL')
 
 	# Cria uma máscara onde o nome do cedente é válido e NÃO é da ArcelorMittal
 	mascara_nao_arcelor = mascara_nome_valido & ~mascara_arcelor
