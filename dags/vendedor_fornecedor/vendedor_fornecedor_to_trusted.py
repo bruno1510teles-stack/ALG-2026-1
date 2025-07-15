@@ -16,10 +16,10 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Conectando com o banco
 	conn = connect(
-		host='trino.alpe.tech',
-		port=443,
-		user='beatriz_anjos',
-		auth=BasicAuthentication('beatriz_anjos', '[qRo!?0IpB&9P&-]*{SU'),
+		host=access_params['trino_endpoint'],
+		port=access_params['trino_port'],
+		user=access_params['trino_user'],
+		auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
 		http_scheme="https",
 	)
 
@@ -344,7 +344,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	query_venda_historico = f"""
 			WITH base_padronizada AS (
 				SELECT
-					nota_fiscal_completa,
+					nota_fical_completa,
 					vendedor_am,
 					filial_consolidada,
 					vendedor_alpe
@@ -352,7 +352,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			)
 			
 			SELECT DISTINCT
-				bp.nota_fiscal_completa AS numero_nfe,
+				bp.nota_fical_completa AS numero_nfe,
 				bp.vendedor_am AS vendedor_arcelor,
 				bp.filial_consolidada AS escritorio_vendas,
 			
@@ -454,7 +454,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 				substr(cnpj_sacado, 1,8) as raiz_cnpj,
 				nome_sacado,
 				numero_nfe,
-				valor_fatura_total,
+				valor_fatura,
 				valor_fatura_pos_sefaz,
 				valor_fatura_oficial,
 				valor_face_qprof
@@ -524,13 +524,13 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
     final['numero_nfe'].notna() &
 
     # Condição 2: o valor da fatura está vazio (NaN)
-    final['valor_fatura_total'].isna() &
+    final['valor_fatura'].isna() &
 
     # Condição 3: a origem é uma das duas fontes que queremos filtrar
     final['origem'].isin(['df_consolidado_venda', 'df_consolidado_venda_historico'])
 )]
 
-	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura_total','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
+	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
 
 	# 1. Define colunas que serão tratadas
 	colunas_para_tratar = ['cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas']
