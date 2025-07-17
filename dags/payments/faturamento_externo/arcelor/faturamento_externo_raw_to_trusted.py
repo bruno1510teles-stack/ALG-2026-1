@@ -212,7 +212,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     base_final_merge = cruzar_bases(df, base1)
 
 
-    # Inserindo Cidade e UF
+   # Inserindo Cidade, UF e Cnae Principal
 
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
     cnpjs = base_final_merge['raiz_cnpj'].unique().tolist()
@@ -229,46 +229,37 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
 
     query_receita_1 = f"""
-                    select
-                        distinct
-                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
-                        municipio as cidade,
-                        uf
-                    from deltalaketrusted.pessoas_e_organizacoes.endereco
-                    where year = 2024
-                    and month = 6
-                    and day = 5
-                    and substr(identificador, 9, 4) = '0001'
-                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_1})
+                        select 	distinct
+                                cnpj_raiz as raiz_cnpj,
+                                municipio as cidade,
+                                uf,
+                                cast(cnae_principal_codigo as varchar) as cnae_principal
+                        from deltalakerefined.receita_federal.dados_cadastrais
+                        where flag_matriz = 'Sim'
+                        and cnpj_raiz in ({cnpjs_str_1})
                     """
 
     query_receita_2 = f"""
-                    select
-                        distinct
-                        substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
-                        municipio as cidade,
-                        uf
-                    from deltalaketrusted.pessoas_e_organizacoes.endereco
-                    where year = 2024
-                    and month = 6
-                    and day = 5
-                    and substr(identificador, 9, 4) = '0001'
-                    and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_2})
+                        select 	distinct
+                                cnpj_raiz as raiz_cnpj,
+                                municipio as cidade,
+                                uf,
+                                cast(cnae_principal_codigo as varchar) as cnae_principal
+                        from deltalakerefined.receita_federal.dados_cadastrais
+                        where flag_matriz = 'Sim'
+                        and cnpj_raiz in ({cnpjs_str_2})
                     """
 
     query_receita_3 = f"""
-                        select
-                            distinct
-                            substr(identificador, 1, length(identificador) - 6) as raiz_cnpj,
-                            municipio as cidade,
-                            uf
-                        from deltalaketrusted.pessoas_e_organizacoes.endereco
-                        where year = 2024
-                        and month = 6
-                        and day = 5
-                        and substr(identificador, 9, 4) = '0001'
-                        and substr(identificador, 1, length(identificador) - 6) in ({cnpjs_str_3})
-                        """
+                        select 	distinct
+                                cnpj_raiz as raiz_cnpj,
+                                municipio as cidade,
+                                uf,
+                                cast(cnae_principal_codigo as varchar) as cnae_principal
+                        from deltalakerefined.receita_federal.dados_cadastrais
+                        where flag_matriz = 'Sim'
+                        and cnpj_raiz in ({cnpjs_str_3})
+                    """
 
     receita_1 = execute_query(conn, query_receita_1)
     receita_2 = execute_query(conn, query_receita_2)
@@ -341,7 +332,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # Reorganizando Colunas
 
-    colunas_ordem = ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf'] + [col for col in df_final.columns if col not in ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf']]
+    colunas_ordem = ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf', 'cnae_principal'] + [col for col in df_final.columns if col not in ['raiz_cnpj', 'razao_social', 'unidade_consolidada', 'cidade', 'uf', 'cnae_principal']]
     df_final = df_final[colunas_ordem]
 
     print('Exportando base...')
