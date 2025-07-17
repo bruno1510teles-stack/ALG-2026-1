@@ -72,20 +72,26 @@ def faturamento_to_refined(access_params=None,  **kwargs):
         numero_nfe,
         data_efetivacao
     )
-    select 
-        coalesce(ft.cnpj_sacado, bol.cnpj_sacado) as cnpj_sacado,  
-        coalesce(ft.nome_sacado, bol.nome_sacado) as nome_sacado,
-        coalesce(ft.cnpj_cedente, bol.cnpj_cedente) as cnpj_cedente,
-        coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
-        coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
-        coalesce(bol.data_efetivacao, ft.data_fatura) as data,
-        coalesce(ft.valor_fatura,0) as valor_fatura,
-        coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
-        coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
-        coalesce(bol.valor_face_qprof, 0) as valor_face_qprof
-    from 
-        faturamento ft
-        full join boletos bol on ft.chave = bol.chave
+    select 	sub1.*,
+            cast(rf.cnae_principal as varchar) as cnae_principal,
+            rf.uf
+    from (
+        select 
+            coalesce(ft.cnpj_sacado, bol.cnpj_sacado) as cnpj_sacado,  
+            coalesce(ft.nome_sacado, bol.nome_sacado) as nome_sacado,
+            coalesce(ft.cnpj_cedente, bol.cnpj_cedente) as cnpj_cedente,
+            coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
+            coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
+            coalesce(bol.data_efetivacao, ft.data_fatura) as data,
+            coalesce(ft.valor_fatura,0) as valor_fatura,
+            coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
+            coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
+            coalesce(bol.valor_face_qprof, 0) as valor_face_qprof
+        from 
+            faturamento ft
+            full join boletos bol on ft.chave = bol.chave ) as sub1
+    left join ( select cnpj_sem_formatacao, cnae_principal_codigo as cnae_principal, uf 
+                    from deltalakerefined.receita_federal.dados_cadastrais) as rf on sub1.cnpj_sacado = rf.cnpj_sem_formatacao
     """
 
     fatura = execute_query(conn, query_fatura)
