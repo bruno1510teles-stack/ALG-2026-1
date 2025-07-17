@@ -74,33 +74,33 @@ def cria_grupo_economico_automatico_historico(access_params=None,  **kwargs):
                 pr_grupo."role" AS role_grupo,
                 pi_grupo.value AS pgid,
                 pi_grupo."type" AS tipo_identificacao_grupo
-            FROM postgres.prts_schema_prd_default.party_identification pi_sacado
-            INNER JOIN postgres.prts_schema_prd_default.party_role pr_sacado 
+            FROM postgres.prts_schema_{Variable.get('STAGE')}_default.party_identification pi_sacado
+            INNER JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_role pr_sacado 
                 ON pr_sacado.party_id = pi_sacado.party_id 
                 AND pr_sacado."role" = 'EG_MEMBER'
-            INNER JOIN postgres.prts_schema_prd_default.party_role_relationship prr 
+            INNER JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_role_relationship prr 
                 ON prr.to_party_role_id = pr_sacado.id 
                 AND prr."type" = 'ECONOMIC_GROUP_TO_EG_MEMBER' 
                 AND prr.date_thru IS NULL
-            INNER JOIN postgres.prts_schema_prd_default.party_role pr_grupo 
+            INNER JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_role pr_grupo 
                 ON pr_grupo.id = prr.from_party_role_id 
                 AND pr_grupo."role" = 'ECONOMIC_GROUP'
-            INNER JOIN postgres.prts_schema_prd_default.party_identification pi_grupo 
+            INNER JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_identification pi_grupo 
                 ON pi_grupo.party_id = pr_grupo.party_id 
                 AND pi_grupo."type" = 'PGID'
-            INNER JOIN postgres.prts_schema_prd_default.party p_sacado 
+            INNER JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party p_sacado 
                 ON p_sacado.id = pi_sacado.party_id
-            LEFT JOIN postgres.prts_schema_prd_default.party_role_relationship prr_participantes 
+            LEFT JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_role_relationship prr_participantes 
                 ON prr_participantes.from_party_role_id = pr_grupo.id 
                 AND prr_participantes."type" = 'ECONOMIC_GROUP_TO_EG_MEMBER' 
                 AND prr_participantes.date_thru IS NULL
-            LEFT JOIN postgres.prts_schema_prd_default.party_role pr_participantes 
+            LEFT JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_role pr_participantes 
                 ON pr_participantes.id = prr_participantes.to_party_role_id 
                 AND pr_participantes."role" = 'EG_MEMBER'
-            LEFT JOIN postgres.prts_schema_prd_default.party_identification pi_participantes 
+            LEFT JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party_identification pi_participantes 
                 ON pi_participantes.party_id = pr_participantes.party_id 
                 AND pi_participantes."type" = 'PGAS'
-            LEFT JOIN postgres.prts_schema_prd_default.party p_participante 
+            LEFT JOIN postgres.prts_schema_{Variable.get('STAGE')}_default.party p_participante 
                 ON p_participante.id = pi_participantes.party_id 
             WHERE 
                 pi_sacado."type" = 'PGAS'
@@ -123,11 +123,11 @@ def cria_grupo_economico_automatico_historico(access_params=None,  **kwargs):
                     , D.participant_name as nome_socio
                     , D.participation_percentage_capital as part_social
                     , IF(C.restriction_sign, 1, 0) as anotacoes
-            from postgres.exrp_prd_default.identification_report as A
-            inner join postgres.exrp_prd_default.optional_features as B on A.ID = B.id 
-            inner join postgres.exrp_prd_default.participated as C on B.company_participations_report_id = C.company_participations_report_id 
-            inner join postgres.exrp_prd_default.participant as D on C.resume_id = D.participated_id
-            inner join (select document_number, max(id) as max_id from postgres.exrp_prd_default.identification_report group by document_number) ir2 on ir2.max_id = A.id
+            from postgres.exrp_{Variable.get('STAGE')}_default.identification_report as A
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features as B on A.ID = B.id 
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.participated as C on B.company_participations_report_id = C.company_participations_report_id 
+            inner join postgres.exrp_{Variable.get('STAGE')}_default.participant as D on C.resume_id = D.participated_id
+            inner join (select document_number, max(id) as max_id from postgres.exrp_{Variable.get('STAGE')}_default.identification_report group by document_number) ir2 on ir2.max_id = A.id
             where substring(A.document_number,1,8) = '{cnpj}'
             and coalesce(D.participation_percentage_capital,0) >= 20  
             """
