@@ -1,23 +1,16 @@
 ### Importando Libs necessárias
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import requests
-import pendulum
-import sys
-from datetime import datetime, timezone, timedelta
 from time import sleep
+import requests
 
 
-sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
-#from processa_historico_propostas import processa_historico
-from captura_proposta import captura_proposta
-from raw_to_trusted import raw_to_trusted
-from trusted_to_refined import trusted_to_refined
+### Importando scripts necessários
+from grupo_economico.cria_grupo_economico_autom_historico import cria_grupo_economico_automatico_historico
+from grupo_economico.cria_grupo_economico_autom_rotina import cria_grupo_economico_automatico_rotina
 
 
 ### Parâmetros de acesso
@@ -42,8 +35,7 @@ access_params = {
     "exrep_client_id": Variable.get('EXREP_CLIENT_ID'),
     "exrep_client_secret": Variable.get('EXREP_CLIENT_SECRET'),
     "keycloack_token_url": Variable.get('KEYCLOAK_TOKEN_URL')
-    }
-
+}
 
 
 def notificar_falha_teams(context):
@@ -54,58 +46,42 @@ def notificar_falha_teams(context):
     }
     requests.post(url, json=mensagem)
 
-    
 
-# Definindo defaults
+### Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    "retries": 1,
-    "retry_delay": timedelta(minutes=5),
-    "on_failure_callback": notificar_falha_teams
+    "retries": 0,
 }
 
 
 # Definindo a DAG
 with DAG(
-    dag_id='processo_jira_propostas',
+    dag_id='grupo_economico_automatico',
     start_date=days_ago(1),
-    schedule_interval='0 * * * *',
+    #schedule_interval='30 * * * *',
+    schedule_interval=None,
     default_args=default_args,
     catchup=False, 
-    tags=['etl', 'jira', 'raw', 'trusted','refined'],
+    tags=['grupo', 'economico', 'automatico'],
     max_active_runs=1
 ) as dag:
-    
-    '''
-    processa_historico = PythonOperator(
-         task_id='processa_historico_propostas',
-         python_callable=processa_historico,
-         op_kwargs={'access_params': access_params},
-         provide_context=True
-    )
-    '''
 
-    captura_proposta = PythonOperator(
-        task_id='captura_proposta',
-        python_callable=captura_proposta,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
+
+    # Definindo o task que processa a proposta
+    cria_grupo_autom_hist = PythonOperator(
+        task_id = 'cria_grupo_econ_hist',
+        python_callable = cria_grupo_economico_automatico_historico,
+        provide_context = True
     )
 
-    raw_to_trusted = PythonOperator(
-        task_id='raw_to_trusted',
-        python_callable=raw_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
 
-    trusted_to_refined = PythonOperator(
-        task_id='trusted_to_refined',
-        python_callable=trusted_to_refined,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
+    # Definindo o task que processa a proposta
+    cria_grupo_autom_rotina = PythonOperator(
+        task_id = 'cria_grupo_econ_rotina',
+        python_callable = cria_grupo_economico_automatico_rotina,
+        provide_context = True
+    )   
 
     # Definindo a ordem de execução das tasks
-    #processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
-    captura_proposta >> raw_to_trusted >> trusted_to_refined
+    cria_grupo_autom_hist >> cria_grupo_autom_rotina
+    
