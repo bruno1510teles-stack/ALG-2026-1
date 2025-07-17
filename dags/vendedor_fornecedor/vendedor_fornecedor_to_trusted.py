@@ -16,10 +16,10 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Conectando com o banco
 	conn = connect(
-		host=access_params['trino_endpoint'],
-		port=access_params['trino_port'],
-		user=access_params['trino_user'],
-		auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+		host='trino.alpe.tech',
+		port=443,
+		user='beatriz_anjos',
+		auth=BasicAuthentication('beatriz_anjos', '[qRo!?0IpB&9P&-]*{SU'),
 		http_scheme="https",
 	)
 
@@ -344,7 +344,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	query_venda_historico = f"""
 			WITH base_padronizada AS (
 				SELECT
-					nota_fical_completa,
+					nota_fiscal_completa,
 					vendedor_am,
 					filial_consolidada,
 					vendedor_alpe
@@ -352,7 +352,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			)
 			
 			SELECT DISTINCT
-				bp.nota_fical_completa AS numero_nfe,
+				bp.nota_fiscal_completa AS numero_nfe,
 				bp.vendedor_am AS vendedor_arcelor,
 				bp.filial_consolidada AS escritorio_vendas,
 			
@@ -437,10 +437,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	concatenado = concatenado.sort_values(by='prioridade')
 
 	# Remove duplicatas, mantendo o de maior prioridade (primeiro após ordenação)
-	concatenado = concatenado.drop_duplicates(
-		subset=['numero_nfe', 'cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas', 'vendedor_alpe'],
-		keep='first'
-	)
+	concatenado = concatenado.drop_duplicates(subset=['numero_nfe'], keep='first')
 
 	concatenado = concatenado.drop(columns='prioridade')
 
@@ -454,7 +451,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 				substr(cnpj_sacado, 1,8) as raiz_cnpj,
 				nome_sacado,
 				numero_nfe,
-				valor_fatura,
+				valor_fatura_total,
 				valor_fatura_pos_sefaz,
 				valor_fatura_oficial,
 				valor_face_qprof
@@ -524,13 +521,13 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
     final['numero_nfe'].notna() &
 
     # Condição 2: o valor da fatura está vazio (NaN)
-    final['valor_fatura'].isna() &
+    final['valor_fatura_total'].isna() &
 
     # Condição 3: a origem é uma das duas fontes que queremos filtrar
     final['origem'].isin(['df_consolidado_venda', 'df_consolidado_venda_historico'])
 )]
 
-	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
+	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura_total','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
 
 	# 1. Define colunas que serão tratadas
 	colunas_para_tratar = ['cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas']
@@ -628,7 +625,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	# 7. Aplica a lógica para atribuir vendedor_alpe
 	final['vendedor_alpe'] = final.apply(definir_vendedor_alpe, axis=1)
 
-
+	final = final.reset_index(drop=True)
+	
 	# 8. Colunas de data
 
 	# Timestamp e partições
