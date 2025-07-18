@@ -7,6 +7,7 @@ from deltalake import write_deltalake
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
+from airflow.models import Variable
 
 
 
@@ -16,10 +17,10 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     # CARREGANDO BASE FOTO, OU SEJA MINHA BASE ATUAL
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host=Variable.get("TRINO_ENDPOINT"),
+        port=Variable.get("TRINO_PORT"),
+        user=Variable.get("TRINO_USER"),
+        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
         http_scheme="https",
     )
 
@@ -40,13 +41,13 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     df = execute_query(conn, query_base_fat_externo_trusted)
 
-
+    print('DADOS AUX CARREGADOS DO TRINO COM SUCESSO!')
 
     # IMPORTA BASE QUE VAI SER ACUMULADA
     minio_raw = Minio(
-        access_params['endpoint_url_raw'],
-        access_key=access_params['aws_access_key_id_raw'],
-        secret_key=access_params['aws_secret_access_key_raw'],
+        Variable.get("MINIO_RAW_ENDPOINT"),
+        access_key=Variable.get("MINIO_RAW_ACCESS_KEY"),
+        secret_key=Variable.get("MINIO_RAW_SECRET_KEY"),
     )
 
     # Connection validation
@@ -348,9 +349,9 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_ACCESS_KEY_ID": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
+        "AWS_SECRET_ACCESS_KEY": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
+        "AWS_ENDPOINT_URL": f"https://{Variable.get("MINIO_TRUSTED_ENDPOINT")}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
