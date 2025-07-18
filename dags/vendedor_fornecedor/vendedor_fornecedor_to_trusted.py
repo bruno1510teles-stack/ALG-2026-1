@@ -97,7 +97,6 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	api_arcelor = api_arcelor.loc[api_arcelor['numero_nfe'].notna()]
 
 	api_arcelor.loc[:, 'escritorio_vendas'] = api_arcelor['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
-
 	api_arcelor.loc[:, 'numero_nfe'] = api_arcelor['numero_nfe'].astype(str).str.strip()
 
 	# Remove acentos e caracteres especiais de 'vendedor_arcelor'
@@ -437,10 +436,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	concatenado = concatenado.sort_values(by='prioridade')
 
 	# Remove duplicatas, mantendo o de maior prioridade (primeiro após ordenação)
-	concatenado = concatenado.drop_duplicates(
-		subset=['numero_nfe', 'cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas', 'vendedor_alpe'],
-		keep='first'
-	)
+	concatenado = concatenado.drop_duplicates(subset=['numero_nfe'], keep='first')
 
 	concatenado = concatenado.drop(columns='prioridade')
 
@@ -520,17 +516,20 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	final[colunas] = final[colunas].astype(str).apply(lambda x: x.str.strip())
 
 	final = final[~(
-    # Condição 1: existe um número de nota fiscal (numero_nfe não está vazio)
-    final['numero_nfe'].notna() &
+	# Condição 1: existe um número de nota fiscal (numero_nfe não está vazio)
+	final['numero_nfe'].notna() &
 
-    # Condição 2: o valor da fatura está vazio (NaN)
-    final['valor_fatura'].isna() &
+	# Condição 2: o valor da fatura está vazio (NaN)
+	final['valor_fatura'].isna() &
 
-    # Condição 3: a origem é uma das duas fontes que queremos filtrar
-    final['origem'].isin(['df_consolidado_venda', 'df_consolidado_venda_historico'])
-)]
+	# Condição 3: a origem é uma das duas fontes que queremos filtrar
+	final['origem'].isin(['consolidado_venda', 'consolidado_venda_historico'])
+	)]
 
 	final = final[['cnpj_sacado','raiz_cnpj_sacado','nome_sacado','cnpj_cedente','nome_cedente','cod_vendedor_arcelor','vendedor_arcelor','escritorio_vendas','vendedor_alpe','cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz','valor_fatura_oficial','valor_face_qprof', 'origem']]
+
+	final
+	print(f"Quantidade de linhas no df_final: {final.shape[0]}")
 
 	# 1. Define colunas que serão tratadas
 	colunas_para_tratar = ['cod_vendedor_arcelor', 'vendedor_arcelor', 'escritorio_vendas']
@@ -628,7 +627,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	# 7. Aplica a lógica para atribuir vendedor_alpe
 	final['vendedor_alpe'] = final.apply(definir_vendedor_alpe, axis=1)
 
-
+	final = final.reset_index(drop=True)
+	
 	# 8. Colunas de data
 
 	# Timestamp e partições
