@@ -351,7 +351,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     storage_options = {
         "AWS_ACCESS_KEY_ID": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
         "AWS_SECRET_ACCESS_KEY": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
-        "AWS_ENDPOINT_URL": f"https://{Variable.get("MINIO_TRUSTED_ENDPOINT")}",
+        "AWS_ENDPOINT_URL": f"https://{Variable.get('MINIO_TRUSTED_ENDPOINT')}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
