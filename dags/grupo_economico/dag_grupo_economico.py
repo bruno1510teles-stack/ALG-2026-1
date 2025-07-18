@@ -51,6 +51,7 @@ def notificar_falha_teams(context):
 default_args = {
     "owner": "Vinicius Moraes",
     "retries": 0,
+    "on_failure_callback": notificar_falha_teams,
 }
 
 

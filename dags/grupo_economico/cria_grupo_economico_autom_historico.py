@@ -14,10 +14,10 @@ def cria_grupo_economico_automatico_historico(access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host=Variable.get("TRINO_ENDPOINT"),
+        port=Variable.get("TRINO_PORT"),
+        user=Variable.get("TRINO_USER"),
+        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
         http_scheme="https",
     )
 
