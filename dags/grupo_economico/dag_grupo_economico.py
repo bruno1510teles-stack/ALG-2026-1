@@ -60,7 +60,6 @@ with DAG(
     dag_id='grupo_economico_automatico',
     start_date=days_ago(1),
     schedule_interval='30 * * * *',
-    schedule_interval=None,
     default_args=default_args,
     catchup=False, 
     tags=['grupo', 'economico', 'automatico'],
