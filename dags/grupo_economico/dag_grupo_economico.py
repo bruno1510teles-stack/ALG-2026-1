@@ -9,7 +9,7 @@ import requests
 
 
 ### Importando scripts necessários
-from grupo_economico.cria_grupo_economico_autom_historico import cria_grupo_economico_automatico_historico
+#from grupo_economico.cria_grupo_economico_autom_historico import cria_grupo_economico_automatico_historico
 from grupo_economico.cria_grupo_economico_autom_rotina import cria_grupo_economico_automatico_rotina
 
 
@@ -59,7 +59,7 @@ default_args = {
 with DAG(
     dag_id='grupo_economico_automatico',
     start_date=days_ago(1),
-    #schedule_interval='30 * * * *',
+    schedule_interval='30 * * * *',
     schedule_interval=None,
     default_args=default_args,
     catchup=False, 
@@ -67,14 +67,14 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-
+    '''
     # Definindo o task que processa a proposta
     cria_grupo_autom_hist = PythonOperator(
         task_id = 'cria_grupo_econ_hist',
         python_callable = cria_grupo_economico_automatico_historico,
         provide_context = True
     )
-
+    '''
 
     # Definindo o task que processa a proposta
     cria_grupo_autom_rotina = PythonOperator(
@@ -84,5 +84,6 @@ with DAG(
     )   
 
     # Definindo a ordem de execução das tasks
-    cria_grupo_autom_hist >> cria_grupo_autom_rotina
+    cria_grupo_autom_rotina
+    #cria_grupo_autom_hist >> cria_grupo_autom_rotina
     
