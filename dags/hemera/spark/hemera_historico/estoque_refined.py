@@ -1,7 +1,7 @@
 # Importando bibliotecas necessárias
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name, year, month, max as spark_max, first, last, min as spark_min
+from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name, year, month, max as spark_max, first, last, min as spark_min, sum as spark_sum
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
@@ -47,8 +47,6 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
     df_estoque = df_estoque.withColumn("nome_cedente", trim(col("nome_cedente"))) \
         .withColumn("nome_sacado", trim(col("nome_sacado")))
 
-    df_estoque.show(5)
-
 
     df_estoque = df_estoque.withColumn("pddtotal", col("pdd_nota") + col("pdd_vencido"))
 
@@ -93,6 +91,10 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
         # Forçar a data_ref correta após a junção
         df_completo = df_completo.withColumn("data_referencia", lit(data_ref))
 
+        # Qtd dias de arquivo ("dias uteis")
+        qtd_dias_arquivo = df_completo.select("data_arquivo").distinct().count()
+        df_completo = df_completo.withColumn("qtd_dias_arquivo", lit(qtd_dias_arquivo))
+
         # Valores base foto
         df_agrupado = df_completo.groupBy(
         "data_referencia", "id_titulo", "cnpj_sacado", "nome_sacado", "cnpj_cedente", "nome_cedente", "grupo"
@@ -101,7 +103,8 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
             spark_min("data_vencimento").alias("data_vencimento"),
             spark_min("valor_nominal").alias("valor_nominal"),
             spark_min("valor_aquisicao").alias("valor_aquisicao"),
-            spark_min("numero_titulo").alias("numero_titulo")
+            spark_min("numero_titulo").alias("numero_titulo"),
+            spark_sum("valor_presente").alias("soma_valor_presente")
         )
 
         # Criar janela
@@ -115,9 +118,10 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
             .withColumn("pdd_final", last("pddtotal").over(janela)) \
             .withColumn("primeira_data", first("data_arquivo").over(janela)) \
             .withColumn("ultima_data", last("data_arquivo").over(janela)) \
+            .withColumn("qtd_dias_uteis", last("qtd_dias_arquivo").over(janela)) \
             .select("data_referencia", "id_titulo", "estoque_valor_presente_inicial", 
                     "estoque_valor_presente_final", "primeira_data", "ultima_data", 
-                    "pdd_inicial", "pdd_final") \
+                    "pdd_inicial", "pdd_final", "qtd_dias_uteis") \
             .distinct()
         
         # Agora fazer um groupBy para reduzir as duplicações
@@ -127,7 +131,8 @@ def estoque_consolidado_refined (access_params=None, **kwargs):
             min("primeira_data").alias("primeira_data"),
             max("ultima_data").alias("ultima_data"),
             first("pdd_inicial").alias("pdd_inicial"),
-            last("pdd_final").alias("pdd_final")
+            last("pdd_final").alias("pdd_final"),
+            last("qtd_dias_uteis").alias("qtd_dias_uteis")
         )
 
 

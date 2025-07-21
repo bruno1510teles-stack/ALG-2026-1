@@ -496,8 +496,9 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                                     'id_titulo', 'numero_titulo', # Info títulos                  
                                     'data_aquisicao', 'data_vencimento', 'data_lancamento_recompra', 
                                     'data_lancamento_retorno', 'data_baixa', 'data_inicial_funding', 'data_final_funding', # Datas
+                                    'qtd_dias_uteis', # Qtd dias uteis no fechamento
                                     'estoque_valor_presente_inicial', 'estoque_valor_presente_final', 'pdd_inicial', 
-                                    'delta_pdd', 'pdd_final', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada','valor_baixa','valor_nominal_original', # Valores
+                                    'delta_pdd', 'pdd_final', 'soma_valor_presente', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada','valor_baixa','valor_nominal_original', # Valores
                                     'valor_descontado_nota_fn', 'multa_e_juros', 'valor_aquisicao', 'spread_bruto_fidc', 
                                     'spread_bruto_percentual', 'valor_funding', 'valor_funding_simulado', 'spread_liquido_fidc_valor', 
                                     'spread_alpe_inter', 'taxa_selic_inicio', 'taxa_selic_final', 'taxa_funding', # Percentuais
@@ -539,7 +540,7 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                         'delta_pdd', 'pdd_final', 'valor_retorno', 'valor_recompra', 'valor_recompra_acumulada', 'valor_baixa', 
                         'valor_nominal_original', 'valor_descontado_nota_fn', 'multa_e_juros', 
                         'valor_aquisicao', 'spread_bruto_fidc', 'spread_liquido_fidc_valor', 'valor_funding', 'valor_funding_simulado',
-                        'prazo_operacao', 'prazo_medio_ponderado']
+                        'prazo_operacao', 'prazo_medio_ponderado', 'soma_valor_presente']
 
         df_analitico[colunas_valores] = df_analitico[colunas_valores].apply(pd.to_numeric, errors='coerce').round(2)
 
