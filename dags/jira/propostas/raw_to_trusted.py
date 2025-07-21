@@ -524,11 +524,19 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
 
+    # Lista de PGIDs a excluir
+    pgids_excluidos = [
+        'ADORO', 'ANIOLLI', 'BARILOCHE', 'BASSAR', 'BENASSI', 'CABOCLO',
+        'COMPREFACIL', 'EMBALA', 'GIROTRADE', 'LTCAROL', 'LTDEALE', 'OCEAN',
+        'PHILIPMORRIS', 'ROGE', 'SEUGIL', 'ULTRACHEESE', 'YANDEH']
+
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
+    # FILTRANDO PGID DIFERENTE DO QUE É YANDEH
     df_resolvido = df_resolvido.loc[
         (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO'])) & 
-        (df_resolvido['limite_pedido'] < 1000000000)
+        (df_resolvido['limite_pedido'] < 1000000000) &
+        (~df_resolvido['pgid'].isin(pgids_excluidos))
     ]
 
     # SELECIONA AS COLUNAS PARA EXPORTAR
