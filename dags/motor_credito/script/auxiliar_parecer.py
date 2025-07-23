@@ -148,6 +148,7 @@ def auxiliar_parecer(spark, **kwargs):
             dc.cnpj_raiz,
             dc.cnpj_formatado,
             dc.municipio,
+            dc.data_fundacao,
             dc.uf,
             dc.cnae_principal_descricao,
             dc.capital_social_empresa,
