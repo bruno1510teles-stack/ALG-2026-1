@@ -95,7 +95,8 @@ def auxiliar_parecer(spark, **kwargs):
                 uf,
                 cnae_principal_descricao,
                 capital_social_empresa,
-                data_ref
+                data_ref,
+                flag_matriz
             FROM 
                 dados_cadastrais 
         ),
@@ -106,8 +107,15 @@ def auxiliar_parecer(spark, **kwargs):
                 `nome/razao_social` AS nome_socio,
                 documento_socio,
                 data_entrada_sociedade,
-                ROW_NUMBER() OVER (PARTITION BY cnpj_raiz ORDER BY data_entrada_sociedade ASC) AS rn_asc,
-                ROW_NUMBER() OVER (PARTITION BY cnpj_raiz ORDER BY data_entrada_sociedade DESC) AS rn_desc
+                ROW_NUMBER() OVER (
+				    PARTITION BY cnpj_raiz 
+				    ORDER BY data_entrada_sociedade ASC, documento_socio ASC
+				) AS rn_asc,
+                ROW_NUMBER() OVER (
+				    PARTITION BY cnpj_raiz 
+				    ORDER BY data_entrada_sociedade DESC, documento_socio DESC
+				) AS rn_desc,
+                1 as qtde_socios
             FROM socios
         ),
         socio_mais_antigo AS (
@@ -130,6 +138,13 @@ def auxiliar_parecer(spark, **kwargs):
             FROM socios_base
             WHERE rn_desc = 1
         ),
+        quantidade_socios as (
+        	select
+        		cnpj_raiz,
+        		sum(qtde_socios) as qtde_socios
+        	from socios_base
+        	group by cnpj_raiz
+        ),
         socios as (
         SELECT 
             a.cnpj_raiz,
@@ -140,9 +155,11 @@ def auxiliar_parecer(spark, **kwargs):
             a.nome_socio_mais_antigo,
             a.identificador_socio_mais_antigo,
             a.documento_socio_mais_antigo,
-            a.data_entrada_sociedade_socio_mais_antigo
+            a.data_entrada_sociedade_socio_mais_antigo,
+            q.qtde_socios as qtde_socios
         FROM socio_mais_antigo a
-        JOIN socio_mais_recente r ON a.cnpj_raiz = r.cnpj_raiz)
+        JOIN socio_mais_recente r ON a.cnpj_raiz = r.cnpj_raiz
+        join quantidade_socios q on a.cnpj_raiz = q.cnpj_raiz)
         SELECT
             dc.cnpj_sem_formatacao,
             dc.cnpj_raiz,
@@ -160,10 +177,13 @@ def auxiliar_parecer(spark, **kwargs):
             s.nome_socio_mais_antigo,
             s.identificador_socio_mais_antigo,
             s.documento_socio_mais_antigo,
-            s.data_entrada_sociedade_socio_mais_antigo
+            s.data_entrada_sociedade_socio_mais_antigo,
+            s.qtde_socios
         from
             dados_cadastrais dc 
             left join socios s on dc.cnpj_raiz = s.cnpj_raiz
+        where
+            dc.flag_matriz = 'Sim'
     """
 
     # Executar a consulta SQL
