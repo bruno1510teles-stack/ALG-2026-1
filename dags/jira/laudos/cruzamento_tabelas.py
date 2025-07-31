@@ -38,18 +38,16 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 SELECT *,
                     ROW_NUMBER() OVER (PARTITION BY ticket_jira ORDER BY try_cast(data_hora AS timestamp) DESC) AS rn
                 FROM minioraw.motor.laudos_alpe
-                WHERE resolucao = 'MESA'
-                AND try_cast(try_cast(data_hora AS timestamp) AS date) >= DATE '2025-04-14'
+                WHERE try_cast(try_cast(data_hora AS timestamp) AS date) >= DATE '2025-04-14'
             ),
             laudos_filtrados AS (
                 SELECT *
                 FROM laudos_rankeados
                 WHERE rn = 1
             ),
-            propostas_filtradas AS (
+            propostas AS (
                 SELECT *
                 FROM deltalaketrusted.jira.propostas
-                WHERE categoria_decisor = 'MESA'
             )
 
             SELECT 
@@ -72,12 +70,14 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
                 p.filial_fn,
                 p.analista_tratado AS analista_responsavel,
                 p.cargo_analista,
+                p.categoria_decisor,
                 p.decisao,
                 p.parecer,
                 l.ramificacao as ramificacao_motor,
-                p.tipo_proposta
+                p.tipo_proposta,
+                l.resolucao
             FROM laudos_filtrados l
-            INNER JOIN propostas_filtradas p
+            INNER JOIN propostas p
                 ON l.ticket_jira = p.issue_key
     """
     cruzamento_tabelas = execute_query (conn, query_cruzamento_tabelas)
@@ -115,6 +115,10 @@ def get_laudos_com_propostas(access_params=None,  **kwargs):
 
         #Tratamento score para inteiro com suporte a nulos
         cruzamento_tabelas['score'] = pd.to_numeric(cruzamento_tabelas['score'], errors='coerce').astype('Int64')
+
+        #Tratamento CNPJ e Raiz CNPJ
+        cruzamento_tabelas['cnpj'] = cruzamento_tabelas['cnpj'].astype(str).str.zfill(14)
+        cruzamento_tabelas['raiz_cnpj'] = cruzamento_tabelas['raiz_cnpj'].astype(str).str.zfill(8)
 
         # Converte data_hora para date
         cruzamento_tabelas['data_execucao_laudo'] = pd.to_datetime(cruzamento_tabelas['data_execucao_laudo'], errors='coerce').dt.date
