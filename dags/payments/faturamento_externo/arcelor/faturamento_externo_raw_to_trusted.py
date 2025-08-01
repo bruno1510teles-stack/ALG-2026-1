@@ -257,6 +257,8 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
     cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
 
+    print('Carregando dados de Cidade e Cnae....')
+
     query_receita_1 = f"""
                         select 	distinct
                                 cnpj_raiz as raiz_cnpj,
@@ -296,29 +298,25 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
 
+    receita.head()
+
     # Fazendo JOIN
+
+    receita['raiz_cnpj'] = '00000000' + receita['raiz_cnpj'].astype(str)
+    receita['raiz_cnpj'] = receita['raiz_cnpj'].str[-8:]
 
     df_final = pd.merge(base_final_merge, receita, on='raiz_cnpj', how='left')
 
     df_final = df_final.reset_index(drop=True)
 
+    print('Após JOIN com a Receita:')
+    df_final.head()
 
     # INSERINDO RAZAO SOCIAL DO NOSSO BANCO DE DADOS
-    cnpjs = df_final['raiz_cnpj'].unique().tolist()
 
-    tamanho = len(cnpjs) // 3
+    print('Carregando dados de Razão Social...')
 
-    cnpj_part_1 = cnpjs[:tamanho]
-    cnpj_part_2 = cnpjs[tamanho:2*tamanho]
-    cnpj_part_3 = cnpjs[2*tamanho:]
-
-    # Convertendo a lista para uma string no formato adequado para o SQL
-    cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
-    cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
-    cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
-
-
-    query_receita_1 =  f""" 
+    query_empresas_1 =  f""" 
                         select  distinct
                                 cnpj_raiz as raiz_cnpj,
                                 razao_social
@@ -327,7 +325,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                     """
 
 
-    query_receita_2 =  f""" 
+    query_empresas_2 =  f""" 
                         select  distinct
                                 cnpj_raiz as raiz_cnpj,
                                 razao_social
@@ -335,7 +333,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                         where cnpj_raiz in ({cnpjs_str_2})
                     """
 
-    query_receita_3 =  f""" 
+    query_empresas_3 =  f""" 
                         select  distinct
                                 cnpj_raiz as raiz_cnpj,
                                 razao_social
@@ -343,21 +341,28 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                         where cnpj_raiz in ({cnpjs_str_3})
                     """
 
-    receita_1 = execute_query(conn, query_receita_1)
-    receita_2 = execute_query(conn, query_receita_2)
-    receita_3 = execute_query(conn, query_receita_3)
+    empresas_1 = execute_query(conn, query_empresas_1)
+    empresas_2 = execute_query(conn, query_empresas_2)
+    empresas_3 = execute_query(conn, query_empresas_3)
 
-    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+    empresas = pd.concat([empresas_1, empresas_2, empresas_3], ignore_index=True)
+
+    empresas['raiz_cnpj'] = '00000000' + empresas['raiz_cnpj'].astype(str)
+    empresas['raiz_cnpj'] = empresas['raiz_cnpj'].str[-8:]
+
+    empresas.head()
 
     df_final = pd.merge(
         df_final, 
-        receita, 
+        empresas, 
         on=['raiz_cnpj'], 
         how='left'
     )
 
-    df_final['razao_social'] = df_final['razao_social'].fillna('X')
+    print('Após JOIN com a Empresas:')
+    df_final.head()
 
+    df_final['razao_social'] = df_final['razao_social'].fillna('X')
 
     # Reorganizando Colunas
 
