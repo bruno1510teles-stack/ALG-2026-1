@@ -74,7 +74,7 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     # Tratando Pagamento Trusted
 
-    pag_trusted = pag_trusted.drop(columns=['atualizado_em', 'year', 'month', 'day', 'unidade'])
+    pag_trusted = pag_trusted.drop(columns=['atualizado_em', 'year', 'month', 'day', 'unidade_consolidada'])
 
 
     # Agrupando Pagamento Trusted
