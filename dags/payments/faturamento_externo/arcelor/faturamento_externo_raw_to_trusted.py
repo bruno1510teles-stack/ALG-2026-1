@@ -235,7 +235,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     
 
     # DROPAR COLUNAS DA BASE FOTO ANTES DO MERGE
-    df = df.drop(columns=['razao_social', 'cidade', 'uf', 'atualizado_em', 'year', 'month', 'day'])
+    df = df.drop(columns=['razao_social', 'cidade', 'uf', 'atualizado_em', 'year', 'month', 'day', 'cnae_principal'])
 
 
     base_final_merge = cruzar_bases(df, base1)
