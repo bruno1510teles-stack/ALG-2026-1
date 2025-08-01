@@ -235,7 +235,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     
 
     # DROPAR COLUNAS DA BASE FOTO ANTES DO MERGE
-    df = df.drop(columns=['razao_social', 'cidade', 'uf', 'atualizado_em', 'year', 'month', 'day'])
+    df = df.drop(columns=['razao_social', 'cidade', 'uf', 'atualizado_em', 'year', 'month', 'day', 'cnae_principal'])
 
 
     base_final_merge = cruzar_bases(df, base1)
@@ -298,7 +298,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
 
-    receita.head()
+    print(receita)
 
     # Fazendo JOIN
 
@@ -310,7 +310,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     df_final = df_final.reset_index(drop=True)
 
     print('Após JOIN com a Receita:')
-    df_final.head()
+    print(df_final)
 
     # INSERINDO RAZAO SOCIAL DO NOSSO BANCO DE DADOS
 
@@ -350,7 +350,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     empresas['raiz_cnpj'] = '00000000' + empresas['raiz_cnpj'].astype(str)
     empresas['raiz_cnpj'] = empresas['raiz_cnpj'].str[-8:]
 
-    empresas.head()
+    print(empresas)
 
     df_final = pd.merge(
         df_final, 
@@ -360,7 +360,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     )
 
     print('Após JOIN com a Empresas:')
-    df_final.head()
+    print(df_final)
 
     df_final['razao_social'] = df_final['razao_social'].fillna('X')
 
