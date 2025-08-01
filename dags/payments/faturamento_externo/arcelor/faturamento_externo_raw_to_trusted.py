@@ -36,37 +36,12 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     query_base_fat_externo_trusted = f"""
                                         select *
-                                        from deltalaketrusted.payments.faturamento_externo_arcelor
+                                        from deltalaketrusted.payments.faturamento_externo_arcelor_aux
                                     """
 
     df = execute_query(conn, query_base_fat_externo_trusted)
 
     print('DADOS AUX CARREGADOS DO TRINO COM SUCESSO!')
-
-
-    ### Atualizando Base Foto
-    storage_options = {
-        "AWS_ACCESS_KEY_ID": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
-        "AWS_SECRET_ACCESS_KEY": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
-        "AWS_ENDPOINT_URL": f"https://{Variable.get('MINIO_TRUSTED_ENDPOINT')}",
-        "AWS_REGION": "us-east-1",
-        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
-    }
-
-    # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_TRUSTED = 'payments'
-    FOLDER_DESTINATION_TRUSTED = 'faturamento_externo/arcelor/base_foto'
-
-    write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
-        df, 
-        partition_by=["year", "month", "day"],
-        storage_options=storage_options,
-        mode="overwrite"
-    )
-
-    print('DADOS DA BASE FOTO ATUALIZADO COM SUCESSO!')
-
 
 
     # IMPORTA BASE QUE VAI SER ACUMULADA
