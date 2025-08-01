@@ -7,6 +7,7 @@ from deltalake import write_deltalake
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
+from airflow.models import Variable
 
 
 def tratamento_faturamento_externo(access_params=None, **kwargs):
@@ -20,10 +21,10 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
 
     
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host=Variable.get("TRINO_ENDPOINT"),
+        port=Variable.get("TRINO_PORT"),
+        user=Variable.get("TRINO_USER"),
+        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
         http_scheme="https",
     )
     
@@ -216,9 +217,9 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
     # Exportando dados para a camada Refined
     # # Conectando na Refined
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_ACCESS_KEY_ID": Variable.get("MINIO_REFINED_ACCESS_KEY"),
+        "AWS_SECRET_ACCESS_KEY": Variable.get("MINIO_REFINED_SECRET_KEY"),
+        "AWS_ENDPOINT_URL": f"https://{Variable.get('MINIO_REFINED_ENDPOINT')}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }

@@ -8,16 +8,17 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
 import unicodedata
+from airflow.models import Variable
 
 
 def join_faturamento_pagamento(access_params=None, **kwargs):
 
     # Conectando com o banco de dados Trino
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        host=Variable.get("TRINO_ENDPOINT"),
+        port=Variable.get("TRINO_PORT"),
+        user=Variable.get("TRINO_USER"),
+        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
         http_scheme="https",
     )
 
@@ -60,7 +61,7 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
 
     # Tratando Faturamento Trusted
 
-    fat_trusted = fat_trusted.drop(columns=['razao_social', 'unidade_consolidada', 'atualizado_em', 'year', 'month', 'day', 'cidade', 'uf'])
+    fat_trusted = fat_trusted.drop(columns=['razao_social', 'unidade_consolidada','cidade', 'uf', 'cnae_principal', 'atualizado_em', 'year', 'month', 'day'])
 
     # Agrupando Faturamento Trusted
     fat_trusted = fat_trusted.groupby(['raiz_cnpj'], as_index=False).max()
@@ -184,9 +185,9 @@ def join_faturamento_pagamento(access_params=None, **kwargs):
     # Exportando dados para a camada Trusted
     # # Conectando na Trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_ACCESS_KEY_ID": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
+        "AWS_SECRET_ACCESS_KEY": Variable.get("MINIO_TRUSTED_SECRET_KEY"),
+        "AWS_ENDPOINT_URL": f"https://{Variable.get('MINIO_TRUSTED_ENDPOINT')}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
