@@ -125,15 +125,15 @@ def calcular_faturamento_estimado (spark, **kwargs):
                         select
                             substring(ir.document_number,1,8) as cnpj_raiz,
                             round(coalesce((pontual.historical_average_range_from + pontual.historical_average_range_to) / 2.0, 0), 2) AS faturamento_serasa_pagamento
-                        from postgres.exrp_{os.getenv('STAGE')}_default.report r
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.identification_report ir on ir.id = r.identification_report_id
-                                inner join (select document_number, max(id) as max_id from postgres.exrp_{os.getenv('STAGE')}_default.identification_report group by document_number) ir2 on ir2.max_id = r.identification_report_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.advanced_commercial_payment_history acph on acph.id = r.advanced_commercial_payment_history_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.payment_history ph on ph.id = acph.payment_history_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.month_detail md on md.id = ph.month_detail_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.total_summary ts on ts.id = md.summary_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.period pontual on pontual.id = ts.punctual_id
-                                inner join postgres.exrp_{os.getenv('STAGE')}_default.period total on total.id = ts.total_id
+                        from postgres.exrp_prd_default.report r
+                                inner join postgres.exrp_prd_default.identification_report ir on ir.id = r.identification_report_id
+                                inner join (select document_number, max(id) as max_id from postgres.exrp_prd_default.identification_report group by document_number) ir2 on ir2.max_id = r.identification_report_id
+                                inner join postgres.exrp_prd_default.advanced_commercial_payment_history acph on acph.id = r.advanced_commercial_payment_history_id
+                                inner join postgres.exrp_prd_default.payment_history ph on ph.id = acph.payment_history_id
+                                inner join postgres.exrp_prd_default.month_detail md on md.id = ph.month_detail_id
+                                inner join postgres.exrp_prd_default.total_summary ts on ts.id = md.summary_id
+                                inner join postgres.exrp_prd_default.period pontual on pontual.id = ts.punctual_id
+                                inner join postgres.exrp_prd_default.period total on total.id = ts.total_id
                         """
     faturamento_serasa = execute_query(conn, query_fat_serasa)
 
