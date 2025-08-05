@@ -1,7 +1,7 @@
 # Importando bibliotecas necessárias
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name
+from pyspark.sql.functions import lit, concat, lpad, substring, coalesce, col, to_date, when, trim, regexp_extract, input_file_name, date_trunc, to_utc_timestamp
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 from pyspark.sql import Window
@@ -301,6 +301,12 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
         .withColumn("valor_presente", col("valor_presente").cast(DoubleType())) \
         .withColumn("pdd_nota", col("pdd_nota").cast(DoubleType())) \
         .withColumn("pdd_vencido", col("pdd_vencido").cast(DoubleType()))
+    
+
+    # Truncar data_arquivo para o início do dia
+    df_join = df_join.withColumn("data_arquivo", date_trunc("day", col("data_arquivo")))
+
+    df_join = df_join.withColumn("data_arquivo", to_utc_timestamp("data_arquivo", "UTC"))
 
 
     # Lista de colunas desejadas
