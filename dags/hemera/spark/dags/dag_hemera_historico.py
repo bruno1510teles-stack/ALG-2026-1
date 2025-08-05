@@ -83,7 +83,9 @@ with DAG(
     default_args=default_args,
     tags=['hemera', 'historico'] 
 ) as dag:
+    
 
+    '''
     aquisicao_excel_to_csv_hist = PythonOperator(
         task_id="aquisicao_excel_to_csv_hist",
         python_callable=aquisicao_excel_to_csv_historico.aquisicao_excel_to_csv_historico,
@@ -114,7 +116,7 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-
+    
 
     ## TRUSTED
 
@@ -124,7 +126,8 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-
+    '''
+    
     estoque_consolid_trusted = SparkKubernetesOperator(
         task_id='estoque_consolidado_trusted',
         application_file='estoque-consolidado-trusted-spark-app.yaml',
@@ -133,6 +136,7 @@ with DAG(
         do_xcom_push=True,
     )
 
+    '''
     recompra_consolid_trusted = PythonOperator(
         task_id="recompra_consolidado_trusted",
         python_callable=recompra_consolidado_trusted.recompra_consolidado_trusted,
@@ -187,6 +191,9 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+    '''
     
     # Definindo a ordem de execução das tasks
-    aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task >> fechamento
+    # aquisicao_excel_to_csv_hist >> estoque_excel_to_csv_hist >> recompra_excel_to_csv_hist >> retorno_excel_to_csv_hist >> aquisicao_consolid_trusted >> estoque_consolid_trusted >> recompra_consolid_trusted >> retorno_consolid_trusted >> aquisicao_refined_task >> estoque_refined_task >> recompra_refined_task >> retorno_refined_task >> fechamento
+    estoque_consolid_trusted
+    # Reprocessando histórico Trusted de estoque para inclusão de agrupamento da VEX
