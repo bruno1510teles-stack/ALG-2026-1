@@ -263,13 +263,13 @@ def estoque_diario_trusted (access_params=None, **kwargs):
     df_join = df_join.withColumn(
         "grupo_temp",
         when(trim(col("Grupo")) == "OLHAR SACADO", 
-            when(col("nome_sacado") == "TRANSTECH TRANSPORTES E LOGISTICA S.A.", "Conglomerado")
-            .when(col("nome_sacado") == "TRANSTECH TRANSPORTE E LOGÍSTICA", "Conglomerado")
-            .when(col("nome_sacado") == "G&B AUTO PECAS ALTERNATIVAS LTDA - EM RECUPERACAO JUDICIAL", "VenderMais")
-            .when(col("nome_sacado") == "G E B AUTO PECAS ALTERNATIVAS LTDA", "VenderMais")
-            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA.", "Tradicional")
-            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA", "Tradicional")
-            .when(col("nome_sacado") == "VEX LOGISTICA E TRANSPORTES LTDA", "Conglomerado")
+            when(col("nome_sacado") == "TRANSTECH TRANSPORTES E LOGISTICA S.A.", "VEX")
+            .when(col("nome_sacado") == "TRANSTECH TRANSPORTE E LOGÍSTICA", "VEX")
+            .when(col("nome_sacado") == "G&B AUTO PECAS ALTERNATIVAS LTDA - EM RECUPERACAO JUDICIAL", "VEX")
+            .when(col("nome_sacado") == "G E B AUTO PECAS ALTERNATIVAS LTDA", "VEX")
+            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA.", "VEX")
+            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA", "VEX")
+            .when(col("nome_sacado") == "VEX LOGISTICA E TRANSPORTES LTDA", "VEX")
             .otherwise(col("Grupo"))
         ).otherwise(col("Grupo"))
     )
@@ -278,13 +278,13 @@ def estoque_diario_trusted (access_params=None, **kwargs):
     df_join = df_join.withColumn(
         "detalhe_temp",
         when(trim(col("Grupo")) == "OLHAR SACADO", 
-            when(col("nome_sacado") == "TRANSTECH TRANSPORTES E LOGISTICA S.A.", "Conglomerado")
-            .when(col("nome_sacado") == "TRANSTECH TRANSPORTE E LOGÍSTICA", "Conglomerado")
-            .when(col("nome_sacado") == "G&B AUTO PECAS ALTERNATIVAS LTDA - EM RECUPERACAO JUDICIAL", "VenderMais")
-            .when(col("nome_sacado") == "G E B AUTO PECAS ALTERNATIVAS LTDA", "VenderMais")
-            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA.", "Tradicional")
-            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA", "Tradicional")
-            .when(col("nome_sacado") == "VEX LOGISTICA E TRANSPORTES LTDA", "Conglomerado")
+            when(col("nome_sacado") == "TRANSTECH TRANSPORTES E LOGISTICA S.A.", "VEX")
+            .when(col("nome_sacado") == "TRANSTECH TRANSPORTE E LOGÍSTICA", "VEX")
+            .when(col("nome_sacado") == "G&B AUTO PECAS ALTERNATIVAS LTDA - EM RECUPERACAO JUDICIAL", "VEX")
+            .when(col("nome_sacado") == "G E B AUTO PECAS ALTERNATIVAS LTDA", "VEX")
+            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA.", "VEX")
+            .when(col("nome_sacado") == "MIXTEL DISTRIBUIDORA LTDA", "VEX")
+            .when(col("nome_sacado") == "VEX LOGISTICA E TRANSPORTES LTDA", "VEX")
             .otherwise(col("Detalhe"))
         ).otherwise(col("Detalhe"))
     )
