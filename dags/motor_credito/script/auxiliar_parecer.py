@@ -214,7 +214,7 @@ def auxiliar_parecer(spark, **kwargs):
     query_faturamento_arcelor = """
     with faturamento as (
     select 
-        raiz_cnpj, max(vop_2023) as vop_total_2023, max(vop_2024) as vop_total_2024, max(max_vop_total) as maior_vop_periodo 
+        raiz_cnpj, max(vop_2023) as vop_total_2023, max(vop_2024) as vop_total_2024, max(vop_2025) as vop_total_2025, max(vop_2026) as vop_total_2026, max(max_vop_total) as maior_vop_periodo 
     from 
         deltalakerefined.payments.faturamento_externo_arcelor 
     group by 
