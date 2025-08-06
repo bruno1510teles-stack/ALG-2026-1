@@ -41,38 +41,53 @@ def report_motor_desafiante_hora_hora (access_params=None):
 
     # Definindo a consulta
     query_acomp_desafiante = f"""
-        select  
-            sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
-            count(sub.issue_key) as "Entrantes",
-            sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Derivadas Mesa",
-            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
-            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
-            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor"
-        from (
-            select  
+        WITH propostas_filtradas AS (
+            SELECT *
+            FROM deltalaketrusted.jira.propostas
+            WHERE politica = 'DESAFIANTE'
+              AND TRY_CAST(data_criado AS DATE) = DATE(timestamp '{data_execucao}')
+        ),
+        vop_aggregado AS (
+            SELECT 
+                cnpj_sacado,
+                SUM(vop_performado) AS vop_performado_total
+            FROM deltalakerefined.payments.vop_vendermais
+            GROUP BY cnpj_sacado
+        ),
+        propostas_com_vop AS (
+            SELECT  
                 a.*,
-                vv.vop_performado,
+                v.vop_performado_total,
                 CASE
-                    WHEN  limite_pedido <= 50000 THEN '01 - Até 50K'
-                    WHEN  limite_pedido > 50000 AND  limite_pedido <= 60000 THEN '02 - 50K - 60K'
-                    WHEN  limite_pedido > 60000 AND  limite_pedido <= 70000 THEN '03 - 60K - 70K'
-                    WHEN  limite_pedido > 70000 AND  limite_pedido <= 80000 THEN '04 - 70K - 80K'
-                    WHEN  limite_pedido > 80000 AND  limite_pedido <= 90000 THEN '05 - 80K - 90K'
-                    WHEN  limite_pedido > 90000 AND  limite_pedido <= 100000 THEN '06 - 90K - 100K'
-                    WHEN  limite_pedido > 100000 AND  limite_pedido <= 110000 THEN '07 - 100K - 110K'
-                    WHEN  limite_pedido > 110000 AND  limite_pedido <= 120000 THEN '08 - 110K - 120K'
-                    WHEN  limite_pedido > 120000 AND  limite_pedido <= 130000 THEN '09 - 120K - 130K'
-                    WHEN  limite_pedido > 130000 AND  limite_pedido <= 140000 THEN '10 - 130K - 140K'
-                    WHEN  limite_pedido > 140000 AND  limite_pedido <= 150000 THEN '11 - 140K - 150K'
+                    WHEN limite_pedido <= 50000 THEN '01 - Até 50K'
+                    WHEN limite_pedido > 50000 AND limite_pedido <= 60000 THEN '02 - 50K - 60K'
+                    WHEN limite_pedido > 60000 AND limite_pedido <= 70000 THEN '03 - 60K - 70K'
+                    WHEN limite_pedido > 70000 AND limite_pedido <= 80000 THEN '04 - 70K - 80K'
+                    WHEN limite_pedido > 80000 AND limite_pedido <= 90000 THEN '05 - 80K - 90K'
+                    WHEN limite_pedido > 90000 AND limite_pedido <= 100000 THEN '06 - 90K - 100K'
+                    WHEN limite_pedido > 100000 AND limite_pedido <= 110000 THEN '07 - 100K - 110K'
+                    WHEN limite_pedido > 110000 AND limite_pedido <= 120000 THEN '08 - 110K - 120K'
+                    WHEN limite_pedido > 120000 AND limite_pedido <= 130000 THEN '09 - 120K - 130K'
+                    WHEN limite_pedido > 130000 AND limite_pedido <= 140000 THEN '10 - 130K - 140K'
+                    WHEN limite_pedido > 140000 AND limite_pedido <= 150000 THEN '11 - 140K - 150K'
                     ELSE '12 - >150K'
                 END AS faixa_valor_solicitado
-            from deltalaketrusted.jira.propostas as a
-            left join deltalakerefined.payments.vop_vendermais vv
-                on a.cnpj = vv.cnpj_sacado
-            where a.politica = 'DESAFIANTE'
-            and TRY_CAST(a.data_criado AS DATE) = DATE(timestamp '{data_execucao}')
-        ) as sub
-        group by sub.faixa_valor_solicitado
+            FROM propostas_filtradas a
+            LEFT JOIN vop_aggregado v ON a.cnpj = v.cnpj_sacado
+        ),
+        agregado_final AS (
+            SELECT  
+                faixa_valor_solicitado AS "Faixa Valor Solicitado",
+                COUNT(DISTINCT issue_key) AS "Entrantes",
+                SUM(CASE WHEN categoria_decisor = 'MESA' THEN 1 ELSE 0 END) AS "Derivadas Mesa",
+                SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'REPROVADO' THEN 1 ELSE 0 END) AS "Reprovadas Motor",
+                SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'APROVADO' THEN 1 ELSE 0 END) AS "Aprovadas Motor",
+                SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'APROVADO' THEN limite_aprovado ELSE 0 END) AS "Valor Aprovado Motor"
+            FROM propostas_com_vop
+            GROUP BY faixa_valor_solicitado
+        )
+        
+        SELECT * FROM agregado_final
     """
 
     query_acomp_desafiante_consolidado = f"""
