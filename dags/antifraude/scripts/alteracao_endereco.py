@@ -71,8 +71,10 @@ def alteracao_endereco(spark):
         how = "left"
     ).drop(valida_endereco["endereco_completo"])
 
+    df = df.filter(col("is_matriz") == True)
 
-    df = df.groupBy("documento_sem_formatacao", "endereco_completo") \
+
+    df = df.groupBy("documento_sem_formatacao", "cnpj_raiz", "endereco_completo") \
         .agg(
             F.collect_set("logradouro").alias("endereco_distintos"),
             F.collect_set("descricao").alias("cidade_distintos"),
@@ -97,7 +99,7 @@ def alteracao_endereco(spark):
     atualizado_em = now.strftime('%Y-%m-%d %X')  
     df = df.withColumn("atualizado_em", lit(atualizado_em))
 
-    df = df.select("cnpj_sem_formatacao", "endereco_completo_atual", "endereco_distintos", "flag_mudanca_endereco", "cidade_distintos", "flag_mudanca_cidade", "estado_distintos", "flag_mudanca_estado",	"quantidade_cnpjs_mesmo_endereco",  "flag_endereco_igual", "data_referencia" , "atualizado_em")			
+    df = df.select("cnpj_sem_formatacao", "cnpj_raiz", "endereco_completo_atual", "endereco_distintos", "flag_mudanca_endereco", "cidade_distintos", "flag_mudanca_cidade", "estado_distintos", "flag_mudanca_estado",	"quantidade_cnpjs_mesmo_endereco",  "flag_endereco_igual", "data_referencia" , "atualizado_em")			
     print("Tratamentos realizados com sucesso!!")
     
     df.show(5)
