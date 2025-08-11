@@ -33,7 +33,6 @@ def rating_mais_recente(access_params=None,  **kwargs):
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
     
-    start_time = time.time()
 
     # Query Propostas
     query_propostas = f"""
@@ -714,16 +713,7 @@ def rating_mais_recente(access_params=None,  **kwargs):
     # Aplica a ordem e reseta o índice
     df_final_cenario2 = df_final_cenario2[ordem_colunas].reset_index(drop=True)
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
-    minutes = int(elapsed_time // 60)
-    seconds = int(elapsed_time % 60)
-
-    print(f"Tempo de execução: {minutes} min e {seconds} seg")
-
     # Colunas de data
-
     # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final_cenario2['atualizado_em'] = now.strftime('%Y-%m-%d %X')
