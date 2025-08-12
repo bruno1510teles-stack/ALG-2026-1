@@ -692,14 +692,13 @@ def rating_mais_antigo(access_params=None,  **kwargs):
         df_final_cenario1[coluna] = df_final_cenario1[coluna].astype('string').fillna('')
 
 
-
     # Colunas de data
     # Colunas com horário (datetime)
     colunas_datetime = ['data_criado', 'data_resolvido']
     for coluna in colunas_datetime:
         df_final_cenario1[coluna] = pd.to_datetime(df_final_cenario1[coluna], errors='coerce').dt.normalize()
 
-    # Converte para datetime (garante limpeza), depois converte para date (sem hora)
+    # Converte para datetime, depois converte para date (sem hora)
     df_final_cenario1['data_consulta'] = pd.to_datetime(df_final_cenario1['data_consulta'], errors='coerce').dt.date
 
 

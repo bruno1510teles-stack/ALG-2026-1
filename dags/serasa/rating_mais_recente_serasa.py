@@ -698,7 +698,7 @@ def rating_mais_recente(access_params=None,  **kwargs):
     for coluna in colunas_datetime:
         df_final_cenario2[coluna] = pd.to_datetime(df_final_cenario2[coluna], errors='coerce').dt.normalize()
 
-    # Converte para datetime (garante limpeza), depois converte para date (sem hora)
+    # Converte para datetime, depois converte para date (sem hora)
     df_final_cenario2['data_consulta'] = pd.to_datetime(df_final_cenario2['data_consulta'], errors='coerce').dt.date
 
 
