@@ -177,8 +177,21 @@ def processa_historico (access_params = None):
     # Tratando JSON do parecer...
     def extrair_parecer(parecer):
         try:
-            return parecer['content'][0]['content'][0]['text']
-        except (KeyError, IndexError, TypeError):
+            if not parecer or 'content' not in parecer:
+                return None
+
+            texto_final = []
+
+            for bloco in parecer['content']:
+                if 'content' in bloco:
+                    for parte in bloco['content']:
+                        if parte.get('type') == 'text':
+                            texto_final.append(parte.get('text', ''))
+                    texto_final.append('\n')  # quebra entre blocos (parágrafos)
+
+            return ''.join(texto_final).strip()
+        except Exception as e:
+            print(f"[Erro ao extrair parecer]: {e}")
             return None
 
     # Aplicando a função para criar uma nova coluna com o texto extraído
