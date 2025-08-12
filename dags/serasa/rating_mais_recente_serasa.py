@@ -685,6 +685,23 @@ def rating_mais_recente(access_params=None,  **kwargs):
         df_final_cenario2['total_restritivos_pf'] = df_final_cenario2['total_restritivos_pf'].astype(float).round(2)
         df_final_cenario2['valor_total_restritivos'] = df_final_cenario2['valor_total_restritivos'].astype(float).round(2)
 
+    # Colunas de texto
+    colunas_string = ['razao_social', 'parecer', 'id', 'cpf_socio_principal']
+
+    for coluna in colunas_string:
+        df_final_cenario2[coluna] = df_final_cenario2[coluna].astype('string').fillna('')
+
+
+    # Colunas de data
+    # Colunas com horário (datetime)
+    colunas_datetime = ['data_criado', 'data_resolvido']
+    for coluna in colunas_datetime:
+        df_final_cenario2[coluna] = pd.to_datetime(df_final_cenario2[coluna], errors='coerce').dt.normalize()
+
+    # Converte para datetime, depois converte para date (sem hora)
+    df_final_cenario2['data_consulta'] = pd.to_datetime(df_final_cenario2['data_consulta'], errors='coerce').dt.date
+
+
     # Tratamento colunas para inteiro com suporte a nulos
     colunas_int = [
         'pontualidade', 'score', 'empresa_grande',
