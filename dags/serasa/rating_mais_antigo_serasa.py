@@ -705,6 +705,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     colunas_para_converter_datetime = ['data_criado', 'data_resolvido']
     df_final_cenario1 = converter_para_datetime(df_final_cenario1, colunas_para_converter_datetime)
 
+
     # Tratamento colunas para inteiro com suporte a nulos
     colunas_int = [
         'pontualidade', 'score', 'empresa_grande',
