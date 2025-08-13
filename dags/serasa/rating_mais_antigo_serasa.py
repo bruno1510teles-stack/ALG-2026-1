@@ -695,6 +695,8 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     # Colunas de data
     # Converte para datetime, depois converte para date (sem hora)
     df_final_cenario1['data_consulta'] = pd.to_datetime(df_final_cenario1['data_consulta'], errors='coerce').dt.date
+    df_final_cenario1['data_criado'] = pd.to_datetime(df_final_cenario1['data_criado'])
+    df_final_cenario1['data_resolvido'] = pd.to_datetime(df_final_cenario1['data_resolvido'])
 
 
     # Tratamento colunas para inteiro com suporte a nulos
