@@ -696,6 +696,15 @@ def rating_mais_recente(access_params=None,  **kwargs):
     # Converte para datetime, depois converte para date (sem hora)
     df_final_cenario2['data_consulta'] = pd.to_datetime(df_final_cenario2['data_consulta'], errors='coerce').dt.date
 
+    def converter_para_datetime(df, colunas, formato='%Y-%m-%d'):
+        for coluna in colunas:
+            df[coluna] = pd.to_datetime(df[coluna], format=formato)
+            df[coluna] = df[coluna].dt.date
+        return df
+    
+    colunas_para_converter_datetime = ['data_criado', 'data_resolvido']
+    df_final_cenario2 = converter_para_datetime(df_final_cenario2, colunas_para_converter_datetime)
+
 
     # Tratamento colunas para inteiro com suporte a nulos
     colunas_int = [
