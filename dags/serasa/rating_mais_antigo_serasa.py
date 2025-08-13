@@ -38,8 +38,8 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     query_propostas = f"""
             WITH propostas_aprovadas AS (
                 SELECT 
-                    TRY_CAST(p.data_criado AS DATE) AS data_criado,
-                    TRY_CAST(p.data_resolvido AS DATE) AS data_resolvido,
+                    TRY_CAST(TRY_CAST(p.data_criado AS timestamp) AS DATE) AS data_criado,
+                    TRY_CAST(TRY_CAST(p.data_resolvido AS timestamp) AS DATE) AS data_resolvido,
                     p.issue_key,
                     SUBSTR(LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0'), 1, 8) AS cnpj_raiz,
                     LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0') AS cnpj_sacado,
@@ -689,15 +689,10 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     colunas_string = ['razao_social', 'parecer', 'id', 'cpf_socio_principal']
 
     for coluna in colunas_string:
-        df_final_cenario1[coluna] = df_final_cenario1[coluna].astype('string').fillna('')
+        df_final_cenario1[coluna] = df_final_cenario1[coluna].fillna('').astype('string')
 
 
     # Colunas de data
-    # Colunas com horário (datetime)
-    colunas_datetime = ['data_criado', 'data_resolvido']
-    for coluna in colunas_datetime:
-        df_final_cenario1[coluna] = pd.to_datetime(df_final_cenario1[coluna], errors='coerce').dt.normalize()
-
     # Converte para datetime, depois converte para date (sem hora)
     df_final_cenario1['data_consulta'] = pd.to_datetime(df_final_cenario1['data_consulta'], errors='coerce').dt.date
 
@@ -715,13 +710,13 @@ def rating_mais_antigo(access_params=None,  **kwargs):
             .astype('Int64')                                        # converte para inteiro com suporte a nulos
         )
 
-    # Remove a coluna 'decisao'
-    df_final_cenario1 = df_final_cenario1.drop(columns=['decisao'], errors='ignore')
+    # Remove colunas
+    df_final_cenario1 = df_final_cenario1.drop(
+        columns=['decisao', 'politica', 'limite_pedido', 'limite_aprovado', 'gerente_tratado', 'parecer'],errors='ignore')
 
-    # Reordena as colunas (sem 'decisao')
+    # Reordena as colunas
     ordem_colunas = [
-        'data_criado', 'data_resolvido', 'issue_key', 'cnpj_raiz', 'cnpj_sacado','razao_social',
-        'politica', 'limite_pedido', 'limite_aprovado', 'gerente_tratado', 'parecer','pontualidade', 
+        'data_criado', 'data_resolvido', 'issue_key', 'cnpj_raiz', 'cnpj_sacado','razao_social','pontualidade', 
         'ramificacao', 'ramificacao_2', 'ramificacao_final', 'id', 'data_consulta', 'score', 
         'empresa_grande', 'total_restritivos_pj', 'total_restritivos_pf', 'valor_total_restritivos', 
         'flag_restritivo', 'qtd_cheque', 'qtd_cheque_pf', 'cpf_socio_principal'
