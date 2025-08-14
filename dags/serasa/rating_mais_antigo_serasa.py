@@ -38,8 +38,8 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     query_propostas = f"""
             WITH propostas_aprovadas AS (
                 SELECT 
-                    TRY_CAST(TRY_CAST(p.data_criado AS timestamp) AS DATE) AS data_criado,
-                    TRY_CAST(TRY_CAST(p.data_resolvido AS timestamp) AS DATE) AS data_resolvido,
+                    DATE(p.data_criado) AS data_criado,
+                    DATE(p.data_resolvido) AS data_resolvido,
                     p.issue_key,
                     SUBSTR(LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0'), 1, 8) AS cnpj_raiz,
                     LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0') AS cnpj_sacado,
@@ -451,18 +451,21 @@ def rating_mais_antigo(access_params=None,  **kwargs):
 
     # Concatenando dataframes da Query 1 e Query 2 do Serasa
     base_score_consolidado = pd.concat([serasa1, serasa2])
-
+    
     # Ordenar por data (mais antiga primeiro) e pegar a primeira linha por cnpj_raiz
     base_score_consolidado = base_score_consolidado.sort_values(['cnpj_raiz', 'data_consulta'], ascending=[True, True])
     base_score_consolidado = base_score_consolidado.drop_duplicates(subset=['cnpj_raiz'], keep='first')
-
+    
+    # Converte para datetime
+    base_score_consolidado['data_consulta'] = pd.to_datetime(base_score_consolidado['data_consulta'])
+    
     # Garantir que as datas estejam no formato datetime
     propostas['data_resolvido'] = pd.to_datetime(propostas['data_resolvido'])
-    base_score_consolidado['data_consulta'] = pd.to_datetime(base_score_consolidado['data_consulta'])
-
+    propostas['data_criado'] = pd.to_datetime(propostas['data_criado'])
+    
     # Cruzando Propostas com Base Score Consolidada (Query 1 e Query 2)
     propostas_com_score = pd.merge(propostas, base_score_consolidado, on ='cnpj_raiz', how='left')
-
+    
     print(f"Quantidade de linhas df_propostas: {propostas.shape[0]}")
     print(f"Quantidade de linhas após cruzamento: {propostas_com_score.shape[0]}")
 
@@ -694,9 +697,9 @@ def rating_mais_antigo(access_params=None,  **kwargs):
 
     # Colunas de data
     # Converte para datetime, depois converte para date (sem hora)
-    df_final_cenario1['data_consulta'] = pd.to_datetime(df_final_cenario1['data_consulta'], errors='coerce').dt.date
-    df_final_cenario1['data_criado'] = pd.to_datetime(df_final_cenario1['data_criado'])
-    df_final_cenario1['data_resolvido'] = pd.to_datetime(df_final_cenario1['data_resolvido'])
+    df_final_cenario1['data_consulta'] = df_final_cenario1['data_consulta'].dt.date
+    df_final_cenario1['data_criado'] = df_final_cenario1['data_criado'].dt.date
+    df_final_cenario1['data_resolvido'] = df_final_cenario1['data_resolvido'].dt.date
 
 
     # Tratamento colunas para inteiro com suporte a nulos
