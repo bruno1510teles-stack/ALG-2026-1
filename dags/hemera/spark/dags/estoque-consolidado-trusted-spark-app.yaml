@@ -7,7 +7,7 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/etl-bureau-to-trusted:1.0.88"
+  image: "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/etl-bureau-to-trusted:1.0.81"
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/hemera/spark/hemera_historico/estoque_consolidado_trusted.py
   sparkVersion: "3.5.1"
