@@ -7,34 +7,13 @@ spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
-  image: "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/etl-bureau-to-trusted:1.0.81"
+  image: "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/etl-bureau-to-trusted:1.0.88"
   imagePullPolicy: Always
   mainApplicationFile: local:///scripts/repo/dags/hemera/spark/hemera_historico/estoque_refined.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
       - https://artifactory.alpenet.com.br/artifactory/maven-local/
-    packages:
-      - io.delta:delta-core_2.12:2.4.0
-      - io.delta:delta-storage:2.4.0
-      # - io.delta:delta-spark_2.12:3.2.0
-      - org.apache.spark:spark-catalyst_2.12:3.5.1
-      - org.apache.hadoop:hadoop-aws:3.3.4
-      - org.apache.hadoop:hadoop-common:3.3.4
-      - org.apache.hadoop:hadoop-hdfs:3.3.4
-      - software.amazon.awssdk:sdk-core:2.25.24
-      - software.amazon.awssdk:s3-transfer-manager:2.25.24
-      - software.amazon.awssdk:auth:2.25.24
-      - software.amazon.awssdk:identity-spi:2.25.24
-      - software.amazon.awssdk:s3:2.25.24
-      - software.amazon.awssdk:aws-core:2.25.24
-      - software.amazon.awssdk:utils:2.25.24
-      - software.amazon.awssdk:regions:2.25.24
-      - software.amazon.awssdk:aws-json-protocol:2.25.24
-      - software.amazon.awssdk:json-utils:2.25.24
-      - software.amazon.awssdk:third-party-jackson-core:2.25.24
-      - software.amazon.awssdk:http-client-spi:2.25.24
-      - io.trino:trino-jdbc:443
     pyFiles:
       - local:///app/dependencies/trino-python-conect-core-1.0.0.zip
   restartPolicy:
