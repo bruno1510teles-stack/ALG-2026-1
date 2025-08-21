@@ -9,7 +9,7 @@ spec:
   mode: cluster
   image: "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/etl-bureau-to-trusted:1.0.88"
   imagePullPolicy: Always
-  mainApplicationFile: local:///scripts/repo/dags/faturamento_estimado/calculo_fat_estimado.py
+  mainApplicationFile: local:///scripts/repo/dags/hemera/spark/hemera_rotina/estoque_consolidado_hemera.py
   sparkVersion: "3.5.1"
   deps:
     repositories:
