@@ -150,7 +150,8 @@ def raw_to_trusted(access_params=None, **kwargs):
         ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO', 'JESSICA PATARRO'): 'JESSICA PATTARO',
         ('LEONARDO BOFF', 'LEONARDO SILVA'): 'LEONARDO BOFF',
         ('VANUZA SILVA', 'VANUZA VIAL'): 'VANUZA SILVA',
-        ('VICENTE DOUGLAS', 'VICENTE MOURA', 'VICENTE DOUGLAS RIBEIRO DE MOURA'): 'VICENTE DOUGLAS'
+        ('VICENTE DOUGLAS', 'VICENTE MOURA', 'VICENTE DOUGLAS RIBEIRO DE MOURA'): 'VICENTE DOUGLAS',
+        ('NATALIA GOLFETO'): 'NATALIA GOLFETO'
     }
 
     # Função para padronizar o nome
@@ -249,7 +250,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
         'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU', 'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO',
         'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'CARLOS MAGNO LOPES FERRO', 'WILMA CARLA DA ROCHA SANTOS',
-        'ADRIANA BARBOSA DE OLIVEIRA'
+        'ADRIANA BARBOSA DE OLIVEIRA', 'EDNEIA COMIN DA SILVA'
     ]
 
     # Função para atribuir categorias
@@ -428,13 +429,15 @@ def raw_to_trusted(access_params=None, **kwargs):
                             'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
                             'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2', 'AF - LIMINAR SERASA',
                             'PF CONSORCIO/SPE/SA', 'TESTE', 'C6 | C2', 'D4 | D1', 'C2 | C2', 'C1 | C1', 'C4 | C2', 'D1 | D1', 'C3 | C1', 'AF - CONSULTAS SERASA',
-                            'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE']
+                            'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE', 'D3 | D1', 'D2 | D1', 'REPROVADO | REPROVADO', 'VENCIDO > 30 DIAS', 'CANCELAMENTO DE LIMITE',
+                            'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI']
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
                             'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8', 'AF - MUDANÇA ENDEREÇO','AF - ENDEREÇO IGUAL',
-                            'B5 | B2', 'B2 | B2', 'B4 | B1', 'B4 | B2', 'B6 | B3', 'B3 | B1']
+                            'B5 | B2', 'B2 | B2', 'B4 | B1', 'B4 | B2', 'B6 | B3', 'B3 | B1', 'B1 | B1', 'B3 | B3', 'AF SERASA SEM INFO', 'AF - SERASA - MAJORACAO',
+                            'AF - RECEITA FEDERAL - MAJORACAO', 'PROPOSTA NAO ELEGIVEL', 'MESA | MESA', 'VERIFICAR - SEM POLITICA ELEGIVEL']
 
-    lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3', 'A8 | A3', 'A1 | A1', 'A7 | A2', 'A6 | A1', 'A2 | A2', 'AA | AA', 'A4 | A2']
+    lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3', 'A8 | A3', 'A1 | A1', 'A7 | A2', 'A6 | A1', 'A2 | A2', 'AA | AA', 'A4 | A2', 'A5 | A3', 'A3 | A1', 'MAJORAÇÃO LIMITE']
 
     lista_ramificacao_nan = ['NÃO ATRIBUIDA', 'B - 12', 'A - A12']
 
