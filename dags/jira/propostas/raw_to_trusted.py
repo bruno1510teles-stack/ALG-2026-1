@@ -294,7 +294,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         elif decisor_func == 'Cancelado':
             return "CANCELADO"
         elif decisor_func == 'Mantido':
-            return "REPROVADO"
+            return "MANTIDO"
         elif decisor_func == 'Duplicado':
             return "DUPLICADO"
         elif decisor_func == 'Inelegível':
@@ -539,7 +539,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
     # FILTRANDO PGID DIFERENTE DO QUE É YANDEH
     df_resolvido = df_resolvido.loc[
-        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO'])) & 
+        (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO', 'MANTIDO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000) &
         (~df_resolvido['pgid'].isin(pgids_excluidos))
     ]
