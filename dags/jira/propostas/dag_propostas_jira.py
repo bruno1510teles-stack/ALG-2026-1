@@ -18,6 +18,8 @@ sys.path.append('/opt/airflow/dags/repo/dags/jira/propostas')
 from captura_proposta import captura_proposta
 from raw_to_trusted import raw_to_trusted
 from trusted_to_refined import trusted_to_refined
+from ydh_raw_to_trusted import ydh_raw_to_trusted
+from ydh_trusted_to_refined import ydh_trusted_to_refined
 
 
 ### Parâmetros de acesso
@@ -85,27 +87,41 @@ with DAG(
     )
     '''
 
-    captura_proposta = PythonOperator(
+    task1 = PythonOperator(
         task_id='captura_proposta',
-        python_callable=captura_proposta,
+        python_callable = captura_proposta,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    raw_to_trusted = PythonOperator(
+    task2 = PythonOperator(
+        task_id='ydh_raw_to_trusted',
+        python_callable = ydh_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
+    task3 = PythonOperator(
         task_id='raw_to_trusted',
-        python_callable=raw_to_trusted,
+        python_callable = raw_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    trusted_to_refined = PythonOperator(
+    task4 = PythonOperator(
         task_id='trusted_to_refined',
-        python_callable=trusted_to_refined,
+        python_callable = trusted_to_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
+    task5 = PythonOperator(
+        task_id='ydh_trusted_to_refined',
+        python_callable = ydh_trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Definindo a ordem de execução das tasks
     #processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
-    captura_proposta >> raw_to_trusted >> trusted_to_refined
+    task1 >> task2 >> task3 >> task4 >> task5
