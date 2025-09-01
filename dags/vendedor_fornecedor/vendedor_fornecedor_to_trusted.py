@@ -348,13 +348,15 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'kaio silva': 'Kaio Vinicius Da Silva',
 		'kaio vinicius da silva': 'Kaio Vinicius Da Silva',
 		'cma - ianne gomes': 'Ianne Amanda Vasconcelos Gomes Avila',
-		'ianne amanda vasconcelos gomes avila': 'Ianne Amanda Vasconcelos Gomes Avila'
+		'ianne amanda vasconcelos gomes avila': 'Ianne Amanda Vasconcelos Gomes Avila',
+		'dba t freitas 5': 'Marcia Nascimento Dos Santos',
+		'dba t freitas 6': 'Ariadson Mota Brito',
+		'dba t freitas 15': 'Romair Tiago Brito Soares',
+		'dba t freitas 8': 'Cleber Santiago Pereira',
 	}
 
 	EXCECAO_MAP_COD = {
-		# Mapeia a variação 'cassolato' para o código correto
 		'bruno cassolato': 'F72',
-		# Adicione os códigos para as outras variações
 		'cbh - bruno cassolat': 'F72',
 		'aruan rangel': 'XE1',
 		'aruam rangel galaxe': 'XE1',
@@ -364,7 +366,15 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'kaio silva': 'BA2',
 		'kaio vinicius da silva': 'BA2',
 		'cma - ianne gomes': 'L08',
-		'ianne amanda vasconcelos gomes avila': 'L08'
+		'ianne amanda vasconcelos gomes avila': 'L08',
+		'dba t freitas 5': 'TF4',
+		'marcia nascimento dos santos':'TF4',
+		'dba t freitas 6': 'TF5',
+		'ariadson mota brito': 'TF5',
+		'dba t freitas 15': 'TG4',
+		'romair tiago brito soares': 'TG4',
+		'dba t freitas 8': 'TF7',
+		'cleber santiago pereira': 'TF7'
 		
 	}
 
