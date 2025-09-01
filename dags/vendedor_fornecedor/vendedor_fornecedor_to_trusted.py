@@ -6,6 +6,8 @@ from datetime import datetime, timezone, timedelta
 from io import BytesIO
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
+from minio import Minio
+from deltalake import write_deltalake
 from unidecode import unidecode
 from airflow.models import Variable
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -886,6 +888,11 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	print(f"O DataFrame final foi concluído com sucesso, contendo {df_final.shape[0]} linhas.")
 
+	# Timestamp
+	now = datetime.now(tz=timezone(timedelta(hours=-3)))
+	df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+	df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
+
 	
 	# Configuração do Delta Lake
 	storage_options = {
@@ -902,7 +909,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	# Escrevendo no Delta Lake com schema fixado
 	write_deltalake(
 		f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-		final,
+		df_final,
 		partition_by=["year", "month", "day"],
 		storage_options=storage_options,
 		mode="overwrite"
