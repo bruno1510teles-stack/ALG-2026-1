@@ -117,12 +117,12 @@ def cnaes_to_trusted(spark, **kwargs):
     # Base para pegar historico de propostas ultimos 60 dias
     query_propostas= """
             SELECT
-                cnpj_raiz,
+                raiz_cnpj as cnpj_raiz,
                 true as analise_menor_60_dias,
                 max(decisao) as decisao
         FROM propostas
         WHERE cast(data_criado AS date) >= current_date - INTERVAL '60' day
-        group by cnpj_raiz
+        group by raiz_cnpj
     """
 
     # Executar a consulta SQL
