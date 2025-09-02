@@ -249,7 +249,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Base consolidado_venda_historico
 	query_venda_historico = fr"""
-			WITH base_padronizada AS (
+			WITH
+			base_padronizada AS (
 				SELECT
 					nota_fical_completa,
 					vendedor_am,
@@ -257,27 +258,26 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 					vendedor_alpe
 				FROM minioraw.planejamento_comercial.consolidado_venda_historico
 			)
-			
+
 			SELECT DISTINCT
 				bp.nota_fical_completa AS numero_nfe,
 				-- Traz o código do vendedor da tabela 'vendedor_am'
 				COALESCE(v.salespersoncode, 'Nao Atribuido') AS cod_vendedor_fornecedor,
-
 				-- Prioriza o nome limpo da tabela 'vendedor_am', caso contrário usa o da base
 				COALESCE(
 					NULLIF(TRIM(v."salesperson__r.name"), ''),
-					REGEXP_REPLACE(v.nome, ' \([A-Z0-9]+\)', ''),
+					v.nome,
 					bp.vendedor_am
 				) AS vendedor_fornecedor,
-				
+
 				bp.filial_consolidada AS escritorio_vendas,
 				COALESCE(dpr.regional_alpe, bp.vendedor_alpe) AS vendedor_alpe
 			FROM base_padronizada AS bp
 			LEFT JOIN minioraw.planejamento_comercial.de_para_unidade_regional AS dpr
 				ON bp.filial_consolidada = dpr.filial_consolidada
 			LEFT JOIN minioraw.planejamento_comercial.vendedor_am AS v
-				-- A condição de JOIN agora é baseada em um nome limpo
-				ON bp.vendedor_am = REGEXP_REPLACE(v.nome, ' \([A-Z0-9]+\)', '')
+				-- A condição de JOIN agora é baseada no nome completo para garantir a correspondência
+				ON bp.vendedor_am = v.nome
 	"""
 	df_consolidado_venda_historico = execute_query(conn, query_venda_historico)
 
@@ -358,6 +358,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'cleber santiago pereira': 'Cleber Santiago Pereira',
 		'daniel junior cordeiro oliveira': 'Daniel Junior Cordeiro Oliveira',
 		'danielle oliveira da silva': 'Danielle Oliveira Da Silva',
+		'dar-19': 'Roselaine Furtado Rosa',
 		'dba  - 10': 'Mery Vieira',
 		'dba  - 6': 'Amanda Matsuda',
 		'dba t freitas 1': 'TF0',
@@ -483,6 +484,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'cleber santiago pereira': 'TF7',
 		'daniel junior cordeiro oliveira': 'AZ4',
 		'danielle oliveira da silva': 'N05',
+		'dar-19': 'R19',
+		'roselaine furtado rosa': 'R19',
 		'dba  - 10': 'BC9',
 		'dba  - 6': 'BC5',
 		'dba t freitas 1': 'TF0',
@@ -622,23 +625,6 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		key_tuples = list(zip(df['escritorio_norm'], df['vendedor_norm']))
 		df['vendedor_fornecedor'] = [api_dict_nome.get(k, v) for k,v in zip(key_tuples, df['vendedor_fornecedor'])]
 		df['cod_vendedor_fornecedor'] = [api_dict_cod.get(k, v) for k,v in zip(key_tuples, df['cod_vendedor_fornecedor'])]
-
-	# =============================
-	# Função para escolher nome mais completo
-	# =============================
-	def escolher_nome_mais_completo(grp):
-		return grp.loc[grp['vendedor_fornecedor'].str.len().idxmax()]
-
-	for i, df in enumerate([df_consolidado_venda_historico, df_consolidado_venda]):
-		df_temp = (
-			df.groupby('cod_vendedor_fornecedor', group_keys=False, as_index=False, sort=False)
-			.apply(lambda g: escolher_nome_mais_completo(g))
-		)
-		df_temp.reset_index(drop=True, inplace=True)
-		if i == 0:
-			df_consolidado_venda_historico = df_temp
-		else:
-			df_consolidado_venda = df_temp
 
 	# =============================
 	# TF-IDF contra API
