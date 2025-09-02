@@ -109,7 +109,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	df_api_arcelor.loc[:, 'numero_nfe'] = df_api_arcelor['numero_nfe'].astype(str).str.strip()
 
 	# Padroniza a coluna 'escritorio_vendas'
-	df_api_arcelor.loc[:, 'escritorio_vendas'] = df_api_arcelor['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
+	df_api_arcelor.loc[:, 'escritorio_vendas'] = (df_api_arcelor['escritorio_vendas'].str.replace('regional', 'Usina', regex=False, case=False))
 
 	# Lista de colunas a tratar
 	colunas_para_tratar = ['cod_vendedor_fornecedor', 'vendedor_fornecedor', 'escritorio_vendas', 'vendedor_alpe']
@@ -201,7 +201,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		df_consolidado_venda.loc[df_consolidado_venda['numero_nfe'] == nfe, ['vendedor_fornecedor', 'escritorio_vendas']] = [vendedor, escritorio]
 
 	# Padroniza 'escritorio_vendas'
-	df_consolidado_venda.loc[:, 'escritorio_vendas'] = df_consolidado_venda['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
+	df_consolidado_venda.loc[:, 'escritorio_vendas'] = (df_consolidado_venda['escritorio_vendas'].str.replace('regional', 'Usina', regex=False, case=False))
 
 	# Tratamento para valores N/D
 	mascara_nd = (
@@ -287,7 +287,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	df_consolidado_venda_historico.loc[:, 'numero_nfe'] = df_consolidado_venda_historico['numero_nfe'].astype(str).str.strip()
 
 	# Padroniza a coluna 'escritorio_vendas'
-	df_consolidado_venda_historico.loc[:, 'escritorio_vendas'] = df_consolidado_venda_historico['escritorio_vendas'].str.replace('Regional', 'Usina', regex=False)
+	df_consolidado_venda_historico.loc[:, 'escritorio_vendas'] = (df_consolidado_venda_historico['escritorio_vendas'].str.replace('regional', 'Usina', regex=False, case=False))
 
 	# Lista de colunas a tratar
 	colunas_para_tratar = ['cod_vendedor_fornecedor', 'vendedor_fornecedor', 'escritorio_vendas', 'vendedor_alpe']
@@ -334,64 +334,286 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# =============================
 	# Mapeamento para casos de exceção
-	# Esta etapa é executada primeiro para garantir que a lógica de negócio
-	# para casos específicos seja aplicada antes de qualquer match automático.
 	# =============================
 	EXCECAO_MAP_NOME = {
-		# Mapeia a variação 'cassolato' para o nome padrão
+		'alex junior de arrude': 'Alex Junior De Arrude',
+		'alex krumholz': 'Alex Krumholz',
+		'alexandre ribeiro chaves': 'Alexandre Ribeiro Chaves',
+		'amanda matsuda': 'Amanda Matsuda',
+		'ana claudia mariano': 'Ana Claudia Mariano',
+		'ana lucia farias de souza': 'Ana Lucia Farias De Souza',
+		'anna beatriz felix': 'Anna Beatriz Felix',
+		'aridan mota brito': 'Ariadson Mota Brito',
+		'arliane silva balbino melo': 'Arliane Silva Balbino Melo',
+		'aruan rangel': 'Aruam Rangel Galaxe',
+		'aruam rangel galaxe': 'Aruam Rangel Galaxe',
+		'barbara catusso vicenzi': 'Barbara Catusso Vicenzi',
+		'belquior emanuel morao prado': 'Belquior Emanuel Morao Prado',
 		'bruno cassolato': 'Bruno Cassolat',
-		# Adicione outras variações aqui
+		'bruno spangnolo': 'Bruno Spangnolo',
+		'carlos daniel reinert': 'Carlos Daniel Reinert',
+		'carlos manoel rodrigues do santos': 'Carlos Manoel Rodrigues Do Santos',
 		'cbh - bruno cassolat': 'CBH - Bruno Cassolat',
-		'aruan rangel': 'Aruan Rangel Galaxe',
-		'aruam rangel galaxe': 'Aruan Rangel Galaxe',
-		'ysa reprcomltda me': 'Maria Aparecida Silva Marques',
 		'cbh 53': 'Sergio Ferreira',
-		'repysa-mg 314': 'Rep.YSA-MG',
-		'kaio silva': 'Kaio Vinicius Da Silva',
-		'kaio vinicius da silva': 'Kaio Vinicius Da Silva',
-		'cma - ianne gomes': 'Ianne Amanda Vasconcelos Gomes Avila',
-		'ianne amanda vasconcelos gomes avila': 'Ianne Amanda Vasconcelos Gomes Avila',
+		'cleber santiago pereira': 'Cleber Santiago Pereira',
+		'daniel junior cordeiro oliveira': 'Daniel Junior Cordeiro Oliveira',
+		'danielle oliveira da silva': 'Danielle Oliveira Da Silva',
+		'dba  - 10': 'Mery Vieira',
+		'dba  - 6': 'Amanda Matsuda',
 		'dba t freitas 1': 'TF0',
 		'dba t freitas 5': 'Marcia Nascimento Dos Santos',
 		'dba t freitas 6': 'Ariadson Mota Brito',
-		'dba t freitas 15': 'Romair Tiago Brito Soares',
 		'dba t freitas 8': 'Cleber Santiago Pereira',
+		'dba t freitas 15': 'Romair Tiago Brito Soares',
+		'dba volta redonda': 'FB0',
+		'dbg -11': 'Mirella Miranda',
+		'dbl - 6': 'Carlos Daniel Reinert',
+		'dbr -11 tulio': 'Tulio Eugenio',
+		'dcb 7': 'Belquior Emanuel Morao Prado',
+		'dcb 8': 'Oscar Joao',
+		'dcg campo grande 13': 'Diego De Moura Ferreira',
+		'dcg campo grande 5': 'Danielle Oliveira Da Silva',
+		'dch - 10': 'Reginaldo Lamp',
+		'dch - 11': 'Bruno Spangnolo',
+		'dch - 3': 'Marcio Luiz Braghini',
+		'dch - 5': 'Nilson Rigoni',
+		'dch - 8': 'Neimar Da Silva',
+		'dch - 9': 'Alex Junior De Arrude',
+		'dcm 4': 'Geyce Guedes',
+		'dcm 6': 'Jessica Dayane Silva',
+		'dcs caxias 10': 'Mariza Chiapetti',
+		'dcs caxias 16': 'Barbara Catusso Vicenzi',
+		'dcs caxias 18': 'Luciano Angelo Lipreri',
+		'dcs caxias 2': 'Romel Paulo Miglioranza',
+		'dcs caxias 7': 'Odinei Ribeiro De Almeida',
+		'dct - 1': 'Mayara Faria',
+		'ddf dist federal 7': 'Anna Beatriz Felix',
+		'ddi divinopolis 17': 'Kely Ronara Costa',
+		'ddi divinopolis 3': 'Ana Claudia Mariano',
+		'ddi divinopolis 5': 'Arliane Silva Balbino Melo',
+		'ddi divinopolis 9': 'Marcos Rodrigo De Carvalho',
+		'dep - 1': 'Ana Lucia Farias De Souza',
+		'dep - 13': 'Daniel Junior Cordeiro Oliveira',
+		'dep - 17': 'Matheus Souza Silva',
+		'dep - 20': 'Sebastiao Filho Pereira Da Cunha',
+		'dep - 5': 'Alexandre Ribeiro Chaves',
+		'dep - 6': 'Evandro Alves De Magalhaes',
+		'dep - 7': 'Silvalino Felix Camara',
+		'dfs - 15': 'Sabrina Andrade',
+		'djf - 10': 'Leonardo Araujo Da Silva',
+		'djf - 3': 'Isabella Da Silva Pereira',
+		'djf - 9': 'Vinicius Motta Hallack',
+		'djf-9': 'Vinicius Motta Hallack',
+		'djo - 14': 'Sandra Mara Bacca',
+		'djo - 2': 'Guilherme H Belloto',
+		'djo - 4': 'Gelson Jose De Souza',
+		'dnt - 12': 'Karla Moreno',
+		'dnt - 19': 'Una Araujo',
+		'dou - 1': 'Tiago Marcelo Lima Da Costa',
+		'dou - 2': 'Nelinton Dias',
+		'dou - 4': 'Douglas Rafael Tamiosso',
+		'dpa pouso alegre 03': 'Eloah Teolis Bernardes',
+		'dpa pouso alegre 04': 'Jeniffer Santos',
+		'dpa pouso alegre 09': 'Tamara Pereira De Mendonça',
+		'dpa pouso alegre 10': 'Larissa Rodrigues Da Silva',
+		'dpe penapolis 10': 'Wanderlei Claus',
+		'dpl 1': 'Giovane Da Cruz Tunas',
+		'dpl 11': 'Fernando Kines Alves',
+		'dpl 2': 'Douglas Rosa',
+		'dri - 13': 'Dri - 13',
+		'dro - 2': 'Edelmo Ferreira De Oliveira',
+		'dro - 7': 'Carlos Manoel Rodrigues Do Santos',
+		'dsa - 2': 'Valteir Solda Gonzales',
+		'dsi  3': 'Indiana Karine Scheffler',
+		'dsi  4': 'Diele De Melo Schneider',
+		'dsm  5': 'Pablo Toneto Da Costa',
+		'dsm  8': 'Micheline Prates Bassi Cado',
+		'dub - 3': 'Paulo Sergio Nogueira',
+		'dub - 4': 'Ronaldo - Vendas Arcelormittal',
+		'dvr 16': 'BF6',
+		'dvr 4': 'Orlando Goncalves Brandao',
+		'dvr 5': 'Vanildo Rodrigues Gomes',
+		'ianne amanda vasconcelos gomes avila': 'Ianne Amanda Vasconcelos Gomes Avila',
+		'kaio silva': 'Kaio Vinicius Da Silva',
+		'kaio vinicius da silva': 'Kaio Vinicius Da Silva',
+		'kely ronara costa': 'Kely Ronara Costa',
+		'luciano angelo lipreri': 'Luciano Angelo Lipreri',
+		'marcio luiz braghini': 'Marcio Luiz Braghini',
+		'mariza chiapetti': 'Mariza Chiapetti',
+		'mery vieira': 'Mery Vieira',
+		'micheline prates bassi cado': 'Micheline Prates Bassi Cado',
+		'mirella miranda': 'Mirella Miranda',
+		'neimar da silva': 'Neimar Da Silva',
+		'nilson rigoni': 'Nilson Rigoni',
+		'odinei ribeiro de almeida': 'Odinei Ribeiro De Almeida',
+		'oscar joao': 'Oscar Joao',
+		'paulo sergio nogueira': 'Paulo Sergio Nogueira',
+		'romel paulo miglioranzo': 'Romel Paulo Miglioranza',
+		'sabrina andrade': 'Sabrina Andrade',
+		'sebastiao filho pereira da cunha': 'Sebastiao Filho Pereira Da Cunha',
+		'tiago marcelo lima da costa': 'Tiago Marcelo Lima Da Costa',
+		'tulio eugenio': 'Tulio Eugenio',
+		'una araujo': 'Una Araujo',
+		'valteir solda gonzales': 'Valteir Solda Gonzales',
+		'wanderlei claus': 'Wanderlei Claus',
+		'ysa reprcomltda me': 'Maria Aparecida Silva Marques'
 	}
+
 
 	EXCECAO_MAP_COD = {
-		'bruno cassolato': 'F72',
-		'cbh - bruno cassolat': 'F72',
+		'alex junior de arrude': 'AU9',
+		'alex krumholz': 'C29',
+		'alexandre ribeiro chaves': 'AX5',
+		'amanda matsuda': 'BC5',
+		'ana claudia mariano': 'O03',
+		'ana lucia farias de souza': 'AX1',
+		'anna beatriz felix': 'I07',
+		'ariadson mota brito': 'TF5',
+		'arliane silva balbino melo': 'O05',
 		'aruan rangel': 'XE1',
 		'aruam rangel galaxe': 'XE1',
-		'ysa reprcomltda me': 'Nao Atribuido',
+		'barbara catusso vicenzi': 'M16',
+		'belquior emanuel morao prado': 'CC7',
+		'bruno cassolato': 'F72',
+		'bruno spangnolo': 'AV2',
+		'carlos daniel reinert': 'BI6',
+		'carlos manoel rodrigues do santos': 'FE7',
+		'cbh - bruno cassolat': 'F72',
 		'cbh 53': 'CBH 53',
-		'repysa-mg 314': '314',
-		'kaio silva': 'BA2',
-		'kaio vinicius da silva': 'BA2',
-		'cma - ianne gomes': 'L08',
-		'ianne amanda vasconcelos gomes avila': 'L08',
+		'cleber santiago pereira': 'TF7',
+		'daniel junior cordeiro oliveira': 'AZ4',
+		'danielle oliveira da silva': 'N05',
+		'dba  - 10': 'BC9',
+		'dba  - 6': 'BC5',
 		'dba t freitas 1': 'TF0',
 		'dba t freitas 5': 'TF4',
-		'marcia nascimento dos santos':'TF4',
 		'dba t freitas 6': 'TF5',
-		'ariadson mota brito': 'TF5',
-		'dba t freitas 15': 'TG4',
-		'romair tiago brito soares': 'TG4',
 		'dba t freitas 8': 'TF7',
-		'cleber santiago pereira': 'TF7'
-		
+		'dba t freitas 15': 'TG4',
+		'dba volta redonda': 'FB0',
+		'dbg -11': 'GS1',
+		'dbl - 6': 'BI6',
+		'dbr -11 tulio': 'FJ0',
+		'dcb 7': 'CC7',
+		'dcb 8': 'CC8',
+		'dcg campo grande 13': 'N13',
+		'dcg campo grande 5': 'N05',
+		'dch - 10': 'AV1',
+		'dch - 11': 'AV2',
+		'dch - 3': 'AU3',
+		'dch - 5': 'AU5',
+		'dch - 8': 'AU8',
+		'dch - 9': 'AU9',
+		'dcm 4': 'BG4',
+		'dcm 6': 'BG6',
+		'dcs caxias 10': 'M10',
+		'dcs caxias 16': 'M16',
+		'dcs caxias 18': 'M18',
+		'dcs caxias 2': 'M02',
+		'dcs caxias 7': 'M07',
+		'dct - 1': 'AE0',
+		'ddf dist federal 7': 'I07',
+		'ddi divinopolis 17': 'O17',
+		'ddi divinopolis 3': 'O03',
+		'ddi divinopolis 5': 'O05',
+		'ddi divinopolis 9': 'O09',
+		'dep - 1': 'AX1',
+		'dep - 13': 'AZ4',
+		'dep - 17': 'AZ8',
+		'dep - 20': 'AY2',
+		'dep - 5': 'AX5',
+		'dep - 6': 'AX6',
+		'dep - 7': 'AX7',
+		'dfs - 15': 'FT5',
+		'djf - 10': 'AN9',
+		'djf - 3': 'AN2',
+		'djf - 9': 'AN8',
+		'djf-9': 'AN8',
+		'djo - 14': 'T14',
+		'djo - 2': 'T02',
+		'djo - 4': 'T04',
+		'dnt - 12': 'NU2',
+		'dnt - 19': 'NU9',
+		'dou - 1': 'PM0',
+		'dou - 2': 'PM1',
+		'dou - 4': 'PM3',
+		'dpa pouso alegre 03': 'D03',
+		'dpa pouso alegre 04': 'D04',
+		'dpa pouso alegre 09': 'D09',
+		'dpa pouso alegre 10': 'D10',
+		'dpe penapolis 10': 'A10',
+		'dpl 1': 'AH0',
+		'dpl 11': 'BT5',
+		'dpl 2': 'AH1',
+		'dri - 13': 'Nao Atribuido',
+		'dro - 2': 'FE2',
+		'dro - 7': 'FE7',
+		'dsa - 2': 'AA1',
+		'dsi  3': 'BO2',
+		'dsi  4': 'BO3',
+		'dsm  5': 'BT4',
+		'dsm  8': 'BT7',
+		'dub - 3': 'U03',
+		'dub - 4': 'Nao Atribuido',
+		'dvr 16': 'BF6',
+		'dvr 4': 'BE4',
+		'dvr 5': 'BE5',
+		'ianne amanda vasconcelos gomes avila': 'L08',
+		'kaio silva': 'BA2',
+		'kaio vinicius da silva': 'BA2',
+		'luciano angelo lipreri': 'M18',
+		'marcio luiz braghini': 'AU3',
+		'mariza chiapetti': 'M10',
+		'mery vieira': 'BC9',
+		'mirella miranda': 'GS1',
+		'neimar da silva': 'AU8',
+		'nilson rigoni': 'AU5',
+		'odinei ribeiro de almeida': 'M07',
+		'oscar joao': 'CC8',
+		'paulo sergio nogueira': 'U03',
+		'romel paulo miglioranzo': 'M02',
+		'sabrina andrade': 'FT5',
+		'sebastiao filho pereira da cunha': 'AY2',
+		'tiago marcelo lima da costa': 'PM0',
+		'tulio eugenio': 'FJ0',
+		'una araujo': 'NU9',
+		'valteir solda gonzales': 'AA1',
+		'wanderlei claus': 'A10',
+		'ysa reprcomltda me': 'Nao Atribuido'
 	}
 
-	for df in [df_consolidado_venda_historico, df_consolidado_venda]:
-		# Atualiza as colunas de vendedor e código diretamente com o mapeamento manual
-		df['vendedor_fornecedor'] = [EXCECAO_MAP_NOME.get(x, y) for x, y in zip(df['vendedor_norm'], df['vendedor_fornecedor'])]
-		df['cod_vendedor_fornecedor'] = [EXCECAO_MAP_COD.get(x, y) for x, y in zip(df['vendedor_norm'], df['cod_vendedor_fornecedor'])]
-		
-		# É crucial atualizar a coluna normalizada para que os próximos passos não peguem o caso
-		df['vendedor_norm'] = normaliza_texto_vetorizado(df['vendedor_fornecedor'])
 
 	# =============================
-	# Merge exato via mapping (sem merge pesado)
+	# Aplicar exceções preservando API
+	# =============================
+	api_vendedores_norm = set(df_api_arcelor['vendedor_norm'])
+
+	# Criar auditoria vazia
+	alteracoes_excecao = []
+
+	for df_name, df in zip(['historico','venda'], [df_consolidado_venda_historico, df_consolidado_venda]):
+		for idx, (vnorm, vreal, cod) in enumerate(zip(df['vendedor_norm'], df['vendedor_fornecedor'], df['cod_vendedor_fornecedor'])):
+			if vnorm not in api_vendedores_norm:
+				novo_nome = EXCECAO_MAP_NOME.get(vnorm, vreal)
+				novo_cod = EXCECAO_MAP_COD.get(vnorm, cod)
+				if (novo_nome != vreal) or (novo_cod != cod):
+					alteracoes_excecao.append({
+						'df': df_name,
+						'indice': idx,
+						'etapa': 'excecao',
+						'cod_ant': cod,
+						'cod_novo': novo_cod,
+						'nome_ant': vreal,
+						'nome_novo': novo_nome
+					})
+					df.at[idx, 'vendedor_fornecedor'] = novo_nome
+					df.at[idx, 'cod_vendedor_fornecedor'] = novo_cod
+		df['vendedor_norm'] = normaliza_texto_vetorizado(df['vendedor_fornecedor'])
+
+	alteracoes_excecao = pd.DataFrame(alteracoes_excecao)
+
+	# =============================
+	# Merge exato com a API
 	# =============================
 	api_dict_nome = df_api_arcelor.set_index(['escritorio_norm','vendedor_norm'])['vendedor_fornecedor'].to_dict()
 	api_dict_cod = df_api_arcelor.set_index(['escritorio_norm','vendedor_norm'])['cod_vendedor_fornecedor'].to_dict()
@@ -402,80 +624,118 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		df['cod_vendedor_fornecedor'] = [api_dict_cod.get(k, v) for k,v in zip(key_tuples, df['cod_vendedor_fornecedor'])]
 
 	# =============================
-	# TF-IDF com limiar
+	# Função para escolher nome mais completo
 	# =============================
-	SIMILARITY_THRESHOLD = 0.4
+	def escolher_nome_mais_completo(grp):
+		return grp.loc[grp['vendedor_fornecedor'].str.len().idxmax()]
+
+	for i, df in enumerate([df_consolidado_venda_historico, df_consolidado_venda]):
+		df_temp = (
+			df.groupby('cod_vendedor_fornecedor', group_keys=False, as_index=False, sort=False)
+			.apply(lambda g: escolher_nome_mais_completo(g))
+		)
+		df_temp.reset_index(drop=True, inplace=True)
+		if i == 0:
+			df_consolidado_venda_historico = df_temp
+		else:
+			df_consolidado_venda = df_temp
+
+	# =============================
+	# TF-IDF contra API
+	# =============================
+	SIMILARITY_THRESHOLD = 0.6
 	vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2,5))
 	vectorizer.fit(df_api_arcelor['vendedor_norm'])
 
-	def aplicar_tfidf_com_limiar(df, limiar=SIMILARITY_THRESHOLD):
-		mask_sem_codigo = df['cod_vendedor_fornecedor'].isin(['Nao Atribuido', np.nan])
-		df_sem_codigo = df.loc[mask_sem_codigo].copy()
-		if df_sem_codigo.empty:
-			return df
+	alteracoes_tfidf = []
 
+	def aplicar_tfidf_api(df, df_name, limiar=SIMILARITY_THRESHOLD):
 		api_map_nome = df_api_arcelor.set_index('vendedor_norm')['vendedor_fornecedor'].to_dict()
 		api_map_cod = df_api_arcelor.set_index('vendedor_norm')['cod_vendedor_fornecedor'].to_dict()
-
-		for escritorio in df_sem_codigo['escritorio_norm'].unique():
-			idx_escritorio = df_sem_codigo[df_sem_codigo['escritorio_norm'] == escritorio].index
+		
+		mask_sem_codigo = df['cod_vendedor_fornecedor'].isin(['Nao Atribuido', np.nan])
+		vendedores_na = df.loc[mask_sem_codigo, 'vendedor_norm'].unique()
+		
+		for escritorio in df.loc[mask_sem_codigo, 'escritorio_norm'].unique():
+			idx_escritorio = df[(mask_sem_codigo) & (df['escritorio_norm']==escritorio)].index
 			candidatos = df_api_arcelor[df_api_arcelor['escritorio_norm'] == escritorio]
 			if candidatos.empty:
 				continue
-
-			tfidf_sem = vectorizer.transform(df.loc[idx_escritorio,'vendedor_norm'])
+			tfidf_sem = vectorizer.transform(df.loc[idx_escritorio, 'vendedor_norm'])
 			tfidf_cand = vectorizer.transform(candidatos['vendedor_norm'])
-
 			sim = cosine_similarity(tfidf_sem, tfidf_cand)
 			idx_max = np.argmax(sim, axis=1)
 			max_sim = sim.max(axis=1)
 			vendedores_encontrados_norm = candidatos['vendedor_norm'].iloc[idx_max]
-
+			
 			for i, (sim_score, vendedor_norm_candidato) in enumerate(zip(max_sim, vendedores_encontrados_norm)):
-				real_idx = idx_escritorio[i]
 				if sim_score >= limiar:
-					df.loc[real_idx,'vendedor_fornecedor'] = api_map_nome.get(vendedor_norm_candidato, df.loc[real_idx,'vendedor_fornecedor'])
-					df.loc[real_idx,'cod_vendedor_fornecedor'] = api_map_cod.get(vendedor_norm_candidato, df.loc[real_idx,'cod_vendedor_fornecedor'])
-
+					real_idx = idx_escritorio[i]
+					cod_ant = df.at[real_idx, 'cod_vendedor_fornecedor']
+					nome_ant = df.at[real_idx, 'vendedor_fornecedor']
+					df.at[real_idx,'vendedor_fornecedor'] = api_map_nome[vendedor_norm_candidato]
+					df.at[real_idx,'cod_vendedor_fornecedor'] = api_map_cod[vendedor_norm_candidato]
+					alteracoes_tfidf.append({
+						'df': df_name,
+						'indice': real_idx,
+						'etapa': 'tfidf',
+						'cod_ant': cod_ant,
+						'cod_novo': api_map_cod[vendedor_norm_candidato],
+						'nome_ant': nome_ant,
+						'nome_novo': api_map_nome[vendedor_norm_candidato]
+					})
 		return df
 
-	df_consolidado_venda_historico = aplicar_tfidf_com_limiar(df_consolidado_venda_historico)
-	df_consolidado_venda = aplicar_tfidf_com_limiar(df_consolidado_venda)
+	df_consolidado_venda_historico = aplicar_tfidf_api(df_consolidado_venda_historico, 'historico')
+	df_consolidado_venda = aplicar_tfidf_api(df_consolidado_venda, 'venda')
+	alteracoes_tfidf = pd.DataFrame(alteracoes_tfidf)
 
 	# =============================
-	# Fallback interno
+	# Fallback interno entre históricos
 	# =============================
-	base_de_referencia = pd.concat([df_consolidado_venda, df_consolidado_venda_historico], ignore_index=True)
-	base_de_referencia = base_de_referencia[base_de_referencia['cod_vendedor_fornecedor'] != 'Nao Atribuido'].copy()
+	base_ref = pd.concat([df_consolidado_venda, df_consolidado_venda_historico], ignore_index=True)
+	base_ref = base_ref[base_ref['cod_vendedor_fornecedor'] != 'Nao Atribuido']
 
 	vectorizer_interno = TfidfVectorizer(analyzer='char', ngram_range=(2,5))
-	vectorizer_interno.fit(base_de_referencia['vendedor_norm'])
-	referencia_matrix = vectorizer_interno.transform(base_de_referencia['vendedor_norm'])
+	vectorizer_interno.fit(base_ref['vendedor_norm'])
+	referencia_matrix = vectorizer_interno.transform(base_ref['vendedor_norm'])
 
-	mapa_interno_cod = base_de_referencia.set_index('vendedor_norm')['cod_vendedor_fornecedor'].to_dict()
-	mapa_interno_nome = base_de_referencia.set_index('vendedor_norm')['vendedor_fornecedor'].to_dict()
+	mapa_interno_cod = base_ref.set_index('vendedor_norm')['cod_vendedor_fornecedor'].to_dict()
+	mapa_interno_nome = base_ref.set_index('vendedor_norm')['vendedor_fornecedor'].to_dict()
 
-	def aplicar_fallback_interno(df, threshold=0.4):
-		mask = df['cod_vendedor_fornecedor'].isin(['Nao Atribuido', np.nan])
-		vendedores_na = df.loc[mask,'vendedor_norm'].unique()
+	alteracoes_fallback = []
+
+	def aplicar_fallback_interno(df, df_name, threshold=0.4):
+		vendedores_na = df.loc[df['cod_vendedor_fornecedor'].isin(['Nao Atribuido', np.nan]), 'vendedor_norm'].unique()
 		if len(vendedores_na) == 0:
 			return df
-
 		venda_matrix = vectorizer_interno.transform(vendedores_na)
 		sim_matrix = cosine_similarity(venda_matrix, referencia_matrix)
-		melhores_matches = sim_matrix.argmax(axis=1)
+		idx_best = sim_matrix.argmax(axis=1)
 		scores = sim_matrix.max(axis=1)
-
 		for i, vendedor_na in enumerate(vendedores_na):
 			if scores[i] >= threshold:
-				vendedor_referencia = base_de_referencia['vendedor_norm'].iloc[melhores_matches[i]]
-				real_idx = df.loc[(df['vendedor_norm'] == vendedor_na) & mask].index
-				df.loc[real_idx,'cod_vendedor_fornecedor'] = mapa_interno_cod.get(vendedor_referencia,'Nao Atribuido')
-				df.loc[real_idx,'vendedor_fornecedor'] = mapa_interno_nome.get(vendedor_referencia, df.loc[real_idx,'vendedor_fornecedor'])
+				vendedor_ref = base_ref['vendedor_norm'].iloc[idx_best[i]]
+				idx_real = df[(df['vendedor_norm']==vendedor_na) & df['cod_vendedor_fornecedor'].isin(['Nao Atribuido', np.nan])].index
+				for idx in idx_real:
+					cod_ant = df.at[idx, 'cod_vendedor_fornecedor']
+					nome_ant = df.at[idx, 'vendedor_fornecedor']
+					df.at[idx,'vendedor_fornecedor'] = mapa_interno_nome[vendedor_ref]
+					df.at[idx,'cod_vendedor_fornecedor'] = mapa_interno_cod[vendedor_ref]
+					alteracoes_fallback.append({
+						'df': df_name,
+						'indice': idx,
+						'etapa': 'fallback',
+						'cod_ant': cod_ant,
+						'cod_novo': mapa_interno_cod[vendedor_ref],
+						'nome_ant': nome_ant,
+						'nome_novo': mapa_interno_nome[vendedor_ref]
+					})
 		return df
 
-	df_consolidado_venda_historico = aplicar_fallback_interno(df_consolidado_venda_historico)
-	df_consolidado_venda = aplicar_fallback_interno(df_consolidado_venda)
+	df_consolidado_venda_historico = aplicar_fallback_interno(df_consolidado_venda_historico, 'historico')
+	df_consolidado_venda = aplicar_fallback_interno(df_consolidado_venda, 'venda')
+	alteracoes_fallback = pd.DataFrame(alteracoes_fallback)
 
 	# =============================
 	# Limpeza final
@@ -483,7 +743,13 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	for df in [df_consolidado_venda_historico, df_consolidado_venda]:
 		df.drop(columns=['vendedor_norm','escritorio_norm'], inplace=True)
 
-	print("Padronização concluída com TF-IDF e fallback interno.")
+	# =============================
+	# Relatório final de auditoria
+	# =============================
+	relatorio_alteracoes = pd.concat([alteracoes_excecao, alteracoes_tfidf, alteracoes_fallback], ignore_index=True)
+	relatorio_alteracoes = relatorio_alteracoes.sort_values(['df','indice','etapa']).reset_index(drop=True)
+
+	print("Relatório de alterações criado!")
 
 	# --- Concatenação ---
 	df_concatenado = pd.concat([df_api_arcelor, df_consolidado_venda, df_consolidado_venda_historico], ignore_index=True)
@@ -625,7 +891,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	ajustes_codigo_fornecedor = {
 		'32250117469701010482550000076326871414495251': '58',
-		'53250317469701002200550000001542451836824289': 'L08'
+		'53250317469701002200550000001542451836824289': 'L08',
+		'33250817469701010806550010002029031620416606': 'BU7'
 
 	}
 
@@ -634,6 +901,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'35250717469701022731550000000281391508452930': 'CDB Curitiba',
 		'33250717469701016766550000000857061706644575': 'DBA Campos dos Goytacazes',
 		'32250117469701010482550000076326871414495251': 'Usina SP',
+		'33250817469701010806550010002029031620416606': 'Usina RJ/ES/MG'
 		
 	}
 
@@ -641,7 +909,8 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		'42250717469701012264550000001382921054567429': 'Talita',
 		'35250717469701022731550000000281391508452930': 'Talita',
 		'33250717469701016766550000000857061706644575': 'Cassio',
-		'32250117469701010482550000076326871414495251': 'Glauciele'
+		'32250117469701010482550000076326871414495251': 'Glauciele',
+		'33250817469701010806550010002029031620416606': 'Cassio'
 	}
 
 
@@ -662,6 +931,16 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Aplica os ajustes de forma vetorizada e performática
 	df_final['vendedor_fornecedor'] = df_final['cod_vendedor_fornecedor'].map(ajustes_codigo_vendedor_fornecedor).fillna(df_final['vendedor_fornecedor'])
+
+	condicao = (
+		((df_final['cod_vendedor_fornecedor'] == 'NU9') & (df_final['escritorio_vendas'] == 'DBA Manaus')) |
+		((df_final['vendedor_fornecedor'] == 'Una Araujo') & (df_final['escritorio_vendas'] == 'DBA Manaus'))
+	)
+
+	df_final.loc[condicao, 'cod_vendedor_fornecedor'] = 'A3K'
+	df_final.loc[condicao, 'vendedor_fornecedor'] = 'Vanessa De Araujo Andrade'
+	# escritorio_vendas já continua como DBA Manaus
+
 
 
 	# Limpeza de strings
@@ -702,6 +981,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 
 	print(f"O DataFrame final foi concluído com sucesso, contendo {df_final.shape[0]} linhas prontas para demais alteraçoes.")
+
 
 	# --- Atribuição por Regras Específicas e Mapeamentos ---
 
@@ -881,12 +1161,16 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
 
 	# Reorganiza colunas na ordem desejada
-	df_final = df_final[['cnpj_sacado','cnpj_raiz','nome_sacado','cnpj_cedente','nome_cedente',
-						'cod_vendedor_fornecedor','vendedor_fornecedor','escritorio_vendas','vendedor_alpe',
-						'cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz',
-						'valor_fatura_oficial','valor_face_qprof','origem']]
+	ordem_colunas = ['cnpj_sacado','cnpj_raiz','nome_sacado','cnpj_cedente','nome_cedente',
+					'cod_vendedor_fornecedor','vendedor_fornecedor','escritorio_vendas','vendedor_alpe',
+					'cep','municipio','uf','data','numero_nfe','valor_fatura','valor_fatura_pos_sefaz',
+					'valor_fatura_oficial','valor_face_qprof','origem']
+
 
 	print(f"O DataFrame final foi concluído com sucesso, contendo {df_final.shape[0]} linhas.")
+
+	# Aplica a ordem e reseta o índice
+	df_final = df_final[ordem_colunas].reset_index(drop=True)
 
 	# Timestamp
 	now = datetime.now(tz=timezone(timedelta(hours=-3)))
