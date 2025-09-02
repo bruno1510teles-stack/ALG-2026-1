@@ -1155,10 +1155,6 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	# Limpeza final: remove colunas temporárias
 	df_final = df_final.drop(columns=['nome_cedente_norm','nome_sacado_norm','uf_sacado_norm'])
 
-	# Timestamp
-	now = datetime.now(tz=timezone(timedelta(hours=-3)))
-	df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-	df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
 
 	# Reorganiza colunas na ordem desejada
 	ordem_colunas = ['cnpj_sacado','cnpj_raiz','nome_sacado','cnpj_cedente','nome_cedente',
