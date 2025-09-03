@@ -125,6 +125,7 @@ def exporta_csv_politica_v4 (access_params=None,  **kwargs):
     df_vencer['prioridade'] = 6
     df_vencer['policy'] = 'V4'
     df_vencer['pre_filtro'] = 'Não'
+    df_vencer['variavel_coringa'] = 'PULAR FILTROS'
     df_vencer['bucket_pgid'] = 'urn-party-pgid-' + df_vencer['pgid']
 
 
@@ -132,7 +133,7 @@ def exporta_csv_politica_v4 (access_params=None,  **kwargs):
     exporta_csv = df_vencer[[
         'cnpj_sacado_completo', 'volume', 'limite', 'razao_social_sacado', 'cnpj_cedente', 
         'codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 
-        'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'bucket_pgid'
+        'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'variavel_coringa', 'bucket_pgid'
     ]]
 
     exporta_csv = exporta_csv.drop_duplicates()

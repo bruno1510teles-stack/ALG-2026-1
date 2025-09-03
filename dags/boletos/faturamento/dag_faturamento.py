@@ -62,7 +62,7 @@ default_args = {
 with DAG(
     dag_id='tratamento_faturamento',
     start_date=days_ago(1),
-    schedule_interval='55 * * * 1-6',
+    schedule_interval='55 * * * 1-7',
     default_args=default_args,
     tags=['etl', 'faturamento', 'raw','trusted'],
     max_active_runs=1

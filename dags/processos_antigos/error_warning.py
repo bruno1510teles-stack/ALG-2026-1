@@ -123,7 +123,7 @@ def erro(context):
             "id": "91a4c5de3b0220e250ea4de26e638fb92bd9337cb0aff8f7d57a8410e4307696",
             "runtime": "containerd",
             "image": {
-            "name": "artifactory.alpenet.com.br/docker-release/alpe/ccred:0.1.183"
+            "name": "740246358066.dkr.ecr.us-east-1.amazonaws.com/alpe-images/ccred:0.1.263"
             }
         },
         "service.name": "ccred",

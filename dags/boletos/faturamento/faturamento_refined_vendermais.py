@@ -35,63 +35,64 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     # Base Boletos CCRED
     query_fatura = f"""
-    with faturamento as (
-    SELECT 
-        cnpj_sacado, 
-        nome_sacado, 
-        cnpj_cedente, 
-        nome_cedente, 
-        numero_nfe, 
-        data_fatura, 
-        CONCAT(cnpj_sacado, cnpj_cedente, numero_nfe) as chave,
-        SUM(valor_fatura) AS valor_fatura, 
-        SUM(CASE WHEN status_fatura_sefaz <> 'CANCELED' OR status_fatura_sefaz IS NULL THEN valor_fatura ELSE 0 END) AS valor_fatura_pos_sefaz,
-        SUM(CASE WHEN status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') and (status_fatura_sefaz not in ('CANCELED') or status_fatura_sefaz is null) THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
-    FROM 
-        deltalaketrusted.payments.faturamento ft
-    GROUP BY
-        cnpj_sacado, nome_sacado, cnpj_cedente, nome_cedente, numero_nfe, data_fatura
-    ),
-    boletos as (
-    SELECT
-        regexp_replace(cnpj_sacado, '[./-]', '') AS cnpj_sacado, 
-        nome_sacado, 
-        regexp_replace(cnpj_cedente, '[./-]', '') AS cnpj_cedente,
-        nome_cedente, 
-        numero_nfe, 
-        data_efetivacao, 
-        CONCAT(regexp_replace(cnpj_sacado, '[./-]', ''), regexp_replace(cnpj_cedente, '[./-]', ''), numero_nfe) AS chave,
-        SUM(valor_face) AS valor_face_qprof
-    FROM 
-        deltalaketrusted.payments.boletos_internos 
-    GROUP BY
-        regexp_replace(cnpj_sacado, '[./-]', ''), 
-        nome_sacado, 
-        regexp_replace(cnpj_cedente, '[./-]', ''), 
-        nome_cedente, 
-        numero_nfe,
-        data_efetivacao
-    )
-    select 	sub1.*,
-            cast(rf.cnae_principal as varchar) as cnae_principal,
-            rf.uf
-    from (
-        select 
-            coalesce(ft.cnpj_sacado, bol.cnpj_sacado) as cnpj_sacado,  
-            coalesce(ft.nome_sacado, bol.nome_sacado) as nome_sacado,
-            coalesce(ft.cnpj_cedente, bol.cnpj_cedente) as cnpj_cedente,
-            coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
-            coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
-            coalesce(bol.data_efetivacao, ft.data_fatura) as data,
-            coalesce(ft.valor_fatura,0) as valor_fatura,
-            coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
-            coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
-            coalesce(bol.valor_face_qprof, 0) as valor_face_qprof
-        from 
-            faturamento ft
-            full join boletos bol on ft.chave = bol.chave ) as sub1
-    left join ( select cnpj_sem_formatacao, cnae_principal_codigo as cnae_principal, uf 
-                    from deltalakerefined.receita_federal.dados_cadastrais) as rf on sub1.cnpj_sacado = rf.cnpj_sem_formatacao
+        with faturamento as (
+        SELECT 
+            cnpj_sacado, 
+            nome_sacado, 
+            cnpj_cedente, 
+            nome_cedente, 
+            numero_nfe, 
+            data_fatura, 
+            CONCAT(cnpj_sacado, cnpj_cedente, numero_nfe) as chave,
+            SUM(valor_fatura) AS valor_fatura, 
+            SUM(CASE WHEN status_fatura_sefaz <> 'CANCELED' OR status_fatura_sefaz IS NULL THEN valor_fatura ELSE 0 END) AS valor_fatura_pos_sefaz,
+            SUM(CASE WHEN status_pago not in ('REJEITADO', 'EXCLUIDO', 'RECOMPRA ANTES DO PAGAMENTO') and (status_fatura_sefaz not in ('CANCELED') or status_fatura_sefaz is null) THEN valor_fatura ELSE 0 END) AS valor_fatura_oficial
+        FROM 
+            deltalaketrusted.payments.faturamento ft
+        GROUP BY
+            cnpj_sacado, nome_sacado, cnpj_cedente, nome_cedente, numero_nfe, data_fatura
+        ),
+        boletos as (
+        SELECT
+            regexp_replace(cnpj_sacado, '[./-]', '') AS cnpj_sacado, 
+            nome_sacado, 
+            regexp_replace(cnpj_cedente, '[./-]', '') AS cnpj_cedente,
+            nome_cedente, 
+            numero_nfe, 
+            data_efetivacao, 
+            CONCAT(regexp_replace(cnpj_sacado, '[./-]', ''), regexp_replace(cnpj_cedente, '[./-]', ''), numero_nfe) AS chave,
+            SUM(valor_face) AS valor_face_qprof
+        FROM 
+            deltalaketrusted.payments.boletos_internos 
+        GROUP BY
+            regexp_replace(cnpj_sacado, '[./-]', ''), 
+            nome_sacado, 
+            regexp_replace(cnpj_cedente, '[./-]', ''), 
+            nome_cedente, 
+            numero_nfe,
+            data_efetivacao
+        )
+        select 	sub1.*,
+                cast(rf.cnae_principal as varchar) as cnae_principal,
+                rf.uf,
+                rf.municipio
+        from (
+            select 
+                coalesce(ft.cnpj_sacado, bol.cnpj_sacado) as cnpj_sacado,  
+                coalesce(ft.nome_sacado, bol.nome_sacado) as nome_sacado,
+                coalesce(ft.cnpj_cedente, bol.cnpj_cedente) as cnpj_cedente,
+                coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
+                coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
+                coalesce(bol.data_efetivacao, ft.data_fatura) as data,
+                coalesce(ft.valor_fatura,0) as valor_fatura,
+                coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
+                coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
+                coalesce(bol.valor_face_qprof, 0) as valor_face_qprof
+            from 
+                faturamento ft
+                full join boletos bol on ft.chave = bol.chave ) as sub1
+        left join ( select cnpj_sem_formatacao, cnae_principal_codigo as cnae_principal, uf, municipio
+                        from deltalakerefined.receita_federal.dados_cadastrais) as rf on sub1.cnpj_sacado = rf.cnpj_sem_formatacao 
     """
 
     fatura = execute_query(conn, query_fatura)

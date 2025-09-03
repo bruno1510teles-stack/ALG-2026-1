@@ -13,12 +13,11 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 
-sys.path.append('/opt/airflow/dags/repo/dags/vendedor_fornecedor')
-from vendedor_fornecedor_to_trusted import vendedor_fornecedor_to_trusted
+from serasa.rating_mais_antigo_serasa import rating_mais_antigo
+from serasa.rating_mais_recente_serasa import rating_mais_recente
 
 
-
-## Parâmetros de acesso
+### Parâmetros de acesso
 access_params = {          
     "endpoint_url_trusted": Variable.get("MINIO_TRUSTED_ENDPOINT"),
     "aws_access_key_id_trusted": Variable.get("MINIO_TRUSTED_ACCESS_KEY"),
@@ -64,20 +63,30 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='vendedor_fornecedor',
+    dag_id='rating_serasa',
     start_date=days_ago(1),
-    schedule_interval = '0 11-23 * * 1-5',
+    schedule_interval = '0 10 * * 1-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
-    tags=['etl', 'vendedor_fornecedor', 'trusted'],
-    max_active_runs=1
+    tags=['etl', 'rating', 'trusted'],
+    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
+
 ) as dag:
 
-    # Definindo o task que processa a tabela vendedor_fornecedor
-    vendedor_fornecedor = PythonOperator(
-        task_id='vendedor_fornecedor',
-        python_callable= vendedor_fornecedor_to_trusted,
+    # Definindo o task que processa a tabela rating_mais_antigo_serasa
+    task_1  = PythonOperator(
+        task_id='rating_mais_antigo_serasa',
+        python_callable= rating_mais_antigo,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
+
+    # Definindo o task que processa a tabela rating_mais_recente_serasa
+    task_2  = PythonOperator(
+        task_id='rating_mais_recente_serasa',
+        python_callable= rating_mais_recente,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+
     # Definindo a ordem de execução das tasks
-    vendedor_fornecedor
+    task_1 >> task_2

@@ -8,13 +8,13 @@ from io import BytesIO
 from requests.auth import HTTPBasicAuth
 import json
 from airflow.utils.log.logging_mixin import LoggingMixin
-from deltalake import write_deltalake, DeltaTable
+from deltalake.writer import write_deltalake
 from datetime import datetime, timezone, timedelta
 import unicodedata
 import string
 
 
-def raw_to_trusted(access_params=None, **kwargs):
+def ydh_raw_to_trusted(access_params=None, **kwargs):
 
     # Conectando no MinIO
     client = Minio(
@@ -147,11 +147,11 @@ def raw_to_trusted(access_params=None, **kwargs):
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS', 'WILMA'): 'WILMA SANTOS',
         'JOEL DONIZETTI APARECIDO': 'OUTROS',
         'COMERCIAL CONEXÃO' : 'OUTROS',
-        ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO', 'JESSICA PATARRO'): 'JESSICA PATTARO',
+        ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO'): 'JESSICA PATTARO',
         ('LEONARDO BOFF', 'LEONARDO SILVA'): 'LEONARDO BOFF',
         ('VANUZA SILVA', 'VANUZA VIAL'): 'VANUZA SILVA',
         ('VICENTE DOUGLAS', 'VICENTE MOURA', 'VICENTE DOUGLAS RIBEIRO DE MOURA'): 'VICENTE DOUGLAS',
-        ('NATALIA GOLFETO'): 'NATALIA GOLFETO'
+        ('NATALIA GOLFETO') : 'NATALIA GOLFETO'
     }
 
     # Função para padronizar o nome
@@ -249,8 +249,8 @@ def raw_to_trusted(access_params=None, **kwargs):
     outros = [
         'NÃO ATRIBUIDA', 'CLAUDIA CRAVO', 'RAFAEL ROCHA LEITE', 'VIVIAN POMPEU', 'MAYARA COSTA', 
         'PRISCILA YURI NAGATA ORTEGA', 'MAYARA.COSTA' , 'AUGUSTO DE ABREU', 'CAMILA MAMEDE CABRAL', 'BEATRIZ PEREIRA GAMA CARDOSO',
-        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'CARLOS MAGNO LOPES FERRO', 'WILMA CARLA DA ROCHA SANTOS',
-        'ADRIANA BARBOSA DE OLIVEIRA', 'EDNEIA COMIN DA SILVA'
+        'VINÍCIUS GABRIEL FERREIRA RIBEIRO', 'VITÓRIA SILVA DOS REIS', 'THIAGO ASSIS', 'CARLOS MAGNO LOPES FERRO', 'WILMA CARLA DA ROCHA SANTOS'
+        'EDNEIA COMIN DA SILVA'
     ]
 
     # Função para atribuir categorias
@@ -429,8 +429,8 @@ def raw_to_trusted(access_params=None, **kwargs):
                             'B - 8', 'B - 11', 'PF CNPJ IRREGULAR', 'PF PEP', 'PF RJ', 'PF CONSORCIO/CONSTRUTORA/SPE', 'PF SOCIO PJ OU < 2 ANOS',
                             'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2', 'AF - LIMINAR SERASA',
                             'PF CONSORCIO/SPE/SA', 'TESTE', 'C6 | C2', 'D4 | D1', 'C2 | C2', 'C1 | C1', 'C4 | C2', 'D1 | D1', 'C3 | C1', 'AF - CONSULTAS SERASA',
-                            'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE', 'D3 | D1', 'D2 | D1', 'REPROVADO | REPROVADO', 'VENCIDO > 30 DIAS', 'CANCELAMENTO DE LIMITE',
-                            'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI']
+                            'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE', 'D3 | D1', 'D2 | D1', 'REPROVADO | REPROVADO','VENCIDO > 30 DIAS', 'CANCELAMENTO DE LIMITE',
+                            'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS','PF - GE SEM INFO SERASA', 'PF - GE MEI']
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
                             'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8', 'AF - MUDANÇA ENDEREÇO','AF - ENDEREÇO IGUAL',
@@ -460,63 +460,6 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['categoria_ramificacao'] = df_resolvido['ramificacao_motor'].apply(categorizar_ramificacao)
 
 
-
-    # PROPOSTAS RÉPLICAS PARA A MESA
-
-    # -> Propostas decididas pelo MOTOR como REPROVADO
-
-    df_motor_reprov = df_resolvido[(df_resolvido['categoria_decisor'] == 'MOTOR') &
-                                (df_resolvido['decisao'] == 'REPROVADO')]
-
-    df_motor_reprov_agrup = df_motor_reprov.groupby('cnpj')['data_resolvido'].min().reset_index()
-
-    df_motor_reprov_agrup = pd.merge(df_motor_reprov_agrup, df_resolvido[['cnpj','data_resolvido','ramificacao_motor']], on=['cnpj', 'data_resolvido'], how='left')
-
-    df_motor_reprov_agrup.rename(columns={'data_resolvido': 'primeira_recusa_motor'}, inplace=True)
-
-    df_motor_reprov_agrup['primeira_recusa_motor'] = pd.to_datetime(df_motor_reprov_agrup['primeira_recusa_motor'], errors='coerce')
-
-
-    # -> Propostas decididas pela MESA, apenas dos casos que tiveram alguma reprova pelo MOTOR
-
-    df_mesa = df_resolvido[(df_resolvido['categoria_decisor'] == 'MESA') & 
-                        (df_resolvido['cnpj'].isin(df_motor_reprov_agrup['cnpj']))]
-
-    df_mesa = df_mesa[['cnpj', 'categoria_decisor', 'decisao', 'data_resolvido', 'issue_key']]
-
-    df_mesa['data_resolvido'] = pd.to_datetime(df_mesa['data_resolvido'], errors='coerce')
-
-    df_mesa.reset_index(drop=True, inplace=True)
-
-
-    # -> Cruzando as bases
-
-    df_propostas_replicas = pd.merge(df_motor_reprov_agrup, df_mesa, on='cnpj', how='left')
-
-    df_propostas_replicas = df_propostas_replicas[df_propostas_replicas['decisao'].notna()]
-
-    df_propostas_replicas.reset_index(drop=True, inplace=True)
-
-    # Filtrando apenas casos que o data_resolvido > primeira_recusa_motor
-    df_propostas_replicas_final = df_propostas_replicas[df_propostas_replicas['data_resolvido'] > df_propostas_replicas['primeira_recusa_motor']]
-
-
-    # Criando flag no df_resolvido
-
-    df_propostas_replicas_final = df_propostas_replicas_final[['issue_key', 'ramificacao_motor']]
-
-    df_propostas_replicas_final.rename(columns={'ramificacao_motor': 'ramificacao_proposta_replica'}, inplace=True)
-
-    df_propostas_replicas_final = df_propostas_replicas_final.drop_duplicates()
-
-    df_resolvido = pd.merge(df_resolvido, df_propostas_replicas_final, on='issue_key', how='left', indicator=True)
-
-    df_resolvido['flag_proposta_replica'] = df_resolvido['_merge'].apply(lambda x: 1 if x == 'both' else 0)
-
-    df_resolvido = df_resolvido.drop(columns=['_merge'])
-
-    df_resolvido = df_resolvido.drop_duplicates()
-
     # CONVERTENDO COLUNAS DE DATA
     df_resolvido['data_criado'] = pd.to_datetime(df_resolvido['data_criado'], errors='coerce')
     df_resolvido['data_resolvido'] = pd.to_datetime(df_resolvido['data_resolvido'], errors='coerce')
@@ -530,10 +473,9 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['year'], df_resolvido['month'], df_resolvido['day'] = now.year, now.month, now.day
 
     # Lista de PGIDs a excluir
-    pgids_excluidos = [
-        'ADORO', 'ANIOLLI', 'BARILOCHE', 'BASSAR', 'BENASSI', 'CABOCLO',
-        'COMPREFACIL', 'EMBALA', 'GIROTRADE', 'LTCAROL', 'LTDEALE', 'OCEAN',
-        'PHILIPMORRIS', 'ROGE', 'SEUGIL', 'ULTRACHEESE', 'YANDEH']
+    pgids_yandeh = ['ADORO', 'ANIOLLI', 'BARILOCHE', 'BASSAR', 'BENASSI', 'CABOCLO',
+    'COMPREFACIL', 'EMBALA', 'GIROTRADE', 'LTCAROL', 'LTDEALE', 'OCEAN',
+    'PHILIPMORRIS', 'ROGE', 'SEUGIL', 'ULTRACHEESE', 'YANDEH']
 
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED
     # FILTRANDO APENAS APROVADOS E REPROVADOS PARA TRUSTED E LIMITE SOLICITADO MENOR QUE 1.000.000.000
@@ -541,16 +483,15 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido = df_resolvido.loc[
         (df_resolvido['decisao'].isin(['APROVADO', 'REPROVADO', 'CANCELADO', 'MANTIDO'])) & 
         (df_resolvido['limite_pedido'] < 1000000000) &
-        (~df_resolvido['pgid'].isin(pgids_excluidos))
+        (df_resolvido['pgid'].isin(pgids_yandeh))
     ]
 
     # SELECIONA AS COLUNAS PARA EXPORTAR
     df_final = df_resolvido[[
         'issue_key', 'politica', 'cnpj', 'raiz_cnpj', 'pgid', 'limite_pedido',
-        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe', 'gerente_tratado',
-        'nome_vendedor_fn', 'filial_fn', 'cdb_dba', 'prioridade', 'status', 'decisor','analista_tratado',
-        'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
-        'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
+        'limite_aprovado', 'nome_issue', 'nome_vendedor_alpe',
+        'nome_vendedor_fn', 'filial_fn', 'cdb_dba', 'prioridade', 'status', 'decisor',
+        'ramificacao_motor','decisao', 'parecer', 'tipo_proposta', 'data_criado',
         'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
@@ -573,16 +514,17 @@ def raw_to_trusted(access_params=None, **kwargs):
 
         # Definindo o caminho e salvando no MinIO
         BUCKET_SOURCE_TRUSTED = "jira"
-        FOLDER_DESTINATION_TRUSTED = "propostas"
+        FOLDER_DESTINATION_TRUSTED = "propostas_yandeh"
 
         write_deltalake(
             f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}", 
             df_final, 
             partition_by=["year", "month", "day"],
             storage_options=storage_options,
-            mode="overwrite"
+            mode="overwrite",
             #overwrite_schema=True
-    )
+        )
+
         logger.info("Salvamento concluído com sucesso.")
         
     except Exception as e:

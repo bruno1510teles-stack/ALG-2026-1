@@ -48,6 +48,7 @@ def cnaes_to_trusted(spark, **kwargs):
     trusted_pep = spark.read.format("delta").load("s3a://pessoas-e-organizacoes/pep")
     trusted_socios = spark.read.format("delta").load("s3a://bureaus/receita-federal/socios")
     trusted_cnae = spark.read.format("delta").load("s3a://bureaus/receita-federal/cnaes")
+    propostas = spark.read.format("delta").load("s3a://jira/propostas")
 
     # Lendo dados
     # Registrar DataFrames como tabelas temporárias
@@ -65,6 +66,8 @@ def cnaes_to_trusted(spark, **kwargs):
     print("trusted_natureza_juridica ok")
     trusted_cnae.createOrReplaceTempView("cnae")
     print("trusted_cnae ok")
+    propostas.createOrReplaceTempView("propostas")
+    print("propostas ok")
 
     
     print(spark.conf.get("fs.s3a.endpoint", "configuração não definida"))
@@ -113,15 +116,44 @@ def cnaes_to_trusted(spark, **kwargs):
 
     # Base para pegar historico de propostas ultimos 60 dias
     query_propostas= """
-            SELECT 	cnpj,
-                max(raiz_cnpj) as raiz_cnpj,
+            SELECT
+                raiz_cnpj as cnpj_raiz,
                 true as analise_menor_60_dias,
                 max(decisao) as decisao
-        FROM deltalaketrusted.jira.propostas
-        WHERE try_cast(data_criado AS date) >= current_date - INTERVAL '60' day
-        group by cnpj
+        FROM propostas
+        WHERE cast(data_criado AS date) >= current_date - INTERVAL '60' day
+        group by raiz_cnpj
     """
-    propostas_aux = execute_query(conn, query_propostas)
+
+    # Executar a consulta SQL
+    aux_propostas_spark = spark.sql(query_propostas)
+
+
+    # Query para pegar campos das informações da ultima proposta analisada do raiz_cnpj
+    sql_query_proposta = """
+        select
+            distinct
+            sub1.raiz_cnpj as cnpj_raiz,
+            sub1.qtd_analises as qtd_analises_jira,
+            u.decisao as ultima_decisao,
+            u.analista_tratado as decisor_ult_proposta,
+            date(substring(cast(sub1.data_analise_mais_recente as varchar(20)), 1, 10)) as data_ult_analise
+        from (  
+            SELECT 
+                p.raiz_cnpj,
+                COUNT(*) AS qtd_analises,
+                MAX(p.data_criado) AS data_analise_mais_recente
+            FROM propostas p
+            GROUP BY p.raiz_cnpj
+        ) as sub1
+        left join propostas u
+            ON u.raiz_cnpj = sub1.raiz_cnpj
+            AND u.data_criado = sub1.data_analise_mais_recente
+
+    """
+
+    # Executar a consulta SQL
+    aux_ultima_proposta = spark.sql(sql_query_proposta)
 
 
     query_info_limite = f"""
@@ -152,7 +184,6 @@ def cnaes_to_trusted(spark, **kwargs):
 
     aux_nat_ju_spark = spark.createDataFrame(aux_nat_ju)
     aux_cnae_spark = spark.createDataFrame(aux_cnae)
-    aux_propostas_spark = spark.createDataFrame(propostas_aux)
     aux_limite_info_spark = spark.createDataFrame(limite_info)
 
 
@@ -326,10 +357,20 @@ def cnaes_to_trusted(spark, **kwargs):
     )
 
 
+    # Renomeia as colunas antes do join ou depois do join
+    aux_propostas_spark = aux_propostas_spark.withColumnRenamed("cnpj_raiz", "cnpj_raiz_prop")
+    aux_ultima_proposta = aux_ultima_proposta.withColumnRenamed("cnpj_raiz", "cnpj_raiz_ult")
+
     # Cruzando com informações de propostas
     df_agrupado = df_agrupado.join(
         aux_propostas_spark,
-        df_agrupado["documento_sem_formatacao"] == aux_propostas_spark["cnpj"],
+        df_agrupado["cnpj_raiz"] == aux_propostas_spark["cnpj_raiz_prop"],
+        how="left"
+    )
+
+    df_agrupado = df_agrupado.join(
+        aux_ultima_proposta,
+        df_agrupado["cnpj_raiz"] == aux_ultima_proposta["cnpj_raiz_ult"],
         how="left"
     )
 
@@ -347,12 +388,13 @@ def cnaes_to_trusted(spark, **kwargs):
 
 
     colunas_finais = [
-    'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
-    'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
-    'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
-    'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio', 'is_sa',
-    'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
-    'nat_ju_aceita','analise_menor_60_dias','decisao','atualizado_em'
+        'documento_sem_formatacao','cnpj_raiz','razao_social','cod_cnae','cnae_secundaria',
+        'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
+        'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
+        'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio', 'is_sa',
+        'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
+        'nat_ju_aceita','analise_menor_60_dias','decisao','qtd_analises_jira', 'ultima_decisao',
+        'decisor_ult_proposta', 'data_ult_analise','atualizado_em'
     ]
 
     df_filtrado = df_agrupado.select(colunas_finais)

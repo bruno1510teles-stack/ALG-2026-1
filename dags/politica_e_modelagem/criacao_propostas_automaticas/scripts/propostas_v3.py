@@ -137,13 +137,14 @@ def exporta_csv_politica_v3 (access_params=None,  **kwargs):
 	vencer_limites['prioridade'] = 6
 	vencer_limites['policy'] = 'V3'
 	vencer_limites['pre_filtro'] = 'Não'
+	vencer_limites['variavel_coringa'] = 'PULAR FILTROS'
 	vencer_limites['bucket_pgid'] = 'urn-party-pgid-' + vencer_limites['pgid']
 
 	# Organiza base exportação
 	exporta_csv = vencer_limites[[
 		'cnpj_sacado', 'volume', 'limite', 'nome_sacado', 'cnpj_cedente', 
 		'codigo_filial', 'uf', 'cdb_dba', 'vendedor_alpe', 'vendedor_fn_nome', 
-		'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'bucket_pgid'
+		'vendedor_fn_email', 'vendedor_fn_telefone', 'prioridade', 'policy', 'pre_filtro', 'variavel_coringa', 'bucket_pgid'
 	]]
 
 

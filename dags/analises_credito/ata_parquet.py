@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 from airflow_dags_core.lib.MinioWriteFile import MinioWriteFile
 from airflow_dags_core.lib.MinioReadFile import MinioReadFile
@@ -11,6 +11,7 @@ import pandas as pd
 default_args = {
     'owner': 'Rafael Leite',
     'retries': 1,
+    'execution_timeout': timedelta(minutes=3)
 }
 
 def createPartition(conn, raizSacado):
