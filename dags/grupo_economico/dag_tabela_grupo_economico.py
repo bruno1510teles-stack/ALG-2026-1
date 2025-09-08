@@ -1,17 +1,17 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import pendulum
 import requests
-from datetime import timedelta
-
-
-### Importando scripts necessários
-from boletos.faturamento import faturamento_vendermais
-from boletos.faturamento import faturamento_refined_vendermais
+import pendulum
+import sys
+from datetime import datetime, timezone, timedelta
+from time import sleep
+from grupo_economico.tabela_grupo_economico import grupo_economico_to_trusted
 
 
 ### Parâmetros de acesso
@@ -49,7 +49,7 @@ def notificar_falha_teams(context):
 
 ### Definindo defaults
 default_args = {
-    "owner": "Felipe Ferraz",
+    "owner": "Natielli Torres",
     "retries": 3,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
@@ -60,29 +60,22 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='tratamento_faturamento',
+    dag_id='tabela_grupo_economico',
     start_date=days_ago(1),
-    schedule_interval="*/30 * * * 1-7",
+    schedule_interval = '0 10 * * 1-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
-    tags=['etl', 'faturamento', 'raw','trusted'],
-    max_active_runs=1
+    tags=['etl', 'grupo_economico', 'trusted'],
+    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
+
 ) as dag:
 
-    # Definindo o task que processa raw_to_trusted
-    raw_to_trusted = PythonOperator(
-        task_id='raw_to_trusted',
-        python_callable=faturamento_vendermais.faturamento_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
-
-    # Definindo o task que processa trusted_to_refined
-    trusted_to_refined = PythonOperator(
-        task_id='trusted_to_refined',
-        python_callable=faturamento_refined_vendermais.faturamento_to_refined,
+    # Definindo o task que processa a tabela rating_mais_antigo_serasa
+    task_1  = PythonOperator(
+        task_id='tabela_ge',
+        python_callable= grupo_economico_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> trusted_to_refined
+    task_1
