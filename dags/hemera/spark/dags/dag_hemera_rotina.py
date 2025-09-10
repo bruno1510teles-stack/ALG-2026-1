@@ -124,9 +124,11 @@ with DAG(
         provide_context=True
     )
 
+    app_file = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-diario-trusted-spark-app.yaml"
+
     estoque_rotina_trusted = SparkKubernetesOperator(
         task_id = 'estoque_diario_trusted',
-        application_file = '/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-diario-trusted-spark-app.yaml',
+        application_file = app_file,
         namespace = 'spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
