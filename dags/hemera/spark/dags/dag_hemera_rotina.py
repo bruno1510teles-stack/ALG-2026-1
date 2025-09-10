@@ -8,6 +8,7 @@ from time import sleep
 import requests
 from datetime import timedelta
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
+import yaml
 
 ### Importando scripts necessários (Excel to Csv) - Rotina
 
@@ -126,15 +127,16 @@ with DAG(
 
 
     with open("/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-diario-trusted-spark-app.yaml") as f:
-        app_yaml = f.read()
+        manifest = yaml.safe_load(f)
 
     estoque_rotina_trusted = SparkKubernetesOperator(
-        task_id = 'estoque_diario_trusted',
-        application_file = app_yaml,
-        namespace = 'spark',
-        kubernetes_conn_id='kubernetes_default',
+        task_id="estoque_diario_trusted",
+        application_manifest=manifest,
+        namespace="spark",
+        kubernetes_conn_id="kubernetes_default",
         do_xcom_push=True,
     )
+
 
     recompra_rotina_trusted = PythonOperator(
         task_id="recompra_diario_trusted",
