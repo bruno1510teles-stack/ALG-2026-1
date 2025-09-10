@@ -125,9 +125,9 @@ with DAG(
     )
 
     estoque_rotina_trusted = SparkKubernetesOperator(
-        task_id='estoque_diario_trusted',
-        application_file='estoque-diario-trusted-spark-app.yaml',
-        namespace='spark',
+        task_id = 'estoque_diario_trusted',
+        application_file = '/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-diario-trusted-spark-app.yaml',
+        namespace = 'spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
     )
@@ -158,7 +158,7 @@ with DAG(
 
     estoque_refined_task = SparkKubernetesOperator(
         task_id='estoque_refined',
-        application_file='estoque-refined-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-refined-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -181,7 +181,7 @@ with DAG(
     ## Processo Fe
     consolidado_hemera_produto = SparkKubernetesOperator(
         task_id='consolidado_hemera_produto',
-        application_file='estoque-consolidado-hemera-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-consolidado-hemera-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
