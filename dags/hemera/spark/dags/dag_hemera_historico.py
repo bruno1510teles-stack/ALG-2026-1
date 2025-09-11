@@ -9,6 +9,9 @@ import requests
 from datetime import timedelta
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 ### Importando scripts necessários
 
 from hemera.spark.hemera_historico import aquisicao_excel_to_csv_historico
@@ -128,7 +131,7 @@ with DAG(
     )
     '''
     
-    estoque_consolid_trusted = SparkKubernetesOperator(
+    estoque_consolid_trusted = NoTemplateSparkKubernetesOperator(
         task_id='estoque_consolidado_trusted',
         application_file='estoque-consolidado-trusted-spark-app.yaml',
         namespace='spark',
@@ -161,7 +164,7 @@ with DAG(
         provide_context=True
     )
 
-    estoque_refined_task = SparkKubernetesOperator(
+    estoque_refined_task = NoTemplateSparkKubernetesOperator(
         task_id='estoque_refined',
         application_file='estoque-refined-spark-app.yaml',
         namespace='spark',
