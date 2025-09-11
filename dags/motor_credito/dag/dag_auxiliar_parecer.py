@@ -7,6 +7,10 @@ import requests
 from datetime import timedelta
 from airflow.utils.dates import datetime
 
+
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
     dag_id = context['task_instance'].dag_id
@@ -41,7 +45,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    parecer_motor = SparkKubernetesOperator(
+    parecer_motor = NoTemplateSparkKubernetesOperator(
         task_id='auxiliar_parecer_motor',
         application_file='auxiliar-parecer-spark-app.yaml',
         namespace='spark',
