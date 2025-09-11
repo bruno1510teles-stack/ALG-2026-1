@@ -33,30 +33,36 @@ def acompanhamento_carteira_refined (access_params=None,  **kwargs):
 
     #Query do trino
     query_carteira = f"""
-    WITH carteira AS (
-    	SELECT DISTINCT
-    		cv.safra 
-    		,substr(regexp_replace(cv.cnpj_sacado, '[^0-9]', ''), 1, 8) AS cnpj_raiz 
-    		,sum (cv.carteira) AS carteira
-    	FROM deltalakerefined.payments.carteira_vendermais cv
-    	WHERE cv.safra >= date '2025-08-31'
-    	GROUP BY 1, 2
+    WITH limites AS (
+        SELECT 
+            SUBSTR(cnpj_sacado, 1, 8) AS raiz_cnpj
+            ,SUM(limite_atribuido) AS limite_atribuido
+            ,SUM(limite_utilizado) AS limite_utilizado
+            ,SUM(limite_disponivel) AS limite_disponivel
+        FROM deltalaketrusted.limites.limite
+        GROUP BY substr(cnpj_sacado, 1, 8)
     )
-    SELECT DISTINCT 
-    	c.safra
-    	,substr(regexp_replace(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) AS cnpj_raiz
-    	,bi.nome_sacado
-    	,l.limite_atribuido AS limite
-    	,c.carteira
-    	    ,CASE 
+    SELECT 
+        SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) AS raiz_cnpj
+        ,bi.nome_sacado 
+        ,SUM(bi.valor_titulo) AS carteira
+        ,l.limite_atribuido
+        ,l.limite_utilizado
+        ,l.limite_disponivel
+        ,CASE 
             WHEN l.limite_atribuido IS NULL OR l.limite_atribuido = 0 THEN NULL
-            ELSE c.carteira / l.limite_atribuido
+            ELSE ROUND(SUM(bi.valor_titulo) / l.limite_atribuido, 5)
         END AS IU
     FROM deltalaketrusted.payments.boletos_internos bi
-    LEFT JOIN deltalaketrusted.limites.limite l
-    	ON substr(regexp_replace(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) = substr(l.cnpj_sacado, 1, 8)
-    LEFT JOIN carteira c
-        ON substr(regexp_replace(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) = c.cnpj_raiz
+    LEFT JOIN limites l ON SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) = l.raiz_cnpj
+    WHERE bi.status_titulo <> 'NO PRAZO'
+    AND bi.valor_titulo > 0
+    GROUP BY 
+        SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8)
+        ,bi.nome_sacado 
+        ,l.limite_atribuido
+        ,l.limite_utilizado
+        ,l.limite_disponivel
         """
        
     df_carteira = execute_query(conn, query_carteira)
