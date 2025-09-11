@@ -135,9 +135,11 @@ with DAG(
         application_file = app_estoque_diario_trusted,
         namespace="spark",
         kubernetes_conn_id="kubernetes_default",
-        startup_timeout_seconds=900,
-        retries=10,
-        retry_delay=timedelta(minutes=5),
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
 
@@ -172,8 +174,11 @@ with DAG(
         application_file = app_estoque_diario_refined,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
-        startup_timeout_seconds=600
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
     recompra_refined_task = PythonOperator(
@@ -199,8 +204,11 @@ with DAG(
         application_file = app_consolid_hemera,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
-        startup_timeout_seconds=600
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
 
