@@ -63,415 +63,438 @@ def rating_mais_recente(access_params=None,  **kwargs):
 """
     propostas = execute_query(conn, query_propostas)
 
-    # Fazendo inner join do cnpj_raiz da tabela de Propostas com a Query 2
+    cnpjs = propostas['cnpj_raiz'].unique()
+    ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
+    ids_query = f"({ids_query})"
+
     query_serasa_2 = f"""
-            WITH 
-                propostas_com_cnpjs AS (
-                    SELECT DISTINCT 
-                        SUBSTR(LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0'), 1, 8) AS cnpj_raiz
-                    FROM deltalaketrusted.jira.propostas p
-                ),
-            
-                base_data AS (
-                    SELECT 
-                        re.id AS id,
-                        re.created_date AS data_consulta,
-                        rc.json_content,
-                        SUBSTRING(last_re.value,1,8) AS cnpj_raiz,
-                        re.reports_id
-                    FROM 
-                        postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.report_content rc ON rc.id = re.content_id
-                        INNER JOIN (
-                            SELECT 
-                                MIN(re.id) AS re_id,
-                                rc.json_content,
-                                pi2.value,
-                                ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content DESC) AS rn
-                            FROM postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
-                                INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd 
-                                    ON rd.id = re.definition_id AND rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
-                                INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.report_content rc 
-                                    ON rc.id = re.content_id
-                                INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri 
-                                    ON ri.report_execution_id = re.id
-                                INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 
-                                    ON pi2.party_id = ri.party_id
-                            WHERE re.resolution = 'DONE'
-                                AND SUBSTRING(pi2.value,1,8) IN (SELECT cnpj_raiz FROM propostas_com_cnpjs)
-                            GROUP BY rc.json_content, pi2.value
-                        ) last_re ON last_re.re_id = re.id AND rn = 1
-                ),
-            
-                tipo_pendencia(tipo, descricao) AS (
-                    VALUES 
-                        ('PEFIN', 'PEFIN'),
-                        ('REFIN', 'REFIN'),
-                        ('COLLECTION_RECORDS', 'DIVIDA VENCIDA'),
-                        ('CHECK', 'CHEQUE'),
-                        ('NOTARY', 'PROTESTO'),
-                        ('BANKRUPTSPATICIPATION', 'FALENCIA'),
-                        ('JUDGEMENTFILINGS', 'ACAO JUDICIAL')
-                ),
-            
-                restritivos_pj AS (
-                    SELECT DISTINCT
-                        bd.id,
-                        CAST(bd.data_consulta AS DATE) AS data_consulta,
-                        bd.cnpj_raiz,
-                        tp.descricao AS grupo_ocorrencia,
-                        s.count AS quantidade_ocorrencia,
-                        s.first_occurrence AS ano_mes_primeiro,
-                        s.last_occurrence AS ano_mes_ultimo,
-                        COALESCE(s.balance, 0) AS valor_total
-                    FROM tipo_pendencia tp 
-                        INNER JOIN base_data bd ON TRUE
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.reports rs ON rs.id = bd.reports_id
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.report r ON rs.id = r.reports_id
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.negative_data nd ON nd.id = r.negative_data_id
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.negative_data_item ndi 
-                            ON ndi.id IN (
-                                nd.pefin_id, 
-                                nd.refin_id, 
-                                nd.collection_records_id, 
-                                nd.check_id,
-                                nd.notary_id
-                            ) AND ndi."_object_type" = tp.tipo
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.facts f ON f.id = r.facts_id
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.bankrupts b ON b.id = f.bankrupts_id AND tp.tipo = 'BANKRUPTSPATICIPATION'
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.judgement_filings jf ON jf.id = f.judgement_filings_id AND tp.tipo = 'JUDGEMENTFILINGS'
-                        LEFT JOIN postgres.exrp_{Variable.get('STAGE')}_default.summary s ON s.id IN (ndi.summary_id, b.summary_id, jf.summary_id)
-                ),
-            
-                total_restritivos_pj AS (
-                    SELECT 
-                        t1.id,
-                        t1.data_consulta,
-                        t1.cnpj_raiz,
-                        SUM(valor_total) AS "TOTAL RESTRITIVOS"
-                    FROM restritivos_pj t1
-                    GROUP BY t1.id, t1.data_consulta, t1.cnpj_raiz
-                ),
-            
-                qtde_cheque_pj AS (
-                    SELECT 
-                        rpj.id,
-                        COALESCE(rpj.quantidade_ocorrencia, 0) AS "QTD CHEQUE"
-                    FROM restritivos_pj rpj
-                    WHERE grupo_ocorrencia = 'CHEQUE'
-                ),
-            
-                restritivos_socios AS (
-                    SELECT 
-                        bd.id,
-                        p.id AS partner_id,
-                        p.kind_person,
-                        p.document,
-                        p.document_branch,
-                        p.document_digit,
-                        CASE 
-                            WHEN d.debt_type = 'BANKRUPTSPATICIPATION' THEN 'FALENCIA'
-                            WHEN d.debt_type = 'CHECKCCF' THEN 'CHEQUE'
-                            WHEN d.debt_type = 'COLLECTIONRECORDS' THEN 'DIVIDA VENCIDA'
-                            WHEN d.debt_type = 'FINANCIAL' THEN 'REFIN'
-                            WHEN d.debt_type = 'JUDGEMENTFILINGS' THEN 'ACAO JUDICIAL'
-                            WHEN d.debt_type = 'MARKET' THEN 'PEFIN'
-                            WHEN d.debt_type = 'NOTARY' THEN 'PROTESTO'
-                        END AS grupo_ocorrencia,
-                        s.count AS quantidade_ocorrencia,
-                        s.last_occurrence AS ano_mes_ultimo,
-                        COALESCE(s.balance, 0) AS valor_total
-                    FROM base_data bd
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.reports rs ON rs.id = bd.reports_id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 ON of2.id = rs.optional_features_id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr ON qcr.id = of2.qsa_complete_report_id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.person p ON p.qsa_complete_report_id = qcr.id AND p."_object_type" = 'PARTNER'
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.debt d ON d.person_id = p.id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.summary s ON s.id = d.summary_id
-                ),
-            
-                qtde_cheque_pf AS (
-                    SELECT 
-                        rs.id,
-                        COALESCE(SUM(rs.quantidade_ocorrencia), 0) AS "CHEQUE PF"
-                    FROM restritivos_socios rs
-                    WHERE grupo_ocorrencia = 'CHEQUE'
-                    GROUP BY rs.id
-                ),
-            
-                total_restritivos_socio AS (
-                    SELECT 
-                        t1.id,
-                        SUM(valor_total) AS "RESTRITIVOS PF"
-                    FROM restritivos_socios t1
-                    GROUP BY t1.id
-                ),
-            
-                score_pj AS (
-                    SELECT 
-                        bd.id,
-                        s.score AS "Score Positivo PJ",
-                        CASE 
-                            WHEN s.message = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' THEN 1 
-                            ELSE 0 
-                        END AS grande_empresa
-                    FROM base_data bd
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.reports rs ON rs.id = bd.reports_id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 ON of2.id = rs.optional_features_id
-                        INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.score s ON s.id = of2.id
-                ),
-            
-                RankedSocios AS (
-                    SELECT 
-                        id,
-                        documento_socio,
-                        percentual_capital,
-                        ROW_NUMBER() OVER (PARTITION BY id ORDER BY percentual_capital DESC, documento_socio) AS rn
-                    FROM (
-                        SELECT 
-                            bd.id,
-                            CASE 
-                                WHEN p.kind_person = 'J' THEN p.document || p.document_branch || p.document_digit
-                                ELSE p.document || p.document_digit
-                            END AS documento_socio,
-                            p.percentage_capital AS percentual_capital
-                        FROM base_data bd
-                            INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.reports rs ON rs.id = bd.reports_id
-                            INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 ON of2.id = rs.optional_features_id
-                            INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr ON qcr.id = of2.qsa_complete_report_id
-                            INNER JOIN postgres.exrp_{Variable.get('STAGE')}_default.person p ON p.qsa_complete_report_id = qcr.id AND p."_object_type" = 'PARTNER'
-                    ) t1
+            with base_data as (
+                select 
+                    re.id id
+                    ,re.created_date data_consulta
+                    ,rc.json_content
+                    ,substring(last_re.value,1,8) cnpj_raiz 
+                    ,re.reports_id
+                from 
+                    postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                    inner join (
+                        select 
+                            min(re.id) re_id
+                            ,rc.json_content
+                            ,pi2.value
+                            ,ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content desc) AS rn
+                        from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
+                        where
+                            re.resolution = 'DONE'
+                            and substring(pi2.value,1,8) in {ids_query}
+                        group by  
+                            rc.json_content
+                            ,pi2.value
+                    )last_re on last_re.re_id = re.id 
+                    --and rn=1	
+            )
+            ,restritivos_pj as (
+                with tipo_pendencia(tipo, descricao) as (
+                values 
+                    ('PEFIN', 'PEFIN')
+                    ,('REFIN', 'REFIN')
+                    ,('COLLECTION_RECORDS', 'DIVIDA VENCIDA')
+                    ,('CHECK', 'CHEQUE')
+                    ,('NOTARY', 'PROTESTO')
+                    ,('BANKRUPTSPATICIPATION', 'FALENCIA')
+                    ,('JUDGEMENTFILINGS', 'ACAO JUDICIAL')
                 )
-            
-            SELECT 
+                select distinct
+                    bd.id
+                    ,cast(bd.data_consulta as date) data_consulta
+                    ,bd.cnpj_raiz
+                    ,tp.descricao grupo_ocorrencia
+                    ,s.count quantidade_ocorrencia
+                    ,s.first_occurrence ano_mes_primeiro
+                    ,s.last_occurrence ano_mes_ultimo
+                    ,coalesce(s.balance, 0) valor_total
+                from tipo_pendencia tp 
+                    inner join base_data bd on true
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.report r on rs.id = r.reports_id
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data nd on nd.id = r.negative_data_id
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data_item ndi on ndi.id in (
+                            nd.pefin_id, 
+                            nd.refin_id, 
+                            nd.collection_records_id, 
+                            nd.check_id,
+                            nd.notary_id)
+                            and ndi."_object_type" = tp.tipo
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.facts f on f.id = r.facts_id
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.bankrupts b on b.id = f.bankrupts_id and tp.tipo = 'BANKRUPTSPATICIPATION'
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.judgement_filings jf on jf.id = f.judgement_filings_id and tp.tipo = 'JUDGEMENTFILINGS'
+                    left join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id in (ndi.summary_id, b.summary_id, jf.summary_id)
+            )
+            ,total_restritivos_pj as (
+                select 
+                    t1.id as id,
+                    t1.data_consulta,
+                    t1.cnpj_raiz,
+                    sum(valor_total) as "TOTAL RESTRITIVOS"
+                from restritivos_pj t1
+                group by
+                    t1.id,
+                    t1.data_consulta,
+                    t1.cnpj_raiz
+            )
+            ,qtde_cheque_pj as (
+                select 
+                    rpj.id
+                    ,coalesce(rpj.quantidade_ocorrencia,0) "QTD CHEQUE"
+                from restritivos_pj rpj
+                where grupo_ocorrencia = 'CHEQUE'
+            )
+            ,restritivos_socios as (
+                select 
+                    bd.id
+                    ,p.id partner_id
+                    ,p.kind_person
+                    ,p.document
+                    ,p.document_branch
+                    ,document_digit
+                    ,case 
+                        when d.debt_type = 'BANKRUPTSPATICIPATION' then 'FALENCIA'
+                        when d.debt_type = 'CHECKCCF' then 'CHEQUE'
+                        when d.debt_type = 'COLLECTIONRECORDS' then 'DIVIDA VENCIDA' --Parece retornar apenas a última
+                        when d.debt_type = 'FINANCIAL' then 'REFIN'
+                        when d.debt_type = 'JUDGEMENTFILINGS' then 'ACAO JUDICIAL'
+                        when d.debt_type = 'MARKET' then 'PEFIN'
+                        when d.debt_type = 'NOTARY' then 'PROTESTO'
+                    end as grupo_ocorrencia
+                    ,s.count quantidade_ocorrencia
+                    ,s.last_occurrence ano_mes_ultimo
+                    ,coalesce(s.balance, 0) valor_total
+                from base_data bd
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.debt d on d.person_id = p.id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id = d.summary_id
+            )
+            ,qtde_cheque_pf as (
+                select 
+                    rs.id
+                    ,coalesce(sum(rs.quantidade_ocorrencia),0) "CHEQUE PF"
+                from restritivos_socios rs
+                where grupo_ocorrencia = 'CHEQUE'
+                group by rs.id
+            )
+            ,total_restritivos_socio as (
+                select 
+                    t1.id as id,
+                    sum(valor_total) as "RESTRITIVOS PF"
+                from restritivos_socios t1
+                group by
+                    t1.id
+            )
+            ,score_pj as (
+                select 
+                    bd.id
+                    ,s.score "Score Positivo PJ"
+                    ,case when s.message  = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' then 1 else 0 end as grande_empresa
+                from base_data bd
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.id
+            )
+            ,consulta_mais_recente AS (
+                select 
+                bd.id
+                ,bd.cnpj_raiz
+                ,date(bd.data_consulta) as consulta_mais_recente 
+                from base_data	bd
+            )
+            ,RankedSocios AS (
+                select
+                    id
+                    ,documento_socio
+                    ,percentual_capital
+                    ,ROW_NUMBER() OVER (PARTITION BY id ORDER BY percentual_capital DESC, documento_socio) AS rn
+                from (
+                    select 
+                        bd.id
+                        ,case 
+                            when p.kind_person = 'J' then p.document || p.document_branch || p.document_digit
+                            else p.document || p.document_digit
+                        end documento_socio
+                        ,p.percentage_capital percentual_capital
+                    from base_data bd
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
+                        inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
+                )t1
+            )
+            select 
                 trp.id,
                 trp.data_consulta,
                 trp.cnpj_raiz,
                 score."Score Positivo PJ",
                 score.grande_empresa,
-                COALESCE(trp."TOTAL RESTRITIVOS", 0) AS "TOTAL RESTRITIVOS",
-                COALESCE(cpj."QTD CHEQUE", 0) AS "QTD CHEQUE",
-                COALESCE(cpf."CHEQUE PF", 0) AS "CHEQUE PF",
-                COALESCE(trs."RESTRITIVOS PF", 0) AS "RESTRITIVOS PF",
-                rs.documento_socio AS "CPF do Principal Socio"
-            FROM total_restritivos_pj trp
-                LEFT JOIN qtde_cheque_pj cpj ON trp.id = cpj.id
-                LEFT JOIN qtde_cheque_pf cpf ON trp.id = cpf.id
-                LEFT JOIN total_restritivos_socio trs ON trp.id = trs.id
-                LEFT JOIN score_pj score ON trp.id = score.id
-                LEFT JOIN RankedSocios rs ON trp.id = rs.id AND rs.rn = 1
-"""
+                coalesce(trp."TOTAL RESTRITIVOS", 0) as "TOTAL RESTRITIVOS",
+                coalesce(cpj."QTD CHEQUE", 0) as "QTD CHEQUE",
+                coalesce(cpf."CHEQUE PF", 0) as "CHEQUE PF",
+                coalesce(trs."RESTRITIVOS PF", 0) as "RESTRITIVOS PF",
+                rs.documento_socio as "CPF do Principal Socio"
+            from total_restritivos_pj trp
+                left join qtde_cheque_pj cpj on trp.id = cpj.id
+                left join qtde_cheque_pf cpf on trp.id = cpf.id
+                left join total_restritivos_socio trs on trp.id = trs.id
+                left join score_pj score on trp.id = score.id
+                --inner join consulta_mais_recente cmr on trp.cnpj_raiz = cmr.cnpj_raiz and trp.data_consulta = cmr.consulta_mais_recente
+                left join RankedSocios rs ON trp.id = rs.id 
+                and rs.rn = 1
+                    """
     serasa2 = execute_query(conn, query_serasa_2)
     
     print(f"Quantidade de CNPJs que retornou da base_retorno_serasa2: {serasa2.shape[0]}")
 
-    # Fazendo inner join do cnpj_raiz da tabela de Propostas com a Query 1
+    cnpjs = propostas['cnpj_raiz'].unique()
+    ids_query_2 = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
+    ids_query_2 = f"({ids_query_2})"
+
     query_serasa_1 = f"""
-            WITH 
-                propostas_com_cnpjs AS (
-                    SELECT DISTINCT 
-                        SUBSTR(LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0'), 1, 8) AS cnpj_raiz
-                    FROM deltalaketrusted.jira.propostas p
+            with 
+                    total_restritivos_pj as (
+            select 
+                t1.org_id as id,
+                t1.data_consulta,
+                t1.cnpj_raiz,
+                sum(valor_total) as "TOTAL RESTRITIVOS"
+            from (
+                select distinct
+                    org.id org_id,
+                    date(split_part(org.data_hora_consulta, ' ', 1)) AS data_consulta,
+                    org.cnpj_raiz,
+                    remp.id,
+                    remp.grupo_ocorrencia,
+                    remp.quantidade_ocorrencia,
+                    remp.ano_mes_primeiro,
+                    remp.ano_mes_ultimo,
+                    remp.moeda,
+                    remp.codigo_natureza,
+                    remp.fonte,
+                    remp.titular_pendencia,
+                    coalesce(remp.valor_total, 0) as valor_total
+                from
+                    deltalaketrusted.serasa.organizacoes org
+                left join deltalaketrusted.serasa.resumo_restritivo remp
+                    on
+                    remp.id = org.id
+                    and remp.titular_pendencia = CONCAT('0',
+                    org.cnpj_raiz)
+                where
+                    org.cnpj_raiz in {ids_query_2}
+            )t1
+            group by
+                t1.org_id,
+                t1.data_consulta,
+                t1.cnpj_raiz
+                )
+                ,
+                    qtde_cheque_pj as (
+            select 
+                t1.org_id as id,
+                sum(t1."QTD CHEQUE") as "QTD CHEQUE"
+            from (
+                select distinct
+                    org.id org_id,
+                    org.cnpj_raiz,
+                    remp.id,
+                    remp.grupo_ocorrencia,
+                    remp.quantidade_ocorrencia,
+                    remp.ano_mes_primeiro,
+                    remp.ano_mes_ultimo,
+                    remp.moeda,
+                    remp.codigo_natureza,
+                    remp.fonte,
+                    remp.titular_pendencia,
+                    coalesce(remp.quantidade_ocorrencia, 0) as "QTD CHEQUE"
+                from
+                    deltalaketrusted.serasa.organizacoes org
+                left join deltalaketrusted.serasa.resumo_restritivo remp
+                    on
+                    remp.id = org.id
+                    and remp.titular_pendencia = CONCAT('0',
+                    org.cnpj_raiz)
+                where
+                    org.cnpj_raiz in {ids_query_2}
+                    and remp.grupo_ocorrencia = 'CHEQUE'
+                ) t1
+            group by
+                t1.org_id
+                )
+                ,
+                    qtde_cheque_pf as (
+            select 
+                t1.org_id as id,
+                sum(t1."CHEQUE PF") as "CHEQUE PF"
+            from (
+                select distinct
+                    socios.id org_id,
+                    rsocio.id,
+                    rsocio.grupo_ocorrencia,
+                    rsocio.quantidade_ocorrencia,
+                    rsocio.ano_mes_primeiro,
+                    rsocio.ano_mes_ultimo,
+                    rsocio.moeda,
+                    rsocio.codigo_natureza,
+                    rsocio.fonte,
+                    rsocio.titular_pendencia,
+                    coalesce(rsocio.quantidade_ocorrencia, 0) as "CHEQUE PF"
+                from
+                    deltalaketrusted.serasa.socios socios
+                left join deltalaketrusted.serasa.resumo_restritivo rsocio
+                    on
+                    rsocio.id = socios.id
+                    and rsocio.titular_pendencia = socios.documento_socio
+                where
+                    rsocio.grupo_ocorrencia = 'CHEQUE') t1
+            group by
+                t1.org_id
+                )
+                ,
+                    total_restritivos_socio as (
+            select 
+                t1.org_id as id,
+                sum(valor_total) as "RESTRITIVOS PF"
+            from (
+                select distinct
+                    socios.id org_id,
+                    rsocio.id,
+                    rsocio.grupo_ocorrencia,
+                    rsocio.quantidade_ocorrencia,
+                    rsocio.ano_mes_primeiro,
+                    rsocio.ano_mes_ultimo,
+                    rsocio.moeda,
+                    rsocio.codigo_natureza,
+                    rsocio.fonte,
+                    rsocio.titular_pendencia,
+                    coalesce(rsocio.valor_total, 0) as valor_total
+                from
+                    deltalaketrusted.serasa.socios socios
+                left join deltalaketrusted.serasa.resumo_restritivo rsocio
+                    on
+                    rsocio.id = socios.id
+                    and rsocio.titular_pendencia = socios.documento_socio
+            )t1
+            group by
+                t1.org_id
+                )
+                ,
+                    score_pj as (
+                select 
+                    sc.id, sc.valor_score as "Score Positivo PJ",
+                    case when sc.probabilidade_inadimplencia_mensagem  = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' then 1 else 0 end as grande_empresa
+                from
+                    deltalaketrusted.serasa.score sc
                 ),
-            
-                total_restritivos_pj AS (
-                    SELECT 
-                        t1.org_id AS id,
-                        t1.data_consulta,
-                        t1.cnpj_raiz,
-                        SUM(valor_total) AS "TOTAL RESTRITIVOS"
-                    FROM (
-                        SELECT DISTINCT
-                            org.id AS org_id,
-                            DATE(SPLIT_PART(org.data_hora_consulta, ' ', 1)) AS data_consulta,
-                            org.cnpj_raiz,
-                            remp.id,
-                            remp.grupo_ocorrencia,
-                            remp.quantidade_ocorrencia,
-                            remp.ano_mes_primeiro,
-                            remp.ano_mes_ultimo,
-                            remp.moeda,
-                            remp.codigo_natureza,
-                            remp.fonte,
-                            remp.titular_pendencia,
-                            COALESCE(remp.valor_total, 0) AS valor_total
-                        FROM deltalaketrusted.serasa.organizacoes org
-                        LEFT JOIN deltalaketrusted.serasa.resumo_restritivo remp
-                            ON remp.id = org.id
-                            AND remp.titular_pendencia = CONCAT('0', org.cnpj_raiz)
-                        INNER JOIN propostas_com_cnpjs pc ON org.cnpj_raiz = pc.cnpj_raiz
-                    ) t1
-                    GROUP BY
-                        t1.org_id,
-                        t1.data_consulta,
-                        t1.cnpj_raiz
+                    consulta_mais_recente AS (
+                select
+                    org.cnpj_raiz,
+                    MAX(date(split_part(org.data_hora_consulta, ' ', 1))) AS consulta_mais_recente
+                from 
+                    deltalaketrusted.serasa.organizacoes org 
+                where 
+                    org.cnpj_raiz in {ids_query_2}
+                group by
+                    org.cnpj_raiz
                 ),
-            
-                qtde_cheque_pj AS (
-                    SELECT 
-                        t1.org_id AS id,
-                        SUM(t1."QTD CHEQUE") AS "QTD CHEQUE"
-                    FROM (
-                        SELECT DISTINCT
-                            org.id AS org_id,
-                            org.cnpj_raiz,
-                            remp.id,
-                            remp.grupo_ocorrencia,
-                            remp.quantidade_ocorrencia,
-                            remp.ano_mes_primeiro,
-                            remp.ano_mes_ultimo,
-                            remp.moeda,
-                            remp.codigo_natureza,
-                            remp.fonte,
-                            remp.titular_pendencia,
-                            COALESCE(remp.quantidade_ocorrencia, 0) AS "QTD CHEQUE"
-                        FROM deltalaketrusted.serasa.organizacoes org
-                        LEFT JOIN deltalaketrusted.serasa.resumo_restritivo remp
-                            ON remp.id = org.id
-                            AND remp.titular_pendencia = CONCAT('0', org.cnpj_raiz)
-                        INNER JOIN propostas_com_cnpjs pc ON org.cnpj_raiz = pc.cnpj_raiz
-                        WHERE remp.grupo_ocorrencia = 'CHEQUE'
-                    ) t1
-                    GROUP BY
-                        t1.org_id
-                ),
-            
-                qtde_cheque_pf AS (
-                    SELECT 
-                        t1.org_id AS id,
-                        SUM(t1."CHEQUE PF") AS "CHEQUE PF"
-                    FROM (
-                        SELECT DISTINCT
-                            socios.id AS org_id,
-                            rsocio.id,
-                            rsocio.grupo_ocorrencia,
-                            rsocio.quantidade_ocorrencia,
-                            rsocio.ano_mes_primeiro,
-                            rsocio.ano_mes_ultimo,
-                            rsocio.moeda,
-                            rsocio.codigo_natureza,
-                            rsocio.fonte,
-                            rsocio.titular_pendencia,
-                            COALESCE(rsocio.quantidade_ocorrencia, 0) AS "CHEQUE PF"
-                        FROM deltalaketrusted.serasa.socios socios
-                        LEFT JOIN deltalaketrusted.serasa.resumo_restritivo rsocio
-                            ON rsocio.id = socios.id
-                            AND rsocio.titular_pendencia = socios.documento_socio
-                        INNER JOIN deltalaketrusted.serasa.organizacoes org
-                            ON socios.id = org.id
-                        INNER JOIN propostas_com_cnpjs pc 
-                            ON org.cnpj_raiz = pc.cnpj_raiz
-                        WHERE rsocio.grupo_ocorrencia = 'CHEQUE'
-                    ) t1
-                    GROUP BY t1.org_id
-                ),
-            
-                total_restritivos_socio AS (
-                    SELECT 
-                        t1.org_id AS id,
-                        SUM(valor_total) AS "RESTRITIVOS PF"
-                    FROM (
-                        SELECT DISTINCT
-                            socios.id AS org_id,
-                            rsocio.id,
-                            rsocio.grupo_ocorrencia,
-                            rsocio.quantidade_ocorrencia,
-                            rsocio.ano_mes_primeiro,
-                            rsocio.ano_mes_ultimo,
-                            rsocio.moeda,
-                            rsocio.codigo_natureza,
-                            rsocio.fonte,
-                            rsocio.titular_pendencia,
-                            COALESCE(rsocio.valor_total, 0) AS valor_total
-                        FROM deltalaketrusted.serasa.socios socios
-                        LEFT JOIN deltalaketrusted.serasa.resumo_restritivo rsocio
-                            ON rsocio.id = socios.id
-                            AND rsocio.titular_pendencia = socios.documento_socio
-                        INNER JOIN deltalaketrusted.serasa.organizacoes org
-                            ON socios.id = org.id
-                        INNER JOIN propostas_com_cnpjs pc
-                            ON org.cnpj_raiz = pc.cnpj_raiz
-                    ) t1
-                    GROUP BY t1.org_id
-                ),
-            
-                score_pj AS (
-                    SELECT 
-                        sc.id, 
-                        sc.valor_score AS "Score Positivo PJ",
-                        CASE 
-                            WHEN sc.probabilidade_inadimplencia_mensagem = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' 
-                            THEN 1 ELSE 0 
-                        END AS grande_empresa
-                    FROM deltalaketrusted.serasa.score sc
-                ),
-            
-                consulta_mais_recente AS (
-                    SELECT
-                        org.cnpj_raiz,
-                        MAX(DATE(SPLIT_PART(org.data_hora_consulta, ' ', 1))) AS consulta_mais_recente
-                    FROM deltalaketrusted.serasa.organizacoes org
-                    INNER JOIN propostas_com_cnpjs pc ON org.cnpj_raiz = pc.cnpj_raiz
-                    GROUP BY org.cnpj_raiz
-                ),
-            
                 RankedSocios AS (
                     SELECT 
                         org.id, 
                         so.documento_socio, 
                         so.percentual_capital,
                         ROW_NUMBER() OVER (PARTITION BY org.id ORDER BY so.percentual_capital DESC, so.documento_socio) AS rn
-                    FROM deltalaketrusted.serasa.organizacoes org
-                    LEFT JOIN deltalaketrusted.serasa.socios so ON org.id = so.id
-                    INNER JOIN propostas_com_cnpjs pc ON org.cnpj_raiz = pc.cnpj_raiz
+                    FROM 
+                        deltalaketrusted.serasa.organizacoes org
+                    LEFT JOIN 
+                        deltalaketrusted.serasa.socios so ON org.id = so.id
+                    where 
+                        org.cnpj_raiz in {ids_query_2}
                 )
-            
-            SELECT 
-                trp.id,
-                trp.data_consulta,
-                trp.cnpj_raiz,
-                score."Score Positivo PJ",
-                score.grande_empresa,
-                COALESCE(trp."TOTAL RESTRITIVOS", 0) AS "TOTAL RESTRITIVOS",
-                COALESCE(cpj."QTD CHEQUE", 0) AS "QTD CHEQUE",
-                COALESCE(cpf."CHEQUE PF", 0) AS "CHEQUE PF",
-                COALESCE(trs."RESTRITIVOS PF", 0) AS "RESTRITIVOS PF",
-                rs.documento_socio AS "CPF do Principal Socio"
-            FROM total_restritivos_pj trp
-            LEFT JOIN qtde_cheque_pj cpj ON trp.id = cpj.id
-            LEFT JOIN qtde_cheque_pf cpf ON trp.id = cpf.id
-            LEFT JOIN total_restritivos_socio trs ON trp.id = trs.id
-            LEFT JOIN score_pj score ON trp.id = score.id
-            LEFT JOIN RankedSocios rs ON trp.id = rs.id
-            WHERE rs.rn = 1
+                select 
+                    trp.id,
+                    trp.data_consulta,
+                    trp.cnpj_raiz,
+                    score."Score Positivo PJ",
+                    score.grande_empresa,
+                    coalesce(trp."TOTAL RESTRITIVOS", 0) as "TOTAL RESTRITIVOS",
+                    coalesce(cpj."QTD CHEQUE", 0) as "QTD CHEQUE",
+                    coalesce(cpf."CHEQUE PF", 0) as "CHEQUE PF",
+                    coalesce(trs."RESTRITIVOS PF", 0) as "RESTRITIVOS PF",
+                    rs.documento_socio as "CPF do Principal Socio"
+                from 
+                    total_restritivos_pj trp
+                left join 
+                    qtde_cheque_pj cpj
+                    on trp.id = cpj.id
+                left join 
+                    qtde_cheque_pf cpf
+                    on trp.id = cpf.id
+                left join 
+                    total_restritivos_socio trs 
+                    on trp.id = trs.id
+                left join 
+                    score_pj score
+                    on trp.id = score.id
+                left join 
+                    RankedSocios rs ON trp.id = rs.id
+                where 
+                rs.rn = 1
 """
     serasa1 = execute_query(conn, query_serasa_1)
     
     print(f"Quantidade de CNPJs que retornou da base_retorno_serasa1: {serasa1.shape[0]}")
 
-    # Concatenando dataframes da Query 1 e Query 2 do Serasa
+    # 1: Concatenando os DataFrames das Queries do Serasa
     base_score_consolidado = pd.concat([serasa1, serasa2])
-    
-    # Ordenar por data (mais antiga primeiro) e pegar a primeira linha por cnpj_raiz
-    base_score_consolidado = base_score_consolidado.sort_values(['cnpj_raiz', 'data_consulta'], ascending=[True, False])
-    base_score_consolidado = base_score_consolidado.drop_duplicates(subset=['cnpj_raiz'], keep='first')
-    
-    # Converte para datetime
+
+    # Converte as colunas de data para o tipo datetime
     base_score_consolidado['data_consulta'] = pd.to_datetime(base_score_consolidado['data_consulta'])
-    
-    # Garantir que as datas estejam no formato datetime
     propostas['data_resolvido'] = pd.to_datetime(propostas['data_resolvido'])
     propostas['data_criado'] = pd.to_datetime(propostas['data_criado'])
-    
-    # Cruzando Propostas com Base Score Consolidada (Query 1 e Query 2)
-    propostas_com_score = pd.merge(propostas, base_score_consolidado, on ='cnpj_raiz', how='left')
-    
-    print(f"Quantidade de linhas df_propostas: {propostas.shape[0]}")
-    print(f"Quantidade de linhas após cruzamento: {propostas_com_score.shape[0]}")
+
+    # 2: Cruza as propostas com TODAS as consultas do Serasa
+    propostas_com_serasa = pd.merge(propostas, base_score_consolidado, on='cnpj_raiz', how='left')
+
+    print(f"Quantidade de linhas propostas: {propostas.shape[0]}")
+    print(f"Quantidade de linhas após cruzamento inicial: {propostas_com_serasa.shape[0]}")
+
+    # 3: Filtra as consultas que ocorreram na data ou antes da aprovação da proposta
+    propostas_com_serasa_filtrado = propostas_com_serasa[
+        propostas_com_serasa['data_consulta'] <= propostas_com_serasa['data_resolvido']
+    ]
+
+    # 4: Para cada cnpj_raiz, pega a linha com a data de consulta mais recente de acordo a data_resolvido
+    propostas_com_serasa_filtrado = propostas_com_serasa_filtrado.sort_values(
+        ['cnpj_raiz', 'data_consulta'], ascending=[True, False]
+    ).drop_duplicates(
+        subset=['cnpj_raiz'], keep='first'
+    ).reset_index(drop=True)
+
+    # 5: Adiciona de volta as propostas que não tinham nenhuma consulta do Serasa
+    propostas_sem_score = propostas_com_serasa[propostas_com_serasa['data_consulta'].isnull()]
+
+    # 6: Concatena os dois DataFrames para ter o resultado final
+    propostas_com_serasa = pd.concat([propostas_com_serasa_filtrado, propostas_sem_score])
+
+    print(f"Quantidade final de linhas no DataFrame propostas_com_serasa: {propostas_com_serasa.shape[0]}")
 
 
-    # Verificando cnpj_raiz da base df_propostas_com_score e atribuindo na Query de Pontualidade
-    cnpjs = propostas_com_score['cnpj_raiz'].unique()
+    # Verificando cnpj_raiz da base propostas_com_serasa e atribuindo na Query de Pontualidade
+    cnpjs = propostas_com_serasa['cnpj_raiz'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     ids_query = f"({ids_query})"
 
@@ -519,10 +542,10 @@ def rating_mais_recente(access_params=None,  **kwargs):
 
     print(f"Quantidade de CNPJs que retornou da base_pontualidade: {base_pontualidade.shape[0]}")
 
-    # Cruzando df_propostas_com_score com a Base de Pontualidade
-    base_analisar = pd.merge(propostas_com_score, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
+    # Cruzando propostas_com_serasa com a Base de Pontualidade
+    base_analisar = pd.merge(propostas_com_serasa, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
     
-    print(f"Quantidade de linhas df_propostas_com_score: {propostas_com_score.shape[0]}")
+    print(f"Quantidade de linhas propostas_com_serasa: {propostas_com_serasa.shape[0]}")
     print(f"Quantidade de linhas após cruzamento: {base_analisar.shape[0]}")
 
     base_analisar['valor_total_restritivos'] = base_analisar['TOTAL RESTRITIVOS'] + base_analisar['RESTRITIVOS PF']
