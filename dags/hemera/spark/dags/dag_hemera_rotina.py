@@ -136,9 +136,10 @@ with DAG(
         namespace="spark",
         kubernetes_conn_id="kubernetes_default",
         do_xcom_push=True,
-        startup_timeout_seconds=600
+        startup_timeout_seconds=900,
+        retries=10,
+        retry_delay=timedelta(minutes=5),
     )
-
 
 
     recompra_rotina_trusted = PythonOperator(
