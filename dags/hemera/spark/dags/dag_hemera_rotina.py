@@ -136,6 +136,7 @@ with DAG(
         namespace="spark",
         kubernetes_conn_id="kubernetes_default",
         do_xcom_push=True,
+        startup_timeout_seconds=600
     )
 
 
