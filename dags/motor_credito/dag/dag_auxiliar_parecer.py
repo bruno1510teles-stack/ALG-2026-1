@@ -44,14 +44,17 @@ with DAG(
     tags=['auxiliar', 'parecer', 'motor', 'refined'],
     max_active_runs=1
 ) as dag:
+    
+    app_parecer_motor = "/opt/airflow/dags/repo/dags/motor_credito/dag/auxiliar-parecer-spark-app.yaml"
 
     parecer_motor = NoTemplateSparkKubernetesOperator(
         task_id='auxiliar_parecer_motor',
-        application_file='auxiliar-parecer-spark-app.yaml',
+        application_file = app_parecer_motor,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
-        execution_timeout=timedelta(minutes=120)
+        startup_timeout_seconds=900,
+        retries=10,
+        retry_delay=timedelta(minutes=5),
     )
 
     parecer_motor
