@@ -130,13 +130,19 @@ with DAG(
         provide_context=True
     )
     '''
-    
+
+    app_estoque_hist_trusted = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-consolidado-trusted-spark-app.yaml"
+
     estoque_consolid_trusted = NoTemplateSparkKubernetesOperator(
         task_id='estoque_consolidado_trusted',
-        application_file='estoque-consolidado-trusted-spark-app.yaml',
+        application_file = app_estoque_hist_trusted,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
     '''
@@ -164,12 +170,19 @@ with DAG(
         provide_context=True
     )
 
+
+    app_estoque_hist_refined = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-refined-spark-app.yaml"
+
     estoque_refined_task = NoTemplateSparkKubernetesOperator(
         task_id='estoque_refined',
-        application_file='estoque-refined-spark-app.yaml',
+        application_file = app_estoque_hist_refined,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
     recompra_refined_task = PythonOperator(
