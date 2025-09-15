@@ -39,30 +39,32 @@ def report_monitoramento (access_params=None):
 
     # Definindo a consulta
     query_tabelas = f"""
-        select mt.camada,
-            mt.schema,
-            mt.tabela,
-            mt.ultima_atualizacao
-        from deltalakerefined.monitoramento.monitoramento_tabelas mt
-        where mt.schema not in (
-            'yandeh', 
-            'antifraude', 
-            'receita_federal',
-            'pessoas_e_organizacoes',
-            'receita_federal_historico',
-            'risco')
-            and DATE(parse_datetime(mt.ultima_atualizacao, 'yyyy-MM-dd HH:mm:ss')) <> CURRENT_DATE
-            and DATE(parse_datetime(mt.atualizado_em, 'yyyy-MM-dd HH:mm:ss')) = DATE '{data_execucao}'
-            and mt.tabela not in ('fat_pag_join',
-            'faturamento_externo_arcelor',
-            'faturamento_externo_arcelor_aux',
-            'retorno_consolidado',
-            'recompra_consolidado',
-            'aquisicao_consolidado',
-            'aquisicao',
-            'pontualidade',
-            'pagamento_externo_arcelor',
-            'propostas_boletos_aux_vop')
+    select mt.camada,
+        mt.schema,
+        mt.tabela,
+        mt.ultima_atualizacao,
+        date_diff('day', DATE(parse_datetime(mt.ultima_atualizacao, 'yyyy-MM-dd HH:mm:ss')), current_date) AS dias_defasados
+    from deltalakerefined.monitoramento.monitoramento_tabelas mt
+    where mt.schema not in (
+        'yandeh', 
+        'antifraude', 
+        'receita_federal',
+        'pessoas_e_organizacoes',
+        'receita_federal_historico',
+        'risco')
+        and DATE(parse_datetime(mt.ultima_atualizacao, 'yyyy-MM-dd HH:mm:ss')) <> CURRENT_DATE
+        and DATE(parse_datetime(mt.atualizado_em, 'yyyy-MM-dd HH:mm:ss')) = DATE '{data_execucao}'
+        and mt.tabela not in ('fat_pag_join',
+        'faturamento_externo_arcelor',
+        'faturamento_externo_arcelor_aux',
+        'retorno_consolidado',
+        'recompra_consolidado',
+        'aquisicao_consolidado',
+        'aquisicao',
+        'pontualidade',
+        'pagamento_externo_arcelor',
+        'propostas_boletos_aux_vop')
+    order by ultima_atualizacao DESC
 
         """
     df_tabelas = execute_query(conn, query_tabelas)
