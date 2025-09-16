@@ -63,7 +63,8 @@ def report_monitoramento (access_params=None):
         'aquisicao',
         'pontualidade',
         'pagamento_externo_arcelor',
-        'propostas_boletos_aux_vop')
+        'propostas_boletos_aux_vop',
+        'pre_filtro')
     order by ultima_atualizacao DESC
 
         """
@@ -72,7 +73,7 @@ def report_monitoramento (access_params=None):
     print(f"Quantidade de tabelas não atualizadas:{df_tabelas.shape[0]}")
 
     if df_tabelas.empty:
-        markdown = f"⚠️ Nenhum resultado encontrado para {data_execucao}"
+        markdown = f"⚠️ Nenhuma tabela desatualizada foi encontrada no reporte monitoramento em {data_execucao}"
     else:
         # Converte DF em tabela formatada
         tabela_formatada = tabulate(
