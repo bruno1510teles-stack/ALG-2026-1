@@ -59,7 +59,7 @@ default_args = {
 with DAG(
     dag_id='report_monitoramento_tabelas',
     start_date=days_ago(1),
-    schedule_interval = '0 12,19 * * 1-5', # Roda às 09:00 BRT (12:00 UTC) e 16:00 BRT (19:00 UTC), de segunda a sexta.
+    schedule_interval = '30 12,19 * * 1-5', # Roda às 09:30 BRT (12:00 UTC) e 16:00 BRT (19:00 UTC), de segunda a sexta.
     default_args=default_args,
     tags=['report', 'monitoramento', 'tabelas'],
     max_active_runs=1
