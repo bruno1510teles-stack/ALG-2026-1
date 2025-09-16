@@ -84,6 +84,7 @@ def faturamento_to_refined(access_params=None,  **kwargs):
                 coalesce(ft.nome_cedente, bol.nome_cedente) as nome_cedente,
                 coalesce(ft.numero_nfe, bol.numero_nfe) as numero_nfe,
                 coalesce(bol.data_efetivacao, ft.data_fatura) as data,
+                ft.data_fatura as data_fatura,
                 coalesce(ft.valor_fatura,0) as valor_fatura,
                 coalesce(ft.valor_fatura_pos_sefaz, 0) as valor_fatura_pos_sefaz,
                 coalesce(ft.valor_fatura_oficial, 0) as valor_fatura_oficial,
