@@ -14,6 +14,7 @@ from boletos.vendermais import boletos_raw_to_trusted
 from boletos.vendermais import boletos_trusted_to_refined_carteira
 from boletos.vendermais import boletos_trusted_to_refined_vop
 from boletos.vendermais import vop_visao_safra
+from boletos.vendermais import acumulada_boletos_vop
 
 from boletos.tradicional import boletos_tradicional_raw_to_trusted
 from boletos.tradicional import boletos_tradicional_trusted_to_refined_carteira
@@ -82,7 +83,15 @@ with DAG(
         task_id='raw_to_trusted',
         python_callable=boletos_raw_to_trusted.boletos_raw_to_trusted,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True 
+    )
+
+    # Definindo o task que processa boletos raw_to_trusted_acum
+    boletos_acum = PythonOperator(
+        task_id = 'raw_to_trusted_acum',
+        python_callable = acumulada_boletos_vop.boletos_raw_to_trusted_acumulada,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True
     )
 
     # Definindo o task que processa boletos raw_to_trusted yandeh
@@ -90,7 +99,7 @@ with DAG(
         task_id='raw_to_trusted_yandeh',
         python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True 
     )
 
     # Definindo o task que processa boletos raw_to_refined yandeh
@@ -98,7 +107,7 @@ with DAG(
         task_id='max_dias_vencidos',
         python_callable=max_dias_vencidos.boletos_trusted_to_refined,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
     # Definindo o task que processa boletos trusted_to_refined_carteira
@@ -106,7 +115,7 @@ with DAG(
         task_id='trusted_to_refined_carteira',
         python_callable=boletos_trusted_to_refined_carteira.boletos_raw_to_refined_carteira,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
     # Definindo o task que processa boletos trusted_to_refined_vop
@@ -114,7 +123,7 @@ with DAG(
         task_id='trusted_to_refined_vop',
         python_callable=boletos_trusted_to_refined_vop.boletos_raw_to_refined_vop,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
     # Definindo o task que processa boletos tradicional raw to trusted
@@ -122,7 +131,7 @@ with DAG(
         task_id = 'raw_to_trusted_tradicional',
         python_callable = boletos_tradicional_raw_to_trusted.boletos_tradicional_raw_to_trusted,
         op_kwargs = {'access_params': access_params},
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+        provide_context = True
     )
 
     # Definindo o task que processa boletos tradicional trusted to refined - carteira
@@ -130,7 +139,7 @@ with DAG(
         task_id = 'trusted_to_refined_tradicional_carteira',
         python_callable = boletos_tradicional_trusted_to_refined_carteira.boletos_tradiconal_trusted_to_refined_carteira,
         op_kwargs = {'access_params': access_params},
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+        provide_context = True
     )
 
     # Definindo o task que processa boletos tradicional trusted to refined - vop
@@ -138,7 +147,7 @@ with DAG(
         task_id = 'trusted_to_refined_tradicional_vop',
         python_callable = boletos_tradicional_trusted_to_refined_vop.boletos_tradicional_trusted_to_refined_vop,
         op_kwargs = {'access_params': access_params},
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+        provide_context = True
     )
 
     # Definindo o task que cria vop_visao_safra
@@ -146,7 +155,7 @@ with DAG(
         task_id = 'vop_visao_safra',
         python_callable = vop_visao_safra.vop_visao_safra,
         op_kwargs = {'access_params': access_params},
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+        provide_context = True
     )
 
     # Definindo o task que cria vop_visao_safra
@@ -154,7 +163,7 @@ with DAG(
         task_id = 'vop_visao_safra_tradicional',
         python_callable = vop_visao_safra_tradicional.vop_visao_safra_tradicional,
         op_kwargs = {'access_params': access_params},
-        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+        provide_context = True
     )
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> raw_to_trusted_yandeh >> max_dias_vencidos_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
+    raw_to_trusted >> boletos_acum >> raw_to_trusted_yandeh >> max_dias_vencidos_yandeh >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task
