@@ -73,13 +73,13 @@ def boletos_raw_to_trusted_acumulada (access_params=None,  **kwargs):
 
     df_acumulado_boletos = pd.concat(bases_acumuladas, ignore_index=True)
 
-    ### DELETANDO COLUNA DATA-REF
+    ### DELETANDO COLUNA ANO_MES
 
-    df_acumulado_boletos = df_acumulado_boletos.drop(columns=["data_ref"])
+    df_acumulado_boletos = df_acumulado_boletos.drop(columns=["ano_mes"])
 
-    ### PRIORIZANDO COLUNA DE ANO MÊS
+    ### PRIORIZANDO COLUNA DE DATA-REF
 
-    colunas = ["ano_mes"] + [c for c in df_acumulado_boletos.columns if c != "ano_mes"]
+    colunas = ["data_ref"] + [c for c in df_acumulado_boletos.columns if c != "data_ref"]
     df_acumulado_boletos = df_acumulado_boletos[colunas]
 
 
