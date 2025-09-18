@@ -70,7 +70,7 @@ def captura_proposta (access_params = None):
 
     # Configurações da API do Jira
     jira_url_base = "https://alpe.atlassian.net"
-    jira_url_search = f"{jira_url_base}/rest/api/3/search"
+    jira_url_search = f"{jira_url_base}/rest/api/3/search/jql"
 
     # Credenciais de acesso
     email = "felipe.ferraz@alpe.com.br"
@@ -96,38 +96,40 @@ def captura_proposta (access_params = None):
     ultimo_dia_util = get_ultimo_dia_util()
 
 
-    # JQL query e parâmetros de paginação
     jql_query = f'project = cmgt AND updated >= "{ultimo_dia_util}"'
-    start_at = 0
     max_results = 100
-    total_issues = 0
     issues_list = []
+    next_token = None  # Inicializa o token como None
 
-    # Paginação para carregar todas as issues
     while True:
         params = {
             "jql": jql_query,
-            "startAt": start_at,
             "maxResults": max_results,
-            "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743",
-                        "customfield_13798", "customfield_13793", "customfield_13811", "customfield_13742", "customfield_13753", "customfield_13721", "priority", "updated"]
+            "fields": ["summary", "status", "assignee", "resolution", "created",
+                    "customfield_13729", "customfield_13739", "resolutiondate",
+                    "customfield_13807", "customfield_13737", "customfield_13709",
+                    "customfield_13743", "customfield_13798", "customfield_13793",
+                    "customfield_13811", "customfield_13742", "customfield_13753",
+                    "customfield_13721", "priority", "updated"]
         }
 
-        # Requisição para API do Jira
-        response = requests.post(jira_url_search, headers=headers, auth=HTTPBasicAuth(email, api_token), data=json.dumps(params))
+        if next_token:  # Se já tiver token da última página
+            params["nextPageToken"] = next_token
 
-        # Verifica se a requisição foi bem-sucedida
+        response = requests.post(jira_url_search, headers=headers,
+                                auth=HTTPBasicAuth(email, api_token),
+                                json=params)  # usar json=params, não data
+
         if response.status_code == 200:
             data = response.json()
-            issues = data['issues']
+            issues = data.get("issues", [])
             issues_list.extend(issues)
-            total_issues += len(issues)
-            print(f"Total de issues carregadas até agora: {total_issues}")
-            
-            if len(issues) == 0:
-                break
-            
-            start_at += max_results
+            print(f"Total de issues carregadas até agora: {len(issues_list)}")
+
+            # Pega o token da próxima página, se houver
+            next_token = data.get("nextPageToken")
+            if not next_token or len(issues) == 0:
+                break  # Sai se não houver próxima página
         else:
             print(f"Erro: {response.status_code}")
             print(response.text)

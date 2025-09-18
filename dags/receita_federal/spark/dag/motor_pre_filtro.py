@@ -44,14 +44,17 @@ with DAG(
     tags=['rotina', 'pre_filtro', 'refined', 'motor'],
     max_active_runs=1
 ) as dag:
+    
+    app_pre_filtro = "/opt/airflow/dags/repo/dags/receita_federal/spark/dag/pre-filtro-v2-spark-app.yaml"
 
     pre_filtro = NoTemplateSparkKubernetesOperator(
         task_id='motor_pre_filtro',
-        application_file='pre-filtro-v2-spark-app.yaml',
+        application_file = app_pre_filtro,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
-        execution_timeout=timedelta(minutes=120)
+        startup_timeout_seconds=900,
+        retries=10,
+        retry_delay=timedelta(minutes=5),
     )
 
     pre_filtro
