@@ -82,7 +82,12 @@ def boletos_raw_to_trusted_acumulada (access_params=None,  **kwargs):
     colunas = ["data_ref"] + [c for c in df_acumulado_boletos.columns if c != "data_ref"]
     df_acumulado_boletos = df_acumulado_boletos[colunas]
 
-    df_acumulado_boletos['data_ref'] = df_acumulado_boletos['data_ref'].dt.to_timestamp()
+
+    df_acumulado_boletos['data_ref'] = (
+        df_acumulado_boletos['data_ref']
+        .dt.to_timestamp(how="end")
+        .dt.date
+    )
 
     ### RESET INDEX
     df_acumulado_boletos = df_acumulado_boletos.reset_index(drop=True)
