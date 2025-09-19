@@ -130,7 +130,7 @@ with DAG(
 
     pre_filtro = SparkKubernetesOperator(
         task_id='pre_filtro',
-        application_file='pre-filtro-spark-app.yaml',
+        application_file='pre-filtro-v2-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -148,4 +148,4 @@ with DAG(
         retry_delay=timedelta(minutes=120) # Ajuste
     )
 
-    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
+    empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> cnae >> pre_filtro >> dados_cadastrais
