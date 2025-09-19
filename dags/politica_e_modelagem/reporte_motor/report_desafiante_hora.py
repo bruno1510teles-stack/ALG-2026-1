@@ -80,7 +80,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
                 faixa_valor_solicitado AS "Faixa Valor Solicitado",
                 COUNT(DISTINCT issue_key) AS "Entrantes",
                 SUM(CASE WHEN categoria_decisor = 'MESA' THEN 1 ELSE 0 END) AS "Derivadas Mesa",
+                SUM(CASE WHEN categoria_decisor NOT IN ('MESA', 'MOTOR') THEN 1 ELSE 0 END) AS "Outros",
                 SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'REPROVADO' THEN 1 ELSE 0 END) AS "Reprovadas Motor",
+                SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'CANCELADO' then 1 else 0 end) as "Canceladas Motor",
                 SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'APROVADO' THEN 1 ELSE 0 END) AS "Aprovadas Motor",
                 SUM(CASE WHEN categoria_decisor = 'MOTOR' AND decisao = 'APROVADO' THEN limite_aprovado ELSE 0 END) AS "Valor Aprovado Motor"
             FROM propostas_com_vop
@@ -95,7 +97,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
             sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
             count(sub.issue_key) as "Entrantes",
             sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Derivadas Mesa",
+            sum(case when sub.categoria_decisor NOT IN ('MESA', 'MOTOR') THEN 1 ELSE 0 END) AS "Outros",
             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
+            sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'CANCELADO' then 1 else 0 end) as "Canceladas Motor",
             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor",
             sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop else 0 end) as "VOP",
@@ -189,7 +193,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
                 sub.faixa_valor_solicitado as "Faixa Valor Solicitado",
                 count(sub.issue_key) as "Entrantes",
                 sum(case when sub.categoria_decisor = 'MESA' then 1 else 0 end) as "Derivadas Mesa",
+                sum(case when sub.categoria_decisor NOT IN ('MESA', 'MOTOR') THEN 1 ELSE 0 END) AS "Outros",
                 sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'REPROVADO' then 1 else 0 end) as "Reprovadas Motor",
+                sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'CANCELADO' then 1 else 0 end) as "Canceladas Motor",
                 sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then 1 else 0 end) as "Aprovadas Motor",
                 sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.limite_aprovado else 0 end) as "Valor Aprovado Motor",
                 sum(case when sub.categoria_decisor = 'MOTOR' and sub.decisao = 'APROVADO' then sub.vop else 0 end) as "VOP",
@@ -318,59 +324,83 @@ def report_motor_desafiante_hora_hora (access_params=None):
     propostas_totais = propostas_desafiante['Entrantes'].sum()
     propostas_mesa = propostas_desafiante['Derivadas Mesa'].sum()
     propostas_reprov_motor = propostas_desafiante['Reprovadas Motor'].sum()
+    propostas_cancel_motor = propostas_desafiante['Canceladas Motor'].sum()
     propostas_aprov_motor = propostas_desafiante['Aprovadas Motor'].sum()
+    propostas_outros = propostas_desafiante['Outros'].sum()
         
     if propostas_totais > 0:
         percent_mesa = (propostas_mesa / propostas_totais) * 100
         percent_reprov_motor = (propostas_reprov_motor / propostas_totais) * 100
+        percent_cancel_motor = (propostas_cancel_motor / propostas_totais) * 100
         percent_aprov_motor = (propostas_aprov_motor / propostas_totais) * 100
+        percent_outros = (propostas_outros / propostas_totais) * 100
     else:
         percent_mesa = 0
         percent_reprov_motor = 0
+        percent_cancel_motor = 0
         percent_aprov_motor = 0
+        percent_outros = 0
         
     print(percent_mesa)
     print(percent_reprov_motor)
+    print(percent_cancel_motor)
     print(percent_aprov_motor)
+    print(percent_outros)
 
     # Cálculos dos percentuais reporte consolidado de propostas
     
     propostas_totais_consolidado = propostas_desafiante_consolidado['Entrantes'].sum()
     propostas_mesa_consolidado = propostas_desafiante_consolidado['Derivadas Mesa'].sum()
     propostas_reprov_motor_consolidado = propostas_desafiante_consolidado['Reprovadas Motor'].sum()
+    propostas_cancel_motor_consolidado = propostas_desafiante_consolidado['Canceladas Motor'].sum()
     propostas_aprov_motor_consolidado = propostas_desafiante_consolidado['Aprovadas Motor'].sum()
+    propostas_outros_consolidado = propostas_desafiante_consolidado['Outros'].sum()
     
     if propostas_totais_consolidado > 0:
         percent_mesa_consolidado = (propostas_mesa_consolidado / propostas_totais_consolidado) * 100
         percent_reprov_motor_consolidado = (propostas_reprov_motor_consolidado / propostas_totais_consolidado) * 100
+        percent_cancel_motor_consolidado = (propostas_cancel_motor_consolidado / propostas_totais_consolidado) * 100
         percent_aprov_motor_consolidado = (propostas_aprov_motor_consolidado / propostas_totais_consolidado) * 100
+        percent_outros_consolidado = (propostas_outros_consolidado / propostas_totais_consolidado) * 100
     else:
         percent_mesa_consolidado = 0
         percent_reprov_motor_consolidado = 0
+        percent_cancel_motor_consolidado = 0
         percent_aprov_motor_consolidado = 0
+        percent_outros_consolidado = 0
     
     print(percent_mesa_consolidado)
     print(percent_reprov_motor_consolidado)
+    print(percent_cancel_motor_consolidado)
     print(percent_aprov_motor_consolidado)
+    print(percent_outros_consolidado)
 
     # Cálculos dos percentuais reporte consolidado de propostas (até 100k)
     propostas_totais_100k = propostas_desafiante_consolidado_100k['Entrantes'].sum()
     propostas_mesa_100k = propostas_desafiante_consolidado_100k['Derivadas Mesa'].sum()
     propostas_reprov_motor_100k = propostas_desafiante_consolidado_100k['Reprovadas Motor'].sum()
+    propostas_cancel_motor_100k = propostas_desafiante_consolidado_100k['Canceladas Motor'].sum()
     propostas_aprov_motor_100k = propostas_desafiante_consolidado_100k['Aprovadas Motor'].sum()
+    propostas_outros_100k = propostas_desafiante_consolidado_100k['Outros'].sum()
     
     if propostas_totais_100k > 0:
         percent_mesa_100k = (propostas_mesa_100k / propostas_totais_100k) * 100
         percent_reprov_motor_100k = (propostas_reprov_motor_100k / propostas_totais_100k) * 100
+        percent_cancel_motor_100k = (propostas_cancel_motor_100k / propostas_totais_100k) * 100
         percent_aprov_motor_100k = (propostas_aprov_motor_100k / propostas_totais_100k) * 100
+        percent_outros_100k = (propostas_outros_100k / propostas_totais_100k) * 100
     else:
         percent_mesa_100k         = 0
         percent_reprov_motor_100k = 0
+        percent_cancel_motor_100k = 0
         percent_aprov_motor_100k  = 0
+        percent_outros_100k = 0
     
     print(percent_mesa_100k)         
-    print(percent_reprov_motor_100k)  
-    print(percent_aprov_motor_100k)   
+    print(percent_reprov_motor_100k)
+    print(percent_cancel_motor_100k)
+    print(percent_aprov_motor_100k)
+    print(percent_outros_100k)   
 
     # Cálculos de quantidade de VOP e Média do Prazo Médio Total
 
@@ -393,7 +423,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
     'Faixa Valor Solicitado': 'Total',
     'Entrantes': propostas_desafiante['Entrantes'].sum(),
     'Derivadas Mesa': propostas_desafiante['Derivadas Mesa'].sum(),
+    'Outros': propostas_desafiante['Outros'].sum(),
     'Reprovadas Motor': propostas_desafiante['Reprovadas Motor'].sum(),
+    'Canceladas Motor': propostas_desafiante['Canceladas Motor'].sum(),
     'Aprovadas Motor': propostas_desafiante['Aprovadas Motor'].sum(),
     'Valor Aprovado Motor': propostas_desafiante ['Valor Aprovado Motor'].sum()
     
@@ -411,7 +443,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
         'Faixa Valor Solicitado': 'Total',
         'Entrantes': propostas_desafiante_consolidado['Entrantes'].sum(),
         'Derivadas Mesa': propostas_desafiante_consolidado['Derivadas Mesa'].sum(),
+        'Outros': propostas_desafiante_consolidado['Outros'].sum(),
         'Reprovadas Motor': propostas_desafiante_consolidado['Reprovadas Motor'].sum(),
+        'Canceladas Motor': propostas_desafiante_consolidado['Canceladas Motor'].sum(),
         'Aprovadas Motor': propostas_desafiante_consolidado['Aprovadas Motor'].sum(),
         'Valor Aprovado Motor': propostas_desafiante_consolidado['Valor Aprovado Motor'].sum(),
         'VOP': propostas_desafiante_consolidado['VOP'].sum(),
@@ -463,7 +497,9 @@ def report_motor_desafiante_hora_hora (access_params=None):
         'Faixa Valor Solicitado': 'Total',
         'Entrantes': propostas_desafiante_consolidado_100k['Entrantes'].sum(),
         'Derivadas Mesa': propostas_desafiante_consolidado_100k['Derivadas Mesa'].sum(),
+        'Outros': propostas_desafiante_consolidado_100k['Outros'].sum(),
         'Reprovadas Motor': propostas_desafiante_consolidado_100k['Reprovadas Motor'].sum(),
+        'Canceladas Motor': propostas_desafiante_consolidado_100k['Canceladas Motor'].sum(),
         'Aprovadas Motor': propostas_desafiante_consolidado_100k['Aprovadas Motor'].sum(),
         'Valor Aprovado Motor': propostas_desafiante_consolidado_100k['Valor Aprovado Motor'].sum(),
         'VOP': propostas_desafiante_consolidado_100k['VOP'].sum(),
@@ -620,27 +656,33 @@ def report_motor_desafiante_hora_hora (access_params=None):
         f"{invisible_space}\n"
         f"📅 Data Referência: {data_execucao}\n\n"
         "---\n"
-        f"🧾 % Derivadas para Mesa: {percent_mesa:.2f}%  \n"
-        f"✅ % Aprovadas Motor: {percent_aprov_motor:.2f}%  \n"
-        f"❌ % Reprovadas Motor: {percent_reprov_motor:.2f}%  \n\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa:.2f}% \n\n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor:.2f}% \n\n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor:.2f}% \n\n"
+        f"🚫 % Canceladas Motor: {percent_cancel_motor:.2f}% \n\n"
+        f"🧩 % Outros: {percent_outros:.2f}% \n\n"
         "```\n" + tabela_formatada_1 + "\n```\n"
         "---\n"
         f"{invisible_space}\n"
         "---\n"
         "📊 Resumo Consolidado\n\n"
          "---\n"
-        f"🧾 % Derivadas para Mesa: {percent_mesa_consolidado:.2f}%  \n"
-        f"✅ % Aprovadas Motor: {percent_aprov_motor_consolidado:.2f}%  \n"
-        f"❌ % Reprovadas Motor: {percent_reprov_motor_consolidado:.2f}%  \n\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa_consolidado:.2f}% \n\n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor_consolidado:.2f}% \n\n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor_consolidado:.2f}% \n\n"
+        f"🚫 % Canceladas Motor: {percent_cancel_motor_consolidado:.2f}% \n\n"
+        f"🧩 % Outros: {percent_outros_consolidado:.2f}% \n\n"
         "```\n" + tabela_formatada_2 + "\n```\n"
         "---\n"
         f"{invisible_space}\n"
         "---\n"
         "📊 Resumo Até 100k\n\n"
         "---\n"
-        f"🧾 % Derivadas para Mesa: {percent_mesa_100k:.2f}%  \n"
-        f"✅ % Aprovadas Motor: {percent_aprov_motor_100k:.2f}%  \n"
-        f"❌ % Reprovadas Motor: {percent_reprov_motor_100k:.2f}%  \n\n"
+        f"🧾 % Derivadas para Mesa: {percent_mesa_100k:.2f}% \n\n"
+        f"✅ % Aprovadas Motor: {percent_aprov_motor_100k:.2f}% \n\n"
+        f"❌ % Reprovadas Motor: {percent_reprov_motor_100k:.2f}% \n\n"
+        f"🚫 % Canceladas Motor: {percent_cancel_motor_100k:.2f}% \n\n"
+        f"🧩 % Outros: {percent_outros_100k:.2f}% \n\n"
         "```\n" + tabela_formatada_3 + "\n```\n"
         "---\n"
         f"{invisible_space}\n"
