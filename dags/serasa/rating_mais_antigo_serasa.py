@@ -57,8 +57,11 @@ def rating_mais_antigo(access_params=None,  **kwargs):
                     ON LPAD(REGEXP_REPLACE(p.cnpj, '[^0-9]', ''), 14, '0') = LPAD(REGEXP_REPLACE(dc.cnpj_sem_formatacao, '[^0-9]', ''), 14, '0')
                 WHERE p.decisao = 'APROVADO'
             )
-            SELECT *
-            FROM propostas_aprovadas
+            SELECT pa.*,
+            faturamento_estimado
+            FROM propostas_aprovadas pa
+            LEFT JOIN deltalakerefined.motor.faturamento_estimado f
+            ON pa.cnpj_raiz = f.cnpj_raiz
             WHERE rn = 1
     """
     propostas = execute_query (conn, query_propostas)
@@ -575,6 +578,22 @@ def rating_mais_antigo(access_params=None,  **kwargs):
         return row
 
 
+    # Garantindo que sejam float
+    base_analisar['faturamento_estimado'] = pd.to_numeric(base_analisar['faturamento_estimado'], errors='coerce').astype(float)
+    base_analisar['valor_total_restritivos'] = pd.to_numeric(base_analisar['valor_total_restritivos'], errors='coerce').astype(float)
+
+    # Cálculo da coluna percentual
+    base_analisar['percentual_restritivo_fat_estimado'] = np.where(
+        base_analisar['faturamento_estimado'] > 0,
+        round((base_analisar['valor_total_restritivos'] / base_analisar['faturamento_estimado']) * 100, 2),
+        np.where(
+            base_analisar['valor_total_restritivos'] > 10,
+            100.0,
+            0.0
+        )
+    )
+
+
     # Regras sem HP
     def regra_aprovacao_limite_sem_hp(row, ram1, ram2):
         limite = 0
@@ -591,7 +610,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
         if row['empresa_grande'] == 1:
             return set_resultado(row, 'B6', 'B3', 'MESA')
 
-        if row['flag_restritivo'] == 0:
+        if row['percentual_restritivo_fat_estimado'] <= 5:
             if row['score'] > 900:
                 return regra_aprovacao_limite_sem_hp(row, 'A6', 'A1')
             elif row['score'] > 700:
@@ -603,7 +622,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
             else:
                 return set_resultado(row, 'C5', 'C1', 'REPROVADO')
 
-        if row['valor_total_restritivos'] < 500000:
+        if row['valor_total_restritivos'] < 100000:
             if row['score'] > 316:
                 return set_resultado(row, 'B5', 'B2', 'MESA')
             else:
@@ -629,7 +648,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
             return set_resultado(row, 'B3', 'B3', 'MESA')
 
         if row['pontualidade'] >= 99:
-            if row['flag_restritivo'] == 0:
+            if row['percentual_restritivo_fat_estimado'] <= 5:
                 if row['score'] > 900:
                     return regra_aprovacao_limite_com_hp(row, 'AA', 'AA')
                 elif row['score'] > 700:
@@ -640,7 +659,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
                     return set_resultado(row, 'B1', 'B1', 'MESA')
                 else:
                     return set_resultado(row, 'C1', 'C1', 'REPROVADO')
-            elif row['valor_total_restritivos'] < 500000:
+            elif row['valor_total_restritivos'] < 100000:
                 if row['score'] > 316:
                     return set_resultado(row, 'B2', 'B2', 'MESA')
                 else:
@@ -649,7 +668,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
                 return set_resultado(row, 'D1', 'D1', 'REPROVADO')
 
         elif row['pontualidade'] >= 40:
-            if row['flag_restritivo'] == 0 and row['pontualidade'] > 90:
+            if row['percentual_restritivo_fat_estimado'] <= 5 and row['pontualidade'] > 90:
                 if row['score'] > 900:
                     return regra_aprovacao_limite_com_hp(row, 'A3', 'A1')
                 elif row['score'] > 700:
@@ -660,7 +679,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
                     return set_resultado(row, 'B3', 'B1', 'MESA')
                 else:
                     return set_resultado(row, 'C3', 'C1', 'REPROVADO')
-            elif row['valor_total_restritivos'] < 500000:
+            elif row['valor_total_restritivos'] < 100000:
                 if row['score'] > 316:
                     return set_resultado(row, 'B4', 'B2', 'MESA')
                 else:
@@ -746,7 +765,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     ordem_colunas = [
         'data_criado', 'data_resolvido', 'issue_key', 'cnpj_raiz', 'cnpj_sacado','razao_social','pontualidade', 
         'ramificacao', 'ramificacao_2', 'ramificacao_final', 'id', 'data_consulta', 'score', 
-        'empresa_grande', 'total_restritivos_pj', 'total_restritivos_pf', 'valor_total_restritivos', 
+        'empresa_grande', 'total_restritivos_pj', 'total_restritivos_pf', 'valor_total_restritivos','faturamento_estimado',
         'flag_restritivo', 'qtd_cheque', 'qtd_cheque_pf', 'cpf_socio_principal'
     ]
 
