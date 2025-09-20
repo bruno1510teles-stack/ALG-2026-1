@@ -45,7 +45,7 @@ with DAG(
 
     cnae = SparkKubernetesOperator(
         task_id='cnae',
-        application_file='cnae-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/cnae-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -54,7 +54,7 @@ with DAG(
 
     empresas = SparkKubernetesOperator(
         task_id='empresas',
-        application_file='empresas-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/empresas-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -63,7 +63,7 @@ with DAG(
 
     estabelecimentos = SparkKubernetesOperator(
         task_id='estabelecimentos',
-        application_file='estabelecimentos-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/estabelecimentos-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -72,7 +72,7 @@ with DAG(
 
     motivos = SparkKubernetesOperator(
         task_id='motivos',
-        application_file='motivos-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/motivos-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -81,7 +81,7 @@ with DAG(
 
     municipios = SparkKubernetesOperator(
         task_id='municipios',
-        application_file='municipios-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/municipios-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -89,7 +89,7 @@ with DAG(
     )
     naturezas = SparkKubernetesOperator(
         task_id='naturezas',
-        application_file='naturezas-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/naturezas-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -97,7 +97,7 @@ with DAG(
     )
     paises = SparkKubernetesOperator(
         task_id='paises',
-        application_file='paises-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/paises-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -105,7 +105,7 @@ with DAG(
     )
     qualificacoes = SparkKubernetesOperator(
         task_id='qualificacoes',
-        application_file='qualificacoes-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/qualificacoes-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -113,7 +113,7 @@ with DAG(
     )
     simples = SparkKubernetesOperator(
         task_id='simples',
-        application_file='simples-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/simples-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -121,7 +121,7 @@ with DAG(
     )
     socios = SparkKubernetesOperator(
         task_id='socios',
-        application_file='socios-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/socios-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -130,7 +130,7 @@ with DAG(
 
     pre_filtro = SparkKubernetesOperator(
         task_id='pre_filtro',
-        application_file='pre-filtro-v2-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/pre-filtro-v2-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
@@ -140,7 +140,7 @@ with DAG(
 
     dados_cadastrais = SparkKubernetesOperator(
         task_id='dados-cadastrais',
-        application_file='dados-cadastrais-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/dados-cadastrais-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
         do_xcom_push=True,
