@@ -65,7 +65,7 @@ default_args = {
 with DAG(
     dag_id='rating_serasa',
     start_date=days_ago(1),
-    schedule_interval = '30 11 * * 1-5',  # Roda às 08:30 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval = '30 11 * * 1-5',  # Roda às 08:30 BRT (11:30 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
     tags=['etl', 'rating', 'trusted'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
