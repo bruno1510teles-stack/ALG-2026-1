@@ -13,8 +13,8 @@ from datetime import datetime, timezone, timedelta
 from time import sleep
 
 
-sys.path.append('/opt/airflow/dags/repo/dags/modelos/tabelas_auxiliares')
-from variaveis_recorrencia_safra import cria_variaveis_modelo_recorrencia
+sys.path.append('/opt/airflow/dags/repo/dags/modelos/recorrencia/execucao_modelo')
+from modelo_recorrencia_safrado import clusters_modelo_recorrencia
 
 
 ### Parâmetros de acesso
@@ -64,18 +64,18 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='tabelas_auxiliares_modelos',
+    dag_id='modelo_recorrencia',
     start_date=days_ago(1),
-    schedule_interval='0 10 * * 1-5',
+    schedule_interval='0 12 * * 1-5',
     default_args=default_args,
     catchup=False, 
-    tags=['modelo', 'recorrencia', 'refined'],
+    tags=['modelo', 'recorrencia', 'refined', 'safra'],
     max_active_runs=1
 ) as dag:
 
     task1 = PythonOperator(
-        task_id = 'variaveis_modelo_recorrencia',
-        python_callable = cria_variaveis_modelo_recorrencia,
+        task_id = 'modelo_recorrencia',
+        python_callable = clusters_modelo_recorrencia,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
