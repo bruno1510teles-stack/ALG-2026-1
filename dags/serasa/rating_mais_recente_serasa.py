@@ -209,7 +209,7 @@ def rating_mais_recente(access_params=None,  **kwargs):
                 from base_data bd
                     inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
                     inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
-                    inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.id
+                    inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.score_id
             )
             ,consulta_mais_recente AS (
                 select 
