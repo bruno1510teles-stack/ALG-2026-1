@@ -153,7 +153,7 @@ def trata_safras_problema (access_params=None, **kwargs):
         'status': 'first',
     }).drop_duplicates().reset_index(drop=True)
 
-
+    '''
     ## Query dados de boletos prorrogados
     query_prorrogados = f"""
                             select
@@ -181,6 +181,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     # Inserindo casos de prorrogados na acumulada
     df_final = pd.concat([df_final, df_prorrogados_filtrado], ignore_index=True)
+    '''
 
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
