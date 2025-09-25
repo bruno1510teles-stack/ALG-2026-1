@@ -38,7 +38,7 @@ def processa_serasa_diario (access_params=None,  **kwargs):
     hoje = datetime.today().date()
 
     # 10 DIAS ATRÁS
-    dez_dias_atras = hoje - timedelta(days=20)
+    dez_dias_atras = hoje - timedelta(days=7)
 
 
     print('Buscando novos casos de compra do serasa...')
