@@ -12,10 +12,8 @@ import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
 
-
-from serasa.rating_mais_antigo_serasa import rating_mais_antigo
-from serasa.rating_mais_recente_serasa import rating_mais_recente
-
+from serasa.compras_serasa import processa_historico_compras_serasa
+from serasa.compras_serasa import processa_novos_casos_compras_serasa
 
 ### Parâmetros de acesso
 access_params = {          
@@ -45,48 +43,47 @@ access_params = {
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
-        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
-        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+        #"title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
+        #"text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
 
+
 ### Definindo defaults
 default_args = {
-    "owner": "Beatriz Anjos",
+    "owner": "Vinicius Moraes",
     "retries": 3,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
 
 
-# Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='rating_serasa',
+    dag_id='historico_compras_serasa',
     start_date=days_ago(1),
-    schedule_interval = '30 11 * * 1-5',  # Roda às 08:30 BRT (11:30 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval = '30 10 * * 1-5',  
     default_args=default_args,
-    tags=['etl', 'rating', 'trusted'],
-    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
+    tags=['etl', 'serasa', 'trusted'],
+    max_active_runs = 1
 
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
-        task_id='rating_mais_antigo_serasa',
-        python_callable= rating_mais_antigo,
+    
+    task1  = PythonOperator(
+        task_id='processa_historico_compras_serasa',
+        python_callable= processa_historico_compras_serasa.processa_historico_serasa,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
+    
 
-    # Definindo o task que processa a tabela rating_mais_recente_serasa
-    task_2  = PythonOperator(
-        task_id='rating_mais_recente_serasa',
-        python_callable= rating_mais_recente,
+    task2 = PythonOperator(
+        task_id='processa_compras_serasa_diario',
+        python_callable= processa_novos_casos_compras_serasa.processa_serasa_diario,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
     # Definindo a ordem de execução das tasks
-    task_1 >> task_2
+    task1 >> task2
