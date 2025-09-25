@@ -178,7 +178,6 @@ def processa_serasa_diario (access_params=None,  **kwargs):
 
     # Normalizando tipos
     df_serasa["id"] = df_serasa["id"].astype(str)
-    df_serasa["data_consulta"] = pd.to_datetime(df_serasa["data_consulta"], errors="coerce")
     df_serasa["cnpj_raiz"] = df_serasa["cnpj_raiz"].astype(str)
 
     df_serasa["score_positivo_pj"] = pd.to_numeric(df_serasa["score_positivo_pj"], errors="coerce").astype(float)
