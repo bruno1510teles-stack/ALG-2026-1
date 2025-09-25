@@ -43,8 +43,8 @@ access_params = {
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
-        #"title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
-        #"text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
+        "title": f"Falha na Execução DAG - {context['task_instance'].dag_id}",
+        "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!!"
     }
     requests.post(url, json=mensagem)
 
@@ -69,13 +69,14 @@ with DAG(
 
 ) as dag:
 
-    
+    '''
     task1  = PythonOperator(
         task_id='processa_historico_compras_serasa',
         python_callable= processa_historico_compras_serasa.processa_historico_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+    '''
     
 
     task2 = PythonOperator(
@@ -86,4 +87,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    #task1 >> 
+    task2
