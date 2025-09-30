@@ -110,7 +110,6 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         query_cedente = """
             select 
                 LPAD(numero_titulo, 10, '0') as numero_titulo_formatado,
-                cnpj_sacado,
                 concat(LPAD(numero_titulo, 10, '0'), cnpj_sacado) as chave,
                 nome_cedente as nome_cedente_query
             from 
@@ -129,13 +128,17 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         # Filtra diretamente no Pandas
         cedente = cedente_total[cedente_total["numero_titulo_formatado"].isin(titulos_formatados)]
 
+        cedente = cedente.drop(columns=["numero_titulo_formatado"])
+
         print(f"Quantidade de linhas no DataFrame 'cedente': {cedente.shape[0]}")
 
 
         print('Iniciando coleta de pagamentos')
-        query_pagamento = f"""
+
+        query_pagamento = """
             select 
-                concat(lpad(bt.numero_titulo,10, '0'),s.numero_cnpj_sacado_formatado) as chave, coalesce(sum(dt.valor),0) as valor_descontado_nota_fn
+                concat(lpad(bt.numero_titulo, 10, '0'), s.numero_cnpj_sacado_formatado) as chave,
+                coalesce(sum(dt.valor), 0) as valor_descontado_nota_fn
             from 
                 postgres.ccred_schema_prd_default.credito_libra cl
                 inner join postgres.ccred_schema_prd_default.credito_boleto cb on cl.id = cb.credito_libra_id
@@ -144,15 +147,21 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
                 inner join postgres.ccred_schema_prd_default.sacado s on bt.sacado_id = s.id
             where 
                 dt.tipo_desconto_id in (1,2,3,14)
-                and LPAD(bt.numero_titulo , 10, '0') IN ({titulos_str})
             group by
-                concat(lpad(bt.numero_titulo,10, '0'),s.numero_cnpj_sacado_formatado)
+                concat(lpad(bt.numero_titulo, 10, '0'), s.numero_cnpj_sacado_formatado)
         """
 
-        pagamento = execute_query(conn, query_pagamento)
-        print('Dados de pagamentos coletado com sucesso!')
-        print(f"Quantidade de linhas no DataFrame 'pagamentos': {pagamento.shape[0]}")
+        # Executa query sem filtro
+        pagamento_total = execute_query(conn, query_pagamento)
 
+        print('Dados de pagamentos coletado com sucesso!')
+        print(f"Quantidade de linhas no DataFrame 'pagamentos': {pagamento_total.shape[0]}")
+
+        pagamento = pagamento_total[
+            pagamento_total["chave"].str[:10].isin(titulos_formatados)
+        ]
+
+        print(f"Quantidade de linhas no DataFrame 'pagamento_filtrado': {pagamento.shape[0]}")
 
 
         # Trazendo o nome do cedente
