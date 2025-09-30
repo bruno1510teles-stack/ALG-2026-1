@@ -106,20 +106,30 @@ def fechamento_hemera_refined(access_params=None,  **kwargs):
         # Convertendo a lista para uma string no formato adequado para o SQL
         titulos_str = ', '.join([f"'{cnpj}'" for cnpj in titulos])
 
+        
+        query_cedente = """
+            select 
+                LPAD(numero_titulo, 10, '0') as numero_titulo_formatado,
+                cnpj_sacado,
+                concat(LPAD(numero_titulo, 10, '0'), cnpj_sacado) as chave,
+                nome_cedente as nome_cedente_query
+            from 
+                deltalaketrusted.payments.boletos_internos
+        """
 
-        query_cedente = f"""
-                    select 
-                        concat(LPAD(numero_titulo , 10, '0'), cnpj_sacado) as chave, nome_cedente as nome_cedente_query
-                    from 
-                        deltalaketrusted.payments.boletos_internos 
-                    where 
-                        LPAD(numero_titulo , 10, '0') IN ({titulos_str})
-                """
+        # Executa a query
+        cedente_total = execute_query(conn, query_cedente)
 
-        cedente = execute_query(conn, query_cedente)
-        print('Dados de cedente coletado com sucesso!')
+        print("Dados de cedente coletados com sucesso!")
+        print(f"Quantidade de linhas brutas no DataFrame 'cedente': {cedente_total.shape[0]}")
+
+        # Faz o mesmo tratamento nos titulos
+        titulos_formatados = [str(t).zfill(10) for t in titulos]
+
+        # Filtra diretamente no Pandas
+        cedente = cedente_total[cedente_total["numero_titulo_formatado"].isin(titulos_formatados)]
+
         print(f"Quantidade de linhas no DataFrame 'cedente': {cedente.shape[0]}")
-
 
 
         print('Iniciando coleta de pagamentos')
