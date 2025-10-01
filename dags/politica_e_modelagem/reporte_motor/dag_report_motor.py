@@ -55,11 +55,21 @@ default_args = {
 }
 
 
+# Ajusta start_date para dia útil
+hoje = pendulum.today("America/Sao_Paulo")
+
+if hoje.day_of_week == 6:      # domingo
+    start_date = hoje.add(days=1)  # próxima segunda
+elif hoje.day_of_week == 5:    # sábado
+    start_date = hoje.add(days=2)  # próxima segunda
+else:
+    start_date = hoje            # dia útil
+
 # Definindo a DAG
 with DAG(
     dag_id='report_motor',
-    start_date=days_ago(1),
-    schedule_interval='00 11 * * 1-5',
+    start_date=start_date, # <-- usa o start_date ajustado para dia útil
+    schedule_interval='0 11 * * 1-5',
     default_args=default_args,
     tags=['report', 'motor', 'credito'],
     max_active_runs=1
