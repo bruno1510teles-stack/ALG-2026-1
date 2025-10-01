@@ -214,6 +214,7 @@ def estoque_consolidado(spark):
         .partitionBy("data_referencia", "data") \
         .format("delta") \
         .option("encoding", 'latin1') \
+        .option("overwriteSchema", "true") \
         .mode("overwrite") \
         .save("s3a://hemera-refined/estoque_consolidado")
 
