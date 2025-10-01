@@ -127,24 +127,19 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
     df_boletos = execute_query(conn, query_boletos)
     df_boletos = df_boletos.reset_index(drop=True)
 
-    # # Função para ajustar os valores ao formato decimal(8, 2)
-    def ajustar_decimal_8_2(valor):
+
+    def ajustar_decimal_10_2(valor):
         if pd.isnull(valor):
             return None
-        else:
-            return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-
-    # # Função para ajustar os valores ao formato decimal(9, 2)
-    def ajustar_decimal_9_2(valor):
-        if pd.isnull(valor):
-            return None
-        else:
-            return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-
+        valor_decimal = Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        if valor_decimal >= Decimal('100000000'):
+            raise ValueError(f"Valor {valor_decimal} excede o limite de 8 dígitos antes da vírgula.")
+        return valor_decimal
+    
     # Aplicar nas colunas
-    df_boletos['vop_vencido'] = df_boletos['vop_vencido'].apply(ajustar_decimal_8_2)
-    df_boletos['vop_a_vencer'] = df_boletos['vop_a_vencer'].apply(ajustar_decimal_9_2)
-    df_boletos['risco'] = df_boletos['risco'].apply(ajustar_decimal_9_2)
+    df_boletos['vop_vencido'] = df_boletos['vop_vencido'].apply(ajustar_decimal_10_2)
+    df_boletos['vop_a_vencer'] = df_boletos['vop_a_vencer'].apply(ajustar_decimal_10_2)
+    df_boletos['risco'] = df_boletos['risco'].apply(ajustar_decimal_10_2)
     
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
