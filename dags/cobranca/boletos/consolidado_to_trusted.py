@@ -82,7 +82,8 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
         ,SUM(CASE WHEN b.status_titulo = 'VENCIDO' THEN b.valor_face ELSE 0 END) AS vop_vencido
         ,SUM(CASE WHEN b.status_titulo = 'A VENCER' THEN b.valor_face ELSE 0 END) AS vop_a_vencer
         ,SUM(CASE WHEN b.data_baixa IS NOT NULL THEN 1 ELSE 0 END) AS qtd_boletos_pagos
-        ,ROUND(AVG(DATE_DIFF('day', b.data_baixa, b.data_vencimento)), 0) AS prazo_medio
+--		,ROUND(AVG(DATE_DIFF('day', b.data_baixa, b.data_vencimento)), 0) AS prazo_medio
+        ,ROUND(AVG(DATE_DIFF('day', b.data_vencimento, b.data_baixa)), 0) AS prazo_medio 
         ,ROUND(SUM(CASE WHEN b.data_baixa IS NULL THEN b.valor_face ELSE 0 END), 2) AS risco
         ,SUM(ROUND(
         CASE WHEN status_titulo = 'VENCIDO'
