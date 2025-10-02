@@ -108,7 +108,7 @@ def rating_mais_recente(access_params=None,  **kwargs):
 
  
     # Verificando cnpj_raiz da base df_propostas_enriquecidas e atribuindo na Query de Pontualidade
-    cnpjs = df_propostas_enriquecidas['cnpj_raiz'].unique()
+    cnpjs = propostas_enriquecidas['cnpj_raiz'].unique()
     ids_query = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
     ids_query = f"({ids_query})"
 
