@@ -10,7 +10,8 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from cobranca.boletos import consolidado_to_trusted
+from boletos.yandeh import boletos_raw_to_trusted_yandeh
+from boletos.yandeh import max_dias_vencidos
 
 ### Parâmetros de acesso
 access_params = {          
@@ -53,27 +54,32 @@ default_args = {
     "on_failure_callback": notificar_falha_teams
 }
 
-
 # Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='consolidado',
+    dag_id='tratamento_boletos_yandeh',
     start_date=days_ago(1),
     schedule_interval='0 11,20 * * *',
     default_args=default_args,
-    tags=['etl', 'boletos', 'consolidado','trusted'],
+    tags=['etl', 'boletos', 'internos', 'raw','trusted', 'yandeh'],
     max_active_runs=1
 ) as dag:
-    
-    
-# Definindo o task que processa boletos tradicional raw to trusted
-    consolidado_to_trusted_task = PythonOperator(
-        task_id = 'consolidado_to_trusted',
-        python_callable = consolidado_to_trusted.consolidado_to_trusted,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+
+    # Definindo o task que processa boletos raw_to_trusted yandeh
+    raw_to_trusted_yandeh = PythonOperator(
+        task_id='raw_to_trusted_yandeh',
+        python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
     )
 
-# Definindo a ordem de execução das tasks
-    consolidado_to_trusted_task
+    # Definindo o task que processa boletos raw_to_refined yandeh
+    max_dias_vencidos = PythonOperator(
+        task_id='max_dias_vencidos',
+        python_callable=max_dias_vencidos.boletos_trusted_to_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+   
+    # Definindo a ordem de execução das tasks
+    raw_to_trusted_yandeh >> max_dias_vencidos
