@@ -11,7 +11,10 @@ import pendulum
 import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
-from monitoramento.monitoramento_trusted_to_refined import trusted_to_refined
+
+
+sys.path.append('/opt/airflow/dags/repo/dags/modelos/recorrencia/execucao_modelo')
+from modelo_recorrencia_safrado import clusters_modelo_recorrencia
 
 
 ### Parâmetros de acesso
@@ -39,6 +42,7 @@ access_params = {
     }
 
 
+
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -47,35 +51,34 @@ def notificar_falha_teams(context):
     }
     requests.post(url, json=mensagem)
 
-### Definindo defaults
+    
+
+# Definindo defaults
 default_args = {
-    "owner": "Natielli Torres",
+    "owner": "Vinicius Moraes",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1),
+    "retry_delay": timedelta(minutes=5),
     "on_failure_callback": notificar_falha_teams
 }
 
 
-# Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='monitoramento',
+    dag_id='modelo_recorrencia',
     start_date=days_ago(1),
-    schedule_interval = '0 12,18 * * 0-5',  # Roda às 07:00 e 15:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval='0 12 * * 1-5',
     default_args=default_args,
-    tags=['etl', 'monitoramento', 'refined'],
-    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
-
+    catchup=False, 
+    tags=['modelo', 'recorrencia', 'refined', 'safra'],
+    max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
-        task_id='verificando_atualizacoes_tabelas',
-        python_callable= trusted_to_refined,
+    task1 = PythonOperator(
+        task_id = 'modelo_recorrencia',
+        python_callable = clusters_modelo_recorrencia,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
     # Definindo a ordem de execução das tasks
-    task_1
+    task1 

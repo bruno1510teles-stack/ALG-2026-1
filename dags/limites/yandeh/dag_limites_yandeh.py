@@ -1,18 +1,16 @@
 ### Importando Libs necessárias
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import requests
 import pendulum
-import sys
-from datetime import datetime, timezone, timedelta
-from time import sleep
-from monitoramento.monitoramento_trusted_to_refined import trusted_to_refined
+import requests
+from datetime import timedelta
 
+
+### Importando scripts necessários
+from limites.yandeh.limites_yandeh_to_trusted import limites_yandeh
 
 ### Parâmetros de acesso
 access_params = {          
@@ -57,25 +55,23 @@ default_args = {
 
 
 # Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='monitoramento',
+    dag_id='tratamento_limites_yandeh',
     start_date=days_ago(1),
-    schedule_interval = '0 12,18 * * 0-5',  # Roda às 07:00 e 15:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval='0 12,21 * * *',
     default_args=default_args,
-    tags=['etl', 'monitoramento', 'refined'],
-    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
-
+    tags=['etl', 'limites', 'trusted', 'yandeh'],
+    max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
-        task_id='verificando_atualizacoes_tabelas',
-        python_callable= trusted_to_refined,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    # Definindo o task que processa limites_to_raw
+    task_limites_yandeh = PythonOperator(
+        task_id = 'tratamento_limites',
+        python_callable = limites_yandeh,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Definindo a ordem de execução das tasks
-    task_1
+    task_limites_yandeh

@@ -1,18 +1,17 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import BranchPythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import requests
 import pendulum
-import sys
-from datetime import datetime, timezone, timedelta
-from time import sleep
-from monitoramento.monitoramento_trusted_to_refined import trusted_to_refined
+import requests
+from datetime import timedelta
 
+
+### Importando scripts necessários
+from boletos.yandeh import boletos_raw_to_trusted_yandeh
+from boletos.yandeh import max_dias_vencidos
 
 ### Parâmetros de acesso
 access_params = {          
@@ -55,27 +54,32 @@ default_args = {
     "on_failure_callback": notificar_falha_teams
 }
 
-
 # Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='monitoramento',
+    dag_id='tratamento_boletos_yandeh',
     start_date=days_ago(1),
-    schedule_interval = '0 12,18 * * 0-5',  # Roda às 07:00 e 15:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval='0 11,20 * * *',
     default_args=default_args,
-    tags=['etl', 'monitoramento', 'refined'],
-    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
-
+    tags=['etl', 'boletos', 'internos', 'raw','trusted', 'yandeh'],
+    max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
-        task_id='verificando_atualizacoes_tabelas',
-        python_callable= trusted_to_refined,
+    # Definindo o task que processa boletos raw_to_trusted yandeh
+    raw_to_trusted_yandeh = PythonOperator(
+        task_id='raw_to_trusted_yandeh',
+        python_callable=boletos_raw_to_trusted_yandeh.boletos_raw_to_trusted,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
     )
 
+    # Definindo o task que processa boletos raw_to_refined yandeh
+    max_dias_vencidos = PythonOperator(
+        task_id='max_dias_vencidos',
+        python_callable=max_dias_vencidos.boletos_trusted_to_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+   
     # Definindo a ordem de execução das tasks
-    task_1
+    raw_to_trusted_yandeh >> max_dias_vencidos
