@@ -8,6 +8,7 @@ from datetime import datetime, timezone, timedelta
 import os
 from airflow.models import Variable
 from airflow.utils.log.logging_mixin import LoggingMixin
+from decimal import Decimal, ROUND_DOWN
 
 def limites_yandeh(access_params=None, **kwargs):
 
@@ -53,7 +54,18 @@ def limites_yandeh(access_params=None, **kwargs):
     df_limites = execute_query(conn, query_limites)
     df_limites = df_limites.reset_index(drop=True)
 
-
+    # Função para ajustar os valores ao formato decimal
+    def ajustar_decimal(valor):
+        if pd.isnull(valor):
+            return None
+        else:
+            return Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+    
+    # Aplicar a função nas colunas de valor 
+    df_limites['valor_limite'] = df_limites['valor_limite'].apply(ajustar_decimal)
+    df_limites['limite_disponivel'] = df_limites['limite_disponivel'].apply(ajustar_decimal)
+    
+    
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_limites['atualizado_em'] = now.strftime('%Y-%m-%d %X')
