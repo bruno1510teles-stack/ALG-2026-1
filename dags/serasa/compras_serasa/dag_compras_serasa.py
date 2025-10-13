@@ -62,7 +62,7 @@ default_args = {
 with DAG(
     dag_id='historico_compras_serasa',
     start_date=days_ago(1),
-    schedule_interval = '30 10 * * 1-5',  
+    schedule_interval = '30 10 * * 0-5',  
     default_args=default_args,
     tags=['etl', 'serasa', 'trusted'],
     max_active_runs = 1
