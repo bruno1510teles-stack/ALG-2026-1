@@ -62,7 +62,7 @@ default_args = {
 with DAG(
     dag_id='tabela_grupo_economico',
     start_date=days_ago(1),
-    schedule_interval = '0 10 * * 1-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval = '0 10 * * 0-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
     tags=['etl', 'grupo_economico', 'trusted'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
