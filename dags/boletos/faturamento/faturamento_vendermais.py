@@ -54,6 +54,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
                                         'benassi', 'seugil', 'roge', 'ltxando', 'comprefacil', 'adoro', 'girotrade', 'embala', 'ultracheese', 'ltdeale')
                             or pgid is null
                     )
+                    and (excluido = false or excluido is null)
                     """
     
     fatura = execute_query(conn, query_fatura)
