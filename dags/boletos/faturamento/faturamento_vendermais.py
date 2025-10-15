@@ -119,6 +119,8 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print("Coluna 'chave' removida com sucesso antes da escrita no Delta Lake.")
     
+    fatura_incremental.reset_index(drop=True, inplace=True)
+    
     # Configuração do Delta Lake
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
