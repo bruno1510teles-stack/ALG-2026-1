@@ -372,7 +372,7 @@ def estoque_diario_trusted (access_params=None, **kwargs):
     # Truncar data_arquivo para o início do dia
     estoque_final = estoque_final.withColumn("data_arquivo", date_trunc("day", col("data_arquivo")))
 
-    estoque_final = estoque_final.withColumn("data_arquivo", to_utc_timestamp("data_arquivo", "UTC"))
+    estoque_final = estoque_final.withColumn("data_arquivo", to_date("data_arquivo"))
 
     # Mostrar o total de linhas
     print("📈 Linhas após a inserção de novas linhas:")

@@ -306,7 +306,7 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
     # Truncar data_arquivo para o início do dia
     df_join = df_join.withColumn("data_arquivo", date_trunc("day", col("data_arquivo")))
 
-    df_join = df_join.withColumn("data_arquivo", to_utc_timestamp("data_arquivo", "UTC"))
+    df_join = df_join.withColumn("data_arquivo", to_date("data_arquivo"))
 
 
     # Lista de colunas desejadas
