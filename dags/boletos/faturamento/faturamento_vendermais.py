@@ -21,7 +21,7 @@ colunas_schema = {
     "nome_sacado": str,
     "cnpj_cedente": str,
     "nome_cedente": str,
-    "data_fatura": "datetime64[ns]",
+    "data_fatura": "datetime64[D]",
     "valor_fatura": float,
     "status_fatura": str,
     "status_fatura_sefaz": str,
@@ -44,12 +44,18 @@ def normalize_schema(df: pd.DataFrame, colunas_schema: dict) -> pd.DataFrame:
                 df[col] = ""
             elif dtype in [float, np.float64]:
                 df[col] = np.nan
+            elif dtype == "datetime64[D]":
+                df[col] = pd.NaT
             else:
-                df[col] = pd.NA
+                df[col] = pd.NA        
         try:
-            df[col] = df[col].astype(dtype)
+            if dtype == "datetime64[D]":
+                # Converte e garante apenas data (sem hora)
+                df[col] = pd.to_datetime(df[col], errors='coerce').dt.floor('D')
+            else:
+                df[col] = df[col].astype(dtype)
         except Exception:
-            df[col] = df[col].astype(str)
+            df[col] = df[col].astype(str)    
     return df
 
 
@@ -159,7 +165,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print("Coluna 'chave' removida com sucesso antes da escrita no Delta Lake.")
     
-    fatura_incremental.reset_index(drop=True, inplace=True)
+    fatura_incremental.reset_index(drop=True, inplace=True)    
     fatura_incremental = normalize_schema(fatura_incremental, colunas_schema)
         
     # Configuração do Delta Lake
