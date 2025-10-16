@@ -58,8 +58,8 @@ default_args = {
 # Definindo a DAG
 with DAG(
     dag_id='report_motor',
-    start_date=days_ago(1),
-    schedule_interval='00 11 * * 1-5',
+    start_date= days_ago(1), 
+    schedule_interval='0 11 * * 0-5',
     default_args=default_args,
     tags=['report', 'motor', 'credito'],
     max_active_runs=1

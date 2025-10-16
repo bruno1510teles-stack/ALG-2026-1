@@ -7,6 +7,7 @@ from deltalake import write_deltalake
 from datetime import datetime, timezone, timedelta
 import os
 from airflow.models import Variable
+from decimal import Decimal, ROUND_DOWN
 
 
 def consolidado_to_trusted(access_params=None,  **kwargs):
@@ -81,7 +82,8 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
         ,SUM(CASE WHEN b.status_titulo = 'VENCIDO' THEN b.valor_face ELSE 0 END) AS vop_vencido
         ,SUM(CASE WHEN b.status_titulo = 'A VENCER' THEN b.valor_face ELSE 0 END) AS vop_a_vencer
         ,SUM(CASE WHEN b.data_baixa IS NOT NULL THEN 1 ELSE 0 END) AS qtd_boletos_pagos
-        ,ROUND(AVG(DATE_DIFF('day', b.data_baixa, b.data_vencimento)), 0) AS prazo_medio
+--		,ROUND(AVG(DATE_DIFF('day', b.data_baixa, b.data_vencimento)), 0) AS prazo_medio
+        ,ROUND(AVG(DATE_DIFF('day', b.data_vencimento, b.data_baixa)), 0) AS prazo_medio 
         ,ROUND(SUM(CASE WHEN b.data_baixa IS NULL THEN b.valor_face ELSE 0 END), 2) AS risco
         ,SUM(ROUND(
         CASE WHEN status_titulo = 'VENCIDO'
@@ -126,6 +128,19 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
     df_boletos = execute_query(conn, query_boletos)
     df_boletos = df_boletos.reset_index(drop=True)
 
+
+    def ajustar_decimal_10_2(valor):
+        if pd.isnull(valor):
+            return None
+        valor_decimal = Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        if valor_decimal >= Decimal('100000000'):
+            raise ValueError(f"Valor {valor_decimal} excede o limite de 8 dígitos antes da vírgula.")
+        return valor_decimal
+    
+    # Aplicar nas colunas
+    df_boletos['vop_vencido'] = df_boletos['vop_vencido'].apply(ajustar_decimal_10_2)
+    df_boletos['vop_a_vencer'] = df_boletos['vop_a_vencer'].apply(ajustar_decimal_10_2)
+    df_boletos['risco'] = df_boletos['risco'].apply(ajustar_decimal_10_2)
     
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))

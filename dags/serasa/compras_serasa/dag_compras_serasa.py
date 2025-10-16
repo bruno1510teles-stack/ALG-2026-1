@@ -62,20 +62,21 @@ default_args = {
 with DAG(
     dag_id='historico_compras_serasa',
     start_date=days_ago(1),
-    schedule_interval = '30 10 * * 1-5',  
+    schedule_interval = '30 10 * * 0-5',  
     default_args=default_args,
     tags=['etl', 'serasa', 'trusted'],
     max_active_runs = 1
 
 ) as dag:
 
-    
+    '''
     task1  = PythonOperator(
         task_id='processa_historico_compras_serasa',
         python_callable= processa_historico_compras_serasa.processa_historico_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+    '''
     
 
     task2 = PythonOperator(
@@ -86,4 +87,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    #task1 >> 
+    task2

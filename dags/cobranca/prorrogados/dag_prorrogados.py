@@ -1,16 +1,23 @@
 ### Importando Libs necessárias
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python_operator import PythonOperator
+from airflow.operators.dummy import DummyOperator
+from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import pendulum
 import requests
-from datetime import timedelta
+import pendulum
+import sys
+from datetime import datetime, timezone, timedelta
+from time import sleep
 
 
-### Importando scripts necessários
-from cobranca.boletos import consolidado_to_trusted
+sys.path.append('/opt/airflow/dags/repo/dags/cobranca/prorrogados')
+
+from gera_tabela_prorrogados import processa_tabela_prorrogados
+
+
 
 ### Parâmetros de acesso
 access_params = {          
@@ -37,6 +44,7 @@ access_params = {
     }
 
 
+
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -45,35 +53,34 @@ def notificar_falha_teams(context):
     }
     requests.post(url, json=mensagem)
 
-### Definindo defaults
+    
+
+# Definindo defaults
 default_args = {
-    "owner": "Natielli Torres",
+    "owner": "Vinicius Moraes",
     "retries": 1,
-    "retry_delay": timedelta(minutes=1)#,
-    #"on_failure_callback": notificar_falha_teams
+    "retry_delay": timedelta(minutes=5),
+    "on_failure_callback": notificar_falha_teams
 }
 
 
-# Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='consolidado',
+    dag_id='processo_tabela_prorrogados',
     start_date=days_ago(1),
-    schedule_interval='0 11,20 * * *',
+    schedule_interval='0 13 * * *',
     default_args=default_args,
-    tags=['etl', 'boletos', 'consolidado','trusted'],
+    catchup=False, 
+    tags=['etl', 'boletos', 'trusted', 'trusted', 'prorrogados'],
     max_active_runs=1
 ) as dag:
     
-    
-# Definindo o task que processa boletos tradicional raw to trusted
-    consolidado_to_trusted_task = PythonOperator(
-        task_id = 'consolidado_to_trusted',
-        python_callable = consolidado_to_trusted.consolidado_to_trusted,
-        op_kwargs = {'access_params': access_params},
-        provide_context = True
+    task1 = PythonOperator(
+         task_id='processa_tabela_prorrogados',
+         python_callable = processa_tabela_prorrogados,
+         op_kwargs={'access_params': access_params},
+         provide_context=True
     )
 
-# Definindo a ordem de execução das tasks
-    consolidado_to_trusted_task
+    # Definindo a ordem de execução das tasks
+    task1 

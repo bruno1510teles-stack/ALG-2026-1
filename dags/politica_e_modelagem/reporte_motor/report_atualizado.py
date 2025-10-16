@@ -50,12 +50,7 @@ def report_motor_atualizado(access_params=None,  **kwargs):
                     count(CASE WHEN decisao = 'APROVADO' THEN 1 END) AS "Qtde Aprovada"
                 FROM deltalaketrusted.jira.propostas
                 WHERE decisor = 'MOTOR'
-                AND try_cast(data_resolvido AS date) = 
-                    CASE 
-                        WHEN EXTRACT(DOW FROM current_date) = 1 
-                        THEN current_date - INTERVAL '3' DAY 
-                        ELSE current_date - INTERVAL '1' DAY 
-                    END
+                AND try_cast(data_resolvido AS date) = DATE '{data_execucao}'
                 GROUP BY CAST(try_cast(data_resolvido AS date) AS varchar), politica
             ),
             

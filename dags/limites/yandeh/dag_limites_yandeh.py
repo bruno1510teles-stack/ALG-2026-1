@@ -1,21 +1,16 @@
 ### Importando Libs necessárias
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import BranchPythonOperator
 from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
-import requests
 import pendulum
-import sys
-from datetime import datetime, timezone, timedelta
-from time import sleep
+import requests
+from datetime import timedelta
 
 
-from serasa.rating.rating_mais_antigo_serasa import rating_mais_antigo
-from serasa.rating.rating_mais_recente_serasa import rating_mais_recente
-
+### Importando scripts necessários
+from limites.yandeh.limites_yandeh_to_trusted import limites_yandeh
 
 ### Parâmetros de acesso
 access_params = {          
@@ -52,41 +47,31 @@ def notificar_falha_teams(context):
 
 ### Definindo defaults
 default_args = {
-    "owner": "Beatriz Anjos",
-    "retries": 3,
+    "owner": "Natielli Torres",
+    "retries": 1,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
 
 
 # Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
-    dag_id='rating_serasa',
+    dag_id='tratamento_limites_yandeh',
     start_date=days_ago(1),
-    schedule_interval = '30 11 * * 0-5',  # Roda às 08:30 BRT (11:30 UTC), de domingo a sexta, uma vez por dia
+    schedule_interval='0 12,21 * * *',
     default_args=default_args,
-    tags=['etl', 'rating', 'trusted'],
-    max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
-
+    tags=['etl', 'limites', 'trusted', 'yandeh'],
+    max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
-        task_id='rating_mais_antigo_serasa',
-        python_callable= rating_mais_antigo,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
-
-    # Definindo o task que processa a tabela rating_mais_recente_serasa
-    task_2  = PythonOperator(
-        task_id='rating_mais_recente_serasa',
-        python_callable= rating_mais_recente,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    # Definindo o task que processa limites_to_raw
+    task_limites_yandeh = PythonOperator(
+        task_id = 'tratamento_limites',
+        python_callable = limites_yandeh,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Definindo a ordem de execução das tasks
-    task_1 >> task_2
+    task_limites_yandeh

@@ -30,19 +30,19 @@ def notificar_falha_teams(context):
 
 default_args = {
     'owner': 'Vinicius Moraes Teixeira',
-    'start_date': days_ago(1),
+    #'start_date': days_ago(1),
     "on_failure_callback": notificar_falha_teams
 } 
 
 
 with DAG(
     dag_id='faturamento_estimado',
-    start_date=datetime(2024, 1, 1),
+    start_date=days_ago(1),
     catchup=False,
     default_args=default_args,
     tags=['faturamento', 'motor', 'refined'],
     max_active_runs=1,
-    schedule_interval='0 10 * * 0' 
+    schedule_interval = '0 10 * * 0-1',
 ) as dag:
 
     app_fat_estimado = "/opt/airflow/dags/repo/dags/faturamento_estimado/faturamento-estimado-spark-app.yaml"
