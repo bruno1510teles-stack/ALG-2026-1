@@ -45,6 +45,7 @@ def boletos_raw_to_trusted_acumulada (access_params=None,  **kwargs):
 
     df_boletos = execute_query (conn, query_boletos)
 
+    df_boletos = df_boletos.drop(columns=['boleto_titulo_id'])
 
     ### CRIANDO COLUNA ANO MÊS PARA FAZER O LOOP E ACUMULAR
 
