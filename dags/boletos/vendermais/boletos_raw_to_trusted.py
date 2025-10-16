@@ -35,7 +35,9 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
     # Base Boletos CCRED
     query_boleto = f"""
         select 
-		distinct bt.numero_sequencial_titulo,
+		distinct 
+        bt.id as boleto_titulo_id,
+        bt.numero_sequencial_titulo,
 		bt.codigo_filial,
 		bt.codigo_empresa,
 		bt.numero_titulo,
@@ -72,7 +74,9 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
 		and coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)) <= cast('2024-04-30' as date)
 union 
 select 
-		distinct bt.numero_sequencial_titulo,
+		distinct 
+        bt.id as boleto_titulo_id,
+        bt.numero_sequencial_titulo,
 		bt.codigo_filial,
 		bt.codigo_empresa,
 		bt.numero_titulo,
