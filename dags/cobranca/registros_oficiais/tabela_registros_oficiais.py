@@ -50,9 +50,7 @@ def cria_tabela_registros_oficiais (access_params=None, **kwargs):
                         WHEN i.status_instrucao_id = 5 AND i.confirmado = false THEN 'IMPROCEDENTE'
                         ELSE 'SEM STATUS'
                     END AS status_ro,
-                    i.motivo,
-                    i.created_date,
-                    i.last_modified_date
+                    i.motivo
                 FROM postgres.ccred_schema_{Variable.get('STAGE')}_default.instrucao i
                 inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.tipo_instrucao ti on ti.id = i.tipo_id
                 INNER JOIN postgres.knkt_intr_default.arcelor_instruction ai on ai.id = cast(i.referencia_externa as int)
