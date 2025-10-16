@@ -13,53 +13,53 @@ from decimal import Decimal, ROUND_DOWN
 import numpy as np
 
 
-colunas_schema = {
-    "id": float,
-    "numero_nfe": str,
-    "numero_pedido": pd.Int64Dtype(),
-    "cnpj_sacado": str,
-    "nome_sacado": str,
-    "cnpj_cedente": str,
-    "nome_cedente": str,
-    "data_fatura": "datetime64[D]",
-    "valor_fatura": float,
-    "status_fatura": str,
-    "status_fatura_sefaz": str,
-    "status_pago": str,
-    "atualizado_em": str,
-    "year": pd.Int64Dtype(),
-    "month": pd.Int64Dtype(),
-    "day": pd.Int64Dtype(),
-}
-
-def normalize_schema(df: pd.DataFrame, colunas_schema: dict) -> pd.DataFrame:
-    """
-    Garantir que o DataFrame tenha todas as colunas e tipos compatíveis
-    com o schema esperado do Delta Lake.
-    """
-    for col, dtype in colunas_schema.items():
-        if col not in df.columns:
-            # Cria coluna com valor default coerente com o tipo
-            if dtype in [str, "string"]:
-                df[col] = ""
-            elif dtype in [float, np.float64]:
-                df[col] = np.nan
-            elif dtype == "datetime64[D]":
-                df[col] = pd.NaT
-            else:
-                df[col] = pd.NA        
-        try:
-            if dtype == "datetime64[D]":
-                # Converte e garante apenas data (sem hora)
-                df[col] = pd.to_datetime(df[col], errors='coerce').dt.floor('D')
-            else:
-                df[col] = df[col].astype(dtype)
-        except Exception:
-            df[col] = df[col].astype(str)    
-    return df
-
-
 def faturamento_to_trusted(access_params=None,  **kwargs):
+
+    colunas_schema = {
+        "id": float,
+        "numero_nfe": str,
+        "numero_pedido": pd.Int64Dtype(),
+        "cnpj_sacado": str,
+        "nome_sacado": str,
+        "cnpj_cedente": str,
+        "nome_cedente": str,
+        "data_fatura": "date32[day]",
+        "valor_fatura": float,
+        "status_fatura": str,
+        "status_fatura_sefaz": str,
+        "status_pago": str,
+        "atualizado_em": str,
+        "year": pd.Int64Dtype(),
+        "month": pd.Int64Dtype(),
+        "day": pd.Int64Dtype(),
+    }
+
+    def normalize_schema(df: pd.DataFrame, colunas_schema: dict) -> pd.DataFrame:
+        """
+        Garante que o DataFrame tenha todas as colunas e tipos compatíveis
+        com o schema esperado do Delta Lake.
+        """
+        for col, dtype in colunas_schema.items():
+            if col not in df.columns:
+                # Cria coluna default coerente com o tipo
+                if dtype in [str, "string"]:
+                    df[col] = ""
+                elif dtype in [float, np.float64]:
+                    df[col] = np.nan
+                else:
+                    df[col] = pd.NA
+
+            try:
+                # Tratamento específico para data
+                if dtype == "date32[day]":
+                    df[col] = pd.to_datetime(df[col]).dt.date
+                else:
+                    df[col] = df[col].astype(dtype)
+
+            except Exception:
+                df[col] = df[col].astype(str)
+
+        return df
 
     ### Coletando dados da camada Raw
     # Conectando com o banco
@@ -165,7 +165,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print("Coluna 'chave' removida com sucesso antes da escrita no Delta Lake.")
     
-    fatura_incremental.reset_index(drop=True, inplace=True)    
+    fatura_incremental.reset_index(drop=True, inplace=True)
     fatura_incremental = normalize_schema(fatura_incremental, colunas_schema)
         
     # Configuração do Delta Lake
