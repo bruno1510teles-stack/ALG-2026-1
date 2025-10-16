@@ -39,6 +39,7 @@ def cria_tabela_registros_oficiais (access_params=None, **kwargs):
 
     query_ro = f"""
                 select
+                    distinct
                     i.boleto_titulo_id,
                     ai.codigo_ro,
                     i.numero_titulo,
