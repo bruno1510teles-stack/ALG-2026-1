@@ -12,6 +12,47 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
 import numpy as np
 
+
+colunas_schema = {
+    "id": float,
+    "numero_nfe": str,
+    "numero_pedido": pd.Int64Dtype(),
+    "cnpj_sacado": str,
+    "nome_sacado": str,
+    "cnpj_cedente": str,
+    "nome_cedente": str,
+    "data_fatura": "datetime64[ns]",
+    "valor_fatura": float,
+    "status_fatura": str,
+    "status_fatura_sefaz": str,
+    "status_pago": str,
+    "atualizado_em": str,
+    "year": pd.Int64Dtype(),
+    "month": pd.Int64Dtype(),
+    "day": pd.Int64Dtype(),
+}
+
+def normalize_schema(df: pd.DataFrame, colunas_schema: dict) -> pd.DataFrame:
+    """
+    Garantir que o DataFrame tenha todas as colunas e tipos compatíveis
+    com o schema esperado do Delta Lake.
+    """
+    for col, dtype in colunas_schema.items():
+        if col not in df.columns:
+            # Cria coluna com valor default coerente com o tipo
+            if dtype in [str, "string"]:
+                df[col] = ""
+            elif dtype in [float, np.float64]:
+                df[col] = np.nan
+            else:
+                df[col] = pd.NA
+        try:
+            df[col] = df[col].astype(dtype)
+        except Exception:
+            df[col] = df[col].astype(str)
+    return df
+
+
 def faturamento_to_trusted(access_params=None,  **kwargs):
 
     ### Coletando dados da camada Raw
@@ -32,7 +73,6 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
     
-
     # Base Boletos CCRED
     query_fatura = f"""
         select
@@ -86,7 +126,6 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     print("Tratamento dos dados concluído")
 
-
     ### Merge incremental
 
     # Cria chave temporária para comparação
@@ -111,6 +150,7 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
 
     if fatura_incremental.empty:
         print("Nenhum registro novo encontrado. Encerrando execução.")
+        return
 
     # Remove coluna 'chave' de todos os DataFrames
     for df in [fatura, trusted, fatura_incremental]:
@@ -120,7 +160,8 @@ def faturamento_to_trusted(access_params=None,  **kwargs):
     print("Coluna 'chave' removida com sucesso antes da escrita no Delta Lake.")
     
     fatura_incremental.reset_index(drop=True, inplace=True)
-    
+    fatura_incremental = normalize_schema(fatura_incremental, colunas_schema)
+        
     # Configuração do Delta Lake
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
