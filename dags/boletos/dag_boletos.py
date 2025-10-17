@@ -22,6 +22,7 @@ from boletos.tradicional import boletos_tradicional_trusted_to_refined_vop
 from boletos.tradicional import vop_visao_safra_tradicional
 
 from boletos.consolidado import consolidado_to_trusted
+from boletos.pontualidade import pontualidade_interna
 
 ### Parâmetros de acesso
 access_params = {          
@@ -157,6 +158,13 @@ with DAG(
         provide_context = True
     )
     
-    
+	# Definindo o task que processa pontualidade to refined
+    pontualidade_to_refined_task = PythonOperator(
+        task_id = 'pontualidade_to_refined',
+        python_callable = pontualidade_interna.pontualidade_to_refined,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True
+    )  
+        
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> boletos_acum >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task >> consolidado_to_trusted_task
+    raw_to_trusted >> boletos_acum >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task >> consolidado_to_trusted_task >> pontualidade_to_refined_task
