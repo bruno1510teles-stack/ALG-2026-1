@@ -13,8 +13,26 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import unicodedata
 
-
 def trata_safras_problema (access_params=None, **kwargs):
+
+    ### Coletando dados da camada Raw
+    # Conectando com o banco
+    conn = connect(
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        http_scheme="https",
+    )
+
+    def execute_query(conn, query):
+        cur = conn.cursor()  # Abre o cursor
+        cur.execute(query)
+        rows = cur.fetchall()
+        columns = [desc[0] for desc in cur.description]
+        cur.close()  # Fecha o cursor após a execução
+        return pd.DataFrame(rows, columns=columns)
+
 
     minio_raw = Minio(
         access_params['endpoint_url_raw'],
@@ -80,7 +98,7 @@ def trata_safras_problema (access_params=None, **kwargs):
     else:
         print("⚠️ Nenhum dado foi carregado.")
 
-
+    
     print('Tratando dados para trusted...')
     print('Quantidade de linhas após empilhamento:')
     print(len(df))
@@ -111,10 +129,8 @@ def trata_safras_problema (access_params=None, **kwargs):
     for col in date_cols:
         df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
 
-    # safra em formato date
-    df['safra'] = df['safra'].astype(str)
-
     # Normalizando campos string
+    df['safra'] = df['safra'].astype(str)
     df['status'] = df['status'].str.upper()
 
 
@@ -134,8 +150,38 @@ def trata_safras_problema (access_params=None, **kwargs):
     df_final = pd.merge(df_agrupado, df, on=['problema', 'safra', 'cnpj', 'ano_mes', 'raiz_cnpj'], how='left')
 
     df_final = df_final.groupby(['safra', 'ano_mes', 'cnpj', 'raiz_cnpj', 'problema', 'chave_is_problema'], as_index=False).agg({
-        'status': 'max',
+        'status': 'first',
     }).drop_duplicates().reset_index(drop=True)
+
+    '''
+    ## Query dados de boletos prorrogados
+    query_prorrogados = f"""
+                            select
+                                distinct
+                                last_day_of_month(b.safra_concessao) as safra,
+                                date_format(b.safra_concessao, '%Y%m') AS ano_mes,
+                                regexp_replace(b.cnpj_sacado, '[./-]', '') as cnpj,
+                                substring(regexp_replace(b.cnpj_sacado, '[./-]', ''), 1, 8) as raiz_cnpj,
+                                'NÃO' as problema,
+                                date_format(b.safra_concessao, '%Y%m') || regexp_replace(b.cnpj_sacado, '[./-]', '') as chave_is_problema,
+                                'TÍTULO PRORROGADO' as status
+                            from deltalaketrusted.payments.boletos_internos b
+                            where status_liquidez = 'PRORROGADO'
+                            and try_cast(data_emissao as date) >= date '2025-01-01'
+                        """
+
+    df_prorrogados = execute_query(conn, query_prorrogados)
+
+    df_prorrogados['safra'] = pd.to_datetime(df_prorrogados['safra']).dt.strftime("%Y-%m-%d")
+
+    # Filtrar apenas chaves que não estão na acumulada
+    df_prorrogados_filtrado = df_prorrogados[
+        ~df_prorrogados['chave_is_problema'].isin(df_final['chave_is_problema'])
+    ]
+
+    # Inserindo casos de prorrogados na acumulada
+    df_final = pd.concat([df_final, df_prorrogados_filtrado], ignore_index=True)
+    '''
 
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -155,7 +201,7 @@ def trata_safras_problema (access_params=None, **kwargs):
 
     print('Salvando dados na Trusted...')
 
-
+    
     storage_options_trusted = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],

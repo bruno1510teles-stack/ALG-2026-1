@@ -149,9 +149,13 @@ def raw_to_trusted(access_params=None, **kwargs):
         'COMERCIAL CONEXÃO' : 'OUTROS',
         ('JESSICA PATTARO', 'JESSICA KONNO PATTARO', 'JÉSSICA PATTARO', 'JESSICA PATARRO'): 'JESSICA PATTARO',
         ('LEONARDO BOFF', 'LEONARDO SILVA'): 'LEONARDO BOFF',
-        ('VANUZA SILVA', 'VANUZA VIAL'): 'VANUZA SILVA',
+        ('VANUZA SILVA', 'VANUZA VIAL'): 'OUTROS',
         ('VICENTE DOUGLAS', 'VICENTE MOURA', 'VICENTE DOUGLAS RIBEIRO DE MOURA'): 'VICENTE DOUGLAS',
-        ('NATALIA GOLFETO'): 'NATALIA GOLFETO'
+        ('NATALIA GOLFETO', 'NATÁLIA GOLFETO') : 'NATALIA GOLFETO',
+        ('MAIRZE CARNEIRO', 'MAIRZE DUTRA'): 'MAIRZE CARNEIRO',
+        ('JEANINI REISER'): 'OUTROS',
+        ('NICOLAS OLIVEIRA', 'NICOLAS SANTOS DE OLIVEIRA'): 'NICOLAS OLIVEIRA',
+        ('CRISTIANE ALMEIDA'): 'CRISTIANE ALMEIDA'
     }
 
     # Função para padronizar o nome
@@ -430,7 +434,10 @@ def raw_to_trusted(access_params=None, **kwargs):
                             'A - E1', 'A - A6', 'A - C2', 'PF JA TEVE ANALISE ANTERIOR ALPE', 'A - A11', 'A - A8', 'A - B2', 'AF - LIMINAR SERASA',
                             'PF CONSORCIO/SPE/SA', 'TESTE', 'C6 | C2', 'D4 | D1', 'C2 | C2', 'C1 | C1', 'C4 | C2', 'D1 | D1', 'C3 | C1', 'AF - CONSULTAS SERASA',
                             'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE', 'D3 | D1', 'D2 | D1', 'REPROVADO | REPROVADO', 'VENCIDO > 30 DIAS', 'CANCELAMENTO DE LIMITE',
-                            'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI']
+                            'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI',
+                            'PF BLOQUEIO ALPE - SEM POLITICA', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA', 'PF LIMITE SOLICITADO <= ATUAL', 'PF SA', 'PF - GE MESA',
+                            'PF - GE CNPJ IRREGULAR', 'PF - GE BLOQUEIO ALPE', 'POLITICA4', 'AF - SEM HISTÓRICO DE PAGAMENTO SERASA'
+                            ]
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
                             'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8', 'AF - MUDANÇA ENDEREÇO','AF - ENDEREÇO IGUAL',

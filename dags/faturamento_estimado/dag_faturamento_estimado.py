@@ -7,6 +7,9 @@ import requests
 from datetime import timedelta
 from airflow.utils.dates import datetime
 
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
     dag_id = context['task_instance'].dag_id
@@ -27,28 +30,33 @@ def notificar_falha_teams(context):
 
 default_args = {
     'owner': 'Vinicius Moraes Teixeira',
-    'start_date': days_ago(1),
+    #'start_date': days_ago(1),
     "on_failure_callback": notificar_falha_teams
 } 
 
 
 with DAG(
     dag_id='faturamento_estimado',
-    start_date=datetime(2024, 1, 1),
+    start_date=days_ago(1),
     catchup=False,
     default_args=default_args,
     tags=['faturamento', 'motor', 'refined'],
     max_active_runs=1,
-    schedule_interval='0 10 * * 0' 
+    schedule_interval = '0 10 * * 0-1',
 ) as dag:
 
-    calculo_fat_estimado = SparkKubernetesOperator(
-        task_id='calcula_faturamento_estimado',
-        application_file='faturamento-estimado-spark-app.yaml',
-        namespace='spark',
-        kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
-        execution_timeout=timedelta(minutes=120)
+    app_fat_estimado = "/opt/airflow/dags/repo/dags/faturamento_estimado/faturamento-estimado-spark-app.yaml"
+
+    calculo_fat_estimado = NoTemplateSparkKubernetesOperator(
+        task_id="calcula_faturamento_estimado",
+        application_file = app_fat_estimado,
+        namespace="spark",
+        kubernetes_conn_id="kubernetes_default",
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
     calculo_fat_estimado

@@ -10,7 +10,7 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from politica_e_modelagem.reporte_motor import report
+from politica_e_modelagem.reporte_motor import report_atualizado
 #from politica_e_modelagem.reporte_motor import report_desafiante
 
 ### Parâmetros de acesso
@@ -58,8 +58,8 @@ default_args = {
 # Definindo a DAG
 with DAG(
     dag_id='report_motor',
-    start_date=days_ago(1),
-    schedule_interval='30 11 * * 1-5',
+    start_date= days_ago(1), 
+    schedule_interval='0 11 * * 0-5',
     default_args=default_args,
     tags=['report', 'motor', 'credito'],
     max_active_runs=1
@@ -68,7 +68,7 @@ with DAG(
     # Definindo task
     reporte = PythonOperator(
         task_id='envia_mensagem_teams',
-        python_callable=report.report_motor,
+        python_callable=report_atualizado.report_motor_atualizado,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )

@@ -35,6 +35,14 @@ def estoque_consolidado(spark):
     )
 
     df = df.withColumn(
+        "valor_presente_tratado",
+        F.when(F.col("data_vencimento") > F.date_sub(F.col("data_arquivo"), 60), F.col("valor_presente"))
+        .otherwise(0)
+    )
+
+
+    # Valor Aquisição
+    df = df.withColumn(
         "valor_aquisicao_vendermais",
         F.when(F.col("grupo") == "VenderMais" , F.col("valor_aquisicao_tratado"))
         .otherwise(0)
@@ -52,12 +60,49 @@ def estoque_consolidado(spark):
         .otherwise(0)
     )
 
+    df = df.withColumn(
+        "valor_aquisicao_vex",
+        F.when(F.col("grupo") == "VEX" , F.col("valor_aquisicao_tratado"))
+        .otherwise(0)
+    )
+
+    # Valor Presente
+    df = df.withColumn(
+        "valor_presente_vendermais",
+        F.when(F.col("grupo") == "VenderMais" , F.col("valor_presente_tratado"))
+        .otherwise(0)
+    )
+
+    df = df.withColumn(
+        "valor_presente_tradicional",
+        F.when(F.col("grupo") == "Tradicional" , F.col("valor_presente_tratado"))
+        .otherwise(0)
+    )
+
+    df = df.withColumn(
+        "valor_presente_conglomerado",
+        F.when(F.col("grupo") == "Conglomerado" , F.col("valor_presente_tratado"))
+        .otherwise(0)
+    )
+
+    df = df.withColumn(
+        "valor_presente_vex",
+        F.when(F.col("grupo") == "VEX" , F.col("valor_presente_tratado"))
+        .otherwise(0)
+    )
+
+    # Agrupando
     df = df.groupBy("data_arquivo", "data_referencia").agg(
         F.sum("valor_presente").alias("estoque"),
         (F.sum("pdd_nota") + F.sum("pdd_vencido")).alias("pdd"),
         F.sum("valor_aquisicao_vendermais").alias("valor_aquisicao_vendermais"),
         F.sum("valor_aquisicao_tradicional").alias("valor_aquisicao_tradicional"),
-        F.sum("valor_aquisicao_conglomerado").alias("valor_aquisicao_conglomerado")
+        F.sum("valor_aquisicao_conglomerado").alias("valor_aquisicao_conglomerado"),
+        F.sum("valor_aquisicao_vex").alias("valor_aquisicao_vex"),
+        F.sum("valor_presente_vendermais").alias("valor_presente_vendermais"),
+        F.sum("valor_presente_tradicional").alias("valor_presente_tradicional"),
+        F.sum("valor_presente_conglomerado").alias("valor_presente_conglomerado"),
+        F.sum("valor_presente_vex").alias("valor_presente_vex")
     )
 
 
@@ -109,6 +154,11 @@ def estoque_consolidado(spark):
         F.col("valor_aquisicao_vendermais"),
         F.col("valor_aquisicao_tradicional"),
         F.col("valor_aquisicao_conglomerado"),
+        F.col("valor_aquisicao_vex"),
+        F.col("valor_presente_vendermais"),
+        F.col("valor_presente_tradicional"),
+        F.col("valor_presente_conglomerado"),
+        F.col("valor_presente_vex"),
         F.col("SELIC_DIA").alias("selic_dia"),
         F.col("data_referencia"),
         F.col("atualizado_em")
@@ -123,6 +173,11 @@ def estoque_consolidado(spark):
         .withColumn("valor_aquisicao_vendermais", col("valor_aquisicao_vendermais").cast(DoubleType())) \
         .withColumn("valor_aquisicao_tradicional", col("valor_aquisicao_tradicional").cast(DoubleType())) \
         .withColumn("valor_aquisicao_conglomerado", col("valor_aquisicao_conglomerado").cast(DoubleType())) \
+        .withColumn("valor_aquisicao_vex", col("valor_aquisicao_vex").cast(DoubleType())) \
+        .withColumn("valor_presente_vendermais", col("valor_presente_vendermais").cast(DoubleType())) \
+        .withColumn("valor_presente_tradicional", col("valor_presente_tradicional").cast(DoubleType())) \
+        .withColumn("valor_presente_conglomerado", col("valor_presente_conglomerado").cast(DoubleType())) \
+        .withColumn("valor_presente_vex", col("valor_presente_vex").cast(DoubleType())) \
         .withColumn("selic_dia", col("selic_dia").cast(DoubleType()))
 
     # Exibição
@@ -133,6 +188,11 @@ def estoque_consolidado(spark):
         format_number("valor_aquisicao_vendermais", 2).alias("valor_aquisicao_vendermais_formatado"),
         format_number("valor_aquisicao_tradicional", 2).alias("valor_aquisicao_tradicional_formatado"),
         format_number("valor_aquisicao_conglomerado", 2).alias("valor_aquisicao_conglomerado"),
+        format_number("valor_aquisicao_vex", 2).alias("valor_aquisicao_vex"),
+        format_number("valor_presente_vendermais", 2).alias("valor_presente_vendermais"),
+        format_number("valor_presente_tradicional", 2).alias("valor_presente_tradicional"),
+        format_number("valor_presente_conglomerado", 2).alias("valor_presente_conglomerado"),
+        format_number("valor_presente_vex", 2).alias("valor_presente_vex"),
         format_number("selic_dia", 10).alias("selic_dia_formatado")
     )
     df_final_exibicao.show()
@@ -154,6 +214,7 @@ def estoque_consolidado(spark):
         .partitionBy("data_referencia", "data") \
         .format("delta") \
         .option("encoding", 'latin1') \
+        .option("overwriteSchema", "true") \
         .mode("overwrite") \
         .save("s3a://hemera-refined/estoque_consolidado")
 

@@ -9,6 +9,9 @@ import requests
 from datetime import timedelta
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 ### Importando scripts necessários (Excel to Csv) - Rotina
 
 from hemera.spark.hemera_rotina import aquisicao_excel_to_csv_diario
@@ -124,13 +127,21 @@ with DAG(
         provide_context=True
     )
 
-    estoque_rotina_trusted = SparkKubernetesOperator(
-        task_id='estoque_diario_trusted',
-        application_file='estoque-diario-trusted-spark-app.yaml',
-        namespace='spark',
-        kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
+
+    app_estoque_diario_trusted = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-diario-trusted-spark-app.yaml"
+
+    estoque_rotina_trusted = NoTemplateSparkKubernetesOperator(
+        task_id="estoque_diario_trusted",
+        application_file = app_estoque_diario_trusted,
+        namespace="spark",
+        kubernetes_conn_id="kubernetes_default",
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
+
 
     recompra_rotina_trusted = PythonOperator(
         task_id="recompra_diario_trusted",
@@ -156,12 +167,18 @@ with DAG(
         provide_context=True
     )
 
-    estoque_refined_task = SparkKubernetesOperator(
+    app_estoque_diario_refined = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-refined-spark-app.yaml"
+
+    estoque_refined_task = NoTemplateSparkKubernetesOperator(
         task_id='estoque_refined',
-        application_file='estoque-refined-spark-app.yaml',
+        application_file = app_estoque_diario_refined,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
     recompra_refined_task = PythonOperator(
@@ -178,13 +195,20 @@ with DAG(
         provide_context=True
     )
 
+
+    app_consolid_hemera = "/opt/airflow/dags/repo/dags/hemera/spark/dags/estoque-consolidado-hemera-spark-app.yaml"
+
     ## Processo Fe
-    consolidado_hemera_produto = SparkKubernetesOperator(
+    consolidado_hemera_produto = NoTemplateSparkKubernetesOperator(
         task_id='consolidado_hemera_produto',
-        application_file='estoque-consolidado-hemera-spark-app.yaml',
+        application_file = app_consolid_hemera,
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
+        startup_timeout_seconds=600,
+        retries=5,
+        reattach_on_restart=True,
+        log_events_on_failure=True,
+        get_logs=True
     )
 
 

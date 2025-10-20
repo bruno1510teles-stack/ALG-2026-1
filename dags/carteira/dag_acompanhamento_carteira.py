@@ -11,10 +11,7 @@ import pendulum
 import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
-
-
-from serasa.rating_mais_antigo_serasa import rating_mais_antigo
-from serasa.rating_mais_recente_serasa import rating_mais_recente
+from carteira.acompanhamento_carteira import acompanhamento_carteira_refined
 
 
 ### Parâmetros de acesso
@@ -52,7 +49,7 @@ def notificar_falha_teams(context):
 
 ### Definindo defaults
 default_args = {
-    "owner": "Beatriz Anjos",
+    "owner": "Natielli Torres",
     "retries": 3,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
@@ -63,30 +60,22 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='rating_serasa',
+    dag_id='carteira',
     start_date=days_ago(1),
     schedule_interval = '0 10 * * 1-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
-    tags=['etl', 'rating', 'trusted'],
+    tags=['etl', 'carteira', 'refined'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
 
 ) as dag:
 
     # Definindo o task que processa a tabela rating_mais_antigo_serasa
     task_1  = PythonOperator(
-        task_id='rating_mais_antigo_serasa',
-        python_callable= rating_mais_antigo,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
-
-    # Definindo o task que processa a tabela rating_mais_recente_serasa
-    task_2  = PythonOperator(
-        task_id='rating_mais_recente_serasa',
-        python_callable= rating_mais_recente,
+        task_id='acompanhamento_carteira',
+        python_callable= acompanhamento_carteira_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
     # Definindo a ordem de execução das tasks
-    task_1 >> task_2
+    task_1

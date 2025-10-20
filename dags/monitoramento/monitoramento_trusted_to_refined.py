@@ -62,12 +62,12 @@ def trusted_to_refined (access_params=None,  **kwargs):
         #max_expr = "format_datetime(MAX(TRY_CAST(atualizado_em AS TIMESTAMP)), 'yyyy-MM-dd HH:mm:ss')"
 
         query = (f'''
-            (SELECT CAST('{camada}' as VARCHAR(99)) AS camada, 
+            SELECT 
+                CAST('{camada}' AS VARCHAR(99)) AS camada, 
                 CAST('{schema}' AS VARCHAR(99)) AS schema, 
                 CAST('{tabela}' AS VARCHAR(99)) AS tabela, 
-                CAST(atualizado_em AS VARCHAR(99)) AS ultima_atualizacao 
-            FROM {camada}.\"{schema}\".\"{tabela}\"
-            LIMIT 1)
+                CAST(MAX(atualizado_em) AS VARCHAR(99)) AS ultima_atualizacao 
+            FROM {camada}."{schema}"."{tabela}"
             '''
         )
 

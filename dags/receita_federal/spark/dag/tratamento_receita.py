@@ -6,6 +6,9 @@ from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKu
 import requests
 from datetime import timedelta
 
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
     dag_id = context['task_instance'].dag_id
@@ -43,109 +46,97 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    cnae = SparkKubernetesOperator(
+    cnae = NoTemplateSparkKubernetesOperator(
         task_id='cnae',
-        application_file='cnae-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/cnae-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
 
-    empresas = SparkKubernetesOperator(
+    empresas = NoTemplateSparkKubernetesOperator(
         task_id='empresas',
-        application_file='empresas-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/empresas-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
 
-    estabelecimentos = SparkKubernetesOperator(
+    estabelecimentos = NoTemplateSparkKubernetesOperator(
         task_id='estabelecimentos',
-        application_file='estabelecimentos-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/estabelecimentos-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
 
-    motivos = SparkKubernetesOperator(
+    motivos = NoTemplateSparkKubernetesOperator(
         task_id='motivos',
-        application_file='motivos-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/motivos-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
 
-    municipios = SparkKubernetesOperator(
+    municipios = NoTemplateSparkKubernetesOperator(
         task_id='municipios',
-        application_file='municipios-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/municipios-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-    naturezas = SparkKubernetesOperator(
+    naturezas = NoTemplateSparkKubernetesOperator(
         task_id='naturezas',
-        application_file='naturezas-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/naturezas-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-    paises = SparkKubernetesOperator(
+    paises = NoTemplateSparkKubernetesOperator(
         task_id='paises',
-        application_file='paises-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/paises-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-    qualificacoes = SparkKubernetesOperator(
+    qualificacoes = NoTemplateSparkKubernetesOperator(
         task_id='qualificacoes',
-        application_file='qualificacoes-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/qualificacoes-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-    simples = SparkKubernetesOperator(
+    simples = NoTemplateSparkKubernetesOperator(
         task_id='simples',
-        application_file='simples-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/simples-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
-    socios = SparkKubernetesOperator(
+    socios = NoTemplateSparkKubernetesOperator(
         task_id='socios',
-        application_file='socios-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/socios-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         execution_timeout=timedelta(minutes=120)
     )
 
-    pre_filtro = SparkKubernetesOperator(
+    pre_filtro = NoTemplateSparkKubernetesOperator(
         task_id='pre_filtro',
-        application_file='pre-filtro-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/pre-filtro-v2-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         retries = 1, # Ajustando retries
         execution_timeout=timedelta(minutes=120)
     )
 
-    dados_cadastrais = SparkKubernetesOperator(
+    dados_cadastrais = NoTemplateSparkKubernetesOperator(
         task_id='dados-cadastrais',
-        application_file='dados-cadastrais-spark-app.yaml',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/dados-cadastrais-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
-        do_xcom_push=True,
         retries = 1, # Ajustando retries
         retry_delay=timedelta(minutes=120) # Ajuste
     )
 
-    cnae >> empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> pre_filtro >> dados_cadastrais
+    empresas >> estabelecimentos >> motivos >> municipios >> naturezas >> paises >> qualificacoes >> simples >> socios >> cnae >> pre_filtro >> dados_cadastrais
