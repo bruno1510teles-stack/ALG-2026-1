@@ -60,6 +60,7 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    '''
     # Captura proposta no jira
     task2 = PythonOperator(
         task_id = "propostas_v4",
@@ -67,6 +68,8 @@ with DAG(
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
+    '''
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    task1 
+    # >> task2
