@@ -8,7 +8,6 @@ import pendulum
 import requests
 from datetime import timedelta
 
-
 ### Importando scripts necessários
 from payments.pagamento_historico import cria_tabela_pagamento_historico
 
@@ -69,6 +68,7 @@ with DAG(
     # Definindo o task que carrega a tabela na Refined
     task1 = PythonOperator(
         task_id='raw_to_trusted',
+        op_kwargs={'access_params': access_params},
         python_callable=cria_tabela_pagamento_historico.cria_tabela_pagamento_historico_task,
         provide_context=True
     )
