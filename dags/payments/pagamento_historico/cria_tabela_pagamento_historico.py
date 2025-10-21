@@ -254,6 +254,22 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
     print(len(df_final))
 
 
+
+    cols_numericas = [
+        "valor_compras_ultimos_6_meses",
+        "valor_compras_ultimos_8_meses",
+        "valor_compras_ultimos_10_meses",
+        "media_compras_ultimos_6_meses",
+        "media_compras_ultimos_8_meses",
+        "media_compras_ultimos_10_meses",
+        "media_pagamento_total"
+    ]
+
+    for col in cols_numericas:
+        if col in df_final.columns:
+            df_final[col] = pd.to_numeric(df_final[col], errors="coerce").fillna(0.0).astype(float)
+
+
     # Atribuindo data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
