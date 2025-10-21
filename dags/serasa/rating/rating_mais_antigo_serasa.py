@@ -114,52 +114,85 @@ def rating_mais_antigo(access_params=None,  **kwargs):
 
 
     query_pontualidade = (
-            f"""
-            with pontualidade_alpe as (
-                select substring(regexp_replace(cnpj_sacado, '[^0-9]', ''),1,8) as cnpj_raiz, nome_sacado, 
-                sum(case when status_titulo = 'NO PRAZO' then valor_face else 0 END) as valor_pago_no_prazo,
-                sum(case when status_titulo = 'FORA DO PRAZO' then valor_face else 0 end) as valor_pago_fora_do_prazo,
-                sum(case when status_titulo = 'VENCIDO' then valor_face else 0 end) as valor_nao_pago,
-                sum(valor_face) as valor_performado,
-                (sum(case when status_titulo = 'NO PRAZO' then valor_face else 0 end)) / (sum(valor_face)) * 100 as pontualidade
-            from 
-                deltalaketrusted.payments.boletos_internos 
-            where 
-                status_titulo not in ('A VENCER') 
-            group by 
-                substring(regexp_replace(cnpj_sacado, '[^0-9]', ''),1,8), nome_sacado
-            ),
-            pontualidade_arcelor as(
-            select
-                raiz_cnpj as cnpj_raiz,
-                pontualidade
-            from 
-                deltalakerefined.motor.pontualidade  
-            ),
-            base_pontualidade as (
-            select 
-            coalesce(palpe.cnpj_raiz, par.cnpj_raiz) as cnpj_raiz, min(coalesce(palpe.pontualidade, par.pontualidade)) as pontualidade
-            from pontualidade_alpe palpe
-            full join pontualidade_arcelor par on palpe.cnpj_raiz = par.cnpj_raiz
-            group by
-            coalesce(palpe.cnpj_raiz, par.cnpj_raiz)
-            )
-            select 
-                *
-            from 
-                base_pontualidade
-            where
-            cnpj_raiz in {ids_query}
+    f"""
+        WITH pontualidade_alpe AS (
+            SELECT
+                cnpj_raiz,
+                pontualidade,
+                safra_referencia AS data_safra,
+                'ALPE' AS origem
+            FROM deltalakerefined.payments.pontualidade_interna
+            WHERE cnpj_raiz IN {ids_query}
+        ),
+        pontualidade_arcelor AS (
+            SELECT
+                raiz_cnpj AS cnpj_raiz,
+                pontualidade,
+                NULL AS data_safra,
+                'ARCELOR' AS origem
+            FROM deltalakerefined.motor.pontualidade
+            WHERE raiz_cnpj IN {ids_query}
+        )
+        SELECT * FROM pontualidade_alpe
+        UNION ALL
+        SELECT * FROM pontualidade_arcelor
     """
     )
 
     base_pontualidade = execute_query(conn, query_pontualidade)
-
+    
     print(f"Quantidade de CNPJs que retornou da base_pontualidade: {base_pontualidade.shape[0]}")
 
-    # Cruzando df_propostas_enriquecidas com a Base de Pontualidade
-    base_analisar = pd.merge(propostas_enriquecidas, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
+# Garantir que as colunas de data estão em datetime
+    propostas_enriquecidas['data_consulta'] = pd.to_datetime(propostas_enriquecidas['data_consulta']).dt.tz_localize(None)
+    propostas_enriquecidas['data_resolvido'] = pd.to_datetime(propostas_enriquecidas['data_resolvido']).dt.tz_localize(None)
+    base_pontualidade['data_safra'] = pd.to_datetime(base_pontualidade['data_safra']) 
 
+    # Cruzando df_propostas_enriquecidas com a Base de Pontualidade
+    #base_analisar = pd.merge(propostas_enriquecidas, base_pontualidade, on = ['cnpj_raiz'], how = 'left')
+    
+    # Merge inicial de TODAS as propostas com TODAS as pontualidades
+    base_analisar = pd.merge(propostas_enriquecidas, base_pontualidade, on = ['cnpj_raiz'], how = 'left').rename(columns={'data_consulta': 'data_consulta_serasa', 'pontualidade': 'pontualidade_bruta'})
+    
+    # Identifica Alpe que é anterior ou igual à consulta Serasa
+    alpe_pont = (base_analisar['origem'] == 'ALPE') & \
+                (base_analisar['data_safra'].notna()) & \
+                (base_analisar['data_safra'] <= base_analisar['data_consulta_serasa'])
+
+    # Calcula a diferença de dias (para ranqueamento)
+    base_analisar.loc[alpe_pont, 'dias_dif'] = \
+        (base_analisar['data_consulta_serasa'] - base_analisar['data_safra']).dt.days
+
+    # Ranqueia a pontualidade Alpe: 1 é a safra mais próxima
+    base_analisar.loc[alpe_pont, 'rnk_alpe'] = \
+        base_analisar[alpe_pont].groupby(['cnpj_raiz'])['dias_dif'].rank(method='min', ascending=True)
+
+    # Seleciona o valor da safra mais próxima - Alpe
+    alpe_min = base_analisar[base_analisar['rnk_alpe'] == 1].groupby('cnpj_raiz')['pontualidade_bruta'].min().rename('pontualidade_alpe_min')
+
+    # Identifica pontualidade Arcelor
+    arcelor_pont = (base_analisar['origem'] == 'ARCELOR') & (base_analisar['pontualidade_bruta'].notna())
+
+    # Seleciona a pontualidade da Arcelor
+    arcelor_min = base_analisar[arcelor_pont].groupby('cnpj_raiz')['pontualidade_bruta'].min().rename('pontualidade_arcelor_min')
+
+    # Reduz a tabela base de volta ao nível de raiz_cnpj
+    base_final = propostas_enriquecidas.copy()
+    
+    # Merge com os resultados agregados
+    base_final = pd.merge(base_final, alpe_min, on='cnpj_raiz', how='left')
+    base_final = pd.merge(base_final, arcelor_min, on='cnpj_raiz', how='left')
+
+
+    # Prioriza a pontualidade Alpe (safra mais próxima), e usa a pontualidade Arcelor apenas caso a pontualidade Alpe não exista.
+    pontualidade_final = base_final['pontualidade_alpe_min'].combine_first(
+        base_final['pontualidade_arcelor_min'])
+
+    base_final['pontualidade'] = pontualidade_final
+    
+    # Limpeza de colunas temporárias
+    base_analisar = base_final.drop(columns=['pontualidade_alpe_min', 'pontualidade_arcelor_min'])
+        
     print(f"Quantidade de linhas df_propostas_enriquecidas: {propostas_enriquecidas.shape[0]}")
     print(f"Quantidade de linhas após cruzamento: {base_analisar.shape[0]}")
 
@@ -167,7 +200,6 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     base_analisar['empresa_grande'] = base_analisar['empresa_grande'].fillna(0).astype(int)
     base_analisar['score'] = base_analisar['score'].fillna(0).astype(int)
 
-    
     # Regras parte da política desafiante
 
     def set_resultado(row, ram1='Sem Informacao', ram2='Sem Informacao', decisao='MESA', parecer=None):
@@ -177,7 +209,7 @@ def rating_mais_antigo(access_params=None,  **kwargs):
         if parecer is not None:
             row['parecer'] = parecer
         return row
-
+    
 
     # Garantindo que sejam float
     base_analisar['faturamento_estimado'] = pd.to_numeric(base_analisar['faturamento_estimado'], errors='coerce').astype(float)
@@ -351,7 +383,6 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     df_rating_concessao['data_criado'] = df_rating_concessao['data_criado'].dt.date
     df_rating_concessao['data_resolvido'] = df_rating_concessao['data_resolvido'].dt.date
 
-
     # Tratamento colunas para inteiro com suporte a nulos
     colunas_int = [
         'pontualidade', 'score', 'empresa_grande',
@@ -408,9 +439,3 @@ def rating_mais_antigo(access_params=None,  **kwargs):
     storage_options=storage_options,
     mode="overwrite"
     )
-
-
-
-
-
-
