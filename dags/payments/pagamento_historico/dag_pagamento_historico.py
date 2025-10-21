@@ -51,7 +51,7 @@ def notificar_falha_teams(context):
 default_args = {
     "owner": "Vinicius Moraes Teixeira",
     "retries": 0,
-    #"on_failure_callback": notificar_falha_teams
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -59,7 +59,7 @@ default_args = {
 with DAG(
     dag_id = 'pagamento_historico',
     start_date = days_ago(1),
-    schedule_interval = None,
+    schedule_interval = '0 11 * * 4',
     default_args = default_args,
     tags = ['etl', 'pagamento','trusted','historico', 'serasa', 'arcelor', 'alpe']
 ) as dag:
