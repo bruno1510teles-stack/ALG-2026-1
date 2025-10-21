@@ -8,18 +8,20 @@ import numpy as np
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from airflow.utils.log.logging_mixin import LoggingMixin
+from deltalake import write_deltalake, DeltaTable
+import joblib
 
 
 def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
 
     ### CONECTANDO COM O TRINO
     conn = connect(
-        host=access_params['trino_endpoint'],
-        port=access_params['trino_port'],
-        user=access_params['trino_user'],
-        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
-        http_scheme="https",
-    )
+        host='trino.alpe.com.br',
+        port=443,
+        user='vinicius_teixeira',
+        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
+        http_scheme="https",)
+    
 
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
