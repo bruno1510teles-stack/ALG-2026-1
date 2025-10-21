@@ -268,6 +268,8 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
 
     try:
         logger.info("Iniciando salvamento das informações")
+
+        print("access_params:", access_params)
             
         storage_options = {
             "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
