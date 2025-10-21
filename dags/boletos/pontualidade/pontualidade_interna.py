@@ -45,7 +45,7 @@ def pontualidade_to_refined (access_params=None,  **kwargs):
             , bi.safra_baixa      
             , bi.data_vencimento 
         FROM deltalaketrusted.payments.boletos_internos bi
-        WHERE bi.data_vencimento <= current_date
+        WHERE bi.data_vencimento < current_date
     ),
     agregacao_mensal AS (
         SELECT
