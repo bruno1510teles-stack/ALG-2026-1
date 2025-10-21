@@ -14,14 +14,14 @@ import joblib
 
 def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
 
-    ### CONECTANDO COM O TRINO
+    # Conectando ao Trino para Leitura
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='vinicius_teixeira',
-        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
-        http_scheme="https",)
-    
+        host=access_params['trino_endpoint'],
+        port=access_params['trino_port'],
+        user=access_params['trino_user'],
+        auth=BasicAuthentication(access_params['trino_user'], access_params['trino_password']),
+        http_scheme="https",
+    )
 
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
