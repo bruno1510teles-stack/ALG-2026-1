@@ -33,37 +33,38 @@ def acompanhamento_carteira_refined (access_params=None,  **kwargs):
 
     #Query do trino
     query_carteira = f"""
-    WITH limites AS (
+        WITH limites AS (
+            SELECT 
+                SUBSTR(cnpj_sacado, 1, 8) AS raiz_cnpj
+                ,SUM(limite_atribuido) AS limite_atribuido
+                ,SUM(limite_utilizado) AS limite_utilizado
+                ,SUM(limite_disponivel) AS limite_disponivel
+            FROM deltalaketrusted.limites.limite
+            GROUP BY substr(cnpj_sacado, 1, 8)
+        )
         SELECT 
-            SUBSTR(cnpj_sacado, 1, 8) AS raiz_cnpj
-            ,SUM(limite_atribuido) AS limite_atribuido
-            ,SUM(limite_utilizado) AS limite_utilizado
-            ,SUM(limite_disponivel) AS limite_disponivel
-        FROM deltalaketrusted.limites.limite
-        GROUP BY substr(cnpj_sacado, 1, 8)
-    )
-    SELECT 
-        SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) AS raiz_cnpj
-        ,bi.nome_sacado 
-        ,SUM(bi.valor_titulo) AS carteira
-        ,l.limite_atribuido
-        ,l.limite_utilizado
-        ,l.limite_disponivel
-        ,CASE 
-            WHEN l.limite_atribuido IS NULL OR l.limite_atribuido = 0 THEN NULL
-            ELSE ROUND(SUM(bi.valor_titulo) / l.limite_atribuido, 5)
-        END AS IU
-    FROM deltalaketrusted.payments.boletos_internos bi
-    LEFT JOIN limites l ON SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) = l.raiz_cnpj
-    WHERE bi.status_titulo <> 'NO PRAZO'
-    AND bi.valor_titulo > 0
-    GROUP BY 
-        SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8)
-        ,bi.nome_sacado 
-        ,l.limite_atribuido
-        ,l.limite_utilizado
-        ,l.limite_disponivel
-        """
+            SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) AS raiz_cnpj
+            ,bi.nome_sacado 
+        --	,SUM(bi.valor_titulo) AS carteira
+            ,SUM(CASE WHEN bi.status_titulo <> 'NO PRAZO' AND bi.valor_titulo > 0 THEN bi.valor_titulo ELSE 0 END) AS carteira
+            ,l.limite_atribuido
+            ,l.limite_utilizado
+            ,l.limite_disponivel
+            ,CASE 
+                WHEN l.limite_atribuido IS NULL OR l.limite_atribuido = 0 THEN NULL
+                ELSE ROUND(SUM(bi.valor_titulo) / l.limite_atribuido, 5)
+            END AS IU
+        FROM deltalaketrusted.payments.boletos_internos bi
+        LEFT JOIN limites l ON SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8) = l.raiz_cnpj
+        --WHERE bi.status_titulo <> 'NO PRAZO'
+        --AND bi.valor_titulo > 0
+        GROUP BY 
+            SUBSTR(REGEXP_REPLACE(bi.cnpj_sacado, '[^0-9]', ''), 1, 8)
+            ,bi.nome_sacado 
+            ,l.limite_atribuido
+            ,l.limite_utilizado
+            ,l.limite_disponivel
+            """
        
     df_carteira = execute_query(conn, query_carteira)
     df_carteira = df_carteira.reset_index(drop=True)
