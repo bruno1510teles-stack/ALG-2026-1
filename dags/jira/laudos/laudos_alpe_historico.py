@@ -1,104 +1,84 @@
 # Importing Libs
 from minio import Minio
-from io import BytesIO
+from io import BytesIO, StringIO
 import pandas as pd
 from datetime import datetime, timedelta, timezone
-from deltalake import write_deltalake
 from deltalake import write_deltalake, DeltaTable
 import os
 import re
-from io import BytesIO, StringIO
 import csv
 from decimal import Decimal, ROUND_DOWN
 
 def raw_laudos(access_params=None, **kwargs):
-
+    # Conexão com MinIO
     minio_raw = Minio(
         access_params['endpoint_url_raw'],
         access_key=access_params['aws_access_key_id_raw'],
         secret_key=access_params['aws_secret_access_key_raw'],
     )
 
-    # Connection validation
+    # Validação de conexão
     try:
-        # Try to list the buckets
         buckets = minio_raw.list_buckets()
-        
-        # If the connection was successful, print the buckests
         print("Conexão bem-sucedida. Lista de buckets disponíveis:")
         for bucket in buckets:
             print(bucket.name)
-        
     except Exception as e:
-            # If the connection was failed, print the error message
-            print(f"Erro ao conectar ao MinIO: {e}")
+        print(f"Erro ao conectar ao MinIO: {e}")
+        return
 
-    #Configurações de leitura
+    # Configurações de leitura
     BUCKET_NAME = "laudo"
     PREFIX = "saida/esteira=alpe/"
-    ALL_DATA = []  
+    ALL_DATA = []
 
     # 📥 Lendo arquivos CSV do MinIO
     objects = minio_raw.list_objects(BUCKET_NAME, prefix=PREFIX, recursive=True)
-
     for obj in objects:
         file_key = obj.object_name
         if file_key.endswith(".csv"):
-            #print(f"📥 Lendo CSV: {file_key}")
-
             try:
-                # Baixa o arquivo CSV como bytes
                 response = minio_raw.get_object(BUCKET_NAME, file_key)
-                
-                # Lê o conteúdo como string
                 csv_content = response.read().decode('utf-8')
-                
-                # Trata o conteúdo como arquivo em memória
                 input_file = StringIO(csv_content)
                 output_file = StringIO()
-                
-                # Cria leitor e escritor CSV
+
                 reader = csv.reader(input_file)
                 writer = csv.writer(output_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
-                
-                # Processa cada linha
+
                 for row in reader:
                     cleaned_row = [field.replace('\n', ' ').replace('\r', ' ') for field in row]
                     writer.writerow(cleaned_row)
-                
-                # Converte de volta para BytesIO para o pandas ler
+
                 csv_data_buffer = BytesIO(output_file.getvalue().encode('utf-8'))
-                
-                # Lê o CSV como DataFrame
                 df = pd.read_csv(csv_data_buffer, sep=',', dtype=str, low_memory=False, header=0)
-                
-                # Adiciona metadado de origem
+
                 df["source_file"] = file_key
-                
                 ALL_DATA.append(df)
-                
             except Exception as e:
                 print(f"⚠️ Erro ao ler {file_key}: {e}")
 
     # Empilha todos os DataFrames
     if ALL_DATA:
-        df_laudo = pd.concat(ALL_DATA, ignore_index=True)
-        print(f"✅ Dados empilhados: {len(df_laudo)} linhas")
+        df_laudo_historico = pd.concat(ALL_DATA, ignore_index=True)
+        print(f"✅ Dados empilhados: {len(df_laudo_historico)} linhas")
     else:
-        raise ValueError("⚠️ Nenhum arquivo CSV foi encontrado.")    
+        raise ValueError("⚠️ Nenhum arquivo CSV foi encontrado.")
 
-    #Tratamentos
-    print('Tratando base para inserção na Trusted...')   
+    # Tratamentos iniciais
+    print('Tratando base para inserção na Trusted...')
+    linhas_iniciais = len(df_laudo_historico)
+    print(f"Linhas iniciais: {linhas_iniciais}")
 
-    # Campo CNPJ
-    if 'cnpj_ec' in df_laudo.columns:
-        df_laudo.rename(columns={'cnpj_ec': 'cnpj'}, inplace=True)
-    df_laudo['cnpj'] = df_laudo['cnpj'].astype(str).str.slice(0, 14).str.zfill(14)
+    # Renomeia cnpj_ec para cnpj e garante 14 dígitos
+    if 'cnpj_ec' in df_laudo_historico.columns:
+        df_laudo_historico.rename(columns={'cnpj_ec': 'cnpj'}, inplace=True)
+    df_laudo_historico['cnpj'] = df_laudo_historico['cnpj'].astype(str).str.slice(0, 14).str.zfill(14)
 
-    # Criação campo cnpj_raiz
-    df_laudo['cnpj_raiz'] = df_laudo['cnpj'].str[:8].str.zfill(8)
+    # Criação do campo cnpj_raiz (8 primeiros dígitos)
+    df_laudo_historico['cnpj_raiz'] = df_laudo_historico['cnpj'].str[:8].str.zfill(8)
 
-    # Função para ajustar os valores ao formato decimal(8, 2)
+    # Função para ajustar valores decimais
     def ajustar_decimal(valor):
         if pd.isnull(valor):
             return None
@@ -112,44 +92,80 @@ def raw_laudos(access_params=None, **kwargs):
 
     colunas_decimais = ['valor_aprovado', 'restritivo_pj', 'restritivo_pf', 'total_restritivo']
     for col in colunas_decimais:
-        if col in df_laudo.columns:
-            df_laudo[col] = df_laudo[col].apply(ajustar_decimal)
-            df_laudo[col] = df_laudo[col].astype(float).round(2)
+        if col in df_laudo_historico.columns:
+            df_laudo_historico[col] = df_laudo_historico[col].apply(ajustar_decimal)
+            df_laudo_historico[col] = df_laudo_historico[col].astype(float).round(2)
 
-
-    # Tratamento colunas para inteiro com suporte a nulos
+    # Colunas inteiras
     colunas_int = ['score']
-
     for col in colunas_int:
-        df_laudo[col] = (
-            pd.to_numeric(df_laudo[col], errors='coerce')  # converte para numérico com NaNs
-            .round(0)                                               # arredonda para zero casas decimais
-            .astype('Int64')                                        # converte para inteiro com suporte a nulos
+        df_laudo_historico[col] = (
+            pd.to_numeric(df_laudo_historico[col], errors='coerce')
+            .round(0)
+            .astype('Int64')
         )
+
+    # Garantir tipo string para algumas colunas
+    colunas_string = [
+        "data_hora", "chave_unica", "nome_filtro", "ticket_jira",
+        "cnpj", "cnpj_raiz", "resolucao", "politica", "parecer", "ramificacao"
+    ]
+    df_laudo_historico[colunas_string] = (
+        df_laudo_historico[colunas_string].astype(str)
+        .replace(["nan", "NaT", "None"], "")
+        .fillna("")
+    )
+
+    # 1 Remove linhas sem data_hora ou sem chave_unica
+    linhas_antes = len(df_laudo_historico)
+    df_laudo_historico = df_laudo_historico[df_laudo_historico['data_hora'].notna() & df_laudo_historico['chave_unica'].notna()]
+    print(f"Removidas {linhas_antes - len(df_laudo_historico)} linhas sem data_hora ou chave_unica. Total atual: {len(df_laudo_historico)}")
+
+    # 2 Mantém apenas CNPJs válidos (14 dígitos)
+    linhas_antes = len(df_laudo_historico)
+    df_laudo_historico = df_laudo_historico[df_laudo_historico['cnpj'].str.match(r'^\d{14}$', na=False)]
+    print(f"Removidas {linhas_antes - len(df_laudo_historico)} linhas com CNPJ inválido. Total atual: {len(df_laudo_historico)}")
+
+    # 3 Remove linhas totalmente nulas
+    linhas_antes = len(df_laudo_historico)
+    df_laudo_historico.dropna(how='all', inplace=True)
+    print(f"Removidas {linhas_antes - len(df_laudo_historico)} linhas totalmente nulas. Total atual: {len(df_laudo_historico)}")
+
+    # Reordenar colunas
+    ordem_colunas = [
+        'data_hora', 'chave_unica', 'nome_filtro', 'ticket_jira',
+        'cnpj', 'cnpj_raiz', 'resolucao', 'valor_aprovado',
+        'politica', 'parecer', 'ramificacao', 'score',
+        'restritivo_pj', 'restritivo_pf', 'total_restritivo'
+    ]
+    df_laudo_historico = df_laudo_historico[ordem_colunas].reset_index(drop=True)
 
     # Timestamp e partições
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df_laudo['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df_laudo['year'], df_laudo['month'], df_laudo['day'] = now.year, now.month, now.day
+    df_laudo_historico['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_laudo_historico['year'], df_laudo_historico['month'], df_laudo_historico['day'] = now.year, now.month, now.day
+
+    # Resumo final
+    linhas_finais = len(df_laudo_historico)
+    print(f"Linhas removidas no total: {linhas_iniciais - linhas_finais}")
+    print(f"✅ Total de linhas após todos os tratamentos: {linhas_finais}")
 
     # Configuração do Delta Lake
     storage_options = {
-    "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
-    "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
-    "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
-    "AWS_REGION": "us-east-1",
-    "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
+        "AWS_REGION": "us-east-1",
+        "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
+    BUCKET_SOURCE_TRUSTED = "laudo-trusted"
+    FOLDER_DESTINATION_TRUSTED = "laudo"
 
-    BUCKET_SOURCE_TRUSTED = "laudos-trusted"
-    FOLDER_DESTINATION_TRUSTED = "laudos-full"
-
-    # Escrevendo no Delta Lake com schema fixado
+    # Escrevendo no Delta Lake
     write_deltalake(
-    f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-    df_laudo,
-    partition_by=["year", "month", "day"],
-    storage_options=storage_options,
-    mode="overwrite"
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
+        df_laudo_historico,
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="overwrite"
     )
-

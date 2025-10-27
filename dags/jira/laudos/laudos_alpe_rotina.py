@@ -1,32 +1,67 @@
-# Importing Libs
 from minio import Minio
-from io import BytesIO
+from io import BytesIO, StringIO
 import pandas as pd
 from datetime import datetime, timedelta, timezone
-from deltalake import write_deltalake
 from deltalake import write_deltalake, DeltaTable
-import os
-import re
-from io import BytesIO, StringIO
 import csv
 from decimal import Decimal, ROUND_DOWN
 
 def trusted_incremental(access_params=None, **kwargs):
     """
-    Script responsável apenas pela carga incremental:
-    lê a base staging (df_laudo) e insere apenas novos registros na trusted.
+    Lê novos arquivos CSV do RAW (df_issues_novas),
+    compara pela chave_unica com a base existente no Delta (df_laudo_historico),
+    aplica todos os tratamentos da carga full nos registros novos,
+    e insere apenas os registros ainda não existentes.
     """
 
+    print("Iniciando carga incremental da base Trusted...")
+
+    # 1 Conexão com MinIO RAW
     minio_raw = Minio(
         access_params['endpoint_url_raw'],
         access_key=access_params['aws_access_key_id_raw'],
         secret_key=access_params['aws_secret_access_key_raw'],
     )
 
-    print('Iniciando processo  incremental da base Trusted...')
+    BUCKET_RAW = "laudo"
+    PREFIX_RAW = "saida/esteira=alpe/"
+    ALL_DATA = []
 
-    # 1️ Definir o caminho e as opções de storage
-    storage_options_trusted = {
+    print("📥 Lendo novos arquivos CSV do RAW (df_issues_novas)...")
+    objects = minio_raw.list_objects(BUCKET_RAW, prefix=PREFIX_RAW, recursive=True)
+    for obj in objects:
+        file_key = obj.object_name
+        if file_key.endswith(".csv"):
+            try:
+                response = minio_raw.get_object(BUCKET_RAW, file_key)
+                csv_content = response.read().decode('utf-8')
+
+                # Limpeza de quebras de linha internas
+                input_file = StringIO(csv_content)
+                output_file = StringIO()
+                reader = csv.reader(input_file)
+                writer = csv.writer(output_file, delimiter=',', quoting=csv.QUOTE_MINIMAL)
+                for row in reader:
+                    cleaned_row = [field.replace('\n', ' ').replace('\r', ' ') for field in row]
+                    writer.writerow(cleaned_row)
+
+                csv_data_buffer = BytesIO(output_file.getvalue().encode('utf-8'))
+                df = pd.read_csv(csv_data_buffer, sep=',', dtype=str, low_memory=False, header=0)
+                df["source_file"] = file_key
+                ALL_DATA.append(df)
+
+            except Exception as e:
+                print(f"⚠️ Erro ao ler {file_key}: {e}")
+
+    if not ALL_DATA:
+        print("⚠️ Nenhum novo arquivo CSV encontrado no RAW.")
+        return
+
+    df_issues_novas = pd.concat(ALL_DATA, ignore_index=True)
+    print(f"✅ Arquivos novos lidos: {len(df_issues_novas)} linhas totais")
+
+    # 2 Lê a base existente do Delta Lake
+    storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
         "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
         "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
@@ -34,96 +69,127 @@ def trusted_incremental(access_params=None, **kwargs):
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
-    # Caminhos  
-    staging_path = "s3a://laudos-trusted/laudos-full"       # origem: full
-    BUCKET_SOURCE_TRUSTED = "laudo-trusted"
-    FOLDER_DESTINATION_TRUSTED = "laudos-incremental" # destino: incremental
-    delta_path = f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}"
+    BUCKET_TRUSTED = "laudo-trusted"
+    FOLDER_TRUSTED = "laudo"
+    delta_path = f"s3a://{BUCKET_TRUSTED}/{FOLDER_TRUSTED}"
 
-    # 1 Lê df_laudo (base full)
-    try:
-        dt_staging = DeltaTable(staging_path, storage_options=storage_options_trusted)
-        df_laudo = dt_staging.to_pandas()
-        print(f"📥 df_laudo carregado da full: {len(df_laudo)} linhas")
-    except Exception as e:
-        raise ValueError(f"❌ Erro ao ler df_laudo (full): {e}")
-    
-    # 2 Lê df_trusted existente (incremental)
-    try:
-            dt_trusted = DeltaTable(delta_path, storage_options=storage_options_trusted)
-            df_trusted = dt_trusted.to_pandas()
-            print(f"📂 df_trusted incremental existente carregado: {len(df_trusted)} linhas")
-    except Exception as e:
-        raise ValueError(f"❌ Base incremental não encontrada. O incremental requer carga full existente. Erro: {e}")
+    df_laudo_historico = DeltaTable(delta_path, storage_options=storage_options).to_pandas()
+    print(f"Base existente (df_laudo_historico): {len(df_laudo_historico)} linhas")
 
+    # 3 Filtra apenas registros novos pela chave_unica
+    if 'chave_unica' not in df_issues_novas.columns:
+        raise ValueError("❌ Coluna 'chave_unica' não encontrada nos arquivos novos.")
 
-    PLACEHOLDER_NULO = 'NA_PLACEHOLDER'
+    chaves_existentes = set(df_laudo_historico['chave_unica'].unique())
+    df_incremental = df_issues_novas[~df_issues_novas['chave_unica'].isin(chaves_existentes)].copy()
+    print(f"Registros novos identificados: {len(df_incremental)}")
 
-    # 3 Cria chave_merge em df_laudo e garante datetime UTC-3 no df_laudo
-    df_laudo['data_hora'] = pd.to_datetime(df_laudo['data_hora'], errors='coerce')
-    if df_laudo['data_hora'].dt.tz is None:
-        df_laudo['data_hora'] = df_laudo['data_hora'].dt.tz_localize('America/Sao_Paulo')
-
-
-    df_laudo['chave_merge'] = (
-        df_laudo['data_hora'].dt.strftime('%Y-%m-%d %H:%M:%S%z').fillna(PLACEHOLDER_NULO) + '|' +
-        df_laudo['chave_unica'].fillna(PLACEHOLDER_NULO).astype(str)
-    )
-
-    # 4 Cria chave_merge em df_trusted (se não vazio) e garante datetime UTC-3 no df_trusted (se não vazio)
-    if not df_trusted.empty:
-        df_trusted['data_hora'] = pd.to_datetime(df_trusted['data_hora'], errors='coerce')
-        if df_trusted['data_hora'].dt.tz is None:
-            df_trusted['data_hora'] = df_trusted['data_hora'].dt.tz_localize('America/Sao_Paulo')
-
-        df_trusted['chave_merge'] = (
-            df_trusted['data_hora'].dt.strftime('%Y-%m-%d %H:%M:%S%z').fillna(PLACEHOLDER_NULO) + '|' +
-            df_trusted['chave_unica'].fillna(PLACEHOLDER_NULO).astype(str)
-        )
-        
-        print("Filtrando registros novos...")
-        chaves_existentes = set(df_trusted["chave_merge"].unique())
-        df_incremental = df_laudo[~df_laudo["chave_merge"].isin(chaves_existentes)].copy()
-        print(f"Registros novos para inserir: {df_incremental.shape[0]}")
-
-    # 5 Checar se há dados novos
     if df_incremental.empty:
-        print("Nenhum registro novo encontrado. Encerrando execução.")
+        print("✅ Nenhum novo registro para inserir. Encerrando carga incremental.")
         return
 
-    # 6 Remover coluna auxiliar antes de salvar
-    df_incremental.drop(columns=['chave_merge'], inplace=True)
-    print("Coluna 'chave_merge' removida antes da escrita.")
+    # Lista de novas chaves_unicas
+    novas_chaves = df_incremental['chave_unica'].tolist()
+    print(f"Novas chaves_unicas que serão inseridas ({len(novas_chaves)}):")
+    print(novas_chaves)
 
-    # 7 Garantir datetime UTC-3 antes de salvar no Delta ---
-    # Converte a coluna 'data_hora' de string para datetime
-    # - errors='coerce' faz com que valores inválidos se tornem NaT (missing)
-    df_incremental['data_hora'] = pd.to_datetime(df_incremental['data_hora'], errors='coerce')
+    # 4 Aplicando todos os tratamentos da carga full
+    print("Aplicando tratamentos da carga full nos registros novos...")
 
-    # Verifica se a coluna 'data_hora' não possui timezone
-    if df_incremental['data_hora'].dt.tz is None:
-        # Se não houver timezone, localiza a hora no fuso de São Paulo (UTC-3)
-        # Isso marca os datetime como timezone-aware, sem alterar a hora
-        df_incremental['data_hora'] = df_incremental['data_hora'].dt.tz_localize('America/Sao_Paulo')
+    linhas_antes = len(df_incremental)
 
+    # Campo CNPJ
+    if 'cnpj_ec' in df_incremental.columns:
+        df_incremental.rename(columns={'cnpj_ec': 'cnpj'}, inplace=True)
+    df_incremental['cnpj'] = df_incremental['cnpj'].astype(str).str.slice(0, 14).str.zfill(14)
 
-    # 8 Reordenar colunas
+    # Criação campo cnpj_raiz
+    df_incremental['cnpj_raiz'] = df_incremental['cnpj'].str[:8].str.zfill(8)
+
+    # Função para ajustar valores decimais
+    def ajustar_decimal(valor):
+        if pd.isnull(valor):
+            return None
+        valor_str = str(valor).strip().replace(',', '.')
+        if valor_str == '':
+            return None
+        try:
+            return Decimal(valor_str).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        except Exception:
+            return None
+
+    colunas_decimais = ['valor_aprovado', 'restritivo_pj', 'restritivo_pf', 'total_restritivo']
+    for col in colunas_decimais:
+        if col in df_incremental.columns:
+            df_incremental[col] = df_incremental[col].apply(ajustar_decimal)
+            df_incremental[col] = df_incremental[col].astype(float).round(2)
+
+    # Colunas inteiras com suporte a nulos
+    colunas_int = ['score']
+    for col in colunas_int:
+        if col in df_incremental.columns:
+            df_incremental[col] = (
+                pd.to_numeric(df_incremental[col], errors='coerce')
+                .round(0)
+                .astype('Int64')
+            )
+
+    # Garantir tipo string
+    colunas_string = [
+        "data_hora", "chave_unica", "nome_filtro", "ticket_jira", "cnpj",
+        "cnpj_raiz", "resolucao", "politica", "parecer", "ramificacao"
+    ]
+    df_incremental[colunas_string] = (
+        df_incremental[colunas_string].astype(str)
+        .replace(["nan", "NaT", "None"], "")
+        .fillna("")
+    )
+
+    # Remove registros sem data_hora ou chave_unica
+    linhas_antes_filtro = len(df_incremental)
+    df_incremental = df_incremental[
+        df_incremental['data_hora'].notna() & df_incremental['chave_unica'].notna()
+    ]
+    print(f"Removidas {linhas_antes_filtro - len(df_incremental)} linhas sem data_hora ou chave_unica")
+
+    # Remove CNPJs inválidos
+    linhas_antes_filtro = len(df_incremental)
+    df_incremental = df_incremental[
+        df_incremental['cnpj'].str.match(r'^\d{14}$', na=False)
+    ]
+    print(f"Removidas {linhas_antes_filtro - len(df_incremental)} linhas com CNPJ inválido")
+
+    # Remove linhas totalmente nulas
+    linhas_antes_filtro = len(df_incremental)
+    df_incremental.dropna(how='all', inplace=True)
+    print(f"Removidas {linhas_antes_filtro - len(df_incremental)} linhas totalmente nulas")
+
+    # Verifica se sobrou algum registro válido
+    if df_incremental.empty:
+        print("⚠️ Nenhum registro válido após tratamento. Encerrando carga incremental.")
+        return
+
+    print(f"✅ Total de registros após tratamento: {len(df_incremental)}")
+
+    # Reordenar colunas
     ordem_colunas = [
-        'data_hora', 'chave_unica', 'nome_filtro', 'ticket_jira', 'cnpj', 'cnpj_raiz', 'resolucao', 
-        'valor_aprovado', 'politica', 'parecer', 'ramificacao', 'score', 'restritivo_pj', 
-        'restritivo_pf', 'total_restritivo'
+        'data_hora', 'chave_unica', 'nome_filtro', 'ticket_jira', 'cnpj', 'cnpj_raiz',
+        'resolucao', 'valor_aprovado', 'politica', 'parecer', 'ramificacao', 'score',
+        'restritivo_pj', 'restritivo_pf', 'total_restritivo'
     ]
     df_incremental = df_incremental[ordem_colunas].reset_index(drop=True)
 
-    # 9 Salvar no Delta
-    print(f"Gravando df_incremental em {delta_path}...")
+    # Timestamp e partições
+    now = datetime.now(tz=timezone(timedelta(hours=-3)))
+    df_incremental["atualizado_em"] = now.strftime("%Y-%m-%d %X")
+    df_incremental["year"], df_incremental["month"], df_incremental["day"] = now.year, now.month, now.day
+
+    # 5 Grava no Delta Lake
     write_deltalake(
         delta_path,
         df_incremental,
-        storage_options=storage_options_trusted,
-        mode="append",
-        overwrite_schema=False
+        partition_by=["year", "month", "day"],
+        storage_options=storage_options,
+        mode="append"
     )
-
-    print(f"✅ Incremento concluído com sucesso ({len(df_incremental)} novas linhas).")
-
+    print(f"✅ Carga incremental concluída com sucesso! {len(df_incremental)} novas linhas inseridas.")
