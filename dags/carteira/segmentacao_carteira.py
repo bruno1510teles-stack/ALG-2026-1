@@ -36,18 +36,18 @@ def segmentacao_carteira_refined (access_params=None,  **kwargs):
     query_segmentacao_carteira = f"""
         WITH segmento_atual AS 
         (
-            SELECT
-                SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8) AS cnpj_raiz
-                    , CASE
-                    WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 100000 THEN '1 - VAREJO LIGHT'
-                    WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 100000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 300000 THEN '2 - VAREJO'
-                    WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 300000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 5000000 THEN '3 - MIDDLE'
-                    WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 5000000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 10000000 THEN '4 - CORPORATE'
-                    WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 10000000 THEN '5 - LARGE CORPORATE'
-                    ELSE 'SEM FAIXA' END AS segmentacao_atual
-            FROM deltalakerefined.payments.carteira_vendermais cv
-            LEFT JOIN deltalaketrusted.limites.limite l ON SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8) = SUBSTRING(REGEXP_REPLACE(l.cnpj_sacado, '[^0-9]', ''),1,8)
-            GROUP BY 1
+        SELECT
+            SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8) AS cnpj_raiz
+            , CASE
+            WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 100000 THEN '1 - VAREJO LIGHT'
+            WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 100000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 300000 THEN '2 - VAREJO'
+            WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 300000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 5000000 THEN '3 - MIDDLE'
+            WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 5000000 AND GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) <= 10000000 THEN '4 - CORPORATE'
+            WHEN GREATEST(COALESCE(MAX(cv.carteira), 0), COALESCE(MAX(l.limite_atribuido), 0)) > 10000000 THEN '5 - LARGE CORPORATE'
+            ELSE 'SEM FAIXA' END AS segmentacao_atual
+        FROM deltalakerefined.payments.carteira_vendermais cv
+        LEFT JOIN deltalaketrusted.limites.limite l ON SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8) = SUBSTRING(REGEXP_REPLACE(l.cnpj_sacado, '[^0-9]', ''),1,8)
+        GROUP BY 1
         )
         SELECT
             cv.safra
@@ -64,6 +64,9 @@ def segmentacao_carteira_refined (access_params=None,  **kwargs):
                 WHEN SUM(cv.carteira) > 10000000 THEN '5 - LARGE CORPORATE'
                 ELSE 'SEM FAIXA' END AS segmentacao_safrada
             , SUM(cv.carteira) AS carteira
+        FROM deltalakerefined.payments.carteira_vendermais cv
+        LEFT JOIN segmento_atual sa ON sa.cnpj_raiz = SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8)
+        GROUP BY 1, 2, 3, 4, 5, 6
     """
 
     df_segmentacao_carteira = execute_query(conn, query_segmentacao_carteira)
