@@ -11,8 +11,9 @@ import pendulum
 import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
-from carteira.acompanhamento_carteira import acompanhamento_carteira_refined
 
+from carteira.acompanhamento_carteira import acompanhamento_carteira_refined
+from carteira.segmentacao_carteira import segmentacao_carteira_refined
 
 ### Parâmetros de acesso
 access_params = {          
@@ -57,7 +58,6 @@ default_args = {
 
 
 # Definindo horário padrão para execução
-
 # Definindo a DAG
 with DAG(
     dag_id='carteira',
@@ -69,13 +69,21 @@ with DAG(
 
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
+    # Definindo o task que processa a tabela acompanhamento_carteira
+    acompanhamento_carteira_task = PythonOperator(
         task_id='acompanhamento_carteira',
         python_callable= acompanhamento_carteira_refined,
         op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+        provide_context=True
+    )
+    
+    # Definindo o task que processa a tabela segmentacao_carteira
+    segmentacao_carteira_task = PythonOperator(
+        task_id='segmentacao_carteira',
+        python_callable= segmentacao_carteira_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True 
     )
 
     # Definindo a ordem de execução das tasks
-    task_1
+    acompanhamento_carteira_task >> segmentacao_carteira_task
