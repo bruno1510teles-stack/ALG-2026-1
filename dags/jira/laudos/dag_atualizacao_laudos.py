@@ -67,19 +67,19 @@ default_args = {
 with DAG(
     dag_id='tratamento_laudos',
     start_date=days_ago(1),
-    schedule_interval='0 8 * * *',
+    schedule_interval='0 10 * * *',
     default_args=default_args,
     tags=['etl', 'laudos', 'refined'],
     max_active_runs=1
 ) as dag:
 
     # Definindo o task que atualiza a tabela laudos
-    atualizando_tabela_de_laudos = PythonOperator(
-        task_id='atualizar_laudos',
-        python_callable= get_laudos,
-        op_kwargs={'access_params': access_params},
-        provide_context=True  # Habilita o envio do contexto (incluindo conf)
-    )
+     #atualizando_tabela_de_laudos = PythonOperator(
+         #task_id='atualizar_laudos',
+         #python_callable= get_laudos,
+         #op_kwargs={'access_params': access_params},
+         #provide_context=True  # Habilita o envio do contexto (incluindo conf)
+     #)
 
     # Definindo o task que cruza a tabela laudos com a tabela propostas
     cruzando_tabelas = PythonOperator(
@@ -90,4 +90,5 @@ with DAG(
     )
 
     # Definindo a ordem de execução das tasks
-    atualizando_tabela_de_laudos >> cruzando_tabelas
+     #atualizando_tabela_de_laudos >> 
+    cruzando_tabelas
