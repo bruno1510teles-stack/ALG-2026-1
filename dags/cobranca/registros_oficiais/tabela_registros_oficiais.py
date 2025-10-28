@@ -39,22 +39,30 @@ def cria_tabela_registros_oficiais (access_params=None, **kwargs):
 
     query_ro = f"""
                 select
-                    distinct
                     i.boleto_titulo_id,
-                    ai.codigo_ro,
-                    i.numero_titulo,
-                    i.chave_nfe,
-                    ti.descricao tipo,
                     CASE
                         WHEN i.status_instrucao_id = 1 AND i.confirmado = false THEN 'EM ANDAMENTO'
                         WHEN i.status_instrucao_id = 2 AND i.confirmado = true THEN 'PROCEDENTE'
                         WHEN i.status_instrucao_id = 5 AND i.confirmado = false THEN 'IMPROCEDENTE'
                         ELSE 'SEM STATUS'
                     END AS status_ro,
-                    i.motivo
-                FROM postgres.ccred_schema_{Variable.get('STAGE')}_default.instrucao i
+                    ai.codigo_ro,
+                    i.chave_nfe,
+                    i.numero_titulo,
+                    ti.descricao tipo,
+                    i.motivo,
+                    i.created_date,
+                    i.last_modified_date
+                FROM (
+                    SELECT *,
+                        ROW_NUMBER() OVER (PARTITION BY chave_nfe, numero_titulo ORDER BY last_modified_date DESC) AS rn
+                    FROM postgres.ccred_schema_{Variable.get('STAGE')}_default.instrucao
+                    WHERE referencia_externa IS NOT NULL
+                ) i
                 inner join postgres.ccred_schema_{Variable.get('STAGE')}_default.tipo_instrucao ti on ti.id = i.tipo_id
                 INNER JOIN postgres.knkt_intr_default.arcelor_instruction ai on ai.id = cast(i.referencia_externa as int)
+                where
+                i.rn = 1
                     """
 
     df_ro = execute_query (conn, query_ro)
