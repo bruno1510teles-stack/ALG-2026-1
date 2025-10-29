@@ -59,7 +59,7 @@ with DAG(
     dag_id='processo_registros_oficiais',
     default_args=default_args,
     start_date=days_ago(1),
-    schedule_interval='0 11,20 * * *',
+    schedule_interval='0 20 * * *',
     tags=['ro', 'registros oficiais', 'trusted'] 
 ) as dag:
 
