@@ -40,6 +40,7 @@ def cria_tabela_registros_oficiais (access_params=None, **kwargs):
     query_ro = f"""
                 select
                     i.boleto_titulo_id,
+                    i.cnpj_sacado,
                     CASE
                         WHEN i.status_instrucao_id = 1 AND i.confirmado = false THEN 'EM ANDAMENTO'
                         WHEN i.status_instrucao_id = 2 AND i.confirmado = true THEN 'PROCEDENTE'
