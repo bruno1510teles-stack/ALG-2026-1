@@ -11,8 +11,9 @@ import pendulum
 import sys
 from datetime import datetime, timezone, timedelta
 from time import sleep
-from grupo_economico.tabela_grupo_economico import grupo_economico_to_trusted
 
+from grupo_economico.tabela_grupo_economico import grupo_economico_to_trusted
+from grupo_economico.grupo_economico_consolidado import ge_consolidado_to_refined
 
 ### Parâmetros de acesso
 access_params = {          
@@ -50,7 +51,7 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Natielli Torres",
-    "retries": 3,
+    "retries": 1,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
@@ -62,20 +63,27 @@ default_args = {
 with DAG(
     dag_id='tabela_grupo_economico',
     start_date=days_ago(1),
-    schedule_interval = '0 10 * * 0-5',  # Roda às 07:00 BRT (10:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval = '0 13 * * 0-5',  # Roda às 10:00 BRT (13:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
     tags=['etl', 'grupo_economico', 'trusted'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
-
 ) as dag:
 
-    # Definindo o task que processa a tabela rating_mais_antigo_serasa
-    task_1  = PythonOperator(
+    # Definindo o task que processa a tabela grupo_economico
+    tabela_ge  = PythonOperator(
         task_id='tabela_ge',
         python_callable= grupo_economico_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
+    
+    # Definindo o task que processa a tabela grupo_economico_consolidado
+    tabela_ge_consolidado = PythonOperator(
+        task_id='tabela_ge_consolidado',
+        python_callable= ge_consolidado_to_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
 
     # Definindo a ordem de execução das tasks
-    task_1
+    tabela_ge >> tabela_ge_consolidado
