@@ -46,7 +46,6 @@ def vop_visao_safra(access_params=None,  **kwargs):
 
     df_titulos = df.copy()
 
-
     ### Definindo fechamentos de safra
     fechamentos = pd.date_range(start='2022-06-30', end=pd.Timestamp.now().replace(day=1) + pd.offsets.MonthEnd(1), freq='M')
         # Captura a data atual
@@ -89,49 +88,67 @@ def vop_visao_safra(access_params=None,  **kwargs):
     for fechamento in fechamentos:
         vop_no_fechamento = calcular_vop_no_fechamento(df_titulos, fechamento)
         vop_historica = pd.concat([vop_historica, vop_no_fechamento], ignore_index=True)
+        
+    
 
-
-
-
-    #### VOP VENCIDO
 
     def calcular_vop_vencido_no_fechamento(df_titulos, fechamento):
+        # Condição 1: Títulos não pagos até o fechamento ou ainda não pagos
+        titulos_validos = df_titulos[
+            (df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)
+        ]
 
-
-        # Condição 1: Títulos que não foram pagos até o fechamento ou ainda não foram pagos
-        titulos_validos = df_titulos[(df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)]
-
-        # Condição 2: Data de vencimento esteja dentro do período do fechamento
+        # Condição 2: Títulos vencidos até a data do fechamento
         titulos_validos = titulos_validos[titulos_validos['data_vencimento'] < fechamento]
 
-        # Calcular a diferença de dias entre a data de vencimento e a data de fechamento
+        # Dias vencidos
         titulos_validos['dias_vencido'] = (fechamento - titulos_validos['data_vencimento']).dt.days
 
-        # Transformar a diferença em meses fracionados
-        titulos_validos['meses_vencido'] = titulos_validos['dias_vencido'] // 30  # Aproximação de meses com 30 dias
+        # Meses vencidos (aproximando 30 dias)
+        titulos_validos['meses_vencido'] = titulos_validos['dias_vencido'] // 30
 
-        # Limitar a diferença de meses até 6 meses, e colocar "6+" para valores maiores que 5
-        titulos_validos['faixa_vencido'] = np.where(titulos_validos['meses_vencido'] > 5, 
-                                                    'Vencido +6 meses ou mais', 
-                                                    'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses')
+        # Faixa de meses
+        titulos_validos['faixa_vencido'] = np.where(
+            titulos_validos['meses_vencido'] > 5,
+            'Vencido +6 meses ou mais',
+            'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses'
+        )
 
-        # Agrupando por sacado/cedente/faixa
-        agrupado = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido'])['valor_face'].sum().reset_index()
+        # Agrupamento por sacado/cedente/faixa
+        agrupado = titulos_validos.groupby(
+            ['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido']
+        )['valor_face'].sum().reset_index()
 
-        # Usando pivot_table para transformar faixas em colunas
-        vop_vencido_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], 
-                                                        columns='faixa_vencido', 
-                                                        values='valor_face', 
-                                                        aggfunc='sum', 
-                                                        fill_value=0).reset_index()
+        # Pivot das faixas em colunas
+        vop_vencido_cliente = agrupado.pivot_table(
+            index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'],
+            columns='faixa_vencido',
+            values='valor_face',
+            aggfunc='sum',
+            fill_value=0
+        ).reset_index()
 
-        # Adicionar a coluna "Total Vencido" somando todas as colunas de faixas
+        # Total vencido (somando todas as faixas)
         vop_vencido_cliente['Total Vencido'] = vop_vencido_cliente.filter(like='Vencido').sum(axis=1)
-        
-        # Adicionar a data de fechamento como coluna de identificação
+
+        # === Novo cálculo: máximo de dias vencido por cliente ===
+        max_dias = (
+            titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])
+            ['dias_vencido'].max()
+            .reset_index()
+            .rename(columns={'dias_vencido': 'dias_em_atraso'})
+        )
+
+        # Junta com o DataFrame principal
+        vop_vencido_cliente = vop_vencido_cliente.merge(
+            max_dias, on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], how='left'
+        )
+
+        # Adiciona a data de fechamento
         vop_vencido_cliente['fechamento'] = fechamento
 
         return vop_vencido_cliente
+    
 
     # Criando DataFrame para armazenar o vop vencido de cada cliente em cada fechamento
     vop_vencido = pd.DataFrame()
@@ -140,6 +157,8 @@ def vop_visao_safra(access_params=None,  **kwargs):
     for fechamento in fechamentos:
         vop_no_fechamento = calcular_vop_vencido_no_fechamento(df_titulos, fechamento)
         vop_vencido = pd.concat([vop_vencido, vop_no_fechamento], ignore_index=True)
+    
+
 
 
     # Renomeando colunas
@@ -208,9 +227,9 @@ def vop_visao_safra(access_params=None,  **kwargs):
         vop_a_vencer = pd.concat([vop_a_vencer, vop_no_fechamento], ignore_index=True)
 
 
-    
+
     ### Cruzando todos os df's
-    
+
     # Realizar o merge da vop histórico e vop vencido
     df_intermediario = pd.merge(vop_historica, vop_vencido, 
                                 on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
@@ -249,7 +268,7 @@ def vop_visao_safra(access_params=None,  **kwargs):
     df_final['VAGAO OVER 90'] = np.where(df_final['Over 90'].fillna(0) > 0, 
                                         df_final['Total Vencido'].fillna(0) + df_final['Total a Vencer'].fillna(0), 
                                         df_final['Over 90'].fillna(0))
-    
+
 
 
 
@@ -299,7 +318,7 @@ def vop_visao_safra(access_params=None,  **kwargs):
     ### Selecionando as colunas relevantes
     df_final = df_final[[
         'fechamento', 'nome_sacado', 'cnpj_sacado', 'nome_cedente', 'cnpj_cedente', 'valor_face', 'Total a Vencer', 
-        'Total Vencido', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
+        'Total Vencido', 'dias_em_atraso',  'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
         'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
         'Atraso acima de 180 dias', 'Over 30', 'Over 60', 'Over 90',
@@ -363,6 +382,7 @@ def vop_visao_safra(access_params=None,  **kwargs):
     df_final['vop_performado'] = df_final['vop'] - df_final['vop_a_vencer']
 
 
+
     # Padronizando coluna valores
     colunas_valores = ['vop','vop_a_vencer','vop_performado','vop_vencido',	'atraso_ate_30_dias',	'atraso_de_31_a_60_dias',	'atraso_de_61_a_90_dias',	'atraso_de_91_a_120_dias',	
                     'atraso_de_121_a_150_dias',	'atraso_de_151_a_180_dias',	'atraso_acima_de_180_dias',	'over_30',	'over_60',	'over_90',	'vagao_over_1',	'vagao_over_30',	
@@ -375,7 +395,6 @@ def vop_visao_safra(access_params=None,  **kwargs):
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
-
 
 
     # Exportando dados para a camada Refined
