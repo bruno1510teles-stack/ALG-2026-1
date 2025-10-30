@@ -88,11 +88,13 @@ def ge_consolidado_to_refined (access_params=None,  **kwargs):
             , vop_performado
             , over_15
             , dias_atraso
+            , CASE WHEN gi.arquivo LIKE '%motor.xlsx%' THEN 'AUTOMÁTICO'ELSE 'MANUAL' END AS origem
         FROM deltalaketrusted.grupo_economico.grupo_economico ge
         LEFT JOIN limites l ON l.raiz_cnpj = ge.raiz_cnpj
         LEFT JOIN carteira c ON c.raiz_cnpj = ge.raiz_cnpj
         LEFT JOIN boletos_internos bi ON bi.raiz_cnpj = ge.raiz_cnpj
-        LEFT JOIN receita_federal rf ON rf.cnpj_raiz = ge.raiz_cnpj 
+        LEFT JOIN receita_federal rf ON rf.cnpj_raiz = ge.raiz_cnpj
+        LEFT JOIN minioraw.credito_grupos.indice gi ON ge.raiz_cnpj = LPAD(gi.cnpj_raiz, 8, '0')
     """
 
     df_ge_consolidado = execute_query(conn, query_ge_consolidado)
