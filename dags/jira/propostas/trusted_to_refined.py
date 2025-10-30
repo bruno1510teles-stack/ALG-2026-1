@@ -40,7 +40,7 @@ def trusted_to_refined (access_params=None, **kwargs):
     # Definindo a consulta
     query_jira_trusted = """
         WITH propostas AS (
-            -- 1 Seleciona todas as propostas
+            -- 1 Seleciona todas as propostas 
             SELECT *
             FROM deltalaketrusted.jira.propostas p
         ),
@@ -68,36 +68,24 @@ def trusted_to_refined (access_params=None, **kwargs):
             FROM propostas p
             LEFT JOIN deltalaketrusted.serasa.historico_compras_serasa s
                 ON p.raiz_cnpj = s.cnpj_raiz
-            AND CAST(s.data_consulta AS date) <= CAST(p.data_resolvido AS date)
+            AND CAST(s.data_consulta AS DATE) <= CAST(p.data_resolvido AS DATE)
         ),
 
         pontualidade_ranked AS (
             -- 3 Junta com a base de pontualidade interna
-            -- Prioriza meses anteriores à data_resolvido; se não houver, pega o mais próximo posterior
+            -- Considera apenas meses anteriores ou iguais à data_resolvido
             SELECT
                 sr.*,
                 pi.safra_referencia AS safra_pontualidade,
                 CAST(pi.pontualidade AS DECIMAL(6,2)) AS pontualidade,
-
                 ROW_NUMBER() OVER (
                     PARTITION BY sr.issue_key
-                    ORDER BY 
-                        -- CASE define prioridade:
-                        -- 0 = mês anterior ou igual à data_resolvido
-                        -- 1 = mês posterior
-                        CASE 
-                            WHEN pi.safra_referencia <= CAST(sr.data_resolvido AS date) THEN 0
-                            ELSE 1
-                        END,
-                        
-                        -- ABS calcula o valor absoluto da diferença em dias entre a data_resolvido e a safra.
-                        -- Assim, ordenamos pela menor diferença (mais próximo).
-                        ABS(DATE_DIFF('day', CAST(sr.data_resolvido AS date),pi.safra_referencia)) ASC
+                    ORDER BY ABS(DATE_DIFF('day', CAST(sr.data_resolvido AS DATE), pi.safra_referencia)) ASC
                 ) AS rn_pontualidade
-
             FROM serasa_ranked sr
             LEFT JOIN deltalakerefined.payments.pontualidade_interna pi
                 ON sr.raiz_cnpj = pi.cnpj_raiz
+            AND pi.safra_referencia <= CAST(sr.data_resolvido AS DATE)  -- só considera meses anteriores ou igual
         )
 
         -- 4 Seleciona apenas o registro mais recente do Serasa e o mais relevante de pontualidade
