@@ -13,6 +13,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 
 def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
+
     ### Coletando dados da camada Raw
     # Conectando com o banco
     conn = connect(
@@ -31,6 +32,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
     
+
     # Base Boletos
     query_boleto = """
     select * from deltalaketrusted.payments.boletos_internos
@@ -38,8 +40,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     boleto = execute_query(conn, query_boleto)
     print(f"Quantidade de linhas no DataFrame 'boleto': {boleto.shape[0]}")
 
-    df_titulos = boleto
-
+    df_titulos = boleto.copy()
 
 
     ### Definindo fechamentos de safra
@@ -56,13 +57,11 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     print(fechamentos)
 
 
-
     ### Tratando colunas de data
     df_titulos['data_emissao'] = pd.to_datetime(df_titulos['data_emissao'])
     df_titulos['data_efetivacao'] = pd.to_datetime(df_titulos['data_efetivacao'])
     df_titulos['data_vencimento'] = pd.to_datetime(df_titulos['data_vencimento'])
     df_titulos['data_baixa'] = pd.to_datetime(df_titulos['data_baixa'], errors='coerce')
-
 
 
     ### Criando funções
@@ -84,7 +83,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         # Adicionar a data de fechamento na coluna para identificar
         carteira_cliente['fechamento'] = fechamento
         return carteira_cliente
-    
+
     # Criando DataFrame para armazenar a carteira de cada cliente em cada fechamento
     carteira_historica = pd.DataFrame()
 
@@ -93,49 +92,74 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         carteira_no_fechamento = calcular_carteira_no_fechamento(df_titulos, fechamento)
         carteira_historica = pd.concat([carteira_historica, carteira_no_fechamento], ignore_index=True)
 
+    
 
 
-    # Criando função de carteira vencida
     def calcular_carteira_vencida_no_fechamento(df_titulos, fechamento):
-        # Um titulo será considerado como carteira vencida se:
-        # - Ele não foi pago até a data do fechamento OU a data de pagamento for depois do fechamento
-        # - A data de vencimento esteja dentro do período do fechamento
+        # Um título será considerado como carteira vencida se:
+        # - Não foi pago até a data do fechamento OU foi pago depois do fechamento
+        # - E a data de vencimento é anterior ao fechamento
 
-        # Condição 1: Títulos que não foram pagos até o fechamento ou ainda não foram pagos
-        titulos_validos = df_titulos[(df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)]
+        # Condição 1: não pago ou pago após o fechamento
+        titulos_validos = df_titulos[
+            (df_titulos['data_baixa'].isna()) | (df_titulos['data_baixa'] > fechamento)
+        ]
 
-        # Condição 2: Data de vencimento esteja dentro do período do fechamento
+        # Condição 2: vencidos até o fechamento
         titulos_validos = titulos_validos[titulos_validos['data_vencimento'] < fechamento]
 
-        # Calcular a diferença de dias entre a data de vencimento e a data de fechamento
+        # Dias vencidos
         titulos_validos['dias_vencido'] = (fechamento - titulos_validos['data_vencimento']).dt.days
 
-        # Transformar a diferença em meses fracionados
-        titulos_validos['meses_vencido'] = titulos_validos['dias_vencido'] // 30  # Aproximação de meses com 30 dias
+        # Meses vencidos (aproximação de 30 dias)
+        titulos_validos['meses_vencido'] = titulos_validos['dias_vencido'] // 30
 
-        # Limitar a diferença de meses até 6 meses, e colocar "6+" para valores maiores que 5
-        titulos_validos['faixa_vencido'] = np.where(titulos_validos['meses_vencido'] > 5, 
-                                                    'Vencido +6 meses ou mais', 
-                                                    'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses')
+        # Faixas de vencimento
+        titulos_validos['faixa_vencido'] = np.where(
+            titulos_validos['meses_vencido'] > 5,
+            'Vencido +6 meses ou mais',
+            'Vencido +' + titulos_validos['meses_vencido'].astype(str) + ' meses'
+        )
 
-        # Agrupando por sacado/cedente/faixa
-        agrupado = titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido'])['valor_face'].sum().reset_index()
+        # Agrupar por cliente/faixa e somar o valor
+        agrupado = titulos_validos.groupby(
+            ['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'faixa_vencido']
+        )['valor_face'].sum().reset_index()
 
-        # Usando pivot_table para transformar faixas em colunas
-        carteira_vencida_cliente = agrupado.pivot_table(index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'], 
-                                                        columns='faixa_vencido', 
-                                                        values='valor_face', 
-                                                        aggfunc='sum', 
-                                                        fill_value=0).reset_index()
+        # Pivotar para deixar faixas como colunas
+        carteira_vencida_cliente = agrupado.pivot_table(
+            index=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'],
+            columns='faixa_vencido',
+            values='valor_face',
+            aggfunc='sum',
+            fill_value=0
+        ).reset_index()
 
-        # Adicionar a coluna "Total Vencido" somando todas as colunas de faixas
+        # Total vencido
         carteira_vencida_cliente['Total Vencido'] = carteira_vencida_cliente.filter(like='Vencido').sum(axis=1)
-        
-        # Adicionar a data de fechamento como coluna de identificação
+
+        # Máximo de dias vencidos por cliente
+        max_dias = (
+            titulos_validos.groupby(['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'])
+            ['dias_vencido']
+            .max()
+            .reset_index()
+            .rename(columns={'dias_vencido': 'dias_em_atraso'})
+        )
+
+        # Mesclar com o DataFrame final
+        carteira_vencida_cliente = carteira_vencida_cliente.merge(
+            max_dias,
+            on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente'],
+            how='left'
+        )
+
+        # Adicionar data de fechamento
         carteira_vencida_cliente['fechamento'] = fechamento
 
         return carteira_vencida_cliente
-    
+
+
     # Criando DataFrame para armazenar a carteira vencida de cada cliente em cada fechamento
     carteira_vencida = pd.DataFrame()
 
@@ -143,6 +167,8 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     for fechamento in fechamentos:
         carteira_no_fechamento = calcular_carteira_vencida_no_fechamento(df_titulos, fechamento)
         carteira_vencida = pd.concat([carteira_vencida, carteira_no_fechamento], ignore_index=True)
+    
+
 
     # Renomeando colunas
     carteira_vencida = carteira_vencida.rename(columns={
@@ -175,6 +201,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
 
 
 
+
     # Criando função de carteira a vencer
     def calcular_carteira_a_vencer(df_titulos, fechamento):      
         # Condição para títulos a vencer:
@@ -193,7 +220,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         
         # Retornar o DataFrame completo
         return carteira_a_vencer
-    
+
     # Inicializar um DataFrame vazio para armazenar a carteira a vencer
     carteira_a_vencer = pd.DataFrame()
 
@@ -206,11 +233,11 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
         
         # Concatenar os resultados ao DataFrame principal
         carteira_a_vencer = pd.concat([carteira_a_vencer, carteira_no_fechamento], ignore_index=True)
-
+    
 
 
     ### Cruzando todos os df's
-        
+    
     # Realizar o merge da carteira histórica e carteira vencida
     df_intermediario = pd.merge(carteira_historica, carteira_vencida, 
                                 on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
@@ -220,7 +247,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     df_final = pd.merge(df_intermediario, carteira_a_vencer, 
                         on=['nome_sacado', 'nome_cedente', 'cnpj_sacado', 'cnpj_cedente', 'fechamento'], 
                         how='outer')
-    
+
 
     # Converter as colunas envolvidas para o mesmo tipo (float)
     df_final['Total Vencido'] = df_final['Total Vencido'].astype(float)
@@ -326,7 +353,7 @@ def boletos_raw_to_refined_carteira(access_params=None,  **kwargs):
     ### Selecionando as colunas relevantes
     df_final = df_final[[
         'fechamento', 'nome_sacado', 'cnpj_sacado', 'nome_cedente', 'cnpj_cedente', 'valor_face', 'Total a Vencer', 
-        'Total Vencido', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
+        'Total Vencido', 'dias_em_atraso', 'Atraso até 30 dias', 'Atraso de 31 a 60 dias',
         'Atraso de 61 a 90 dias', 'Atraso de 91 a 120 dias',
         'Atraso de 121 a 150 dias', 'Atraso de 151 a 180 dias',
         'Atraso acima de 180 dias', 'Over 30', 'Over 60', 'Over 90',
