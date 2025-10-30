@@ -71,7 +71,7 @@ default_args = {
 with DAG(
     dag_id='processo_jira_propostas',
     start_date=days_ago(1),
-    schedule_interval='0 * * * *',
+    schedule_interval = '30 14,20 * * *', #Roda as 11:30 e 17:30 todos os dias
     default_args=default_args,
     catchup=False, 
     tags=['etl', 'jira', 'raw', 'trusted','refined'],
