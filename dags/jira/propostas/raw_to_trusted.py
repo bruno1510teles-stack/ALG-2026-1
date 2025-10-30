@@ -48,6 +48,15 @@ def raw_to_trusted(access_params=None, **kwargs):
     print(f"Quantidade de linhas com status \"Resolvido\" ou \"Fechada\": {df_resolvido.shape[0]}")
 
 
+    # TRATANDO A COLUNA 'CNPJ'
+    # Converte para string e remove todos os caracteres não numéricos
+    df_resolvido['cnpj'] = (df_resolvido['cnpj'].astype(str).str.replace(r'\D', '', regex=True))
+
+    # TRATANDO A COLUNA 'RAIZ_CNPJ'
+    # Pega os 8 primeiros dígitos do CNPJ já limpo
+    df_resolvido['raiz_cnpj'] = df_resolvido['cnpj'].astype(str).str[:8]
+
+    
     # TRATANDO COLUNA DA POLITICA
     def verifica_politica(politica_desc):
         if pd.isnull(politica_desc):
@@ -57,9 +66,6 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     df_resolvido['politica'] = df_resolvido['politica'].apply(verifica_politica).str.upper()
 
-
-    # CRIANDO RAIZ CNPJ 8
-    df_resolvido['raiz_cnpj'] = df_resolvido['cnpj'].astype(str).str[:8]
 
 
     # TRATANDO PGID

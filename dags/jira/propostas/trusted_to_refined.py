@@ -13,6 +13,7 @@ import json
 from deltalake import write_deltalake, DeltaTable
 from airflow.utils.log.logging_mixin import LoggingMixin
 from datetime import datetime, time, timedelta, timezone
+from decimal import Decimal, ROUND_DOWN
 
 
 def trusted_to_refined (access_params=None, **kwargs):
@@ -38,8 +39,72 @@ def trusted_to_refined (access_params=None, **kwargs):
 
     # Definindo a consulta
     query_jira_trusted = """
+        WITH propostas AS (
+            -- 1 Seleciona todas as propostas
+            SELECT *
+            FROM deltalaketrusted.jira.propostas p
+        ),
+
+        serasa_ranked AS (
+            -- 2 Junta as propostas com o histórico Serasa
+            -- Considera apenas consultas realizadas até a data_resolvido
+            -- Usa ROW_NUMBER() para pegar o registro Serasa mais recente antes da resolução
+            SELECT
+                p.*,
+                s.id,
+                s.data_consulta,
+                s.score_positivo_pj AS score,
+                s.grande_empresa AS empresa_grande,
+                s.restritivos_pj AS total_restritivos_pj,
+                s.restritivos_pf AS total_restritivos_pf,
+                s.cheque_pf AS qtd_cheque_pf,
+                s.cheque_pj AS qtd_cheque_pj,
+                s.total_restritivos AS valor_total_restritivos,
+                s.total_cheques AS qtd_total_cheques,
+                ROW_NUMBER() OVER (
+                    PARTITION BY p.issue_key
+                    ORDER BY s.data_consulta DESC
+                ) AS rn_serasa
+            FROM propostas p
+            LEFT JOIN deltalaketrusted.serasa.historico_compras_serasa s
+                ON p.raiz_cnpj = s.cnpj_raiz
+            AND CAST(s.data_consulta AS date) <= CAST(p.data_resolvido AS date)
+        ),
+
+        pontualidade_ranked AS (
+            -- 3 Junta com a base de pontualidade interna
+            -- Prioriza meses anteriores à data_resolvido; se não houver, pega o mais próximo posterior
+            SELECT
+                sr.*,
+                pi.safra_referencia AS safra_pontualidade,
+                CAST(pi.pontualidade AS DECIMAL(6,2)) AS pontualidade,
+
+                ROW_NUMBER() OVER (
+                    PARTITION BY sr.issue_key
+                    ORDER BY 
+                        -- CASE define prioridade:
+                        -- 0 = mês anterior ou igual à data_resolvido
+                        -- 1 = mês posterior
+                        CASE 
+                            WHEN pi.safra_referencia <= CAST(sr.data_resolvido AS date) THEN 0
+                            ELSE 1
+                        END,
+                        
+                        -- ABS calcula o valor absoluto da diferença em dias entre a data_resolvido e a safra.
+                        -- Assim, ordenamos pela menor diferença (mais próximo).
+                        ABS(DATE_DIFF('day', CAST(sr.data_resolvido AS date),pi.safra_referencia)) ASC
+                ) AS rn_pontualidade
+
+            FROM serasa_ranked sr
+            LEFT JOIN deltalakerefined.payments.pontualidade_interna pi
+                ON sr.raiz_cnpj = pi.cnpj_raiz
+        )
+
+        -- 4 Seleciona apenas o registro mais recente do Serasa e o mais relevante de pontualidade
         SELECT *
-        FROM deltalaketrusted.jira.propostas
+        FROM pontualidade_ranked
+        WHERE (rn_serasa = 1 OR rn_serasa IS NULL)
+        AND (rn_pontualidade = 1 OR rn_pontualidade IS NULL)
     """
 
     # Verifica se a conexão foi bem-sucedida antes de executar a consulta
@@ -58,8 +123,13 @@ def trusted_to_refined (access_params=None, **kwargs):
 
     # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE APROVADA
 
-    # CRIANDO RAIZ CNPJ 8
-    df['raiz_cnpj'] = df['raiz_cnpj'].astype(str).str[:8]
+    # TRATANDO A COLUNA 'CNPJ'
+    # Converte para string e remove todos os caracteres não numéricos
+    df['cnpj'] = (df['cnpj'].astype(str).str.replace(r'\D', '', regex=True))
+
+    # TRATANDO A COLUNA 'RAIZ_CNPJ'
+    # Pega os 8 primeiros dígitos do CNPJ já limpo
+    df['raiz_cnpj'] = df['cnpj'].astype(str).str[:8]
 
     # Convertendo a coluna de data para datetime
     df['data_resolvido'] = pd.to_datetime(df['data_resolvido'])
@@ -280,6 +350,48 @@ def trusted_to_refined (access_params=None, **kwargs):
             return "04 - >= D + 3"
         
 
+    # Função para ajustar os valores ao formato decimal(8, 2)
+    def ajustar_decimal(valor):
+        if pd.isnull(valor):
+            return None  # Mantém valores nulos como estão
+        valor_str = str(valor).strip().replace(',', '.')  # Normaliza string
+        if valor_str == '':
+            return None  # Trata string vazia como None
+        try:
+            return Decimal(valor_str).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
+        except Exception:
+            return None
+
+    if df is not None and not df.empty:
+        # Aplicar a função nas colunas desejadas
+        df['total_restritivos_pj'] = df['total_restritivos_pj'].apply(ajustar_decimal)
+        df['total_restritivos_pf'] = df['total_restritivos_pf'].apply(ajustar_decimal)
+        df['valor_total_restritivos'] = df['valor_total_restritivos'].apply(ajustar_decimal)
+
+    # Lista de colunas que devem ser float
+    cols_float = [
+        'total_restritivos_pj',
+        'total_restritivos_pf',
+        'valor_total_restritivos'
+    ]
+
+    # Converter para float, tratar valores inválidos como NaN e arredondar para 2 casas decimais
+    df[cols_float] = df[cols_float].apply(pd.to_numeric, errors='coerce').round(2)
+
+
+    # Tratamento colunas para inteiro com suporte a nulos
+    colunas_int = [
+        'score', 'empresa_grande','qtd_cheque_pj', 'qtd_cheque_pf', 'qtd_total_cheques'
+    ]
+
+    for col in colunas_int:
+        df[col] = (
+            pd.to_numeric(df[col], errors='coerce')  # converte para numérico com NaNs
+            .round(0)                                               # arredonda para zero casas decimais
+            .astype('Int64')                                        # converte para inteiro com suporte a nulos
+        )
+
+
     # Adiciona colunas de atualização
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df['atualizado_em'] = now.strftime('%Y-%m-%d %X')
@@ -316,6 +428,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         lambda row: status_decisao_relacional(row['status'], row['status_aprovacao_percent']), axis=1
     )
 
+    
 
     # Selecionando as colunas relevantes
     df_final = df[
@@ -330,8 +443,9 @@ def trusted_to_refined (access_params=None, **kwargs):
         'sla_hora_disp_mesa_resolvido', 'sla_dias_criado_resolvido',
         'sla_dias_disp_mesa_resolvido', 'faixa_valor_solicitado',
         'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional','analista_tratado',
-        'analista_responsavel','cargo_analista_responsavel','gerente_responsavel',
-        'atualizado_em', 'year', 'month', 'day',
+        'analista_responsavel','cargo_analista_responsavel','gerente_responsavel', 'id', 'data_consulta', 'score', 'empresa_grande',
+        'total_restritivos_pf', 'total_restritivos_pj', 'valor_total_restritivos', 'qtd_cheque_pf', 'qtd_cheque_pj', 'qtd_total_cheques', 
+        'safra_pontualidade', 'pontualidade','atualizado_em', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
 
