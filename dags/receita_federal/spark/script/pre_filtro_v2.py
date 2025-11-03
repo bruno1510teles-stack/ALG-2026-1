@@ -194,6 +194,10 @@ def cnaes_to_trusted(spark, **kwargs):
             SELECT
                 DISTINCT
                 s.cnpj_raiz,
+                p.nome,
+                p.funcao,
+                p.nome_orgao,
+                p.data_fim_carencia,
                 TRUE AS tem_pep
             FROM pep p
             JOIN socios s ON REPLACE(REPLACE(p.documento, '.', ''), '-', '') = s.documento_socio 
@@ -233,6 +237,10 @@ def cnaes_to_trusted(spark, **kwargs):
         COALESCE(s.tem_socio_pj, FALSE) AS tem_socio_pj,
         COALESCE(sim.is_mei, FALSE) AS is_mei,
         COALESCE(tp.tem_pep, FALSE) AS tem_pep,
+        tp.nome as nome_pep,
+        tp.funcao as funcao_pep,
+        tp.nome_orgao as nome_orgao_pep,
+        tp.data_fim_carencia as data_fim_carencia_pep,
         COALESCE(est.is_matriz, FALSE) AS is_matriz,
         est.situacao_especial,
         est.data_ref AS data_ref_receita
@@ -299,6 +307,10 @@ def cnaes_to_trusted(spark, **kwargs):
         first("tem_socio_pj").alias("tem_socio_pj"),
         first("is_mei").alias("is_mei"),
         first("tem_pep").alias("tem_pep"),
+        first("nome_pep").alias("nome_pep"),
+        first("funcao_pep").alias("funcao_pep"),
+        first("nome_orgao_pep").alias("nome_orgao_pep"),
+        first("data_fim_carencia_pep").alias("data_fim_carencia_pep"),
         first("is_matriz").alias("is_matriz"),
         first("situacao_especial").alias("situacao_especial"),
         first("data_ref_receita").alias("data_ref_receita"),
@@ -392,7 +404,7 @@ def cnaes_to_trusted(spark, **kwargs):
         'cod_natureza_juridica','idade','codigo_porte_empresa','capital_social_empresa',
         'situacao_cadastral','situacao_sacado', 'limite_alpe', 'limite_atribuido', 'pcto_limite_utilizado',
         'idade_socio','tem_socio_pj','is_mei','is_matriz', 'is_spe','is_consorcio', 'is_sa',
-        'is_construtora','tem_pep','situacao_especial','data_ref_receita','cnae_aceito',
+        'is_construtora','tem_pep', 'nome_pep', 'funcao_pep', 'nome_orgao_pep', 'data_fim_carencia_pep', 'situacao_especial','data_ref_receita','cnae_aceito',
         'nat_ju_aceita','analise_menor_60_dias','decisao','qtd_analises_jira', 'ultima_decisao',
         'decisor_ult_proposta', 'data_ult_analise','atualizado_em'
     ]
