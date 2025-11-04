@@ -46,7 +46,7 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Felipe Ferraz",
-    "retries": 3,
+    "retries": 1,
     "retry_delay": timedelta(minutes=1),
     "on_failure_callback": notificar_falha_teams
 }
