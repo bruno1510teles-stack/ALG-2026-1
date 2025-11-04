@@ -71,18 +71,33 @@ def alteracao_endereco(spark):
         how = "left"
     ).drop(valida_endereco["endereco_completo"])
 
-    df = df.filter(col("is_matriz") == True)
+    df = df.filter(col("is_matriz") == True) ###
 
+    df = df.withColumn("endereco_hist", F.struct(F.col("data_ref").alias("date"), F.col("logradouro").alias("value")))
+    df = df.withColumn("cidade_hist", F.struct(F.col("data_ref").alias("date"), F.col("descricao").alias("value")))
+    df = df.withColumn("estado_hist", F.struct(F.col("data_ref").alias("date"), F.col("uf").alias("value")))
 
-    df = df.groupBy("documento_sem_formatacao", "cnpj_raiz", "endereco_completo") \
+    df = df.groupBy("documento_sem_formatacao", "cnpj_raiz") \
         .agg(
-            F.collect_set("logradouro").alias("endereco_distintos"),
-            F.collect_set("descricao").alias("cidade_distintos"),
-            F.collect_set("uf").alias("estado_distintos"),
+            # Coleta as structs e ordena pela data: o mais antigo fica na posição 0
+            F.sort_array(F.collect_list("endereco_hist")).alias("sorted_endereco_hist"),
+            F.sort_array(F.collect_list("cidade_hist")).alias("sorted_cidade_hist"),
+            F.sort_array(F.collect_list("estado_hist")).alias("sorted_estado_hist"),
+            
+            # Agrega as colunas de status atual (max)
             F.max("data_ref").alias("data_referencia"),
-            F.max("quantidade_cnpjs").alias("quantidade_cnpjs_mesmo_endereco")
-        ) \
-        .withColumn("flag_mudanca_endereco", F.size("endereco_distintos") > 1) \
+            F.max("endereco_completo").alias("endereco_completo_atual"), # Endereço atual (do estabelecimento)
+            F.max("quantidade_cnpjs").alias("quantidade_cnpjs_mesmo_endereco") # Contagem atual (do valida_endereco)
+        )
+    
+    #Extrai o valor do struct e garante a distinção (a ordem já está garantida pela data)    
+    df = df.withColumn("endereco_distintos", F.array_distinct(F.col("sorted_endereco_hist.value")))
+    df = df.withColumn("cidade_distintos", F.array_distinct(F.col("sorted_cidade_hist.value")))
+    df = df.withColumn("estado_distintos", F.array_distinct(F.col("sorted_estado_hist.value")))
+    
+    df = df.drop("sorted_endereco_hist", "sorted_cidade_hist", "sorted_estado_hist")
+    
+    df = df.withColumn("flag_mudanca_endereco", F.size("endereco_distintos") > 1) \
         .withColumn("flag_mudanca_endereco", F.when(F.col("flag_mudanca_endereco") == True, "Sim").otherwise("Nao")) \
         .withColumn("flag_mudanca_cidade", F.size("cidade_distintos") > 1) \
         .withColumn("flag_mudanca_cidade", F.when(F.col("flag_mudanca_cidade") == True, "Sim").otherwise("Nao")) \
@@ -92,7 +107,7 @@ def alteracao_endereco(spark):
         .withColumn("flag_endereco_igual", F.when(F.col("flag_endereco_igual") == True, "Sim").otherwise("Nao"))
 
     df = df.withColumnRenamed("documento_sem_formatacao", "cnpj_sem_formatacao")
-    df = df.withColumnRenamed("endereco_completo", "endereco_completo_atual")
+    #df = df.withColumnRenamed("endereco_completo", "endereco_completo_atual")
 
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -128,7 +143,7 @@ def alteracao_endereco(spark):
     print("Arquivos Salvos")
 
 
-    spark.stop()
+#    spark.stop()
     
 if __name__ == "__main__":
     spark = SparkSession.builder \
