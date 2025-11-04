@@ -51,7 +51,7 @@ def boletos_raw_to_trusted(access_params=None,  **kwargs):
         
         bt.codigo_cedente in (12, 188, 40585, 99241, 
                 101880, 14688, 105372, 109619, 109151, 
-                107738, 108454, 108455, 10798, 123326, 109485, 130500, 112294)
+                107738, 108454, 108455, 10798, 123326, 109485, 130500, 112294, 129442)
         and bt.excluido != true
         and bt.codigo_estagio_titulo in (6)
         and bt.codigo_banco is not null
