@@ -71,7 +71,7 @@ def alteracao_endereco(spark):
         how = "left"
     ).drop(valida_endereco["endereco_completo"])
 
-    df = df.filter(col("is_matriz") == True) ###
+    df = df.filter(col("is_matriz") == True)
 
     df = df.withColumn("endereco_hist", F.struct(F.col("data_ref").alias("date"), F.col("logradouro").alias("value")))
     df = df.withColumn("cidade_hist", F.struct(F.col("data_ref").alias("date"), F.col("descricao").alias("value")))
