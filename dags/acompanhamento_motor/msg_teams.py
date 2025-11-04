@@ -49,7 +49,7 @@ def enviar_mensagem_teams():
                         },
                         {
                             "type": "TextBlock",
-                            "text": f"[🔗 Clique aqui para acessar o relatório](https://minio-datalake.alpe.com.br/raw/browser/proposta-motor/base_propostas_decididas_motor/year={year}/month={month}/day={day}/)",
+                            "text": f"[🔗 Clique aqui para acessar o relatório](https://minio-datalake.alpe.com.br/raw/browser/propostas-motor/base_propostas_decididas_motor/year={year}/month={month}/day={day}/)",
                             "wrap": True,
                             "spacing": "Large"
                         }
