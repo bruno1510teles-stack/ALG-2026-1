@@ -143,7 +143,7 @@ def alteracao_endereco(spark):
     print("Arquivos Salvos")
 
 
-#    spark.stop()
+    spark.stop()
     
 if __name__ == "__main__":
     spark = SparkSession.builder \
