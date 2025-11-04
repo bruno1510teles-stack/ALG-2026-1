@@ -47,9 +47,7 @@ def aquisicao_excel_to_csv_diario (access_params=None, **kwargs):
     print(f"📅 Processando arquivos modificados em: {data_hoje}")
 
     # 🔍 Lista e processa arquivos do bucket origem
-    objects = minio_raw.list_objects(BUCKET_SOURCE, prefix=BASE_FOLDER, recursive=True)
-
-    for obj in objects:
+    for obj in minio_raw.list_objects(BUCKET_SOURCE, prefix=BASE_FOLDER, recursive=True):
         file_key = obj.object_name
         modified_date = (obj.last_modified - timedelta(hours=3)).date()
 
