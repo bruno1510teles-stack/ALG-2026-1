@@ -20,6 +20,7 @@ from raw_to_trusted import raw_to_trusted
 from trusted_to_refined import trusted_to_refined
 from ydh_raw_to_trusted import ydh_raw_to_trusted
 from ydh_trusted_to_refined import ydh_trusted_to_refined
+from tabela_decisor import decisor_trusted
 
 
 ### Parâmetros de acesso
@@ -95,27 +96,34 @@ with DAG(
     )
 
     task2 = PythonOperator(
-        task_id='ydh_raw_to_trusted',
-        python_callable = ydh_raw_to_trusted,
-        op_kwargs={'access_params': access_params},
-        provide_context=True
-    )
-
-    task3 = PythonOperator(
         task_id='raw_to_trusted',
         python_callable = raw_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
+    task3 = PythonOperator(
+        task_id='extraindo_categoria_decisor',
+        python_callable=decisor_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
     task4 = PythonOperator(
+        task_id='ydh_raw_to_trusted',
+        python_callable = ydh_raw_to_trusted,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
+    task5 = PythonOperator(
         task_id='trusted_to_refined',
         python_callable = trusted_to_refined,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    task5 = PythonOperator(
+    task6 = PythonOperator(
         task_id='ydh_trusted_to_refined',
         python_callable = ydh_trusted_to_refined,
         op_kwargs={'access_params': access_params},
@@ -124,4 +132,4 @@ with DAG(
 
     # Definindo a ordem de execução das tasks
     #processa_historico >> captura_proposta >> raw_to_trusted >> trusted_to_refined
-    task1 >> task2 >> task3 >> task4 >> task5
+    task1 >> task2 >> task3 >> task4 >> task5 >> task6
