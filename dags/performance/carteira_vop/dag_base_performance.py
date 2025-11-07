@@ -10,7 +10,8 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from performance.carteira_vop import performance_visao_mob
+from performance.carteira_vop import visao_mob_to_refined
+from performance.carteira_vop import base_final_to_refined
 
 ### Parâmetros de acesso
 access_params = {          
@@ -49,7 +50,7 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes",
-    #"on_failure_callback": notificar_falha_teams
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -57,21 +58,27 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='processo_base_performance',
-    start_date=days_ago(1),
-    schedule_interval='0 12 * * *',
-    default_args=default_args,
-    tags=['etl', 'performance', 'refined', 'consolidado', 'mob'],
-    max_active_runs=1
+    dag_id = 'processo_base_performance',
+    start_date = days_ago(1),
+    schedule_interval = '0 12 * * *',
+    default_args = default_args,
+    tags=['etl', 'performance', 'refined', 'consolidado', 'mob', 'recorrencia'],
+    max_active_runs = 1
 ) as dag:
 
-    # Definindo o task que processa limites_to_raw
     task1 = PythonOperator(
-        task_id = 'carteira_e_vop_refined',
-        python_callable = performance_visao_mob.performance_visao_mob,
+        task_id = 'visao_mob_to_refined',
+        python_callable = visao_mob_to_refined.performance_visao_mob,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True
+    )
+
+    task2 = PythonOperator(
+        task_id = 'base_final_to_refined',
+        python_callable = base_final_to_refined.performance_base_final,
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
 
     # Definindo a ordem de execução das tasks
-    task1
+    task1 >> task2
