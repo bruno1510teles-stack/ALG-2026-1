@@ -73,6 +73,8 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                         sub2.raiz_cnpj,
                         
                         'SERASA' as fonte_informacao,
+
+                        sub2.total_compras,
                         
                         sub2.total_compras_ultimos_6_meses,
                         sub2.valor_compras_ultimos_6_meses,
@@ -138,11 +140,13 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                             from deltalaketrusted.payments.boletos_internos as bi
                             group by 1, safra_concessao
                     )
-                    
+
                     select
                         sub2.raiz_cnpj,
                         
                         'ALPE' as fonte_informacao,
+                        
+                        sub2.total_compras,
                         
                         sub2.total_compras_ultimos_6_meses,
                         sub2.valor_compras_ultimos_6_meses,
@@ -161,6 +165,8 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                     from (
                         select
                             raiz_cnpj,
+                            
+                            count(*) as total_compras,
                             
                             sum(case when safra_concessao >= date_trunc('month', current_date) - interval '5' month then 1 else 0 end) as total_compras_ultimos_6_meses,
                             sum(case when safra_concessao >= date_trunc('month', current_date) - interval '7' month then 1 else 0 end) as total_compras_ultimos_8_meses,
@@ -195,16 +201,18 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                         from deltalaketrusted.payments.fat_pag_join 
                         group by raiz_cnpj, 2
                     ),
-                    
+
                     referencia as (
                         select max(safra) AS data_referencia
                         FROM infos_faturamento_arcelor
                     )
-                    
+
                     select
                         sub2.raiz_cnpj,
                         
                         'ARCELOR' as fonte_informacao,
+                        
+                        sub2.total_compras,
                         
                         sub2.total_compras_ultimos_6_meses,
                         sub2.valor_compras_ultimos_6_meses,
@@ -223,6 +231,9 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                     from (
                         SELECT
                             b.raiz_cnpj,
+                            
+                            count(*) as total_compras,
+                            
                             SUM(CASE WHEN b.safra >= date_add('month', -5, r.data_referencia) THEN 1 ELSE 0 END) AS total_compras_ultimos_6_meses,
                             SUM(CASE WHEN b.safra >= date_add('month', -7, r.data_referencia) THEN 1 ELSE 0 END) AS total_compras_ultimos_8_meses,
                             SUM(CASE WHEN b.safra >= date_add('month', -9, r.data_referencia) THEN 1 ELSE 0 END) AS total_compras_ultimos_10_meses,
@@ -262,7 +273,8 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
         "media_compras_ultimos_6_meses",
         "media_compras_ultimos_8_meses",
         "media_compras_ultimos_10_meses",
-        "media_pagamento_total"
+        "media_pagamento_total",
+        "total_compras"
     ]
 
     for col in cols_numericas:
