@@ -52,9 +52,9 @@ def segmentacao_carteira_refined (access_params=None,  **kwargs):
         SELECT
             cv.safra
             , SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8) AS cnpj_raiz
-            , cv.nome_sacado
+            , MAX(cv.nome_sacado) AS nome_sacado
             , cv.cnpj_cedente
-            , cv.nome_cedente 
+            , cv.nome_cedente
             , sa.segmentacao_atual
             , CASE 
                 WHEN SUM(cv.carteira) <= 100000 THEN '1 - VAREJO LIGHT'
@@ -66,7 +66,7 @@ def segmentacao_carteira_refined (access_params=None,  **kwargs):
             , SUM(cv.carteira) AS carteira
         FROM deltalakerefined.payments.carteira_vendermais cv
         LEFT JOIN segmento_atual sa ON sa.cnpj_raiz = SUBSTRING(REGEXP_REPLACE(cv.cnpj_sacado, '[^0-9]', ''),1,8)
-        GROUP BY 1, 2, 3, 4, 5, 6
+        GROUP BY 1, 2, 4, 5, 6
     """
 
     df_segmentacao_carteira = execute_query(conn, query_segmentacao_carteira)
