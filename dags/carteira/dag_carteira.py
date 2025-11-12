@@ -62,7 +62,7 @@ default_args = {
 with DAG(
     dag_id='carteira',
     start_date=days_ago(1),
-    schedule_interval = '0 13 * * 0-5',  # Roda às 10:00 BRT (13:00 UTC), de segunda a sexta, uma vez por dia
+    schedule_interval = '0 13 * * 0-6',  # Roda às 10:00 BRT (13:00 UTC), de segunda a sexta, uma vez por dia
     default_args=default_args,
     tags=['etl', 'carteira', 'refined'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
