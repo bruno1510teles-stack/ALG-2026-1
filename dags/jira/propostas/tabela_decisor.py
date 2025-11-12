@@ -47,6 +47,7 @@ def decisor_trusted (access_params=None, **kwargs):
                     ) AS rn
                 FROM deltalaketrusted.jira.propostas
                 WHERE decisao = 'APROVADO'
+                AND issue_key <> 'CMGT-114001'
             )
 
             SELECT 
