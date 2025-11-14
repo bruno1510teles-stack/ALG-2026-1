@@ -9,6 +9,7 @@ from io import BytesIO
 from airflow.utils.log.logging_mixin import LoggingMixin
 from airflow.models import Variable
 
+
 def limites_to_raw(access_params=None, **kwargs):
 
     ### Coletando dados da camada Raw
@@ -46,8 +47,7 @@ def limites_to_raw(access_params=None, **kwargs):
         except Exception as e:
             print(f"Erro ao procurar arquivos em {prefix}: {e}")
             return None
-
-
+        
 
     # Lista de prefixos (pastas principais)
     buckets_1 = [
@@ -86,42 +86,65 @@ def limites_to_raw(access_params=None, **kwargs):
     colunas_v2 = ['cnpj_sacado', 'limite_atribuido', 'limite_utilizado', 'limite_disponivel', 'status', 'stop_supply', 'motivo_bloqueio']
     colunas_v3 = ['cnpj_sacado', 'limite_atribuido', 'limite_utilizado', 'limite_disponivel', 'bloqueado','razao_social_sacado', 'data_ultima_operacao']
 
-    # Função para processar os buckets e concatenar em um DataFrame
+
+    def ultimo_dia_util():
+        hoje = datetime.now(timezone.utc)
+        dia_semana = hoje.weekday()  # 0 = segunda, 6 = domingo
+
+        if dia_semana == 0:
+            dia_util = hoje - timedelta(days=3)
+        elif dia_semana == 6:
+            dia_util = hoje - timedelta(days=2)
+        else:
+            dia_util = hoje - timedelta(days=1)
+
+        # Zera a hora (meia-noite UTC)
+        dia_util = dia_util.replace(hour=0, minute=0, second=0, microsecond=0)
+
+        return dia_util
+
+
     def processar_buckets(client, buckets, colunas, df):
+        limite_data = ultimo_dia_util()
+        print(f"📅 Último dia útil considerado: {limite_data}")
+
         for bucket in buckets:
             caminho_completo = subcaminho  # Caminho dentro do bucket
             
-            # Encontra o arquivo mais recente no bucket atual
             arquivo = encontrar_arquivo_mais_recente(client, bucket, caminho_completo)
             
             if arquivo:
-                print(f"Arquivo mais recente em {bucket}/{caminho_completo}: {arquivo.object_name}, Modificado em: {arquivo.last_modified}")
-                
-                # Baixa o arquivo mais recente
-                data = client.get_object(bucket, arquivo.object_name)
-                
-                # Lê o arquivo como um DataFrame (ajuste o `pd.read_csv` conforme o formato do arquivo)
-                df_bucket = pd.read_csv(BytesIO(data.read()), sep=';', header=None, names=colunas)
-                
-                # Fecha o objeto baixado
-                data.close()
-                
-                # Extrai o nome final do bucket (ex: "agrichem" de "urn-party-pgid-agrichem")
-                nome_bucket = bucket.split("-")[-1]
-                
-                # Adiciona uma nova coluna ao DataFrame com o nome do bucket
-                df_bucket['cedente'] = nome_bucket
-                
-                # Concatena com o DataFrame final
-                df = pd.concat([df, df_bucket], ignore_index=True)
+                data_modificacao = arquivo.last_modified  # já vem com timezone UTC
+                print(f"Arquivo mais recente em {bucket}/{caminho_completo}: {arquivo.object_name}, Modificado em: {data_modificacao}")
+
+                # 🔍 Ajuste de timezone (garantia)
+                if data_modificacao.tzinfo is None:
+                    data_modificacao = data_modificacao.replace(tzinfo=timezone.utc)
+
+                # Só processa se for mais recente que o último dia útil
+                if data_modificacao > limite_data:
+                    print("→ Processando arquivo (recente o suficiente).")
+
+                    data = client.get_object(bucket, arquivo.object_name)
+                    df_bucket = pd.read_csv(BytesIO(data.read()), sep=';', header=None, names=colunas)
+                    data.close()
+
+                    nome_bucket = bucket.split("-")[-1]
+                    df_bucket['cedente'] = nome_bucket
+
+                    df = pd.concat([df, df_bucket], ignore_index=True)
+                else:
+                    print("⏩ Ignorado: arquivo mais antigo que o último dia útil.")
             else:
                 print(f"Nenhum arquivo encontrado em {bucket}/{caminho_completo}")
+
         return df
 
     # Processa cada conjunto de buckets e armazena em seus respectivos DataFrames
     v1 = processar_buckets(client, buckets_1, colunas_v1, v1)
     v2 = processar_buckets(client, buckets_2, colunas_v2, v2)
     v3 = processar_buckets(client, buckets_3, colunas_v3, v3)
+
 
     # Junta todos os DataFrames em um só
     df_final = pd.concat([v1, v2, v3], ignore_index=True)
@@ -144,6 +167,7 @@ def limites_to_raw(access_params=None, **kwargs):
 
     # Exibe o resultado
     print(contagem_por_bucket)
+
 
     # Exportando dados para a camada Raw
         
