@@ -12,6 +12,7 @@ from datetime import timedelta
 ### Importando scripts necessários
 from limites import limites_to_raw
 from limites import limites_raw_to_trusted
+from limites import limites_trusted_to_refined_acum
 
 ### Parâmetros de acesso
 access_params = {          
@@ -67,7 +68,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    # Definindo o task que processa limites_to_raw
+
     to_raw = PythonOperator(
         task_id='to_raw',
         python_callable=limites_to_raw.limites_to_raw,
@@ -75,7 +76,6 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
-     # Definindo o task que processa limites_raw_to_trusted
     raw_to_trusted = PythonOperator(
         task_id='raw_to_trusted',
         python_callable=limites_raw_to_trusted.limites_raw_to_trusted,
@@ -83,5 +83,12 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    trusted_to_refined_acum = PythonOperator(
+        task_id = 'trusted_to_refined_acum',
+        python_callable = limites_trusted_to_refined_acum.limites_acum,
+        op_kwargs = {'access_params': access_params},
+        provide_context = True  # Habilita o envio do contexto (incluindo conf)
+    )
+
     # Definindo a ordem de execução das tasks
-    to_raw >> raw_to_trusted
+    to_raw >> raw_to_trusted >> trusted_to_refined_acum
