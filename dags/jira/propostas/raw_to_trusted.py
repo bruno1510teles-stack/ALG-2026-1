@@ -57,14 +57,27 @@ def raw_to_trusted(access_params=None, **kwargs):
     df_resolvido['raiz_cnpj'] = df_resolvido['cnpj'].astype(str).str[:8]
 
     
-    # TRATANDO COLUNA DA POLITICA
-    def verifica_politica(politica_desc):
-        if pd.isnull(politica_desc):
-            return "NÃO ATRIBUIDA"
-        else:
-            return politica_desc
+    # TRATANDO COLUNA DA POLÍTICA
+    def verifica_politica(politica, ramificacao_motor):
+        # Se a política estiver vazia
+        if not politica or pd.isna(politica):
+            texto = str(ramificacao_motor).upper()  # transforma em texto e coloca em maiúsculo
 
-    df_resolvido['politica'] = df_resolvido['politica'].apply(verifica_politica).str.upper()
+            if texto.startswith("AF"):
+                return "ANTIFRAUDE"
+            elif texto.startswith("PF"):
+                return "PRÉ-FILTRO"
+            else:
+                return "NÃO ATRIBUIDA"
+
+        # Se já tiver política, mantém
+        return politica
+
+    # Aplica a regra
+    df_resolvido["politica"] = df_resolvido.apply(
+        lambda x: verifica_politica(x['politica'], x['ramificacao_motor']),
+        axis=1
+    ).str.upper()
 
 
 
