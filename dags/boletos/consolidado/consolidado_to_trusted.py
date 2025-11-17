@@ -133,8 +133,8 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
         if pd.isnull(valor):
             return None
         valor_decimal = Decimal(valor).quantize(Decimal('0.01'), rounding=ROUND_DOWN)
-        if valor_decimal >= Decimal('100000000'):
-            raise ValueError(f"Valor {valor_decimal} excede o limite de 8 dígitos antes da vírgula.")
+        if valor_decimal >= Decimal('1000000000'):
+            raise ValueError(f"Valor {valor_decimal} excede o limite de dígitos antes da vírgula.")
         return valor_decimal
     
     # Aplicar nas colunas
