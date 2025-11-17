@@ -8,23 +8,23 @@ from trino.auth import BasicAuthentication
 from airflow.utils.log.logging_mixin import LoggingMixin
 import numpy as np
 from io import BytesIO
+from dateutil.relativedelta import relativedelta
 
 
 def limites_acum(access_params=None, **kwargs):
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
-    
     # valida se é dia 28
-    if now.day != 28:
+    if now.day != 1:
         print('Dia considerado:')
         print(now)
 
-        print("Task ignorada: só roda no dia 28.")
+        print("Task ignorada: só roda no dia 01.")
         exit()
 
     print("Executando task...")
-    
+
 
    ### CONECTANDO COM O TRINO
 
@@ -56,9 +56,16 @@ def limites_acum(access_params=None, **kwargs):
 
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
+
+    # Data de referência = um mês antes
+    ref = now - relativedelta(months=1)
+
     df_limites['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_limites['year'], df_limites['month'], df_limites['day'] = now.year, now.month, now.day
-    df_limites['ano_mes'] = now.strftime('%Y-%m')
+
+    # ano_mes de referência (mês anterior)
+    df_limites['anomes_ref'] = ref.strftime('%Y-%m')
+
     print("Tratamento dos dados concluído")
 
     # Exiba o DataFrame
