@@ -14,7 +14,7 @@ def limites_acum(access_params=None, **kwargs):
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
 
-    '''
+    
     # valida se é dia 28
     if now.day != 28:
         print('Dia considerado:')
@@ -24,7 +24,7 @@ def limites_acum(access_params=None, **kwargs):
         exit()
 
     print("Executando task...")
-    '''
+    
 
    ### CONECTANDO COM O TRINO
 
