@@ -165,8 +165,8 @@ def cria_tabela_pagamento_historico_task (access_params=None, **kwargs):
                     from (
                         select
                             raiz_cnpj,
-                            
-                            count(*) as total_compras,
+
+                            sum(case when safra_concessao >= date_trunc('month', current_date) - interval '11' month then 1 else 0 end) as total_compras,
                             
                             sum(case when safra_concessao >= date_trunc('month', current_date) - interval '5' month then 1 else 0 end) as total_compras_ultimos_6_meses,
                             sum(case when safra_concessao >= date_trunc('month', current_date) - interval '7' month then 1 else 0 end) as total_compras_ultimos_8_meses,
