@@ -80,14 +80,22 @@ def trusted_to_refined (access_params=None,  **kwargs):
     
     df_final = df_monitoramento.reset_index(drop=True)
     df_final = df_final.astype(str)
-
     
     # Atribuindo data
     
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
- 
+
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
+    
+    
+    df_final.loc[
+    (df_final["schema"] == "monitoramento") &
+    (df_final["tabela"] == "monitoramento_tabelas"),
+    "ultima_atualizacao"
+    ] = df_final["atualizado_em"]
+        
+        
     print("Tratamento dos dados concluído")
  
  
