@@ -40,9 +40,11 @@ def processa_historico (access_params = None):
         
         return None
 
+
     # Configurações da API do Jira
     jira_url_base = "https://alpe.atlassian.net"
-    jira_url_search = f"{jira_url_base}/rest/api/3/search"
+    jira_url_search = f"{jira_url_base}/rest/api/3/search/jql"
+
     # Credenciais de acesso
     email = "felipe.ferraz@alpe.com.br"
     api_token = "ATATT3xFfGF0HVdx6POVBSFWH3BnpC0HyKvTF9EXgjLZ6rpwZuHnIAcI1UDeNTht79mL-O60ezlE4a2qKr4d-H_A3DmY7VCwATPRMABBMQns1ubEjMI_uFgCjEMPeUKkpVgb_-BZ5btV7yQQal1ZNmEm2dGZY_NTpUpOkHdC-SjK0iiBIj3EP80=037ADAA4"
@@ -53,54 +55,50 @@ def processa_historico (access_params = None):
         "Accept": "application/json"
     }
 
-    # JQL query e parâmetros de paginação
-    jql_query = 'project = cmgt' # and issue = "CMGT-49482"
-    start_at = 0
+
+    jql_query = f'project = cmgt'
     max_results = 100
-    total_issues = 0
     issues_list = []
-
-
-    # Paginação para carregar no máximo 10.000 issues
-    max_total_issues = 5000 # Apenas para DEV, para termos testes mais rapidos
+    next_token = None  # Inicializa o token como None
 
 
     while True:
         params = {
             "jql": jql_query,
-            "startAt": start_at,
             "maxResults": max_results,
-            "fields": ["summary", "status", "assignee", "resolution", "created", "customfield_13729", "customfield_13739", "resolutiondate", 
-                    "customfield_13807", "customfield_13737", "customfield_13709", "customfield_13743", "customfield_13798", 
-                    "customfield_13793", "customfield_13811", "customfield_13742", "customfield_13753", "customfield_13721", 
-                    "priority", "updated"]
+            "fields": ["summary", "status", "assignee", "resolution", "created",
+                    "customfield_13729", "customfield_13739", "resolutiondate",
+                    "customfield_13807", "customfield_13737", "customfield_13709",
+                    "customfield_13743", "customfield_13798", "customfield_13793",
+                    "customfield_13811", "customfield_13742", "customfield_13753",
+                    "customfield_13825", "customfield_13721", "priority", "updated"]
         }
 
-        response = requests.post(jira_url_search, headers=headers, auth=HTTPBasicAuth(email, api_token), data=json.dumps(params))
+        if next_token:  # Se já tiver token da última página
+            params["nextPageToken"] = next_token
+
+        response = requests.post(jira_url_search, headers=headers,
+                                auth=HTTPBasicAuth(email, api_token),
+                                json=params)  # usar json=params, não data
 
         if response.status_code == 200:
             data = response.json()
-            issues = data['issues']
-            
-            if not issues:
-                break
-
+            issues = data.get("issues", [])
             issues_list.extend(issues)
-            total_issues += len(issues)
-            print(f"Total de issues carregadas até agora: {total_issues}")
+            print(f"Total de issues carregadas até agora: {len(issues_list)}")
 
-            # Interrompe ao atingir o máximo
-            if total_issues >= max_total_issues:
-                issues_list = issues_list[:max_total_issues]  # Garante o corte exato
-                break
-
-            start_at += max_results
+            # Pega o token da próxima página, se houver
+            next_token = data.get("nextPageToken")
+            if not next_token or len(issues) == 0:
+                break  # Sai se não houver próxima página
         else:
             print(f"Erro: {response.status_code}")
             print(response.text)
             break
 
     issues_data = []
+
+
 
     # Função para processar cada issue
     def process_issue(issue):
@@ -123,6 +121,7 @@ def processa_historico (access_params = None):
             'decisao': issue['fields'].get('resolution', {}).get('name') if issue['fields'].get('resolution') else None,
             'parecer': issue['fields'].get('customfield_13753', None),
             'ramificacao_motor': issue['fields'].get('customfield_13807', None),
+            'ignorar_motor': issue['fields'].get('customfield_13825', None),
             'data_criado': issue['fields'].get('created', None),
             'data_resolvido': issue['fields'].get('resolutiondate', None),
             'data_atualizado': issue['fields'].get('updated', None)
@@ -136,6 +135,8 @@ def processa_historico (access_params = None):
         issue_data['data_disponivel_mesa'] = data_disponivel if data_disponivel else None
 
         return issue_data
+    
+
 
     # Processando as issues com informações detalhadas por interação
     start_time = time.time()
@@ -171,31 +172,34 @@ def processa_historico (access_params = None):
     total_time = end_time - start_time
     print(f"\nProcessamento concluído em {total_time:.2f} segundos.")
 
+
     # Convertendo os dados para DataFrame
     df_jira = pd.DataFrame(issues_data)
+
+
+    print('Distribuição de propostas ignorar motor:')
+    df_jira['ignorar_motor'].apply(type).value_counts()
+
+
+    # Criando Flag Ignorar Motor
+
+    df_jira['flag_ignorar_motor'] = \
+        df_jira['ignorar_motor'].apply(lambda x: 1 if isinstance(x, dict) else 0)
+
+    df_jira = df_jira.drop(columns=['ignorar_motor'], errors='ignore')
+
 
     # Tratando JSON do parecer...
     def extrair_parecer(parecer):
         try:
-            if not parecer or 'content' not in parecer:
-                return None
-
-            texto_final = []
-
-            for bloco in parecer['content']:
-                if 'content' in bloco:
-                    for parte in bloco['content']:
-                        if parte.get('type') == 'text':
-                            texto_final.append(parte.get('text', ''))
-                    texto_final.append('\n')  # quebra entre blocos (parágrafos)
-
-            return ''.join(texto_final).strip()
-        except Exception as e:
-            print(f"[Erro ao extrair parecer]: {e}")
+            return parecer['content'][0]['content'][0]['text']
+        except (KeyError, IndexError, TypeError):
             return None
+
 
     # Aplicando a função para criar uma nova coluna com o texto extraído
     df_jira['parecer'] = df_jira['parecer'].apply(extrair_parecer)
+
 
     # Atribuindo data atual
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
@@ -204,7 +208,6 @@ def processa_historico (access_params = None):
 
     # Resetando o índice
     df_jira = df_jira.reset_index(drop=True)
-
 
     # Salvando Output
 

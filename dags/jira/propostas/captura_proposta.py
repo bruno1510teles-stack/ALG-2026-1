@@ -101,6 +101,7 @@ def captura_proposta (access_params = None):
     issues_list = []
     next_token = None  # Inicializa o token como None
 
+
     while True:
         params = {
             "jql": jql_query,
@@ -110,7 +111,7 @@ def captura_proposta (access_params = None):
                     "customfield_13807", "customfield_13737", "customfield_13709",
                     "customfield_13743", "customfield_13798", "customfield_13793",
                     "customfield_13811", "customfield_13742", "customfield_13753",
-                    "customfield_13721", "priority", "updated"]
+                    "customfield_13825", "customfield_13721", "priority", "updated"]
         }
 
         if next_token:  # Se já tiver token da última página
@@ -137,6 +138,7 @@ def captura_proposta (access_params = None):
 
     issues_data = []
 
+
     # Função para processar cada issue
     def process_issue(issue):
         issue_key = issue['key']
@@ -158,6 +160,7 @@ def captura_proposta (access_params = None):
             'decisao': issue['fields'].get('resolution', {}).get('name') if issue['fields'].get('resolution') else None,
             'parecer': issue['fields'].get('customfield_13753', None),
             'ramificacao_motor': issue['fields'].get('customfield_13807', None),
+            'ignorar_motor': issue['fields'].get('customfield_13825', None),
             'data_criado': issue['fields'].get('created', None),
             'data_resolvido': issue['fields'].get('resolutiondate', None),
             'data_atualizado': issue['fields'].get('updated', None)
@@ -171,6 +174,7 @@ def captura_proposta (access_params = None):
         issue_data['data_disponivel_mesa'] = data_disponivel if data_disponivel else None
 
         return issue_data
+    
 
     # Processando as issues com informações detalhadas por interação
     start_time = time.time()
@@ -206,31 +210,31 @@ def captura_proposta (access_params = None):
     total_time = end_time - start_time
     print(f"\nProcessamento concluído em {total_time:.2f} segundos.")
 
+
     # Convertendo os dados para DataFrame
     df_propostas_ult_dia_util = pd.DataFrame(issues_data)
+
+
+    print('Distribuição de propostas ignorar motor:')
+    df_propostas_ult_dia_util['ignorar_motor'].apply(type).value_counts()
+
+
+    # Criando Flag Ignorar Motor
+
+    df_propostas_ult_dia_util['flag_ignorar_motor'] = \
+        df_propostas_ult_dia_util['ignorar_motor'].apply(lambda x: 1 if isinstance(x, dict) else 0)
+
+    df_propostas_ult_dia_util = df_propostas_ult_dia_util.drop(columns=['ignorar_motor'], errors='ignore')
+
 
     # Tratando parecer
     def extrair_parecer(parecer):
         try:
-            if not parecer or 'content' not in parecer:
-                return None
-
-            texto_final = []
-
-            for bloco in parecer['content']:
-                if 'content' in bloco:
-                    for parte in bloco['content']:
-                        if parte.get('type') == 'text':
-                            texto_final.append(parte.get('text', ''))
-                    texto_final.append('\n')  # quebra entre blocos (parágrafos)
-
-            return ''.join(texto_final).strip()
-        except Exception as e:
-            print(f"[Erro ao extrair parecer]: {e}")
-        return None
+            return parecer['content'][0]['content'][0]['text']
+        except (KeyError, IndexError, TypeError):
+            return None
 
     df_propostas_ult_dia_util['parecer'] = df_propostas_ult_dia_util['parecer'].apply(extrair_parecer)
-
 
 
     # Regra para atualizarmos as issues do df_propostas_ult_dia_util na base histórica
