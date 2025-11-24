@@ -433,7 +433,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional','analista_tratado',
         'analista_responsavel','cargo_analista_responsavel','gerente_responsavel', 'id', 'data_consulta', 'score', 'empresa_grande',
         'total_restritivos_pf', 'total_restritivos_pj', 'valor_total_restritivos', 'qtd_cheque_pf', 'qtd_cheque_pj', 'qtd_total_cheques', 
-        'safra_pontualidade', 'pontualidade','atualizado_em', 'year', 'month', 'day',
+        'safra_pontualidade', 'pontualidade','atualizado_em','flag_ignorar_motor', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
 

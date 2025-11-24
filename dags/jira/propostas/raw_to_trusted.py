@@ -580,7 +580,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         'nome_vendedor_fn', 'filial_fn', 'cdb_dba', 'prioridade', 'status', 'decisor','analista_tratado',
         'cargo_analista', 'categoria_decisor', 'decisao', 'parecer', 'ramificacao_motor', 
         'categoria_ramificacao', 'tipo_proposta','flag_proposta_replica','ramificacao_proposta_replica', 'data_criado',
-        'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em', 'year', 'month', 'day'
+        'data_resolvido', 'data_atualizado','data_disponivel_mesa','atualizado_em','flag_ignorar_motor', 'year', 'month', 'day'
         ]
     ].reset_index(drop=True)
 
