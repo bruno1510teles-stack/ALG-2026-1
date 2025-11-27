@@ -196,7 +196,7 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     print("DF FINAL:")
     print(df)
     
-    # Exportando dados para a camada Raw
+    # Exportando dados para a camada Refined
     
     storage_options = {
         "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
@@ -207,10 +207,10 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     }
 
     # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_TRUSTED = "cnae/depara-cnae/delta"
+    BUCKET_SOURCE_REFINED = "cnae/depara-cnae/delta"
 
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_TRUSTED}", 
+        f"s3a://{BUCKET_SOURCE_REFINED}", 
         df, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
