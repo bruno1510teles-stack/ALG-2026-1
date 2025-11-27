@@ -123,8 +123,8 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     
 
     df_merge = sacados.merge(
-        df_enriquecimento[['cnpj_completo', 'secao_final', 'divisao_final']],
-        on='cnpj_completo',
+        df_enriquecimento[['raiz_cnpj', 'secao_final', 'divisao_final']],
+        on='raiz_cnpj',
         how='left')
     
 
@@ -165,15 +165,53 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     )
     
     
+    divisoes_industria = [
+        "FABRICAÇÃO DE PRODUTOS DE METAL, EXCETO MÁQUINAS E EQUIPAMENTOS",
+        "METALURGIA",
+        "FABRICAÇÃO DE VEÍCULOS AUTOMOTORES, REBOQUES E CARROCERIAS",
+        "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS",
+        "FABRICAÇÃO DE PRODUTOS DIVERSOS",
+        "FABRICAÇÃO DE MÓVEIS",
+        "FABRICAÇÃO DE MÁQUINAS, APARELHOS E MATERIAIS ELÉTRICOS",
+        "FABRICAÇÃO DE PRODUTOS DE MINERAIS NÃO METÁLICOS",
+        "FABRICAÇÃO DE CELULOSE, PAPEL E PRODUTOS DE PAPEL"
+    ]
+
     df['sub_segmento'] = df.apply(
-        lambda row: 'COMÉRCIO VAREJISTA' if row['segmento'] == 'MATCON' and row['divisao_final'] in ['COMÉRCIO VAREJISTA', 'COMÉRCIO E REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS'] else
-                    ('COMÉRCIO ATACADISTA' if row['segmento'] == 'MATCON' and row['divisao_final'] == 'COMÉRCIO POR ATACADO, EXCETO VEÍCULOS AUTOMOTORES E MOTOCICLETAS' else
-                    ('INCORPORAÇÃO' if row['segmento'] == 'MATCON' and row['secao_final'] == 'CONSTRUÇÃO' else row['segmento'])),
+        lambda row:
+
+            # Regra INDÚSTRIA (dentro de MATCON)
+            ('INDÚSTRIA' if row['segmento'] == 'MATCON'
+                            and row['secao_final'] == 'INDÚSTRIAS DE TRANSFORMAÇÃO'
+                            and row['divisao_final'] in divisoes_industria else
+
+            # Regra MATCON - Varejo
+            ('COMÉRCIO VAREJISTA' if row['segmento'] == 'MATCON'
+                                    and row['divisao_final'] in [
+                                        'COMÉRCIO VAREJISTA',
+                                        'COMÉRCIO E REPARAÇÃO DE VEÍCULOS AUTOMOTORES E MOTOCICLETAS'
+                                    ] else
+
+            # Regra MATCON - Atacado
+            ('COMÉRCIO ATACADISTA' if row['segmento'] == 'MATCON'
+                                    and row['divisao_final'] == 'COMÉRCIO POR ATACADO, EXCETO VEÍCULOS AUTOMOTORES E MOTOCICLETAS' else
+
+            # Regra MATCON - Incorporação
+            ('INCORPORAÇÃO' if row['segmento'] == 'MATCON'
+                            and row['secao_final'] == 'CONSTRUÇÃO' else
+
+            # Se nenhuma regra anterior se aplicar, mantém o segmento original
+            row['segmento'])))),
         axis=1
     )
-    
-    
-    df['sub_segmento'] = df.apply(lambda row: 'MATCON - OUTROS' if row['segmento'] == 'MATCON' and row['sub_segmento'] == 'MATCON' else row['sub_segmento'], axis=1)
+
+    # Ajuste final: MATCON que sobrar vira MATCON - OUTROS
+    df['sub_segmento'] = df.apply(
+        lambda row: 'MATCON - OUTROS'
+            if row['segmento'] == 'MATCON' and row['sub_segmento'] == 'MATCON'
+            else row['sub_segmento'],
+        axis=1
+    )
     
     
     #df = df.drop(columns=['casos_matcon', 'casos_agro', 'casos_outros'])
