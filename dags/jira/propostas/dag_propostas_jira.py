@@ -79,15 +79,15 @@ with DAG(
     max_active_runs=1
 ) as dag:
     
-    
+    '''
     processa_historico = PythonOperator(
          task_id='processa_historico_propostas',
          python_callable=processa_historico,
          op_kwargs={'access_params': access_params},
          provide_context=True
     )
-    
     '''
+   
     task1 = PythonOperator(
         task_id='captura_proposta',
         python_callable = captura_proposta,
@@ -129,8 +129,8 @@ with DAG(
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    '''
+
 
     # Definindo a ordem de execução das tasks
-    processa_historico
-    #task1 >> task2 >> task3 >> task4 >> task5 >> task6
+    #processa_historico
+    task1 >> task2 >> task3 >> task4 >> task5 >> task6
