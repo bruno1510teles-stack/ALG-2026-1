@@ -212,27 +212,27 @@ def auxiliar_parecer(spark, **kwargs):
 
     # Base Boletos
     query_faturamento_arcelor = """
-    with faturamento as (
-    select 
-        raiz_cnpj, max(vop_2023) as vop_total_2023, max(vop_2024) as vop_total_2024, max(vop_2025) as vop_total_2025, max(vop_2026) as vop_total_2026, max(max_vop_total) as maior_vop_periodo 
-    from 
-        deltalakerefined.payments.faturamento_externo_arcelor 
-    group by 
-        raiz_cnpj 
-    ),
-    liquidez as (
-    select 
-        *, ((vlr_recebido + vlr_receb_atrasado) / (vlr_recebido + vlr_receb_atrasado + vlr_inad_corrente)) as liquidez
-    from(
-    select raiz_cnpj, sum(vlr_recebido) as vlr_recebido, sum(vlr_receb_atrasado) as vlr_receb_atrasado, sum(vlr_inad_corrente) as vlr_inad_corrente
-    from deltalaketrusted.payments.fat_pag_join 
-    group by raiz_cnpj)
-    where vlr_recebido <> 0)
-    select 
-        f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2025, f.vop_total_2026, f.maior_vop_periodo, l.liquidez
-    from 
-        faturamento f
-        left join liquidez l on f.raiz_cnpj = l.raiz_cnpj
+        with faturamento as (
+        select 
+            raiz_cnpj, max(vop_2023) as vop_total_2023, max(vop_2024) as vop_total_2024, max(vop_2025) as vop_total_2025, max(vop_2026) as vop_total_2026, max(max_vop_total) as maior_vop_periodo 
+        from 
+            deltalakerefined.payments.faturamento_externo_arcelor 
+        group by 
+            raiz_cnpj 
+        ),
+        liquidez as (
+        select 
+            *, ((vlr_recebido + vlr_receb_atrasado) / (vlr_recebido + vlr_receb_atrasado + vlr_inad_corrente)) as liquidez
+        from(
+        select raiz_cnpj, sum(vlr_recebido) as vlr_recebido, sum(vlr_receb_atrasado) as vlr_receb_atrasado, sum(vlr_inad_corrente) as vlr_inad_corrente
+        from deltalaketrusted.payments.fat_pag_join 
+        group by raiz_cnpj)
+        where vlr_recebido <> 0)
+        select 
+            f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2025, f.vop_total_2026, f.maior_vop_periodo, l.liquidez
+        from 
+            faturamento f
+            left join liquidez l on f.raiz_cnpj = l.raiz_cnpj
     """
     faturamento_arcelor = execute_query(conn, query_faturamento_arcelor)
     print(f"Quantidade de linhas no DataFrame 'faturamento': {faturamento_arcelor.shape[0]}")
@@ -246,6 +246,190 @@ def auxiliar_parecer(spark, **kwargs):
     print("Iniciando tratamentos")
 
     df_final = resultado_tratamento.join(faturamento_arcelor, on='cnpj_raiz', how='left')
+
+
+    # Campos Parecer Faturamento Alpe
+
+    query_faturamento_alpe = """
+                        WITH base AS (
+                            SELECT
+                                substring(regexp_replace(cnpj_sacado, '\.', ''), 1, 8) AS cnpj8,
+                                date_diff('day', data_efetivacao, data_vencimento) AS prazo,
+                                valor_face
+                            FROM deltalaketrusted.payments.boletos_internos
+                        ),
+
+                        prazo_arredondado AS (
+                            SELECT
+                                cnpj8,
+                                valor_face,
+                                case WHEN prazo < 60 then 15 * ceil(prazo / 15.0) else 30 * ceil(prazo / 30.0) END AS faixa_prazo
+                            FROM base
+                        ),
+
+                        somas AS (
+                            SELECT
+                                cnpj8,
+                                faixa_prazo,
+                                sum(valor_face) AS soma_faixa
+                            FROM prazo_arredondado
+                            GROUP BY 1, 2
+                        ),
+
+                        totais AS (
+                            SELECT
+                                cnpj8,
+                                sum(soma_faixa) AS total
+                            FROM somas
+                            GROUP BY 1
+                        ),
+
+                        percentual AS (
+                            SELECT
+                                s.cnpj8,
+                                s.faixa_prazo,
+                                s.soma_faixa,
+                                (s.soma_faixa / t.total) AS pct
+                            FROM somas s
+                            JOIN totais t
+                            ON s.cnpj8 = t.cnpj8
+                        ),
+
+                        faixas_relevantes AS (
+                            SELECT
+                                cnpj8,
+                                faixa_prazo
+                            FROM percentual
+                            WHERE pct >= 0.10  -- SOMENTE FAIXAS COM MAIS DE 10%
+                        ),
+
+                        final AS (
+                            SELECT
+                                cnpj8,
+                                array_join(array_sort(array_agg(DISTINCT faixa_prazo)),'-') AS fluxo_pagamento
+                            FROM faixas_relevantes
+                            GROUP BY 1
+                        ),
+
+                        max_atraso as (
+                            select
+                                substring(regexp_replace(cnpj_sacado, '[./-]', ''), 1, 8) as cnpj_raiz,
+                                max(dias_em_atraso) as max_atraso
+                            from deltalakerefined.payments.carteira_vendermais cv
+                            group by 1
+                        ),
+
+                        max_vop_mensal as (
+                            select
+                                sub1.cnpj_raiz,
+                                max(sub1.vop) as max_vop_mensal
+                            from (
+                                select
+                                    substring(regexp_replace(cnpj_sacado, '[./-]', ''), 1, 8) as cnpj_raiz,
+                                    safra_concessao,
+                                    sum(valor_face) as vop
+                                from deltalaketrusted.payments.boletos_internos
+                                group by 1, 2 ) as sub1
+                            group by 1
+                        ),
+
+
+                        liquidez_interna as (
+                            select
+                                sub2.raiz_cnpj_sacado as cnpj_raiz,
+                                sub2.pago,
+                                sub2.pago + sub2.pago_em_atraso as pago_total,
+                                (sub2.pago / NULLIF(sub2.pago + sub2.pago_em_atraso, 0)) * 100 AS liq_interna
+                            from (
+                                    select
+                                    sub.raiz_cnpj_sacado,
+                                    sum(case when sub.status_pagamento_custom = 'A VENCER' then sub.vop else 0 end) as vop_a_vencer,
+                                    sum(case when sub.status_pagamento_custom = 'PAGO' then sub.vop else 0 end) as pago,
+                                    sum(case when sub.status_pagamento_custom = 'PAGO EM ATRASO' then sub.vop else 0 end) as pago_em_atraso,
+                                    sum(case when sub.status_pagamento_custom = 'VENCIDO' then sub.vop else 0 end) as vop_vencido
+                                    from (
+                                    select
+                                        substring(replace(replace(replace(cnpj_sacado, '.', ''), '/', ''), '-', ''), 1, 8) as raiz_cnpj_sacado,
+                                        data_baixa,
+                                        data_vencimento,
+                                        data_emissao,
+                                        valor_face as vop,
+                                        case
+                                        when data_baixa is not null then
+                                            case
+                                            when data_baixa <= date_add('day', 10, data_vencimento) then 'PAGO'
+                                            else 'PAGO EM ATRASO'
+                                            end
+                                        else
+                                            case
+                                            when current_date > data_vencimento then 'VENCIDO'
+                                            else 'A VENCER'
+                                            end
+                                        end as status_pagamento_custom
+                                    from deltalaketrusted.payments.boletos_internos
+                                    ) as sub
+                                    group by sub.raiz_cnpj_sacado ) as sub2
+                        ),
+
+                        infos_vop as (
+                            select
+                                substring ( cnpj_sacado, 1, 8 ) as cnpj_raiz,
+                                sum ( vop ) as vop_total,
+                                sum ( vop_performado ) as vop_performado,
+                                sum ( vop_a_vencer ) as vop_a_vencer,
+                                avg ( prazo_medio ) as prazo_medio,
+                                min ( safra_concessao ) as safra_concessao_min,
+                                array_join(array_agg(distinct nome_cedente), ', ') as nomes_cedentes
+                            from deltalakerefined.payments.vop_vendermais
+                            group by 1
+                        )
+
+                        select
+                            iv.*,
+                            f.fluxo_pagamento,
+                            ma.max_atraso,
+                            mvm.max_vop_mensal,
+                            li.liq_interna
+                        FROM infos_vop iv
+                        left join final f
+                            on iv.cnpj_raiz = f.cnpj8
+                        left join max_atraso ma 
+                            on iv.cnpj_raiz = ma.cnpj_raiz
+                        left join max_vop_mensal mvm
+                            on iv.cnpj_raiz = mvm.cnpj_raiz
+                        left join liquidez_interna li
+                            on iv.cnpj_raiz = li.cnpj_raiz
+    """
+
+    faturamento_alpe = execute_query(conn, query_faturamento_alpe)
+    print(f"Quantidade de linhas no DataFrame 'faturamento alpe': {faturamento_alpe.shape[0]}")
+    faturamento_alpe = spark.createDataFrame(faturamento_alpe)
+    print("Trino finalizado com sucesso!!")
+
+
+    faturamento_alpe = (
+        faturamento_alpe
+
+            .withColumn("vop_total", F.round(F.col("vop_total"), 2))
+            .withColumn("vop_performado", F.round(F.col("vop_performado"), 2))
+            .withColumn("vop_a_vencer", F.round(F.col("vop_a_vencer"), 2))
+            .withColumn("max_vop_mensal", F.round(F.col("max_vop_mensal"), 2))
+
+            .withColumn("prazo_medio", F.round(F.col("prazo_medio"), 0))
+            .withColumn("max_atraso", F.round(F.col("max_atraso"), 0))
+            .withColumn("liq_interna", F.round(F.col("liq_interna"), 0))
+
+            .withColumn(
+                "safra_concessao_min",
+                F.date_format(F.col("safra_concessao_min"), "dd/MM/yyyy")
+            )
+    )
+
+
+    print("Iniciando cruzamento")
+
+    df_final = df_final.join(faturamento_alpe, on='cnpj_raiz', how='left')
+
 
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     atualizado_em = now.strftime('%Y-%m-%d %X')  
