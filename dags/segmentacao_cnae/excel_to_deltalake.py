@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from deltalake import write_deltalake
 from trino.dbapi import connect
 from trino.auth import BasicAuthentication
+import re
 
 def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
 
@@ -120,6 +121,17 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
     df_enriquecimento['raiz_cnpj'] = df_enriquecimento['raiz_cnpj'].astype(str).str.zfill(8)
     df_enriquecimento['cnpj_completo'] = df_enriquecimento['cnpj_completo'].astype(str).str.zfill(14)
     df_enriquecimento['cnae'] = df_enriquecimento['cnae'].astype(str).str.replace('.0', '', regex=False)
+
+    # Função para limpar caracteres invisíveis df_enriquecimento
+    def limpar_texto(x):
+        if isinstance(x, str):
+            return re.sub(r'[\x00-\x1F]', ' ', x)
+        return x
+
+    # Aplicar limpeza nas colunas de texto relevantes
+    for col in ['secao', 'divisao', 'secao_final', 'divisao_final']:
+        if col in df_enriquecimento.columns:
+            df_enriquecimento[col] = df_enriquecimento[col].apply(limpar_texto)
     
 
     df_merge = sacados.merge(
@@ -133,6 +145,17 @@ def transforma_excel_deltalake_cnae (access_params=None, **kwargs):
 
     #Tratamentos df_cnae_fixo
     df_cnae_fixo['cnae'] = df_cnae_fixo['cnae'].fillna('').astype(str).str.replace('.0', '', regex=False).str.zfill(7)
+
+    # Função para limpar caracteres invisíveis df_cnae_fixo
+    def limpar_texto(x):
+        if isinstance(x, str):
+            return re.sub(r'[\x00-\x1F]', ' ', x)
+        return x
+
+    # Aplicar limpeza nas colunas de texto relevantes
+    for col in ['secao_desc', 'divisao_desc']:
+        if col in df_cnae_fixo.columns:
+            df_cnae_fixo[col] = df_cnae_fixo[col].apply(limpar_texto)
     
 
     df_merge = df_merge.merge(
