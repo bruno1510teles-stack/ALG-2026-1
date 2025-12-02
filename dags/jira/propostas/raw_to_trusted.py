@@ -458,7 +458,8 @@ def raw_to_trusted(access_params=None, **kwargs):
                             'AF - MUDANÇA ESTADO','AF - MUDANÇA CIDADE', 'D3 | D1', 'D2 | D1', 'REPROVADO | REPROVADO', 'VENCIDO > 30 DIAS', 'CANCELAMENTO DE LIMITE',
                             'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI',
                             'PF BLOQUEIO ALPE - SEM POLITICA', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA', 'PF LIMITE SOLICITADO <= ATUAL', 'PF SA', 'PF - GE MESA',
-                            'PF - GE CNPJ IRREGULAR', 'PF - GE BLOQUEIO ALPE', 'POLITICA4', 'AF - SEM HISTÓRICO DE PAGAMENTO SERASA', 'AF - SEM HISTÓRICO DE PAGAMENTO'
+                            'PF - GE CNPJ IRREGULAR', 'PF - GE BLOQUEIO ALPE', 'POLITICA4', 'AF - SEM HISTÓRICO DE PAGAMENTO SERASA', 'AF - SEM HISTÓRICO DE PAGAMENTO',
+                            'SERASA SCORE < 200'
                             ]
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
