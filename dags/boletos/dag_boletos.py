@@ -167,4 +167,4 @@ with DAG(
     )  
         
     # Definindo a ordem de execução das tasks
-    raw_to_trusted >> boletos_acum >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task >> consolidado_to_trusted_task >> pontualidade_to_refined_task
+    raw_to_trusted >> boletos_acum >> trusted_to_refined_carteira >> trusted_to_refined_vop >> raw_to_trusted_tradicional >> trusted_to_refined_tradicional_carteira >> trusted_to_refined_tradicional_vop >> vop_visao_safra_task >> vop_visao_safra_tradicional_task >> pontualidade_to_refined_task >> consolidado_to_trusted_task

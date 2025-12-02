@@ -168,5 +168,6 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
         df_boletos, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
-        mode="overwrite"
+        mode="overwrite",
+        overwrite_schema=True
     )
