@@ -8,7 +8,7 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 import numpy as np
 import unicodedata
-import Variable
+from airflow.models import Variable
 
 
 def join_faturamento_pagamento(access_params=None, **kwargs):
