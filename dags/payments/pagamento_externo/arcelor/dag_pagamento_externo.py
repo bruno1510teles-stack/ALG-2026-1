@@ -13,6 +13,7 @@ from datetime import timedelta
 from payments.pagamento_externo.arcelor import pagamento_raw_to_trusted
 from payments.pagamento_externo.arcelor import pagamento_trusted_to_refined
 from payments.pagamento_externo.arcelor import pontualidade_pagamento
+from payments.pagamento_externo.belgo import pontualidade_pagamento_belgo
 
 
 # Parâmetros de acesso
@@ -40,7 +41,6 @@ access_params = {
     }
 
 
-'''
 def notificar_falha_teams(context):
     url = "https://yandehbr.webhook.office.com/webhookb2/3efc9ab8-aba8-4150-8e68-864d086592a3@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/2bb511bca72643d58ea858c433be3aec/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2AAjaUAPO15qUofSpSzGh6PW4gkg2FJypyvorUwW89eU1"
     mensagem = {
@@ -48,14 +48,13 @@ def notificar_falha_teams(context):
         "text": f"Falha na DAG: {context['task_instance'].dag_id} na task: {context['task_instance'].task_id} VERIFICAR URGENTE!! - teste"
     }
     requests.post(url, json=mensagem)
-'''
 
 
 # Definindo defaults
 default_args = {
     "owner": "Vinicius Moraes Teixeira",
     "retries": 0,
-    # "on_failure_callback": notificar_falha_teams          # Descomentar quando for para producao
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -68,26 +67,33 @@ with DAG(
     tags=['etl', 'pagamento','trusted','refined']
 ) as dag:
 
-    # Definindo o task que carrega a tabela na trusted (tratamentos iniciais)
     task1 = PythonOperator(
         task_id='raw_to_trusted',
         python_callable=pagamento_raw_to_trusted.extracao_pagamento,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    # Definindo o task que carrega a tabela na Refined
     task2 = PythonOperator(
         task_id='trusted_to_refind',
         python_callable=pagamento_trusted_to_refined.tratamento_pagamento_externo,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
-    # Definindo o task que carrega a tabela na Refined
     task3 = PythonOperator(
-        task_id='trusted_to_refind_pontualidade',
+        task_id='pontualidade_arcelor',
         python_callable=pontualidade_pagamento.pontualidade_pagamento,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
+
+    task4 = PythonOperator(
+        task_id='pontualidade_belgo',
+        python_callable=pontualidade_pagamento_belgo.pontualidade_pagamento_belgo,
+        op_kwargs={'access_params': access_params},
         provide_context=True
     )
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2 >> task3
+    task1 >> task2 >> task3 >> task4
