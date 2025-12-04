@@ -36,14 +36,14 @@ def consulta_relato():
         access_token = get_access_token()
         base_url = Variable.get('EXREP_BASE_URL')
 
-        url_completo = f"{base_url}api/v1/report-executions?$sort=createdDate desc,lastModifiedDate desc&$expand=content&$filter=involved.party.identifications.value='{cnpj}' and definition.type=SERASA_RELATO and resolution=DONE&$audit=true"
+        url_completo = f"{base_url}api/v1/report-executions?$sort=createdDate desc,lastModifiedDate desc&$expand=content&$filter=involved.party.identifications.value='{cnpj}' and definition.type=RELATORIO_AVANCADO_PJ_ANALITICO and resolution=DONE&$audit=true"
         headers = {
             'Authorization': f"Bearer {access_token}"
         }
 
         response_completo = requests.get(url_completo, headers=headers)
 
-        valida_response_e_envia_arquivo(response=response_completo, base_url=base_url, headers=headers, cnpj=cnpj, bucket=bucket, tipo_relato='SERASA_RELATO', key= issueKey)
+        valida_response_e_envia_arquivo(response=response_completo, base_url=base_url, headers=headers, cnpj=cnpj, bucket=bucket, tipo_relato='RELATORIO_AVANCADO_PJ_ANALITICO', key= issueKey)
 
     
     def envia_pdf(response, bucket, cnpj, tipo_relato,issueKey):
