@@ -12,7 +12,7 @@ from airflow.utils.log.logging_mixin import LoggingMixin
 from decimal import Decimal, ROUND_DOWN
 import numpy as np
 
-def faturamento_to_refined(access_params=None,  **kwargs):
+def faturamento_historico_to_refined(access_params=None,  **kwargs):
 
     ### Coletando dados da camada Raw
     # Conectando com o banco
@@ -98,15 +98,8 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     fatura = execute_query(conn, query_fatura)
 
-    query_refined = f"""
-    SELECT *
-    FROM deltalakerefined.payments.faturamento ft
-    """
-    
-    refined = execute_query(conn, query_refined)  
 
     print(f"Quantidade de linhas no DataFrame 'fatura': {fatura.shape[0]}")
-    print(f"Quantidade de linhas no DataFrame 'refined': {refined.shape[0]}")
 
 
     # Função para ajustar os valores ao formato decimal(8, 2)
@@ -130,41 +123,7 @@ def faturamento_to_refined(access_params=None,  **kwargs):
     fatura['year'], fatura['month'], fatura['day'] = now.year, now.month, now.day
     print("Tratamento dos dados concluído")
 
-    ### Merge incremental
 
-    # Cria chave temporária para comparação
-    fatura['chave'] = (
-        fatura['cnpj_sacado'].astype(str) + '|' +
-        fatura['cnpj_cedente'].astype(str) + '|' +
-        fatura['numero_nfe'].astype(str)
-    )
-
-    if not refined.empty:
-        refined['chave'] = (
-            refined['cnpj_sacado'].astype(str) + '|' +
-            refined['cnpj_cedente'].astype(str) + '|' +
-            refined['numero_nfe'].astype(str)
-        )
-        chaves_refined = set(refined['chave'].unique())
-        fatura_incremental = fatura[~fatura['chave'].isin(chaves_refined)].copy() #~inverte a logica, e traz a chave que nao está na trusted
-    else:
-        fatura_incremental = fatura.copy()
-
-    print(f"Registros novos para inserir: {fatura_incremental.shape[0]}")
-
-    if fatura_incremental.empty:
-        print("Nenhum registro novo encontrado. Encerrando execução.")
-        return
-
-    # Remove coluna 'chave' de todos os DataFrames
-    for df in [fatura, refined, fatura_incremental]:
-        if 'chave' in df.columns:
-            df.drop(columns=['chave'], inplace=True)
-
-    print("Coluna 'chave' removida com sucesso antes da escrita no Delta Lake.")
-    
-    fatura_incremental.reset_index(drop=True, inplace=True)
-    
     # Exportando dados para a camada refined
     # # Conectando na refined        
     storage_options = {
@@ -181,8 +140,8 @@ def faturamento_to_refined(access_params=None,  **kwargs):
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
-        fatura_incremental, 
+        fatura, 
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
-        mode="append"
+        mode="overwrite"
     )

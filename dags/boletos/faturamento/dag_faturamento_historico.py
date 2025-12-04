@@ -11,6 +11,7 @@ from datetime import timedelta
 
 ### Importando scripts necessários
 from boletos.faturamento import faturamento_historico
+from boletos.faturamento import faturamento_refined_vendermais_historico
 
 
 ### Parâmetros de acesso
@@ -48,10 +49,10 @@ def notificar_falha_teams(context):
 
 ### Definindo defaults
 default_args = {
-    "owner": "Felipe Ferraz",
+    "owner": "Natielli Torres",
     "retries": 1,
     "retry_delay": timedelta(minutes=1),
-#    "on_failure_callback": notificar_falha_teams
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -62,7 +63,7 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval=None,
     default_args=default_args,
-    tags=['etl', 'faturamento', 'raw','trusted'],
+    tags=['etl', 'faturamento', 'raw','trusted', 'refined', 'historico'],
     max_active_runs=1
 ) as dag:
 
@@ -74,5 +75,13 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )
 
+    # Definindo o task que processa faturamento_historico_refined
+    faturamento_historico_refined = PythonOperator(
+        task_id='faturamento_historico_refined',
+        python_callable=faturamento_refined_vendermais_historico.faturamento_historico_to_refined,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+    
     # Definindo a ordem de execução das tasks
-    faturamento_historico_trusted
+    faturamento_historico_trusted >> faturamento_historico_refined
