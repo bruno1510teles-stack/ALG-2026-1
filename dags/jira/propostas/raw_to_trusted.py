@@ -67,6 +67,10 @@ def raw_to_trusted(access_params=None, **kwargs):
                 return "ANTIFRAUDE"
             elif texto.startswith("PF"):
                 return "PRÉ-FILTRO"
+            elif texto.startswith("SERASA"):
+                return "SERASA - SCORE"
+            elif texto.startswith("PROPOSTA NAO"):
+                return "OVER|TRANSFER|ZERAR"
             else:
                 return "NÃO ATRIBUIDA"
 
