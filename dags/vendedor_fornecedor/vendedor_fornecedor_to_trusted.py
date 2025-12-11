@@ -250,22 +250,48 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 
 	# Base de Faturamento
-	print("\n=== Processamento df_faturamento ===")
+	print("\n=== Processamento padronizado do df_faturamento ===")
 
 	query_faturamento = f"""
-			SELECT 
-				data,
-				LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
-				nome_cedente,
-				LPAD(REGEXP_REPLACE(cnpj_sacado, '[^0-9]', ''), 14, '0') AS cnpj_sacado,
-				substr(cnpj_sacado, 1,8) as raiz_cnpj,
-				nome_sacado,
-				numero_nfe,
-				valor_fatura,
-				valor_fatura_pos_sefaz,
-				valor_fatura_oficial,
-				valor_face_qprof
-			FROM deltalakerefined.payments.faturamento
+			WITH faturamento_padronizado AS (
+				SELECT 
+					data,
+					
+					-- CNPJ cedente: somente números, 14 dígitos
+					LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
+					
+					-- Nome cedente: padronização limpa
+					UPPER(
+						REGEXP_REPLACE(
+							TRIM(REGEXP_REPLACE(nome_cedente, '\\s+', ' ')),  -- remove múltiplos espaços
+							'[^\\w\\s/]|(?<=\\S)\\.$', ''                    -- remove pontuação, exceto '/', remove ponto final
+						)
+					) AS nome_cedente,
+					
+					-- CNPJ sacado: somente números, 14 dígitos
+					LPAD(REGEXP_REPLACE(cnpj_sacado, '[^0-9]', ''), 14, '0') AS cnpj_sacado,
+					
+					-- Raiz CNPJ sacado
+					SUBSTR(REGEXP_REPLACE(cnpj_sacado, '[^0-9]', ''), 1, 8) AS raiz_cnpj,
+					
+					-- Nome sacado: padronização limpa
+					UPPER(
+						REGEXP_REPLACE(
+							TRIM(REGEXP_REPLACE(nome_sacado, '\\s+', ' ')),
+							'[^\\w\\s/]|(?<=\\S)\\.$', ''
+						)
+					) AS nome_sacado,
+					
+					numero_nfe,
+					valor_fatura,
+					valor_fatura_pos_sefaz,
+					valor_fatura_oficial,
+					valor_face_qprof
+				FROM deltalakerefined.payments.faturamento
+			)
+			
+			SELECT *
+			FROM faturamento_padronizado
 	"""
 
 	df_faturamento = execute_query(conn, query_faturamento)
@@ -313,37 +339,36 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	# Regra - Escritório de outros fornecedores 
 
-	# Função de padronização (remove pontos, espaços extras e deixa maiúsculo)
+	# Função de padronização
 	def padronizar_nome(x):
-		return (
-			str(x).strip().upper().replace('.', '')
-		)
+		x = str(x).upper().replace('.', '').strip()
+		x = re.sub(r'\s+', ' ', x)   # substitui múltiplos espaços por 1
+		return x
 
-	# Dicionário 
+	# Dicionário original
 	mapeamento_escritorio = {
 		'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A': 'ARCELORMITTAL GONVARRI BRASIL PRODUTOS SIDERURGICOS S/A',
-		'APERAM INOX AMERICA DO SUL S.A.': 'APERAM INOX AMERICA DO SUL S.A.',
-		'ASUS - INDUSTRIA DE MAQUINAS AGRICOLAS LTDA': 'ASUS - INDUSTRIA DE MAQUINAS AGRICOLAS LTDA',
-		'CASA DO ADUBO S.A': 'CASA DO ADUBO S.A',
+		'APERAM INOX AMERICA DO SUL S.A': 'APERAM INOX AMERICA DO SUL S.A',
+		'ASUS  INDUSTRIA DE MAQUINAS AGRICOLAS LTDA': 'ASUS - INDUSTRIA DE MAQUINAS AGRICOLAS LTDA',
+		'CASA DO ADUBO SA': 'CASA DO ADUBO S.A',
 		'CASAL COMERCIO E SERVICOS LTDA': 'CASAL COMERCIO E SERVICOS LTDA',
-		'DISCOR DISTRIBUIDORA DE TINTAS LTDA.': 'DISCOR DISTRIBUIDORA DE TINTAS LTDA.',
+		'DISCOR DISTRIBUIDORA DE TINTAS LTDA': 'DISCOR DISTRIBUIDORA DE TINTAS LTDA',
 		'MJR CUNHA DISTRIBUIDORA DE MATERIAIS PARA CONSTRUCAO LTDA': 'MJR CUNHA DISTRIBUIDORA DE MATERIAIS PARA CONSTRUCAO LTDA',
 		'TUPER S/A': 'TUPER S/A'
 	}
 
-	# Padronizar as chaves do dicionário para eliminar problemas de variação
+	# Padronizar as chaves do dicionário
 	mapeamento_pad = {
 		padronizar_nome(k): v
 		for k, v in mapeamento_escritorio.items()
 	}
 
-	# Padronizar o nome_cedente no dataframe
-	df_faturamento_total['nome_cedente_pad'] = df_faturamento_total['nome_cedente'].apply(padronizar_nome)
-
-	# Aplicar regra usando nome padronizado
+	# Aplicar a regra diretamente no nome_cedente
 	df_faturamento_total['escritorio_venda'] = (
-		df_faturamento_total['nome_cedente_pad'].map(mapeamento_pad)
-		.combine_first(df_faturamento_total['escritorio_venda'])
+		df_faturamento_total['nome_cedente']
+			.apply(padronizar_nome)     # padroniza o texto
+			.map(mapeamento_pad)        # aplica o mapeamento quando existir
+			.combine_first(df_faturamento_total['escritorio_venda'])  # mantém valor existente
 	)
 
 	# Lista de valores considerados vazios (somente para limpeza dos nomes)
@@ -395,9 +420,14 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		df_faturamento_total['vendedor_fornecedor'].map(mapa_codigos)
 	)
 
-	# Relatório
+
 	print(f"Vendedores aprendidos: {df_referencia['vendedor_fornecedor'].nunique()}")
 	print("--- Concluído! ---\n")
+
+
+	# Enriquecimento com localização
+	cnpjs = df_faturamento_total['cnpj_sacado'].dropna().unique()
+	ids_cnpjs = ', '.join(f"'{cnpj}'" for cnpj in cnpjs)
 
 
 	# Base de localização
@@ -456,12 +486,138 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			df_faturamento_total[col] = df_faturamento_total[col].astype(str).str.strip()	
 
 
+	print("\n=== Enriquecimento do gerente_alpe através das exceções ===")
+
+	query_excecoes = f"""
+	WITH excecoes_padronizadas AS (
+		SELECT 
+			-- CNPJ cedente: somente números, 14 dígitos
+			LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
+			
+			-- Nome cedente: padronização limpa
+			UPPER(
+				REGEXP_REPLACE(
+					TRIM(REGEXP_REPLACE(cedente, '\\s+', ' ')),  -- remove múltiplos espaços
+					'[^\\w\\s/]|(?<=\\S)\\.$', ''                 -- remove pontuação, exceto '/', remove ponto final
+				)
+			) AS nome_cedente,
+			
+			-- Nome sacado: padronização limpa
+			UPPER(
+				REGEXP_REPLACE(
+					TRIM(REGEXP_REPLACE(sacado, '\\s+', ' ')),
+					'[^\\w\\s/]|(?<=\\S)\\.$', ''
+				)
+			) AS nome_sacado,
+			
+			regiao_filial AS escritorio_venda,
+			vendedor_externo AS vendedor_fornecedor,
+			vendedor_alpe AS gerente_alpe
+		FROM minioraw.planejamento_comercial.excecoes_identificacao_nfes
+	)
+
+	SELECT *
+	FROM excecoes_padronizadas
+	"""
+
+	df_excecoes = execute_query(conn, query_excecoes)	
+
+
+	# Limpeza e padronização dos nomes no df_excecoes
+	limpar_colunas(df_excecoes, ['vendedor_fornecedor'], valores_vazios)
+	df_excecoes['vendedor_fornecedor'] = df_excecoes['vendedor_fornecedor'].apply(formatar_nome)
+
+
+	print("\n=== Aplicando regras de exceção para gerente_alpe ===")
+
+	# REGRA 1 — exceções por (nome_cedente + nome_sacado)
+	print("Aplicando Regra 1...")
+
+	# Criar chave no faturamento
+	df_faturamento_total['chave_excecao1'] = (
+		df_faturamento_total['nome_cedente'].astype(str).str.strip().str.upper() + '|' +
+		df_faturamento_total['nome_sacado'].astype(str).str.strip().str.upper()
+	)
+
+	# Criar chave no df_excecoes
+	df_excecoes['chave_excecao1'] = (
+		df_excecoes['nome_cedente'].astype(str).str.strip().str.upper() + '|' +
+		df_excecoes['nome_sacado'].astype(str).str.strip().str.upper()
+	)
+
+	# Seleção da exceção
+	df_exc_regra1 = df_excecoes[['chave_excecao1', 'gerente_alpe', 'escritorio_venda']].rename(
+		columns={
+			'gerente_alpe': 'gerente_alpe_regra1',
+			'escritorio_venda': 'escritorio_venda_regra1'
+		}
+	)
+
+	# Remove duplicados na chave para evitar múltiplas linhas
+	df_exc_regra1 = df_exc_regra1.drop_duplicates(subset=['chave_excecao1'])
+
+	# Criar dicionários de mapeamento
+	mapa_gerente = df_exc_regra1.set_index('chave_excecao1')['gerente_alpe_regra1'].to_dict()
+	mapa_escritorio = df_exc_regra1.set_index('chave_excecao1')['escritorio_venda_regra1'].to_dict()
+
+	# Atualiza as colunas no df_faturamento_total
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['chave_excecao1'].map(mapa_gerente)
+	df_faturamento_total['escritorio_venda'] = df_faturamento_total['chave_excecao1'].map(mapa_escritorio).combine_first(df_faturamento_total['escritorio_venda'])
+
+	# Limpeza da coluna auxiliar
+	df_faturamento_total.drop(columns=['chave_excecao1'], inplace=True, errors='ignore')
+
+	print("Regra 1 aplicada com sucesso!")	
+
+
+	print("Aplicando Regra 2...")
+
+	# Condição para permitir aplicar regra 2 (vendedor válido)
+	mask_vendedor_valido = (
+		df_faturamento_total['vendedor_fornecedor']
+			.notna()
+			.astype(bool) & 
+		(df_faturamento_total['vendedor_fornecedor'].astype(str).str.strip() != '')
+	)
+
+	# Criar chave secundária no faturamento SOMENTE onde vendedor é válido
+	df_faturamento_total.loc[mask_vendedor_valido, 'chave_excecao2'] = (
+		df_faturamento_total.loc[mask_vendedor_valido, 'cnpj_cedente'].astype(str).str.strip() + '|' +
+		df_faturamento_total.loc[mask_vendedor_valido, 'vendedor_fornecedor'].astype(str).str.strip().str.upper()
+	)
+
+	# Criar chave nas exceções (normal)
+	df_excecoes['chave_excecao2'] = (
+		df_excecoes['cnpj_cedente'].astype(str).str.strip() + '|' +
+		df_excecoes['vendedor_fornecedor'].astype(str).str.strip().str.upper()
+	)
+
+	# Seleção e dicionário
+	df_exc_regra2 = df_excecoes[['chave_excecao2', 'gerente_alpe']].rename(
+		columns={'gerente_alpe': 'gerente_alpe_regra2'}
+	).drop_duplicates(subset=['chave_excecao2'])
+
+	mapa_gerente2 = df_exc_regra2.set_index('chave_excecao2')['gerente_alpe_regra2'].to_dict()
+
+	# Aplicar somente onde vendedor é válido E gerente_alpe ainda está vazio
+	df_faturamento_total.loc[mask_vendedor_valido, 'gerente_alpe'] = (
+		df_faturamento_total.loc[mask_vendedor_valido, 'gerente_alpe']
+			.combine_first(
+				df_faturamento_total.loc[mask_vendedor_valido, 'chave_excecao2'].map(mapa_gerente2)
+			)
+	)
+
+	df_faturamento_total.drop(columns=['chave_excecao2'], inplace=True, errors='ignore')
+
+	print("Regra 2 aplicada com sucesso! Ignorando vendedores em branco.")
+
+
 	# Atualização do gerente_alpe via atuação
 	print("\n=== Enriquecimento do gerente_alpe através da atuacao regional ===")
 
 	query_atuacao = f"""
 	SELECT
-		cnpj_cedente,
+		LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
 		filial_fn AS escritorio_venda,
 		uf,
 		vendedor_alpe AS gerente_alpe
@@ -470,128 +626,91 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	df_atuacao = execute_query(conn, query_atuacao)
 
-	# Tratamento cnpj_cedente
-	if col in df_atuacao.columns:
-		df_atuacao[col] = df_atuacao[col].astype(str).str.strip()
 
-	# Cruzamento com a tabela de atuação comercial para trazer o gerente_alpe
-	df_faturamento_total = df_faturamento_total.merge(
-		df_atuacao,
-		how='left',
-		on=['cnpj_cedente', 'escritorio_venda', 'uf']
-	)
+	print("\n=== Aplicando Regra 3 (UF + CNPJ, somente BELGO, sem sobrescrever Regra 1) ===")
 
+	# REGRA 3 - Enriquecer o escritorio_venda e gerente_alpe nos casos Belgo da origem df_faturamento
 
-	print("\n=== Enriquecimento do gerente_alpe através das exceções ===")
-	query_excecoes = f"""
-	SELECT 
-		cnpj_cedente,
-		cedente AS nome_cedente,
-		sacado AS nome_sacado,
-		regiao_filial AS escritorio_venda,
-		vendedor_externo AS vendedor_fornecedor,
-		vendedor_alpe AS gerente_alpe_exc
-	FROM minioraw.planejamento_comercial.excecoes_identificacao_nfes
-	"""
-	df_excecoes = execute_query(conn, query_excecoes)
+	# 1 — Mascara BELGO
+	mask_belgo = df_faturamento_total['nome_cedente'].str.upper() == "BELGO BEKAERT ARAMES LTDA"
 
-	# Limpeza e padronização dos nomes no df_excecoes
-	limpar_colunas(df_excecoes, ['vendedor_fornecedor'], valores_vazios)
-	df_excecoes['vendedor_fornecedor'] = df_excecoes['vendedor_fornecedor'].apply(formatar_nome)
-
-	# Tratamento cnpj_cedente
-	if col in df_excecoes.columns:
-		df_excecoes[col] = df_excecoes[col].astype(str).str.strip()
-
-
-	print("\n=== Aplicando regras de exceção para gerente_alpe ===")
-
-	# REGRA 1 — Exceções por (nome_cedente, nome_sacado)
-	print("Aplicando Regra 1: exceções por (cedente, sacado e escritorio_venda)...")
-
-	# Criar chave composta no faturamento
-	df_faturamento_total['chave_excecao'] = (
+	# 2 — Criar chave da REGRA 1 para identificar quem já foi tratado
+	df_faturamento_total['chave_r1'] = (
 		df_faturamento_total['nome_cedente'].astype(str).str.strip().str.upper() + '|' +
-		df_faturamento_total['nome_sacado'].astype(str).str.strip().str.upper() + '|' +
-		df_faturamento_total['escritorio_venda'].astype(str).str.strip().str.upper()
+		df_faturamento_total['nome_sacado'].astype(str).str.strip().str.upper()
 	)
 
-	# Criar chave composta no DF de exceções
-	df_excecoes['chave_excecao'] = (
+	df_excecoes['chave_r1'] = (
 		df_excecoes['nome_cedente'].astype(str).str.strip().str.upper() + '|' +
-		df_excecoes['nome_sacado'].astype(str).str.strip().str.upper() + '|' +
-		df_excecoes['escritorio_venda'].astype(str).str.strip().str.upper()
+		df_excecoes['nome_sacado'].astype(str).str.strip().str.upper()
 	)
 
-	# Renomear a exceção da Regra 1 para não gerar conflito na Regra 2
-	df_exc_regra1 = df_excecoes[['chave_excecao', 'gerente_alpe_exc']].rename(
-		columns={'gerente_alpe_exc': 'gerente_alpe_exc_regra1'}
+	# Conjunto de chaves tratadas pela Regra 1
+	chaves_r1 = set(df_excecoes['chave_r1'].unique())
+
+	mask_regra1_aplicada = df_faturamento_total['chave_r1'].isin(chaves_r1)
+
+	# 3 — Regra 3 só pode atuar quando:
+	#    - é BELGO
+	#    - NÃO foi tratado pela Regra 1
+	mask_regra3_pode_atuar = (
+		mask_belgo &
+		(~mask_regra1_aplicada)
 	)
 
-	# MERGE REGRA 1
+	# 4 — Criar chave UF para quem pode receber a Regra 3
+	df_faturamento_total.loc[mask_regra3_pode_atuar, 'chave_uf'] = (
+		df_faturamento_total.loc[mask_regra3_pode_atuar, 'cnpj_cedente'].astype(str).str.strip() + '|' +
+		df_faturamento_total.loc[mask_regra3_pode_atuar, 'uf'].astype(str).str.strip()
+	)
+
+	# Criar chave no df_atuacao
+	df_atuacao['chave_uf'] = (
+		df_atuacao['cnpj_cedente'].astype(str).str.strip() + '|' +
+		df_atuacao['uf'].astype(str).str.strip()
+	)
+
+	# Dicionários
+	df_atuacao_map = df_atuacao[['chave_uf', 'escritorio_venda', 'gerente_alpe']].drop_duplicates()
+
+	map_escritorio = df_atuacao_map.set_index('chave_uf')['escritorio_venda'].to_dict()
+	map_gerente = df_atuacao_map.set_index('chave_uf')['gerente_alpe'].to_dict()
+
+	# 5 — Preencher escritório_venda quando estiver vazio
+	df_faturamento_total.loc[
+		mask_regra3_pode_atuar &
+		(df_faturamento_total['escritorio_venda'].isna() | (df_faturamento_total['escritorio_venda'] == "")),
+		'escritorio_venda'
+	] = df_faturamento_total.loc[mask_regra3_pode_atuar, 'chave_uf'].map(map_escritorio)
+
+	# 6 — Preencher gerente_alpe quando estiver vazio
+	df_faturamento_total.loc[
+		mask_regra3_pode_atuar &
+		(df_faturamento_total['gerente_alpe'].isna() | (df_faturamento_total['gerente_alpe'] == "")),
+		'gerente_alpe'
+	] = df_faturamento_total.loc[mask_regra3_pode_atuar, 'chave_uf'].map(map_gerente)
+
+	# 7 — Limpeza final
+	df_faturamento_total.drop(columns=['chave_r1', 'chave_uf'], inplace=True, errors='ignore')
+
+	print("Regra 3 aplicada com sucesso!")
+
+
+	# Merge direto no df_faturamento_total
 	df_faturamento_total = df_faturamento_total.merge(
-		df_exc_regra1,
-		on='chave_excecao',
-		how='left'
+		df_atuacao[['cnpj_cedente', 'escritorio_venda', 'uf', 'gerente_alpe']],
+		on=['cnpj_cedente', 'escritorio_venda', 'uf'],
+		how='left',
+		suffixes=('', '_atuacao')
 	)
 
-	# PRIORIDADE: exceção sempre sobreescreve
-	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe_exc_regra1'].fillna(
-		df_faturamento_total['gerente_alpe']
+	# Atualiza apenas os valores que estão em NaN
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].combine_first(
+		df_faturamento_total['gerente_alpe_atuacao']
 	)
 
-	print("Regra 1 aplicada com sucesso!")
-
-
-	# REGRA 2 — Exceções por (cnpj_cedente, escritorio_venda, vendedor_fornecedor)
-	print("Aplicando Regra 2: exceções por (cnpj_cedente, escritorio_venda, vendedor_fornecedor)...")
-
-	# Criar chave secundária no faturamento incluindo cnpj_cedente
-	df_faturamento_total['chave_excecao2'] = (
-		df_faturamento_total['cnpj_cedente'].astype(str).str.strip() + '|' +
-		df_faturamento_total['escritorio_venda'].astype(str).str.strip().str.upper() + '|' +
-		df_faturamento_total['vendedor_fornecedor'].astype(str).str.strip().str.upper()
-	)
-
-	# Criar chave secundária no DF de exceções incluindo cnpj_cedente
-	df_excecoes['chave_excecao2'] = (
-		df_excecoes['cnpj_cedente'].astype(str).str.strip() + '|' +
-		df_excecoes['escritorio_venda'].astype(str).str.strip().str.upper() + '|' +
-		df_excecoes['vendedor_fornecedor'].astype(str).str.strip().str.upper()
-	)
-
-	# Renomear a exceção da Regra 2
-	df_exc_regra2 = df_excecoes[['chave_excecao2', 'gerente_alpe_exc']].rename(
-		columns={'gerente_alpe_exc': 'gerente_alpe_exc_regra2'}
-	)
-
-	# MERGE REGRA 2
-	df_faturamento_total = df_faturamento_total.merge(
-		df_exc_regra2,
-		on='chave_excecao2',
-		how='left'
-	)
-
-	# Aplicar exceção da Regra 2 APENAS onde ainda está nulo
-	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].fillna(
-		df_faturamento_total['gerente_alpe_exc_regra2']
-	)
-
-	print("Regra 2 aplicada com sucesso!")
-
-	# LIMPEZA FINAL — remoção de colunas auxiliares
-	df_faturamento_total.drop(
-		columns=[
-			'chave_excecao',
-			'chave_excecao2',
-			'gerente_alpe_exc_regra1',
-			'gerente_alpe_exc_regra2'
-		],
-		inplace=True,
-		errors='ignore'
-	)
-
-	print("Regras aplicadas e colunas auxiliares removidas!")
+	# Remove a coluna auxiliar
+	df_faturamento_total.drop(columns=['gerente_alpe_atuacao'], inplace=True)
 
 
 	# Carregando sacados_planos
@@ -599,33 +718,53 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	print("\n=== Enriquecimento do gerente_alpe através do cnpj_raiz dos sacados de planos ===")
 
 	query_sacados_planos = f"""
-		SELECT 
-			cnpj_cedente, 
-			cedente AS nome_cedente, 
-			raiz_cnpj_sacado AS cnpj_raiz,
-			sacado AS nome_sacado,
-			filial AS escritorio_venda,
-			vendedor_alpe AS gerente_alpe
-		FROM minioraw.planejamento_comercial.sacados_planos
+			WITH sacados_padronizados AS (
+				SELECT 
+					-- CNPJ cedente: somente números, 14 dígitos
+					LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
+					
+					-- Nome cedente: padronização limpa
+					UPPER(
+						REGEXP_REPLACE(
+							TRIM(REGEXP_REPLACE(cedente, '\\s+', ' ')),  -- remove múltiplos espaços
+							'[^\\w\\s/]|(?<=\\S)\\.$', ''               -- remove pontuação, exceto '/', remove ponto final
+						)
+					) AS nome_cedente,
+					
+					-- Nome sacado: padronização limpa
+					UPPER(
+						REGEXP_REPLACE(
+							TRIM(REGEXP_REPLACE(sacado, '\\s+', ' ')),
+							'[^\\w\\s/]|(?<=\\S)\\.$', ''
+						)
+					) AS nome_sacado,
+					
+					raiz_cnpj_sacado AS cnpj_raiz,
+					filial AS escritorio_venda,
+					vendedor_alpe AS gerente_alpe
+				FROM minioraw.planejamento_comercial.sacados_planos
+			)
+			
+			SELECT *
+			FROM sacados_padronizados
 	"""
 
-	df_sacados_planos = execute_query(conn, query_sacados_planos)	
+	df_sacados_planos = execute_query(conn, query_sacados_planos)
 
-	# Tratamento cnpj_cedente
-	if col in df_sacados_planos.columns:
-		df_sacados_planos[col] = df_sacados_planos[col].astype(str).str.strip()
 
-	# REGRA 3 — Exceções sacados_planos por raiz_cnpj
-	print("Aplicando Regra 3: regras sacados_planos por raiz_cnpj...")
+	# REGRA 4 — Enriquecimento do gerente_alpe via sacados_planos
+	print("=== Enriquecimento do gerente_alpe através do cnpj_raiz e cnpj_cedente dos sacados de planos ===")
 
+	# Merge direto usando cnpj_raiz + cnpj_cedente
 	df_faturamento_total = df_faturamento_total.merge(
-		df_sacados_planos[['cnpj_raiz', 'escritorio_venda', 'gerente_alpe']],
-		left_on='cnpj_raiz',    
-		right_on='cnpj_raiz',
+		df_sacados_planos[['cnpj_raiz', 'cnpj_cedente', 'escritorio_venda', 'gerente_alpe']],
+		left_on=['cnpj_raiz', 'cnpj_cedente'],
+		right_on=['cnpj_raiz', 'cnpj_cedente'],
 		how='left',
 		suffixes=('', '_sacado')
 	)
 
+	# Sobrescreve apenas os valores que vieram do merge (não nulos)
 	df_faturamento_total['escritorio_venda'] = df_faturamento_total['escritorio_venda_sacado'].where(
 		df_faturamento_total['escritorio_venda_sacado'].notna(),
 		df_faturamento_total['escritorio_venda']
@@ -636,27 +775,39 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		df_faturamento_total['gerente_alpe']
 	)
 
+	# Remove colunas auxiliares
 	df_faturamento_total.drop(columns=['escritorio_venda_sacado', 'gerente_alpe_sacado'], inplace=True)
 
-	print("Regras sacados_planos aplicadas e colunas auxiliares removidas!")	
+	print("Enriquecimento via sacados_planos aplicado com sucesso!")
 
 
-	# REGRA 4 —  A partir do cnpj cedente de outros fns, trazer o nome do gerente alpe
+	# REGRA 5 —  A partir do cnpj cedente de outros fns, trazer o nome do gerente alpe
 	print("\n=== Enriquecimento do gerente_alpe através do cnpj_cedente de outros fornecedores ===")
 
 	query_outros_fns = f"""
-			SELECT 
-			cnpj_cedente,
-			cedente AS nome_cedente,
-			vendedor_alpe AS gerente_alpe
-			FROM minioraw.planejamento_comercial.atendimento_alpe_outros_fn
+			WITH outros_fns_padronizados AS (
+				SELECT 
+					-- CNPJ cedente: somente números, 14 dígitos
+					LPAD(REGEXP_REPLACE(cnpj_cedente, '[^0-9]', ''), 14, '0') AS cnpj_cedente,
+			
+					-- Nome cedente: padronização limpa
+					UPPER(
+						REGEXP_REPLACE(
+							TRIM(REGEXP_REPLACE(cedente, '\\s+', ' ')),       -- remove múltiplos espaços
+							'[^\\w\\s/]|(?<=\\S)\\.$', ''                     -- remove pontuação, exceto '/', remove ponto final
+						)
+					) AS nome_cedente,
+			
+					vendedor_alpe AS gerente_alpe
+				FROM minioraw.planejamento_comercial.atendimento_alpe_outros_fn
+			)
+			
+			SELECT *
+			FROM outros_fns_padronizados
 	"""
 
 	df_outros_fns = execute_query(conn, query_outros_fns)
 
-	# Tratamento cnpj_cedente
-	if col in df_outros_fns.columns:
-		df_outros_fns[col] = df_outros_fns[col].astype(str).str.strip()
 
 	df_faturamento_total = df_faturamento_total.merge(
 		df_outros_fns[['cnpj_cedente', 'gerente_alpe']],
@@ -675,7 +826,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	print("Regras outros fns aplicadas e colunas auxiliares removidas!")
 
 
-	# REGRA 5 —  A partir da filial, trazer o nome do gerente alpe
+	# REGRA 6 —  A partir da filial, trazer o nome do gerente alpe para o que ficou vazio nas regras anteriores
 	print("\n=== Enriquecimento do gerente_alpe que ainda ficaram em branco através da filial do de_para ===")
 
 	query_de_para = f"""
@@ -690,54 +841,55 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 
 	df_de_para = execute_query(conn, query_de_para)	
 
-	# Primeiro merge pelo campo 'filial'
-	df_merge1 = df_faturamento_total.merge(
-		df_de_para[['filial', 'filial_consolidada', 'gerente_alpe_de_para']],
-		how='left',
-		left_on='escritorio_venda',
-		right_on='filial',
-		suffixes=('', '_filial')
+
+	# TRATAMENTO PRÉVIO 
+	# Garante que "espaços em branco" ou strings vazias sejam tratados como NaN para o fillna funcionar
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].replace(r'^\s*$', np.nan, regex=True)
+
+	# CRIAÇÃO DOS DICIONÁRIOS DE MAPEAMENTO
+
+	# Dicionários para buscar o GERENTE (Chave = Variação do Nome, Valor = Gerente)
+	map_por_filial = df_de_para.set_index('filial')['gerente_alpe_de_para'].to_dict()
+	map_por_sem_acento = df_de_para.set_index('filial_sem_acentuacao')['gerente_alpe_de_para'].to_dict()
+	map_por_consolidada = df_de_para.set_index('filial_consolidada')['gerente_alpe_de_para'].to_dict()
+
+	# Dicionário para padronizar o NOME do escritório (Chave = Variação, Valor = Nome Consolidado)
+	# A CORREÇÃO ESTÁ AQUI: usamos drop=False na última linha para não perder a coluna
+	map_nomes_padronizados = {
+		**df_de_para.set_index('filial')['filial_consolidada'].to_dict(),
+		**df_de_para.set_index('filial_sem_acentuacao')['filial_consolidada'].to_dict(),
+		**df_de_para.set_index('filial_consolidada', drop=False)['filial_consolidada'].to_dict()
+	}
+
+	# APLICAÇÃO DA LÓGICA EM CASCATA 
+	print("Aplicando regras de preenchimento...")
+
+	# PASSO 1: Tenta preencher batendo com 'filial'
+	# O fillna garante que só preenchemos onde está vazio (não sobrescreve regras anteriores)
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].fillna(
+		df_faturamento_total['escritorio_venda'].map(map_por_filial)
 	)
 
-	# Depois merge pelo 'filial_sem_acentuacao'
-	df_merge2 = df_merge1.merge(
-		df_de_para[['filial_sem_acentuacao', 'filial_consolidada', 'gerente_alpe_de_para']],
-		how='left',
-		left_on='escritorio_venda',
-		right_on='filial_sem_acentuacao',
-		suffixes=('', '_sem_acentuacao')
+	# PASSO 2: Tenta preencher batendo com 'filial_sem_acentuacao'
+	# Só afeta quem continuou vazio após o Passo 1
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].fillna(
+		df_faturamento_total['escritorio_venda'].map(map_por_sem_acento)
 	)
 
-	# Depois merge pelo 'filial_consolidada'
-	df_merge3 = df_merge2.merge(
-		df_de_para[['filial_consolidada', 'gerente_alpe_de_para']],
-		how='left',
-		left_on='escritorio_venda',
-		right_on='filial_consolidada',
-		suffixes=('', '_consolidada')
+	# PASSO 3: Tenta preencher batendo com 'filial_consolidada'
+	# Só afeta quem continuou vazio após o Passo 2
+	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe'].fillna(
+		df_faturamento_total['escritorio_venda'].map(map_por_consolidada)
 	)
 
-	# Coalesce dos gerentes: prioridade = filial > filial_sem_acentuacao > filial_consolidada
-	df_merge3['gerente_alpe'] = (
-		df_merge3['gerente_alpe_de_para']
-		.combine_first(df_merge3['gerente_alpe_de_para_sem_acentuacao'])
-		.combine_first(df_merge3['gerente_alpe_de_para_consolidada'])
-		.combine_first(df_merge3['gerente_alpe'])  # mantém o original se não houver match
-	)
+	# PASSO 4: Padronização do Nome (escritorio_venda vira filial_consolidada)
+	# Se encontrar o escritorio_venda no dicionário, substitui pelo consolidado.
+	# Se não encontrar, mantém o original (fillna com ele mesmo).
+	df_faturamento_total['escritorio_venda'] = df_faturamento_total['escritorio_venda'].map(map_nomes_padronizados).fillna(df_faturamento_total['escritorio_venda'])
 
-	# Coalesce do escritorio_venda: sempre pega a filial_consolidada mais padronizada
-	df_merge3['escritorio_venda'] = (
-		df_merge3['filial_consolidada']
-		.combine_first(df_merge3['filial_consolidada_sem_acentuacao'])
-		.combine_first(df_merge3['filial_consolidada_consolidada'])
-		.combine_first(df_merge3['escritorio_venda'])
-	)
+	# Verificação final
+	print("Enriquecimento do gerente_alpe e escritorio_venda no de_para concluído com sucesso.")
 
-	# Remove colunas auxiliares
-	col_aux = [c for c in df_merge3.columns if 'filial' in c or 'gerente_alpe_de_para' in c]
-	df_faturamento_total = df_merge3.drop(columns=col_aux)
-
-	print("Merge completo. 'escritorio_venda' atualizado para a filial consolidada e gerente_alpe definido corretamente.")
 
 	# Quantidade de linhas antes
 	qtd_antes = df_faturamento_total.shape[0]
@@ -751,18 +903,23 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	print(f"Duplicatas removidas: {qtd_antes - qtd_depois}")
 	print(f"Total de linhas finais: {qtd_depois}")
 
-	# 1 — Aplicar ajustes manuais primeiro
+
+	# Aplicar ajustes manuais
 	ajustes_manuaes_nfe = {
-		'35241117469701002897550010015281941001123558': 'Nicolas'
+		'35241117469701002897550010015281941001123558': {
+			'gerente_alpe': 'Nicolas',
+			'cod_vendedor_fornecedor': 'E08'
+		}
 	}
 
-	for nfe, gerente in ajustes_manuaes_nfe.items():
+	for nfe, ajustes in ajustes_manuaes_nfe.items():
 		df_faturamento_total.loc[
 			df_faturamento_total['numero_nfe'] == nfe,
-			['gerente_alpe', 'cod_vendedor_fornecedor', 'vendedor_fornecedor', 'escritorio_venda']
-		] = gerente
+			['gerente_alpe', 'cod_vendedor_fornecedor']
+		] = [ajustes['gerente_alpe'], ajustes['cod_vendedor_fornecedor']]
 
-	# 2 — Setar "Não Atribuído" SOMENTE onde ainda está vazio
+	
+	# Setar "Não Atribuído" SOMENTE onde ainda está vazio
 	cols = ['cod_vendedor_fornecedor', 'vendedor_fornecedor', 'escritorio_venda', 'gerente_alpe']
 
 	for col in cols:
@@ -770,7 +927,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 			df_faturamento_total[col].isna() | (df_faturamento_total[col] == ''),
 			col
 		] = 'Não Atribuído'
-		
+
 
 	# Reorganiza colunas na ordem desejada
 	ordem_colunas = ['cnpj_sacado','cnpj_raiz','nome_sacado','cnpj_cedente','nome_cedente',
@@ -781,7 +938,7 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 	print(f"O DataFrame final foi concluído com sucesso, contendo {df_faturamento_total.shape[0]} linhas.")
 
 	# Aplica a ordem e reseta o índice
-	df_faturamento_total = df_faturamento_total[ordem_colunas].reset_index(drop=True)		
+	df_faturamento_total = df_faturamento_total[ordem_colunas].reset_index(drop=True)
 
 
 	# Timestamp
