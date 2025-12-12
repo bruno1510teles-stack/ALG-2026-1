@@ -55,9 +55,9 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
                 WHEN b.uf_sacado IN ('ES','MG','RJ','SP') THEN 'Sudeste'
                 WHEN b.uf_sacado IN ('PR','RS','SC') THEN 'Sul'
                 ELSE 'Desconhecida' END AS regiao
-            ,nfv.vendedor_alpe
+            ,nfv.gerente_alpe
             ,nfv.vendedor_fornecedor
-            ,nfv.escritorio_vendas AS filial
+            ,nfv.escritorio_venda AS filial
             ,cnae.segmento AS segmento_banco
             ,cnae.sub_segmento
             ,cnae.secao_final AS secao_final
@@ -115,9 +115,9 @@ def consolidado_to_trusted(access_params=None,  **kwargs):
             ,SUBSTR(REGEXP_REPLACE(b.cnpj_sacado, '[^0-9]', ''), 1, 8)
             ,b.cidade_sacado
             ,b.uf_sacado
-            ,nfv.vendedor_alpe
+            ,nfv.gerente_alpe
             ,nfv.vendedor_fornecedor
-            ,nfv.escritorio_vendas
+            ,nfv.escritorio_venda
             ,cnae.segmento
             ,cnae.sub_segmento
             ,cnae.secao_final
