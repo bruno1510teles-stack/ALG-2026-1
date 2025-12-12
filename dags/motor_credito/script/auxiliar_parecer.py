@@ -263,7 +263,7 @@ def auxiliar_parecer(spark, **kwargs):
                             SELECT
                                 cnpj8,
                                 valor_face,
-                                case WHEN prazo < 60 then 15 * ceil(prazo / 15.0) else 30 * ceil(prazo / 30.0) END AS faixa_prazo
+                                case WHEN prazo < 60 then 15 * round(prazo / 15.0) else 30 * round(prazo / 30.0) END AS faixa_prazo
                             FROM base
                         ),
 
