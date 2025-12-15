@@ -61,10 +61,11 @@ default_args = {
 with DAG(
     dag_id='faturamento_historico',
     start_date=days_ago(1),
-    schedule_interval=None,
+    schedule_interval="0 * * * 1-7",
     default_args=default_args,
     tags=['etl', 'faturamento', 'raw','trusted', 'refined', 'historico'],
-    max_active_runs=1
+    max_active_runs=1,
+    catchup=False
 ) as dag:
 
     # Definindo o task que processa faturamento_historico
