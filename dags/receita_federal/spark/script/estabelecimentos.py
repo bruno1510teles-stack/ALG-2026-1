@@ -319,8 +319,8 @@ def estabelecimentos_to_trusted(spark):
         .partitionBy("data_ref") \
         .format("delta") \
         .option("overwriteSchema", "true") \
-        .mode("overwrite") \
-        .save("s3a://bureaus/receita-federal/estabelecimentos")
+        .mode("append") \
+        .save("s3a://bureaus/receita-federal/estabelecimentos_aud")
 
     print("Arquivos Salvos")    
     # Fechar a sessão Spark
