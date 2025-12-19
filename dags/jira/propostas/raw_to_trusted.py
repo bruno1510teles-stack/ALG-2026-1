@@ -469,7 +469,7 @@ def raw_to_trusted(access_params=None, **kwargs):
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
                             'A - B3', 'A - B6', 'A - A10', 'A - C6', 'A - C8', 'AF - MUDANÇA ENDEREÇO','AF - ENDEREÇO IGUAL',
                             'B5 | B2', 'B2 | B2', 'B4 | B1', 'B4 | B2', 'B6 | B3', 'B3 | B1', 'B1 | B1', 'B3 | B3', 'AF SERASA SEM INFO', 'AF - SERASA - MAJORACAO',
-                            'AF - RECEITA FEDERAL - MAJORACAO', 'PROPOSTA NAO ELEGIVEL', 'MESA | MESA', 'VERIFICAR - SEM POLITICA ELEGIVEL']
+                            'AF - RECEITA FEDERAL - MAJORACAO', 'PROPOSTA NAO ELEGIVEL', 'MESA | MESA', 'VERIFICAR - SEM POLITICA ELEGIVEL', 'RC MESA']
 
     lista_ramificacao_bom = ['B - 1', 'B - 4', 'B - 3', 'A8 | A3', 'A1 | A1', 'A7 | A2', 'A6 | A1', 'A2 | A2', 'AA | AA', 'A4 | A2', 'A5 | A3', 'A3 | A1', 'MAJORAÇÃO LIMITE']
 
