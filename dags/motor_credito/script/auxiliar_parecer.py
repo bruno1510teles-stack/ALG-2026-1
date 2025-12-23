@@ -234,7 +234,7 @@ def auxiliar_parecer(spark, **kwargs):
 
         )
         select 
-            f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2024, f.maior_vop_periodo, l.liquidez, f.fornecedores_fat_externo
+            f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2025, f.vop_total_2026, f.maior_vop_periodo, l.liquidez, f.fornecedores_fat_externo
         from 
             faturamento f
             left join liquidez l on f.raiz_cnpj = l.raiz_cnpj
