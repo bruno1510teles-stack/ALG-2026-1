@@ -49,7 +49,7 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
 
     query_base_fat_externo_trusted = f"""
                                         select *
-                                        from deltalaketrusted.payments.faturamento_externo_arcelor
+                                        from deltalaketrusted.payments.faturamento_externo_belgo
                                     """
 
     df = execute_query(conn, query_base_fat_externo_trusted)
@@ -227,7 +227,7 @@ def tratamento_faturamento_externo(access_params=None, **kwargs):
 
     # Definindo o caminho e salvando no MinIO
     BUCKET_SOURCE_REFINED = 'payments'
-    FOLDER_DESTINATION_REFINED = 'faturamento_externo/arcelor'
+    FOLDER_DESTINATION_REFINED = 'faturamento_externo/belgo'
 
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}", 
