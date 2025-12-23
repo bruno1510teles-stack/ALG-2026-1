@@ -11,6 +11,7 @@ from datetime import timedelta
 
 ### Importando scripts necessários
 from payments.faturamento_externo.belgo import to_trusted
+from payments.faturamento_externo.belgo import trusted_to_refined
 
 # Parâmetros de acesso
 access_params = {          
@@ -72,5 +73,11 @@ with DAG(
         provide_context = True
     )
 
+    task2 = PythonOperator(
+        task_id = 'trusted_to_refined',
+        python_callable = trusted_to_refined.tratamento_faturamento_externo,
+        provide_context = True
+    )
+
     # Definindo a ordem de execução das tasks
-    task1
+    task1 >> task2
