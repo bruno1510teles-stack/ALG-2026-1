@@ -10,8 +10,7 @@ from datetime import timedelta
 
 
 ### Importando scripts necessários
-from payments.faturamento_externo.belgo import to_trusted
-from payments.faturamento_externo.belgo import trusted_to_refined
+from payments.faturamento_externo.consolidado import consolida_faturamento
 
 # Parâmetros de acesso
 access_params = {          
@@ -59,25 +58,19 @@ default_args = {
 
 # Definindo a DAG
 with DAG(
-    dag_id='faturamento_externo_belgo',
+    dag_id='consolida_faturamento_externo',
     start_date=days_ago(1),
     schedule_interval=None,
     default_args=default_args,
-    tags=['etl', 'faturamento','trusted','refined']
+    tags=['etl', 'faturamento','refined', 'consolidado']
 ) as dag:
 
     # Definindo o task que carrega a tabela na trusted (tratamentos iniciais)
     task1 = PythonOperator(
-        task_id = 'raw_to_trusted',
-        python_callable = to_trusted.extracao_faturamento_externo_belgo,
-        provide_context = True
-    )
-
-    task2 = PythonOperator(
-        task_id = 'trusted_to_refined',
-        python_callable = trusted_to_refined.tratamento_faturamento_externo,
+        task_id = 'to_refined',
+        python_callable = consolida_faturamento.consolida_faturamento_externo,
         provide_context = True
     )
 
     # Definindo a ordem de execução das tasks
-    task1 >> task2
+    task1

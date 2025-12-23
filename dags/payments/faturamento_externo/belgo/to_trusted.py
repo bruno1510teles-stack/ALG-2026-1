@@ -16,11 +16,12 @@ import base64, requests, json
 def extracao_faturamento_externo_belgo(access_params=None, **kwargs):
 
     conn = connect(
-        host='trino.alpe.com.br',
-        port=443,
-        user='vinicius_teixeira',
-        auth=BasicAuthentication('vinicius_teixeira', 'TEjcv)-+b}o!QL5CM2:p'),
-        http_scheme="https",)
+        host=Variable.get("TRINO_ENDPOINT"),
+        port=Variable.get("TRINO_PORT"),
+        user=Variable.get("TRINO_USER"),
+        auth=BasicAuthentication(Variable.get("TRINO_USER"), Variable.get("TRINO_PASSWORD")),
+        http_scheme="https",
+    )
 
     def execute_query(conn, query):
         cur = conn.cursor()  # Abre o cursor
