@@ -213,27 +213,33 @@ def auxiliar_parecer(spark, **kwargs):
     # Base Boletos
     query_faturamento_arcelor = """
         with faturamento as (
-        select 
-            raiz_cnpj, max(vop_2023) as vop_total_2023, max(vop_2024) as vop_total_2024, max(vop_2025) as vop_total_2025, max(vop_2026) as vop_total_2026, max(max_vop_total) as maior_vop_periodo 
-        from 
-            deltalakerefined.payments.faturamento_externo_arcelor 
-        group by 
-            raiz_cnpj 
+                select
+                    raiz_cnpj, 
+                    fornecedores as fornecedores_fat_externo, 
+                    vop_2023 as vop_total_2023, 
+                    vop_2024 as vop_total_2024, 
+                    vop_2025 as vop_total_2025, 
+                    vop_2026 as vop_total_2026, 
+                    max_vop_total as maior_vop_periodo
+                from deltalakerefined.payments.faturamento_externo_consolidado
         ),
         liquidez as (
         select 
             *, ((vlr_recebido + vlr_receb_atrasado) / (vlr_recebido + vlr_receb_atrasado + vlr_inad_corrente)) as liquidez
         from(
-        select raiz_cnpj, sum(vlr_recebido) as vlr_recebido, sum(vlr_receb_atrasado) as vlr_receb_atrasado, sum(vlr_inad_corrente) as vlr_inad_corrente
-        from deltalaketrusted.payments.fat_pag_join 
-        group by raiz_cnpj)
-        where vlr_recebido <> 0)
+                select raiz_cnpj, sum(vlr_recebido) as vlr_recebido, sum(vlr_receb_atrasado) as vlr_receb_atrasado, sum(vlr_inad_corrente) as vlr_inad_corrente
+                from deltalaketrusted.payments.fat_pag_join 
+                group by raiz_cnpj)
+        where vlr_recebido <> 0
+
+        )
         select 
-            f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2025, f.vop_total_2026, f.maior_vop_periodo, l.liquidez
+            f.raiz_cnpj as cnpj_raiz, f.vop_total_2023, f.vop_total_2024, f.vop_total_2025, f.vop_total_2026, f.maior_vop_periodo, l.liquidez, f.fornecedores_fat_externo
         from 
             faturamento f
             left join liquidez l on f.raiz_cnpj = l.raiz_cnpj
     """
+    
     faturamento_arcelor = execute_query(conn, query_faturamento_arcelor)
     print(f"Quantidade de linhas no DataFrame 'faturamento': {faturamento_arcelor.shape[0]}")
     faturamento_arcelor = spark.createDataFrame(faturamento_arcelor)
