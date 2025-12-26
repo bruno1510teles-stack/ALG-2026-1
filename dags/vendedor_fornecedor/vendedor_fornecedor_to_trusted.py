@@ -764,19 +764,37 @@ def vendedor_fornecedor_to_trusted(access_params=None,  **kwargs):
 		suffixes=('', '_sacado')
 	)
 
-	# Sobrescreve apenas os valores que vieram do merge (não nulos)
-	df_faturamento_total['escritorio_venda'] = df_faturamento_total['escritorio_venda_sacado'].where(
-		df_faturamento_total['escritorio_venda_sacado'].notna(),
-		df_faturamento_total['escritorio_venda']
+	# Condição de enriquecimento:
+	# - faturamento NÃO possui gerente
+	# - sacados_planos possui gerente
+	# - e NÃO há conflito entre escritorio_venda (faturamento) e filial (sacados)
+	condicao_enriquecimento_planos = (
+		df_faturamento_total['gerente_alpe'].isna()
+		& df_faturamento_total['gerente_alpe_sacado'].notna()
+		& (
+			df_faturamento_total['escritorio_venda'].isna()
+			| (
+				df_faturamento_total['escritorio_venda']
+				== df_faturamento_total['escritorio_venda_sacado']
+			)
+		)
 	)
 
-	df_faturamento_total['gerente_alpe'] = df_faturamento_total['gerente_alpe_sacado'].where(
-		df_faturamento_total['gerente_alpe_sacado'].notna(),
-		df_faturamento_total['gerente_alpe']
-	)
+	# Aplica enriquecimento SOMENTE quando a condição é verdadeira
+	df_faturamento_total.loc[
+		condicao_enriquecimento_planos, 'gerente_alpe'
+	] = df_faturamento_total.loc[
+		condicao_enriquecimento_planos, 'gerente_alpe_sacado'
+	]
+
+	df_faturamento_total.loc[
+		condicao_enriquecimento_planos, 'escritorio_venda'
+	] = df_faturamento_total.loc[
+		condicao_enriquecimento_planos, 'escritorio_venda_sacado'
+	]
 
 	# Remove colunas auxiliares
-	df_faturamento_total.drop(columns=['escritorio_venda_sacado', 'gerente_alpe_sacado'], inplace=True)
+	df_faturamento_total.drop(columns=['gerente_alpe_sacado', 'escritorio_venda_sacado'],inplace=True)
 
 	print("Enriquecimento via sacados_planos aplicado com sucesso!")
 
