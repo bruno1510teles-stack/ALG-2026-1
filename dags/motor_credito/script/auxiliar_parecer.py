@@ -319,9 +319,16 @@ def auxiliar_parecer(spark, **kwargs):
 
                         max_atraso as (
                             select
-                                substring(regexp_replace(cnpj_sacado, '[./-]', ''), 1, 8) as cnpj_raiz,
-                                max(dias_em_atraso) as max_atraso
-                            from deltalakerefined.payments.carteira_vendermais cv
+                                sub.raiz_cnpj as cnpj_raiz,
+                                max(sub.dias_para_pagamento) as max_atraso
+                            from (
+                            select
+                                substring(regexp_replace(cnpj_sacado, '[./-]', ''), 1, 8) as raiz_cnpj,
+                                case when data_vencimento is null then null
+                                    when data_baixa is null then greatest(date_diff('day', data_vencimento, current_date), 0)
+                                    else greatest(date_diff('day', data_vencimento, data_baixa), 0) end as dias_para_pagamento
+                            from deltalaketrusted.payments.boletos_internos
+                            where status_titulo <> 'A VENCER' ) as sub
                             group by 1
                         ),
 
