@@ -45,7 +45,7 @@ def estoque_consolidado_trusted (access_params=None, **kwargs):
     bucket_name = "hemera-csv"
     caminho = 'estoque'
 
-    anos = ['2025', '2024', '2023', '2022', '2021', '2020']
+    anos = ['2026', '2025', '2024', '2023', '2022', '2021', '2020']
 
     meses = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12']
 

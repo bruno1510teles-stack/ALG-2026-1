@@ -36,7 +36,7 @@ def estoque_excel_to_csv_historico (access_params=None, **kwargs):
     BUCKET_SOURCE = "hemera"
     BUCKET_DESTINATION = "hemera-csv"
     BASE_FOLDER = "estoque"
-    YEARS = [2020, 2021, 2022, 2023, 2024, 2025]
+    YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026]
     MONTHS = [f"{m:02}" for m in range(1, 13)]
     EXCEL_PASSWORD = "Alpe38"
 
