@@ -5,7 +5,7 @@ from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import pandas as pd
 from time import sleep
-
+from datetime import datetime
 
 ### Importando scripts necessários
 from politica_e_modelagem.criacao_propostas_automaticas.scripts.propostas_v3 import exporta_csv_politica_v3
@@ -47,8 +47,8 @@ default_args = {
 # Definindo a DAG
 with DAG(
     dag_id='criacao_propostas_automaticas',
-    start_date=days_ago(1),
-    schedule_interval='0 12 * * 1',  # Rodar todas as segundas-feiras às 10:00
+    start_date=datetime(2024, 1, 1, 8, 50),
+    schedule_interval='50 8 * * 1',  # Rodar todas as segundas-feiras às 06:50
     default_args=default_args,
     tags=['propostas', 'automaticas'] # DAG só será acionada manualmente pela API
 ) as dag:
@@ -60,7 +60,6 @@ with DAG(
         provide_context = True  # Habilita o envio do contexto (incluindo conf)
     )
 
-    '''
     # Captura proposta no jira
     task2 = PythonOperator(
         task_id = "propostas_v4",
@@ -68,8 +67,6 @@ with DAG(
         op_kwargs = {'access_params': access_params},
         provide_context = True
     )
-    '''
 
     # Definindo a ordem de execução das tasks
-    task1 
-    # >> task2
+    task1 >> task2
