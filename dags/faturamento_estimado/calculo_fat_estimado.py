@@ -242,9 +242,8 @@ def calcular_faturamento_estimado (spark, **kwargs):
         .when(col("faturamento_estimado") == col("apenas_serasa"), "MODELO A2")
         .when(col("faturamento_estimado") == col("apenas_hp_externo"), "MODELO A3")
         .when(col("faturamento_estimado") == col("apenas_receita"), "MODELO A1")
-        .otherwise("NÃO ENCONTRADO")
+        .otherwise("FATURAMENTO EXTERNO")
     )
-
 
     # De/Para dos modelos utilizados:
     # Modelo A1 = Apenas Receita Federal
