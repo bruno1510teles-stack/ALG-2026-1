@@ -110,11 +110,26 @@ def calcular_faturamento_estimado (spark, **kwargs):
 
     # Base Faturamento Externo Arcelor
     query_fat_externo = """
-                select
-                    raiz_cnpj as cnpj_raiz,
-                    cast(max(media_vop_total) as double) as faturamento_externo_arcelor
-                from deltalakerefined.payments.faturamento_externo_arcelor
-                group by raiz_cnpj
+                    with fat_arcelor as (    
+                        select
+                            raiz_cnpj as cnpj_raiz,
+                            cast(max(media_vop_total) as double) as faturamento_externo_arcelor
+                        from deltalakerefined.payments.faturamento_externo_arcelor
+                        group by raiz_cnpj ),
+
+                    fat_belgo as (
+                        select
+                            raiz_cnpj as cnpj_raiz,
+                            cast(max(media_vop_total) as double) as faturamento_externo_belgo
+                        from deltalakerefined.payments.faturamento_externo_belgo
+                        group by raiz_cnpj )
+
+                    select
+                        coalesce(fa.cnpj_raiz, fb.cnpj_raiz) as cnpj_raiz,
+                        coalesce(fb.faturamento_externo_belgo, 0) + coalesce(fa.faturamento_externo_arcelor, 0) as faturamento_externo_arcelor
+                    from fat_arcelor as fa 
+                    full join fat_belgo as fb 
+                        on fa.cnpj_raiz = fb.cnpj_raiz
                 """
     faturamento_externo_hp = execute_query(conn, query_fat_externo)
 
@@ -188,7 +203,7 @@ def calcular_faturamento_estimado (spark, **kwargs):
     df_final = df_final \
         .withColumn("apenas_receita", 1.4843 * col("faturamento_receita_federal")) \
         .withColumn("apenas_serasa", 0.2976 * col("faturamento_serasa_pagamento")) \
-        .withColumn("apenas_hp_externo", 0.8031 * col("faturamento_externo_arcelor")) \
+        .withColumn("apenas_hp_externo", 1 * col("faturamento_externo_arcelor")) \
         .withColumn("hp_externo_e_receita", 
             0.39584 * col("faturamento_externo_arcelor") +
             1.29748 * col("faturamento_receita_federal")
@@ -213,7 +228,8 @@ def calcular_faturamento_estimado (spark, **kwargs):
             col("apenas_hp_externo"),
             col("hp_externo_e_receita"),
             col("receita_e_serasa"),
-            col("receita_hp_externo_e_serasa")
+            col("receita_hp_externo_e_serasa"),
+            col("faturamento_externo_arcelor")
         )
     )
 
