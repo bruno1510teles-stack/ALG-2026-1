@@ -114,6 +114,46 @@ select
 		and bt.data_efetivacao is not null
 		and bt.codigo_cedente not in (12, 188, 6910, 14099, 40585, 99241, 101880, 13974, 14688, 105372, 109619, 109151, 107738, 108454, 108455, 10798, 109485, 123326, 109485, 112294, 130500, 129442, 138434, 138433)
 		and coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)) > cast('2024-04-30' as date)
+    
+    union
+    select 
+		distinct 
+        bt.id as boleto_titulo_id,
+        bt.numero_sequencial_titulo,
+		bt.codigo_filial,
+		bt.codigo_empresa,
+		bt.numero_titulo,
+		coalesce(bt.codigo_cedente_endossante, bt.codigo_cedente) as codigo_cedente,
+		coalesce(bt.cedente_endossante_id, bt.cedente_id) as cedente_id,
+		bt.codigo_sacado,
+		bt.sacado_id,
+		bt.status_titulo, 
+		bt.status_liquidez,
+		bt.codigo_situacao_titulo,
+		to_char(coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)), 'yyyy-mm-dd') as data_emissao,
+		to_char(coalesce(date(bt2.data_efetivacao), date(bt.data_efetivacao)), 'yyyy-mm-dd') as data_efetivacao,
+		to_char(date(bt.data_vencimento), 'yyyy-mm-dd') as data_vencimento,
+		to_char(date(bt.data_baixa), 'yyyy-mm-dd') as data_baixa,
+        to_char(date(bt.data_original_vencimento), 'yyyy-mm-dd') as data_original_vencimento,
+		bt.valor_face,
+		bt.valor_titulo,
+		bt.valor_baixado,
+		bt.valor_desagio,
+	        bt.rotulo,
+	        bt.codigo_estagio_titulo,
+               SUBSTRING(bt.numero_nfe, 27,9) as numero_nota_fiscal,
+               bt.numero_nfe
+	from 
+			postgres.ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo bt
+			left join postgres.ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo_endosso bte on bt.id = bte.boleto_titulo_id_endossado 
+			left join postgres.ccred_schema_{Variable.get('STAGE')}_default.boleto_titulo bt2 on bte.boleto_titulo_id  = bt2.id and bt2.codigo_empresa = 3
+	where 
+	    (
+	    bt.origem_titulo_id = 2
+	    and bt.rotulo = 'MRV OPERAÇÃO FIDC '
+	    and not bt.excluido
+	    and bt.codigo_estagio_titulo in (5, 6)
+	  	)
     """
     boleto = execute_query(conn, query_boleto)
 
