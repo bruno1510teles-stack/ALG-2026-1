@@ -386,33 +386,38 @@ def raw_to_trusted(access_params=None, **kwargs):
 
     # CRIANDO COLUNA TIPO DA PROPOSTA
     def classifica_tipo_proposta(proposta):
-        if isinstance(proposta, str):  # Verifica se proposta é uma string
-            proposta = proposta.upper()  # Converte para maiúsculas
-            
-            if 'SOLICITAÇÃO DE LIMITE' in proposta or 'ANÁLISE DE SACADO' in proposta or 'SOLICITAÇÃO DE LIMITE' in proposta or 'SOLICITAÇÃO DE CADASTRO' in proposta:
-                return "SOLICITAÇÃO DE LIMITE"
-            elif 'TRANSFERENCIA DE LIMITE' in proposta or 'TRANSFERÊNCIA  DE LIMITE' in proposta or 'TRANSFERÊNCIA DE LIMITE' in proposta or 'TRANSFERÊNCIA DE LIMITE' in proposta:
-                return "TRANSFERÊNCIA DE LIMITE"
-            elif 'SOLICITAÇÃO DE OVER' in proposta or 'SOLICITAÇÃO DE OVERLIMITE' in proposta or 'OVERLIMIT' in proposta:
-                return "SOLICITAÇÃO DE OVERLIMIT"
-            elif 'ZERAR LIMITE' in proposta or 'ZERAR LIMITE' in proposta or 'ZERAR LIMTE' in proposta or 'ZERAR  LIMITE' in proposta or 'ZERAR  LIMITE' in proposta or 'ZERAR | AJUSTE LIMITE' in proposta:
-                return "ZERAR LIMITE"
-            elif 'AJUSTE DE LIMITE' in proposta or 'AJUSTE DE LIMITE' in proposta or 'REAJUSTE DE LIMITE' in proposta or 'REVISÃO DE LIMITE' in proposta or 'REMANEJAMENTO DE LIMITE' in proposta or 'AJUSTE  DE LIMITE' in proposta or 'AJUSTE  DE LIMITE' in proposta or 'AJUSTE DE LC' in proposta:
-                return "AJUSTE DE LIMITE"
-            elif 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta or 'REDUÇÃO DE LIMITE' in proposta:
-                return "REDUÇÃO DE LIMITE"
-            elif 'BLOQUEIO SACADO' in proposta:
-                return "BLOQUEIO SACADO"
-            elif 'LOTE' in proposta:
+        if isinstance(proposta, str):
+            proposta = proposta.upper().strip()
+
+        if proposta.startswith('V8'):
+                return "AÇÃO MAJORAÇÃO"
+
+        elif proposta.startswith('ACOMPANHAMENTO DE CARTEIRA'):
+                return "ACOMPANHAMENTO DE CARTEIRA"
+
+        elif proposta.startswith('CADASTRO NOVO'):
+                return "CADASTRO NOVO"
+
+        elif proposta.startswith('V3') or proposta.startswith('V4') or proposta.startswith('CANCELAMENTO'):
+                return "CANCELAMENTO"
+
+        elif proposta.startswith('SOLICITAÇÃO') or proposta.startswith('MAJORAÇÃO'):
+                return "DIÁRIAS"
+
+        elif proposta.startswith('LISTA'):
+                return "LISTA"
+
+        elif proposta.startswith('LOTE'):
                 return "LOTE"
-            elif 'CNPJ' in proposta or 'CNPJ ERRADO' in proposta:
-                return "VERIFICAR CNPJ"
-            elif 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO  DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO LIMITE' in proposta or 'MAJORAÇÃO' in proposta or 'MAJORAÇÃO DE LIMITE' in proposta or 'MAJORAÇÃO DE LIMITE/TRANSFERÊNCIA DE LC' in proposta:
-                return "MAJORAÇÃO DE LIMITE"
-            elif 'BAIXA DE OVERLIMIT' in proposta or 'BAIXA DE OVER' in proposta or 'REDUZIR OVER' in proposta or 'OVERLIMITE' in proposta:
-                return "BAIXA DE OVERLIMIT"
-            
-            return "OUTROS"
+
+        elif proposta.startswith('REVISÃO DE CARTEIRA'):
+                return "REVISÃO DE CARTEIRA"
+        
+        elif proposta.startswith('AJUSTE DE OVER') or proposta.startswith('ZERAR') or proposta.startswith('TRANSFERÊNCIA'):
+            return "NÃO ELEGÍVEIS"
+
+        else:
+                return "OUTROS"
 
     df_resolvido['tipo_proposta'] = df_resolvido['nome_issue'].apply(classifica_tipo_proposta)
 
