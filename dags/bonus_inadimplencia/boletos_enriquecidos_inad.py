@@ -37,7 +37,7 @@ def boletos_trusted_to_refined(access_params=None,  **kwargs):
     query_boletos = f"""
             WITH boletos_base AS (
                 SELECT
-                    nfv.data AS data_ref,
+                    date_format(nfv.data, '%Y-%m') AS data_referencia,
                     CONCAT(
                         COALESCE(CAST(b.codigo_cedente AS VARCHAR), ''),
                         COALESCE(CAST(b.codigo_sacado AS VARCHAR), ''),
@@ -69,7 +69,7 @@ def boletos_trusted_to_refined(access_params=None,  **kwargs):
             ),
             boletos_enriquecidos AS (
                 SELECT
-                    data_ref,
+                    data_referencia,
                     codigo_cedente, 
                     nome_cedente, 
                     cnpj_cedente, 
@@ -97,9 +97,20 @@ def boletos_trusted_to_refined(access_params=None,  **kwargs):
                     chave_cliente_gerente
                 FROM boletos_base
             )
-            
-            SELECT *
-            FROM boletos_enriquecidos
+            ,base_agrupada as (
+            SELECT 
+            	nome_cedente, nome_sacado, cnpj_sacado, escritorio_venda, vendedor_fornecedor, gerente_alpe, 
+            	sum(vop) as vop, sum(vop_performado) as vop_performado, sum(vop_a_vencer) as vop_a_vencer, sum(vop_vencido) as vop_vencido, sum(vop_over_60) as vop_over_60, max(dias_em_atraso) as max_dias_em_atraso
+            FROM 
+            	boletos_enriquecidos where data_referencia in ('2025-07', '2025-08', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12')
+            group by
+            	nome_cedente, nome_sacado, cnpj_sacado, escritorio_venda, vendedor_fornecedor, gerente_alpe
+            )
+            select 
+            	nome_cedente,nome_sacado,cnpj_sacado,escritorio_venda,vendedor_fornecedor,gerente_alpe,vop,vop_performado,vop_a_vencer,vop_vencido, max_dias_em_atraso
+				,case when vop_over_60 > 0 then vop_vencido + vop_a_vencer else 0 end as vagao_over_60 
+            from 
+            	base_agrupada
     """
     df_boletos_inad = execute_query(conn, query_boletos)
     print(f"Quantidade de linhas no DataFrame final: {df_boletos_inad.shape[0]}")
