@@ -94,7 +94,33 @@ def estoque_consolidado(spark):
     # Agrupando
     df = df.groupBy("data_arquivo", "data_referencia").agg(
         F.sum("valor_presente").alias("estoque"),
+        # pdd total
         (F.sum("pdd_nota") + F.sum("pdd_vencido")).alias("pdd"),
+        # pdd só do VenderMais
+        F.sum(
+            F.when(F.col("grupo") == "VenderMais",
+                F.col("pdd_nota") + F.col("pdd_vencido"))
+            .otherwise(0)
+        ).alias("pdd_vendermais"),
+        # pdd só do Tradicional
+        F.sum(
+            F.when(F.col("grupo") == "Tradicional",
+                F.col("pdd_nota") + F.col("pdd_vencido"))
+            .otherwise(0)
+        ).alias("pdd_tradicional"),
+        # pdd só do conglomerado
+        F.sum(
+            F.when(F.col("grupo") == "Conglomerado",
+                F.col("pdd_nota") + F.col("pdd_vencido"))
+            .otherwise(0)
+        ).alias("pdd_conglomerado"),
+        # pdd só do conglomerado
+        F.sum(
+            F.when(F.col("grupo") == "VEX",
+                F.col("pdd_nota") + F.col("pdd_vencido"))
+            .otherwise(0)
+        ).alias("pdd_vex"),
+
         F.sum("valor_aquisicao_vendermais").alias("valor_aquisicao_vendermais"),
         F.sum("valor_aquisicao_tradicional").alias("valor_aquisicao_tradicional"),
         F.sum("valor_aquisicao_conglomerado").alias("valor_aquisicao_conglomerado"),
@@ -151,6 +177,10 @@ def estoque_consolidado(spark):
         F.col("data_arquivo").alias("data"),
         F.col("estoque"),
         F.col("pdd"),
+        F.col("pdd_vendermais"),
+        F.col("pdd_tradicional"),
+        F.col("pdd_conglomerado"),
+        F.col("pdd_vex"),
         F.col("valor_aquisicao_vendermais"),
         F.col("valor_aquisicao_tradicional"),
         F.col("valor_aquisicao_conglomerado"),
@@ -170,6 +200,10 @@ def estoque_consolidado(spark):
     # Formatando colunas de valores
     df_final = df_final.withColumn("estoque", col("estoque").cast(DoubleType())) \
         .withColumn("pdd", col("pdd").cast(DoubleType())) \
+        .withColumn("pdd_vendermais", col("pdd_vendermais").cast(DoubleType())) \
+        .withColumn("pdd_tradicional", col("pdd_tradicional").cast(DoubleType())) \
+        .withColumn("pdd_conglomerado", col("pdd_conglomerado").cast(DoubleType())) \
+        .withColumn("pdd_vex", col("pdd_vex").cast(DoubleType())) \
         .withColumn("valor_aquisicao_vendermais", col("valor_aquisicao_vendermais").cast(DoubleType())) \
         .withColumn("valor_aquisicao_tradicional", col("valor_aquisicao_tradicional").cast(DoubleType())) \
         .withColumn("valor_aquisicao_conglomerado", col("valor_aquisicao_conglomerado").cast(DoubleType())) \
@@ -183,10 +217,14 @@ def estoque_consolidado(spark):
     # Exibição
     df_final_exibicao = df_final.select(
         F.col("data").alias("data"),
-        format_number("estoque", 2).alias("estoque_formatado"),
-        format_number("pdd", 2).alias("pdd_formatado"),
-        format_number("valor_aquisicao_vendermais", 2).alias("valor_aquisicao_vendermais_formatado"),
-        format_number("valor_aquisicao_tradicional", 2).alias("valor_aquisicao_tradicional_formatado"),
+        format_number("estoque", 2).alias("estoque"),
+        format_number("pdd", 2).alias("pdd"),
+        format_number("pdd_vendermais", 2).alias("pdd_vendermais"),
+        format_number("pdd_tradicional", 2).alias("pdd_tradicional"),
+        format_number("pdd_conglomerado", 2).alias("pdd_conglomerado"),
+        format_number("pdd_vex", 2).alias("pdd_vex"),
+        format_number("valor_aquisicao_vendermais", 2).alias("valor_aquisicao_vendermais"),
+        format_number("valor_aquisicao_tradicional", 2).alias("valor_aquisicao_tradicional"),
         format_number("valor_aquisicao_conglomerado", 2).alias("valor_aquisicao_conglomerado"),
         format_number("valor_aquisicao_vex", 2).alias("valor_aquisicao_vex"),
         format_number("valor_presente_vendermais", 2).alias("valor_presente_vendermais"),
