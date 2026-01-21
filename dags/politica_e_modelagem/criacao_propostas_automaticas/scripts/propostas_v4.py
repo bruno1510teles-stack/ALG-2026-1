@@ -11,6 +11,7 @@ from io import BytesIO
 import re
 import time
 from airflow.models import Variable
+from tabulate import tabulate
 
 
 def exporta_csv_politica_v4 (access_params=None,  **kwargs):
@@ -138,6 +139,62 @@ def exporta_csv_politica_v4 (access_params=None,  **kwargs):
 
     exporta_csv = exporta_csv.drop_duplicates()
 
+    df_vencer["MOTIVO DO CANCELAMENTO"] = (df_vencer["situacao_cadastral"].combine_first(df_vencer["situacao_especial"]))
+
+    cancelamento_v4 = (
+        df_vencer.groupby("MOTIVO DO CANCELAMENTO")
+      .agg(
+          QUANTIDADE=("cnpj_sacado_completo", "count"),
+          LIMITE_ZERADO=("limite_atribuido", "sum")
+      )
+      .reset_index()
+    )
+
+    cancelamento_v4["LIMITE_ZERADO"] = cancelamento_v4["LIMITE_ZERADO"].apply(
+        lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        if pd.notnull(x) and isinstance(x, (int, float)) else "R$ 0,00")
+    
+    if cancelamento_v4.empty:
+        markdown = f"⚠️ Propostas V4 - Nenhum limite zerado"
+    else:
+    # Converte DF em tabela formatada
+        tabela_formatada = tabulate(
+            cancelamento_v4.values.tolist(),
+            headers=cancelamento_v4.columns.tolist(),
+            tablefmt="pretty"
+        )
+
+    # Espaço invisível (para espaçamento no Teams/Markdown)
+    invisible_space = "\u200B"
+
+    # Monta o markdown final
+    markdown = (
+        "📊 Propostas V4 - Relatório semanal de Cancelamento de Limite\n\n"
+        "```\n" + tabela_formatada + "\n```\n"
+        f"{invisible_space}\n"
+    )
+
+    print(markdown)
+
+    def enviar_para_webhook(mensagem):
+        webhook_url = "https://yandehbr.webhook.office.com/webhookb2/aff1add1-1e5e-445d-9644-f7d9ab677641@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/cd64a656b86b4db6a8a64a74153a8555/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2M-crEG-kOlO8wQffCBWAHSBeR29YtNktVPx1gvoiR4M1"
+
+        headers = {
+   "Content-Type": "application/json"
+  }
+
+        payload = {
+   "text": mensagem
+  }
+
+        response = requests.post(webhook_url, json=payload, headers=headers)
+
+        if response.status_code == 200:
+            print("Mensagem enviada com sucesso para o Teams!")
+        else:
+            print(f"Falha ao enviar a mensagem. Código de status: {response.status_code}")
+
+    enviar_para_webhook(markdown)
 
     print(f"Quantidade de CNPJs para criar issue no Jira politica v4: {exporta_csv.shape[0]}")
 
