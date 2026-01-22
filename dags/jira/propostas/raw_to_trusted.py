@@ -404,7 +404,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         elif proposta.startswith('SOLICITAÇÃO') or proposta.startswith('MAJORAÇÃO'):
                 return "DIÁRIAS"
 
-        elif proposta.startswith('LISTA'):
+        elif proposta.startswith('LISTA') or proposta.startswith('USINA'):
                 return "LISTA"
 
         elif proposta.startswith('LOTE'):
