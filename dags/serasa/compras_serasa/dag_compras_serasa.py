@@ -69,23 +69,23 @@ with DAG(
 
 ) as dag:
 
-    '''
+    
     task1  = PythonOperator(
         task_id='processa_historico_compras_serasa',
         python_callable= processa_historico_compras_serasa.processa_historico_serasa,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    '''
-    
 
+    '''
     task2 = PythonOperator(
         task_id='processa_compras_serasa_diario',
         python_callable= processa_novos_casos_compras_serasa.processa_serasa_diario,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+    '''
 
     # Definindo a ordem de execução das tasks
     #task1 >> 
-    task2
+    task1
