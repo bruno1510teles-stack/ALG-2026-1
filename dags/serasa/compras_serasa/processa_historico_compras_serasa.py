@@ -378,6 +378,7 @@ def processa_historico_serasa (access_params=None,  **kwargs):
             .astype(int)
         )
 
+    df_serasa = df_serasa.loc[:, ~df_serasa.columns.duplicated()]
 
     # Colunas de data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
