@@ -14,6 +14,7 @@ import numpy as np
 import time
 import os
 
+
 def processa_serasa_diario (access_params=None,  **kwargs):
 
     # Conectando ao Trino para Leitura
@@ -47,143 +48,228 @@ def processa_serasa_diario (access_params=None,  **kwargs):
 
     query = f"""
             with base_data as (
-                select re.id id, re.created_date data_consulta, rc.json_content
-                    ,substring(last_re.value,1,8) cnpj_raiz , re.reports_id
-                from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
-                inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
-                inner join (select min(re.id) re_id, rc.json_content, pi2.value
-                                ,ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content desc) AS rn
-                            from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
-                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id and rd."type" = 'RELATORIO_AVANCADO_PJ_ANALITICO'
-                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
-                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
-                            inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
-                            where re.resolution = 'DONE'
-                            group by rc.json_content, pi2.value ) as last_re 
-                    on last_re.re_id = re.id
-                where try_cast( re.created_date as date ) >= try_cast( '{dez_dias_atras}' as date )
-        ),
-        restritivos_pj as (
-                with tipo_pendencia(tipo, descricao) as (
-                    values 
-                        ('PEFIN', 'PEFIN')
-                        ,('REFIN', 'REFIN')
-                        ,('COLLECTION_RECORDS', 'DIVIDA VENCIDA')
-                        ,('CHECK', 'CHEQUE')
-                        ,('NOTARY', 'PROTESTO')
-                        ,('BANKRUPTSPATICIPATION', 'FALENCIA')
-                        ,('JUDGEMENTFILINGS', 'ACAO JUDICIAL')
-                    )
-                    select distinct bd.id, cast(bd.data_consulta as date) data_consulta
-                        ,bd.cnpj_raiz, tp.descricao grupo_ocorrencia, s.count quantidade_ocorrencia
-                        ,s.first_occurrence ano_mes_primeiro, s.last_occurrence ano_mes_ultimo
-                        ,coalesce(s.balance, 0) valor_total
-                    from tipo_pendencia tp 
-                    inner join base_data bd on true
-                    inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.report r on rs.id = r.reports_id
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data nd on nd.id = r.negative_data_id
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data_item ndi on ndi.id in (
-                                nd.pefin_id, 
-                                nd.refin_id, 
-                                nd.collection_records_id, 
-                                nd.check_id,
-                                nd.notary_id)
-                                and ndi."_object_type" = tp.tipo
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.facts f on f.id = r.facts_id
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.bankrupts b on b.id = f.bankrupts_id and tp.tipo = 'BANKRUPTSPATICIPATION'
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.judgement_filings jf on jf.id = f.judgement_filings_id and tp.tipo = 'JUDGEMENTFILINGS'
-                    left join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id in (ndi.summary_id, b.summary_id, jf.summary_id)
-        ),
-        
-        total_restritivos_pj as (
-                    select t1.id as id, t1.data_consulta, t1.cnpj_raiz,
-                        sum(valor_total) as total_restritivos
-                    from restritivos_pj t1
-                    group by t1.id, t1.data_consulta, t1.cnpj_raiz
-        ),
-        
-        qtde_cheque_pj as (
-                    select rpj.id, coalesce(rpj.quantidade_ocorrencia,0) as qtd_cheque
-                    from restritivos_pj rpj
-                    where grupo_ocorrencia = 'CHEQUE'
-        ),
-        
-        restritivos_socios as (
-                    select bd.id, p.id partner_id, p.kind_person
-                        ,p.document, p.document_branch, document_digit
-                        ,case 
-                            when d.debt_type = 'BANKRUPTSPATICIPATION' then 'FALENCIA'
-                            when d.debt_type = 'CHECKCCF' then 'CHEQUE'
-                            when d.debt_type = 'COLLECTIONRECORDS' then 'DIVIDA VENCIDA' --Parece retornar apenas a última
-                            when d.debt_type = 'FINANCIAL' then 'REFIN'
-                            when d.debt_type = 'JUDGEMENTFILINGS' then 'ACAO JUDICIAL'
-                            when d.debt_type = 'MARKET' then 'PEFIN'
-                            when d.debt_type = 'NOTARY' then 'PROTESTO' end as grupo_ocorrencia
-                        ,s.count quantidade_ocorrencia
-                        ,s.last_occurrence ano_mes_ultimo
-                        ,coalesce(s.balance, 0) valor_total
-                    from base_data bd
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id and p."_object_type" = 'PARTNER'
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.debt d on d.person_id = p.id
-                        inner join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id = d.summary_id
-        ),
-        
-        qtde_cheque_pf as (
-                    select rs.id, coalesce(sum(rs.quantidade_ocorrencia),0) cheque_pf
-                    from restritivos_socios rs
-                    where grupo_ocorrencia = 'CHEQUE'
-                    group by rs.id
-        ),
-        
-        total_restritivos_socio as (
-                    select t1.id as id, sum(valor_total) as restritivos_pf
-                    from restritivos_socios t1
-                    group by t1.id
-        ),
-        
-        score_pj as (
-                    select bd.id, s.score as score_positivo_pj
-                        ,case when s.message  = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' then 1 else 0 end as grande_empresa
-                    from base_data bd
-                    inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
-                    inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
-                    inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.score_id
-        )  
+                                            select 
+                                                re.id id
+                                                ,re.created_date data_consulta
+                                                ,rc.json_content
+                                                ,substring(last_re.value,1,8) cnpj_raiz
+                                                ,re.reports_id
+                                            from 
+                                                postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                                                inner join (
+                                                    select 
+                                                        min(re.id) re_id
+                                                        ,rc.json_content
+                                                        ,pi2.value
+                                                        ,ROW_NUMBER() OVER (PARTITION BY pi2.value ORDER BY json_content desc) AS rn
+                                                    from postgres.exrp_{Variable.get('STAGE')}_default.report_execution re
+                                                        inner join postgres.exrp_{Variable.get('STAGE')}_default.report_definition rd on rd.id = re.definition_id and rd."type" in ('RELATORIO_AVANCADO_PJ_ANALITICO')
+                                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_content rc on rc.id = re.content_id
+                                            inner join postgres.exrp_{Variable.get('STAGE')}_default.report_involvement ri on ri.report_execution_id = re.id
+                                            inner join postgres.exrp_{Variable.get('STAGE')}_default.party_identification pi2 on pi2.party_id = ri.party_id
+                                            where
+                                                re.resolution = 'DONE'
+                                            group by  
+                                                rc.json_content
+                                                ,pi2.value
+                                            ) last_re on last_re.re_id = re.id and rn=1
+                                            where try_cast( re.created_date as date ) >= try_cast( '{dez_dias_atras}' as date )
+                )
+                
+                ,restritivos_pj as (
+                                            with tipo_pendencia(tipo, descricao) as (
+                                            values 
+                                                ('PEFIN', 'PEFIN')
+                                                ,('REFIN', 'REFIN')
+                                                ,('COLLECTION_RECORDS', 'DIVIDA VENCIDA')
+                                                ,('CHECK', 'CHEQUE')
+                                                ,('NOTARY', 'PROTESTO')
+                                                ,('BANKRUPTSPATICIPATION', 'FALENCIA')
+                                                ,('JUDGEMENTFILINGS', 'ACAO JUDICIAL')
+                                            )
+                                            select distinct
+                                                bd.id
+                                                ,cast(bd.data_consulta as date) data_consulta
+                                                ,bd.cnpj_raiz
+                                                ,tp.descricao grupo_ocorrencia
+                                                ,s.count quantidade_ocorrencia
+                                                ,s.first_occurrence ano_mes_primeiro
+                                                ,s.last_occurrence ano_mes_ultimo
+                                                ,coalesce(s.balance, 0) valor_total
+                                            from tipo_pendencia tp 
+                                                inner join base_data bd on true
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.report r on rs.id = r.reports_id
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data nd on nd.id = r.negative_data_id
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.negative_data_item ndi on ndi.id in (
+                                                        nd.pefin_id, 
+                                                        nd.refin_id, 
+                                                        nd.collection_records_id, 
+                                                        nd.check_id,
+                                                        nd.notary_id)
+                                                        and ndi."_object_type" = tp.tipo
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.facts f on f.id = r.facts_id
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.bankrupts b on b.id = f.bankrupts_id and tp.tipo = 'BANKRUPTSPATICIPATION'
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.judgement_filings jf on jf.id = f.judgement_filings_id and tp.tipo = 'JUDGEMENTFILINGS'
+                                                left join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id in (ndi.summary_id, b.summary_id, jf.summary_id)
+                )
+                
+                ,total_restritivos_pj as (
+                                            select 
+                                                t1.id as id,
+                                                t1.data_consulta,
+                                                t1.cnpj_raiz,
+                                                sum(case when t1.grupo_ocorrencia = 'PEFIN' then quantidade_ocorrencia else 0 end) as qtd_pefin_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'PEFIN' then valor_total else 0 end) as valor_pefin_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'REFIN' then quantidade_ocorrencia else 0 end) as qtd_refin_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'REFIN' then valor_total else 0 end) as valor_refin_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'DIVIDA VENCIDA' then quantidade_ocorrencia else 0 end) as qtd_divida_vencida_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'DIVIDA VENCIDA' then valor_total else 0 end) as valor_divida_vencida_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'CHEQUE' then quantidade_ocorrencia else 0 end) as qtd_cheque_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'CHEQUE' then valor_total else 0 end) as valor_cheque_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'PROTESTO' then quantidade_ocorrencia else 0 end) as qtd_protesto_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'PROTESTO' then valor_total else 0 end) as valor_protesto_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'FALENCIA' then quantidade_ocorrencia else 0 end) as qtd_falencia_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'FALENCIA' then valor_total else 0 end) as valor_falencia_pj,
+                                                
+                                                sum(case when t1.grupo_ocorrencia = 'ACAO JUDICIAL' then quantidade_ocorrencia else 0 end) as qtd_acao_judicial_pj,
+                                                sum(case when t1.grupo_ocorrencia = 'ACAO JUDICIAL' then valor_total else 0 end) as valor_acao_judicial_pj,
+                                                
+                                                sum(quantidade_ocorrencia) as qtd_total_restritivos_pj,
+                                                sum(valor_total) as valor_total_restritivos_pj
+                                                
+                                            from restritivos_pj t1
+                                            group by
+                                                t1.id,
+                                                t1.data_consulta,
+                                                t1.cnpj_raiz
+                )	    
+                
+                ,restritivos_socios as (
+                                            select distinct
+                                                bd.id
+                                                ,p.kind_person
+                                                ,p.document
+                                                ,p.document_branch
+                                                ,document_digit
+                                                ,case 
+                                                    when d.debt_type = 'BANKRUPTSPATICIPATION' then 'FALENCIA'
+                                                    when d.debt_type = 'CHECKCCF' then 'CHEQUE'
+                                                    when d.debt_type = 'COLLECTIONRECORDS' then 'DIVIDA VENCIDA'
+                                                    when d.debt_type = 'FINANCIAL' then 'REFIN'
+                                                    when d.debt_type = 'JUDGEMENTFILINGS' then 'ACAO JUDICIAL'
+                                                    when d.debt_type = 'MARKET' then 'PEFIN'
+                                                    when d.debt_type = 'NOTARY' then 'PROTESTO'
+                                                end as grupo_ocorrencia
+                                                ,s.count quantidade_ocorrencia
+                                                ,s.last_occurrence ano_mes_ultimo
+                                                ,coalesce(s.balance, 0) valor_total
+                                            from base_data bd
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.qsa_complete_report qcr on qcr.id = of2.qsa_complete_report_id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.person p on p.qsa_complete_report_id = qcr.id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.debt d on d.person_id = p.id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.summary s on s.id = d.summary_id
+                )
+                , total_restritivos_pf as (
+                
+                                            select
+                                                rs.id,
+                                                sum(case when rs.grupo_ocorrencia = 'PEFIN' then quantidade_ocorrencia else 0 end) as qtd_pefin_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'PEFIN' then valor_total else 0 end) as valor_pefin_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'REFIN' then quantidade_ocorrencia else 0 end) as qtd_refin_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'REFIN' then valor_total else 0 end) as valor_refin_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'DIVIDA VENCIDA' then quantidade_ocorrencia else 0 end) as qtd_divida_vencida_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'DIVIDA VENCIDA' then valor_total else 0 end) as valor_divida_vencida_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'CHEQUE' then quantidade_ocorrencia else 0 end) as qtd_cheque_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'CHEQUE' then valor_total else 0 end) as valor_cheque_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'PROTESTO' then quantidade_ocorrencia else 0 end) as qtd_protesto_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'PROTESTO' then valor_total else 0 end) as valor_protesto_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'FALENCIA' then quantidade_ocorrencia else 0 end) as qtd_falencia_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'FALENCIA' then valor_total else 0 end) as valor_falencia_pf,
+                                                    
+                                                    sum(case when rs.grupo_ocorrencia = 'ACAO JUDICIAL' then quantidade_ocorrencia else 0 end) as qtd_acao_judicial_pf,
+                                                    sum(case when rs.grupo_ocorrencia = 'ACAO JUDICIAL' then valor_total else 0 end) as valor_acao_judicial_pf,
+                                                    
+                                                    sum(quantidade_ocorrencia) as qtd_total_restritivos_pf,
+                                                    sum(valor_total) as valor_total_restritivos_pf
+                                                
+                                            from restritivos_socios as rs
+                                            group by rs.id
+                )
+                    
+                ,score_pj as (
+                                            select 
+                                                bd.id
+                                                ,s.score "Score Positivo PJ"
+                                                ,case when s.message  = 'EMPRESA CORPORATE PLUS RECOMENDA-SE CONSULTAR CREDIT RATING SERASA EXPERIAN' then 1 else 0 end as grande_empresa
+                                            from base_data bd
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.reports rs on rs.id = bd.reports_id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.optional_features of2 on of2.id = rs.optional_features_id
+                                                inner join postgres.exrp_{Variable.get('STAGE')}_default.score s on s.id = of2.score_id
+                )
+                
                 select 
-                    trp.id,
-                    trp.data_consulta,
-                    trp.cnpj_raiz,
-                    score.score_positivo_pj,
-                    cast(score.grande_empresa as int) as grande_empresa,
-                    coalesce(trp.total_restritivos, 0) as restritivos_pj,
-                    coalesce(trs.restritivos_pf, 0) as restritivos_pf,
-                    coalesce(cpf.cheque_pf, 0) as cheque_pf,
-                    coalesce(cpj.qtd_cheque, 0) as cheque_pj
+                    trp.*,
+                    trpf.*,
+                    score."Score Positivo PJ" as score_positivo_pj,
+                    score.grande_empresa
                 from total_restritivos_pj trp
-                    left join qtde_cheque_pj cpj on trp.id = cpj.id
-                    left join qtde_cheque_pf cpf on trp.id = cpf.id
-                    left join total_restritivos_socio trs on trp.id = trs.id
-                    left join score_pj score on trp.id = score.id
+                left join score_pj score on trp.id = score.id
+                left join total_restritivos_pf trpf on trp.id = trpf.id
             """
 
     df_serasa = execute_query (conn, query)
 
-    df_serasa['total_restritivos'] = df_serasa['restritivos_pj'] + df_serasa['restritivos_pf']
-    df_serasa['total_cheques'] = df_serasa['cheque_pf'] + df_serasa['cheque_pj']
 
-
-    # Normalizando tipos
+    # Normalizando Tipos de Dados
     df_serasa["id"] = df_serasa["id"].astype(str)
+    df_serasa["data_consulta"] = (
+        pd.to_datetime(df_serasa["data_consulta"], errors="coerce")
+        .dt.tz_localize(None)
+        .dt.normalize()
+    )
     df_serasa["cnpj_raiz"] = df_serasa["cnpj_raiz"].astype(str)
 
     df_serasa["score_positivo_pj"] = pd.to_numeric(df_serasa["score_positivo_pj"], errors="coerce").astype(float)
 
-    for col in ["grande_empresa", "restritivos_pj", "restritivos_pf", "cheque_pf", "cheque_pj", "total_restritivos", "total_cheques"]:
-        df_serasa[col] = pd.to_numeric(df_serasa[col], errors="coerce").fillna(0).astype(int)
+    for col in [
+        "qtd_pefin_pj", "valor_pefin_pj",
+        "qtd_refin_pj", "valor_refin_pj",
+        "qtd_divida_vencida_pj", "valor_divida_vencida_pj",
+        "qtd_cheque_pj", "valor_cheque_pj",
+        "qtd_protesto_pj", "valor_protesto_pj",
+        "qtd_falencia_pj", "valor_falencia_pj",
+        "qtd_acao_judicial_pj", "valor_acao_judicial_pj",
+        "qtd_total_restritivos_pj", "valor_total_restritivos_pj",
+        "qtd_pefin_pf", "valor_pefin_pf",
+        "qtd_refin_pf", "valor_refin_pf",
+        "qtd_divida_vencida_pf", "valor_divida_vencida_pf",
+        "qtd_cheque_pf", "valor_cheque_pf",
+        "qtd_protesto_pf", "valor_protesto_pf",
+        "qtd_falencia_pf", "valor_falencia_pf",
+        "qtd_acao_judicial_pf", "valor_acao_judicial_pf",
+        "qtd_total_restritivos_pf", "valor_total_restritivos_pf"
+    ]:
+        df_serasa[col] = (
+            pd.to_numeric(df_serasa[col], errors="coerce")
+            .fillna(0)
+            .astype(int)
+        )
+
+    df_serasa = df_serasa.loc[:, ~df_serasa.columns.duplicated()].copy()
 
 
     print('Base de novos casos tratadas...')
@@ -195,6 +281,12 @@ def processa_serasa_diario (access_params=None,  **kwargs):
             """
 
     df_acumulado = execute_query (conn, query_acumulada)
+
+    df_acumulado["data_consulta"] = (
+        pd.to_datetime(df_acumulado["data_consulta"], errors="coerce")
+        .dt.tz_localize(None)
+        .dt.normalize()
+    )
 
 
     ### Regra para atualizar essas novas compras na nossa acumulada
@@ -223,12 +315,15 @@ def processa_serasa_diario (access_params=None,  **kwargs):
 
     # Remove a coluna "nome_coluna"
     df_final = df_final.drop(columns=["atualizado_em", "year", "month", "day"])
-    
+
     # Colunas de data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
     df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
     df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
     print("Tratamento dos dados concluído")
+
+    # Remove linhas que não possuem o data_consulta
+    df_final = df_final[df_final['data_consulta'].notna()].copy()
 
 
     # Configuração do Delta Lake
