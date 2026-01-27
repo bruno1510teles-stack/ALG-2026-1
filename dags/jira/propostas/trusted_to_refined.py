@@ -44,7 +44,6 @@ def trusted_to_refined (access_params=None, **kwargs):
             SELECT *
             FROM deltalaketrusted.jira.propostas p
         ),
-
         serasa_ranked AS (
             -- 2 Junta as propostas com o histórico Serasa
             -- Considera apenas consultas realizadas até a data_resolvido
@@ -55,12 +54,14 @@ def trusted_to_refined (access_params=None, **kwargs):
                 s.data_consulta,
                 s.score_positivo_pj AS score,
                 s.grande_empresa AS empresa_grande,
-                s.restritivos_pj AS total_restritivos_pj,
-                s.restritivos_pf AS total_restritivos_pf,
-                s.cheque_pf AS qtd_cheque_pf,
-                s.cheque_pj AS qtd_cheque_pj,
-                s.total_restritivos AS valor_total_restritivos,
-                s.total_cheques AS qtd_total_cheques,
+                s.valor_total_restritivos_pj AS total_restritivos_pj,
+                s.valor_total_restritivos_pf AS total_restritivos_pf,
+                s.qtd_cheque_pf AS qtd_cheque_pf,
+                s.qtd_cheque_pj AS qtd_cheque_pj,
+                --s.total_restritivos AS valor_total_restritivos,
+                COALESCE(s.valor_total_restritivos_pj, 0) + COALESCE(s.valor_total_restritivos_pf, 0) AS valor_total_restritivos,
+                --s.total_cheques AS qtd_total_cheques,
+                COALESCE(s.qtd_cheque_pf, 0) + COALESCE(s.qtd_cheque_pj, 0) AS qtd_total_cheques,
                 ROW_NUMBER() OVER (
                     PARTITION BY p.issue_key
                     ORDER BY s.data_consulta DESC
@@ -70,7 +71,6 @@ def trusted_to_refined (access_params=None, **kwargs):
                 ON p.raiz_cnpj = s.cnpj_raiz
             AND CAST(s.data_consulta AS DATE) <= CAST(p.data_resolvido AS DATE)
         ),
-
         pontualidade_ranked AS (
             -- 3 Junta com a base de pontualidade interna
             -- Considera apenas meses anteriores ou iguais à data_resolvido
@@ -87,7 +87,6 @@ def trusted_to_refined (access_params=None, **kwargs):
                 ON sr.raiz_cnpj = pi.cnpj_raiz
             AND pi.safra_referencia <= CAST(sr.data_resolvido AS DATE)  -- só considera meses anteriores ou igual
         )
-
         -- 4 Seleciona apenas o registro mais recente do Serasa e o mais relevante de pontualidade
         SELECT *
         FROM pontualidade_ranked
