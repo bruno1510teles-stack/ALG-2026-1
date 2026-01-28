@@ -226,7 +226,7 @@ def exporta_csv_politica_v3(access_params=None, **kwargs):
     print(markdown)
 
     def enviar_para_webhook(mensagem):
-        webhook_url = "https://yandehbr.webhook.office.com/webhookb2/..."
+        webhook_url = "https://yandehbr.webhook.office.com/webhookb2/aff1add1-1e5e-445d-9644-f7d9ab677641@fe284b6f-c6d2-4028-badb-7d0c22aef0ae/IncomingWebhook/cd64a656b86b4db6a8a64a74153a8555/e3ad1a1a-7716-40ee-ab81-0f05650df5dc/V2M-crEG-kOlO8wQffCBWAHSBeR29YtNktVPx1gvoiR4M1"
         headers = {"Content-Type": "application/json"}
         payload = {"text": mensagem}
 

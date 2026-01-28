@@ -12,6 +12,7 @@ import re
 import time
 from airflow.models import Variable
 from tabulate import tabulate
+import requests
 
 
 def exporta_csv_politica_v4 (access_params=None,  **kwargs):
