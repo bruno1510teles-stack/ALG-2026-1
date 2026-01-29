@@ -94,6 +94,7 @@ def trusted_to_refined (access_params=None, **kwargs):
         AND (rn_pontualidade = 1 OR rn_pontualidade IS NULL)
     """
 
+
     # Verifica se a conexão foi bem-sucedida antes de executar a consulta
     if conn is not None:
         df = execute_query(conn, query_jira_trusted)
@@ -107,6 +108,11 @@ def trusted_to_refined (access_params=None, **kwargs):
     print(df.columns.tolist())
 
 
+    df["data_consulta"] = (
+        pd.to_datetime(df["data_consulta"], errors="coerce")
+        .dt.tz_localize(None)
+        .dt.normalize()
+    )
 
     # LOGICA ANALISTA RESPONSAVEL, PRIMEIRO ANALISTA QUE APARECE NA PRIMEIRA PROPOSTA DO CLIENTE APROVADA
 
