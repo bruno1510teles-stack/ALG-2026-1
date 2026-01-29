@@ -6,7 +6,7 @@ from trino.dbapi import connect
 from trino.auth import BasicAuthentication
 from deltalake import write_deltalake
 
-def bitrix_chamadas_to_refined (access_params=None, **kwargs):
+def bitrix_chamadas_to_trusted (access_params=None, **kwargs):
 
     WEBHOOK_URL = "https://alpenet.bitrix24.com.br/rest/49586/ek5qbi3clr1jhr0r/"
     
@@ -140,7 +140,7 @@ def bitrix_chamadas_to_refined (access_params=None, **kwargs):
     ids_existentes = set()
     try:
         cur = conn.cursor()
-        cur.execute("SELECT CAST(id_chamada AS VARCHAR) FROM deltalakerefined.cobranca.bitrix_chamadas")
+        cur.execute("SELECT CAST(id_chamada AS VARCHAR) FROM deltalaketrusted.cobranca.bitrix_chamadas")
         ids_existentes = set([row[0] for row in cur.fetchall()])
         cur.close()
     except Exception as e:
@@ -154,21 +154,21 @@ def bitrix_chamadas_to_refined (access_params=None, **kwargs):
 
     df_incremental = df_incremental.reset_index(drop=True)
     
-    # Exportando dados para a camada refined
+    # Exportando dados para a camada trusted
     storage_options = {
-        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_refined'],
-        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_refined'],
-        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_refined']}",
+        "AWS_ACCESS_KEY_ID": access_params['aws_access_key_id_trusted'],
+        "AWS_SECRET_ACCESS_KEY": access_params['aws_secret_access_key_trusted'],
+        "AWS_ENDPOINT_URL": f"https://{access_params['endpoint_url_trusted']}",
         "AWS_REGION": "us-east-1",
         "AWS_S3_ALLOW_UNSAFE_RENAME": "true"
     }
 
     # Definindo o caminho e salvando no MinIO
-    BUCKET_SOURCE_REFINED = "cobranca"
-    FOLDER_DESTINATION_REFINED = "bitrix_chamadas"
+    BUCKET_SOURCE_TRUSTED = "cobranca"
+    FOLDER_DESTINATION_TRUSTED = "bitrix_chamadas"
 
     write_deltalake(
-        f"s3a://{BUCKET_SOURCE_REFINED}/{FOLDER_DESTINATION_REFINED}",
+        f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
         df_incremental,
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
