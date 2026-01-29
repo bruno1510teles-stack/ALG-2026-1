@@ -78,12 +78,12 @@ def rating_mais_recente(access_params=None,  **kwargs):
             s.data_consulta,               
             s.score_positivo_pj AS score,           
             s.grande_empresa AS empresa_grande,              
-            s.restritivos_pj AS total_restritivos_pj,               
-            s.restritivos_pf AS total_restritivos_pf,              
-            s.cheque_pf AS qtd_cheque_pf,                   
-            s.cheque_pj AS qtd_cheque_pj,                    
-            s.total_restritivos AS valor_total_restritivos,           
-            s.total_cheques AS qtd_total_cheques,               
+            s.qtd_total_restritivos_pj AS total_restritivos_pj,               
+            s.qtd_total_restritivos_pf AS total_restritivos_pf,              
+            s.qtd_cheque_pf,                   
+            s.qtd_cheque_pj,                    
+            s.valor_total_restritivos_pj + s.valor_total_restritivos_pf AS valor_total_restritivos,           
+            s.qtd_cheque_pf + s.qtd_cheque_pj AS qtd_total_cheques,               
             ROW_NUMBER() OVER (
                 PARTITION BY pcf.cnpj_raiz   -- Para cada proposta
                 ORDER BY CASE 
