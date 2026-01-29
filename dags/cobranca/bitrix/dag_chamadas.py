@@ -10,7 +10,7 @@ from datetime import timedelta
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 
 ### Importando scripts necessários
-from cobranca.bitrix.chamadas import bitrix_chamadas_to_refined
+from cobranca.bitrix.chamadas import bitrix_chamadas_to_trusted
 
 
 ### Parâmetros de acesso
@@ -63,16 +63,16 @@ with DAG(
     start_date=days_ago(1),
     schedule_interval = '0 12,21 * * *',  # Roda às 9:00 e 18:00 BRT (12:00 e 21:00 UTC)
     default_args=default_args,
-    tags=['cobranca', 'refined', 'bitrix', 'chamadas'],
+    tags=['cobranca', 'trusted', 'bitrix', 'chamadas'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
 ) as dag:
 
     bitrix_chamadas_task = PythonOperator(
-        task_id="bitrix_to_refined",
-        python_callable=bitrix_chamadas_to_refined,
+        task_id="bitrix_to_trusted",
+        python_callable=bitrix_chamadas_to_trusted,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
-    
+
     # Definindo a ordem de execução das tasks
     bitrix_chamadas_task
