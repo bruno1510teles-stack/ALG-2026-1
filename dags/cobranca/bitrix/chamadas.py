@@ -101,7 +101,7 @@ def bitrix_chamadas_to_refined (access_params=None, **kwargs):
     df_chamadas['fim_chamada'] = fim_chamada.dt.strftime('%Y-%m-%d %H:%M:%S')
     
     df_chamadas['discado'] = 1
-    df_chamadas['atendido'] = (df_chamadas['duracao_segundos'] > 0).astype(int)
+    df_chamadas['atendido'] = (df_chamadas['duracao_segundos'] > 3).astype(int)
     df_chamadas['alo'] = (df_chamadas['duracao_segundos'] >= 10).astype(int)
     df_chamadas['nome_responsavel'] = df_chamadas['RESPONSIBLE_ID'].astype(str).map(mapa_usuarios)
 
@@ -114,6 +114,10 @@ def bitrix_chamadas_to_refined (access_params=None, **kwargs):
         'SUBJECT': 'descricao',
         'RESPONSIBLE_ID': 'id_responsavel'
     })
+
+    # Remove qualquer caractere que não seja número
+    df_chamadas['cnpj_sacado'] = df_chamadas['cnpj_sacado'].astype(str).str.replace(r'\D', '', regex=True)
+    df_chamadas['cnpj_cedente'] = df_chamadas['cnpj_cedente'].astype(str).str.replace(r'\D', '', regex=True)
 
     colunas_finais = [
         'id_negocio', 'id_chamada', 'cnpj_sacado', 'nome_sacado', 'inicio_chamada', 

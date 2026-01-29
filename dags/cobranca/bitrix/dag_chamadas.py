@@ -53,7 +53,7 @@ def notificar_falha_teams(context):
 ### Definindo defaults
 default_args = {
     "owner": "Natielli Torres",
-    ##"on_failure_callback": notificar_falha_teams
+    "on_failure_callback": notificar_falha_teams
 }
 
 
@@ -61,7 +61,7 @@ default_args = {
 with DAG(
     dag_id='bitrix_chamadas',
     start_date=days_ago(1),
-    schedule_interval = '0 21 * * *',  # Roda às 18:00 BRT (21:00 UTC)
+    schedule_interval = '0 12,21 * * *',  # Roda às 9:00 e 18:00 BRT (12:00 e 21:00 UTC)
     default_args=default_args,
     tags=['cobranca', 'refined', 'bitrix', 'chamadas'],
     max_active_runs = 1 # impede mais de uma execução rodar ao mesmo tempo
