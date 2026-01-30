@@ -15,9 +15,9 @@ import time
 import os
 
 
-def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
+def processa_serasa_diario_yandeh (access_params=None,  **kwargs):
 
-    ### Conectando com o Trino
+    # Conectando ao Trino para Leitura
     conn = connect(
         host=access_params['trino_endpoint'],
         port=access_params['trino_port'],
@@ -27,18 +27,24 @@ def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
     )
 
     def execute_query(conn, query):
-        cur = conn.cursor()
+        cur = conn.cursor()  # Abre o cursor
         cur.execute(query)
         rows = cur.fetchall()
         columns = [desc[0] for desc in cur.description]
-        cur.close()
+        cur.close()  # Fecha o cursor após a execução
         return pd.DataFrame(rows, columns=columns)
     
 
-    print('Processando Query das Compras do Serasa...')
+    # HOJE
+    hoje = datetime.today().date()
+
+    # 10 DIAS ATRÁS
+    dez_dias_atras = hoje - timedelta(days=7)
 
 
-    ### QUERY COMPRAS SERASA YANDEH
+    print('Buscando novos casos de compra do serasa...')
+
+    ### QUERY COMPRAS SERASA YANDEH DIÁRIO
 
     query   =   f"""
                 with base_data as (
@@ -70,6 +76,7 @@ def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
                                                                 ,pi2.value
                                                                 ,rd."type"
                                             ) last_re on last_re.re_id = re.id
+                                            where try_cast( re.created_date as date ) >= try_cast( '{dez_dias_atras}' as date )
                 )
                 
                 ,restritivos_pj as (
@@ -246,6 +253,8 @@ def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
 
     df_serasa_yandeh["score_positivo_pj"] = pd.to_numeric(df_serasa_yandeh["score_positivo_pj"], errors="coerce").astype(float)
 
+
+
     for col in [
         "qtd_pefin_pj", "valor_pefin_pj",
         "qtd_refin_pj", "valor_refin_pj",
@@ -269,15 +278,62 @@ def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
             .fillna(0)
             .astype(int)
         )
-    
+
     df_serasa_yandeh = df_serasa_yandeh.loc[:, ~df_serasa_yandeh.columns.duplicated()].copy()
 
 
+    print('Base de novos casos tratadas...')
+    print('Carregando acumulada...')
+
+
+    query_acumulada = f"""
+                        select * from deltalaketrusted.serasa.historico_compras_serasa_yandeh
+            """
+
+    df_acumulado = execute_query (conn, query_acumulada)
+
+    df_acumulado["data_consulta"] = (
+        pd.to_datetime(df_acumulado["data_consulta"], errors="coerce")
+        .dt.tz_localize(None)
+        .dt.normalize()
+    )
+
+
+    ### Regra para atualizar essas novas compras na nossa acumulada
+
+    ids_novos = df_serasa_yandeh["id"].drop_duplicates()
+
+    ### Removendo do acumulado os ids que já existem no novo
+    df_acumulado_filtrado = df_acumulado[~df_acumulado["id"].isin(ids_novos)]
+
+    ### Concatenando acumulado filtrado + novos
+    df_final = pd.concat([df_acumulado_filtrado, df_serasa_yandeh], ignore_index=True)
+
+    print('--------------------------------------------')
+    print('Novos casos de compra:')
+    print(len(df_serasa_yandeh))
+    print('--------------------------------------------')
+    print('Casos na acumulada:')
+    print(len(df_acumulado))
+    print('--------------------------------------------')
+    print('Casos após desconsiderar casos novos que já estão na acumulada:')
+    print(len(df_acumulado_filtrado))
+    print('--------------------------------------------')
+    print('Casos tabela final:')
+    print(len(df_final))
+
+
+    # Remove a coluna "nome_coluna"
+    df_final = df_final.drop(columns=["atualizado_em", "year", "month", "day"])
+
     # Colunas de data
     now = datetime.now(tz=timezone(timedelta(hours=-3)))
-    df_serasa_yandeh['atualizado_em'] = now.strftime('%Y-%m-%d %X')
-    df_serasa_yandeh['year'], df_serasa_yandeh['month'], df_serasa_yandeh['day'] = now.year, now.month, now.day
+    df_final['atualizado_em'] = now.strftime('%Y-%m-%d %X')
+    df_final['year'], df_final['month'], df_final['day'] = now.year, now.month, now.day
     print("Tratamento dos dados concluído")
+
+    # Remove linhas que não possuem o data_consulta
+    df_final = df_final[df_final['data_consulta'].notna()].copy()
 
 
     # Configuração do Delta Lake
@@ -296,7 +352,7 @@ def processa_historico_serasa_yandeh (access_params=None,  **kwargs):
     # Escrevendo no Delta Lake com schema fixado
     write_deltalake(
         f"s3a://{BUCKET_SOURCE_TRUSTED}/{FOLDER_DESTINATION_TRUSTED}",
-        df_serasa_yandeh,
+        df_final,
         partition_by=["year", "month", "day"],
         storage_options=storage_options,
         mode="overwrite"

@@ -14,6 +14,7 @@ from time import sleep
 
 from serasa.compras_serasa import processa_historico_compras_serasa
 from serasa.compras_serasa import processa_novos_casos_compras_serasa
+from serasa.compras_serasa import processa_novos_casos_compras_serasa_yandeh
 from serasa.compras_serasa import processo_historico_compras_serasa_yandeh
 
 ### Parâmetros de acesso
@@ -86,14 +87,23 @@ with DAG(
         provide_context=True
     )
 
+    '''
     task3  = PythonOperator(
         task_id='processa_historico_compras_serasa_yandeh',
         python_callable = processo_historico_compras_serasa_yandeh.processa_historico_serasa_yandeh,
         op_kwargs={'access_params': access_params},
         provide_context=True
     )
+    '''
+
+    task4 = PythonOperator(
+        task_id='processa_compras_serasa_diario_yandeh',
+        python_callable= processa_novos_casos_compras_serasa_yandeh.processa_serasa_diario_yandeh,
+        op_kwargs={'access_params': access_params},
+        provide_context=True
+    )
     
 
     # Definindo a ordem de execução das tasks
-    #task1 >> 
-    task2 >> task3
+    #task1 >>  task3
+    task2 >> task4
