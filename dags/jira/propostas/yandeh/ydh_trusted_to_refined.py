@@ -38,8 +38,95 @@ def ydh_trusted_to_refined (access_params=None, **kwargs):
 
     # Definindo a consulta
     query_jira_trusted = """
-        SELECT *
-        FROM deltalaketrusted.jira.propostas_yandeh
+        WITH propostas AS (
+            -- 1 Seleciona todas as propostas do CNPJ raiz informado
+            SELECT *
+            FROM deltalaketrusted.jira.propostas_yandeh p
+        ),
+        
+        serasa_restritivos AS (
+            -- 2 Junta as propostas com o histórico Serasa
+            -- Considera apenas consultas realizadas até a data_resolvido
+            -- Usa ROW_NUMBER() para pegar o registro Serasa mais recente antes da resolução
+            select * 
+            from (
+            SELECT
+                p.*,
+                s.id,
+                s.data_consulta,
+                s.qtd_total_restritivos_pj AS total_restritivos_pj,
+                s.qtd_total_restritivos_pf AS total_restritivos_pf,
+                s.qtd_cheque_pf,
+                s.qtd_cheque_pj,
+                s.valor_total_restritivos_pj + s.valor_total_restritivos_pf  AS valor_total_restritivos,
+                s.qtd_cheque_pf + s.qtd_cheque_pj AS qtd_total_cheques,
+                ROW_NUMBER() OVER (
+                    PARTITION BY p.issue_key
+                    ORDER BY s.data_consulta DESC
+                ) AS rn_serasa
+            FROM propostas p
+            LEFT JOIN (select distinct * from deltalaketrusted.serasa.historico_compras_serasa_yandeh where tipo_produto = 'SERASA_RELATO_YANDEH') as s
+                ON p.raiz_cnpj = s.cnpj_raiz AND CAST(s.data_consulta AS DATE) <= CAST(p.data_resolvido AS DATE) )
+            where (rn_serasa = 1 or rn_serasa is null)
+        ),
+        
+        serasa_score as (
+        
+            select *
+            from (
+            SELECT
+                p.*,
+                s.data_consulta as data_consulta_score,
+                s.score_positivo_pj AS score,
+                s.grande_empresa AS empresa_grande,
+                ROW_NUMBER() OVER (
+                    PARTITION BY p.issue_key
+                    ORDER BY s.data_consulta DESC
+                ) AS rn_serasa_2
+            FROM serasa_restritivos p
+            LEFT JOIN (select distinct * from deltalaketrusted.serasa.historico_compras_serasa_yandeh where tipo_produto = 'RELATORIO_DADOS_AVULSOS_PJ_YANDEH') as s
+                ON p.raiz_cnpj = s.cnpj_raiz AND CAST(s.data_consulta AS DATE) <= CAST(p.data_resolvido AS DATE))
+            where (rn_serasa_2 = 1 or rn_serasa_2 is null)
+        ),
+        
+        pontualidade as (
+        
+                select   s.*,
+                            sub.pontualidade,
+                            sub.media_pagamento as media_pagamento_serasa,
+                            ROW_NUMBER() OVER (
+                                PARTITION BY s.issue_key
+                                ORDER BY sub.data_consulta DESC
+                            ) AS rn_pontualidade
+                from serasa_score as s
+                left join (
+                    select
+                        r.ID,
+                        ir.document_number as cnpj_completo,
+                        r.created_date as data_consulta,
+                        substring(ir.document_number,1,8) as cnpj_raiz,
+                        coalesce((pontual.percentage_value_from + pontual.percentage_value_to) / 2.0, 0) AS pontualidade,
+                        coalesce((pontual.historical_average_range_from + pontual.historical_average_range_to) / 2.0, 0) AS media_pagamento
+                    from postgres.exrp_prd_default.report r
+                            inner join postgres.exrp_prd_default.identification_report ir on ir.id = r.identification_report_id
+                            inner join (select document_number, ir.id
+                                        from postgres.exrp_prd_default.identification_report ir
+                                        inner join postgres.exrp_prd_default.report r on ir.id = r.identification_report_id
+                                        where r.report_name = 'RELATORIO_AVANCADO_PJ_ANALITICO'
+                                        ) ir2 on ir2.id = r.identification_report_id
+                            inner join postgres.exrp_prd_default.advanced_commercial_payment_history acph on acph.id = r.advanced_commercial_payment_history_id
+                            inner join postgres.exrp_prd_default.payment_history ph on ph.id = acph.payment_history_id
+                            inner join postgres.exrp_prd_default.month_detail md on md.id = ph.month_detail_id
+                            inner join postgres.exrp_prd_default.total_summary ts on ts.id = md.summary_id
+                            inner join postgres.exrp_prd_default.period pontual on pontual.id = ts.punctual_id
+                            inner join postgres.exrp_prd_default.period total on total.id = ts.total_id ) as sub
+                        ON s.raiz_cnpj = sub.cnpj_raiz AND CAST(sub.data_consulta AS DATE) <= CAST(s.data_resolvido AS DATE)
+        
+        )
+        
+        select * 
+        from  pontualidade
+        where (rn_pontualidade = 1 or rn_pontualidade is null)
     """
 
     # Verifica se a conexão foi bem-sucedida antes de executar a consulta
@@ -250,6 +337,9 @@ def ydh_trusted_to_refined (access_params=None, **kwargs):
         'sla_hora_disp_mesa_resolvido', 'sla_dias_criado_resolvido',
         'sla_dias_disp_mesa_resolvido', 'faixa_valor_solicitado',
         'aprovacao_percent', 'status_aprovacao_percent', 'status_relacional',
+        'total_restritivos_pj', 'total_restritivos_pf', 'qtd_cheque_pf', 'qtd_cheque_pj',
+        'valor_total_restritivos', 'qtd_total_cheques', 'score', 
+        'empresa_grande', 'pontualidade', 'media_pagamento_serasa',
         'atualizado_em', 'year', 'month', 'day',
         ]
     ].reset_index(drop=True)
