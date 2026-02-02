@@ -13,6 +13,7 @@ import json
 from deltalake import write_deltalake, DeltaTable
 from airflow.utils.log.logging_mixin import LoggingMixin
 from datetime import datetime, time, timedelta, timezone
+from airflow.models import Variable
 
 
 def ydh_trusted_to_refined (access_params=None, **kwargs):
@@ -37,7 +38,7 @@ def ydh_trusted_to_refined (access_params=None, **kwargs):
     
 
     # Definindo a consulta
-    query_jira_trusted = """
+    query_jira_trusted = f"""
         WITH propostas AS (
             -- 1 Seleciona todas as propostas do CNPJ raiz informado
             SELECT *
@@ -107,19 +108,19 @@ def ydh_trusted_to_refined (access_params=None, **kwargs):
                         substring(ir.document_number,1,8) as cnpj_raiz,
                         coalesce((pontual.percentage_value_from + pontual.percentage_value_to) / 2.0, 0) AS pontualidade,
                         coalesce((pontual.historical_average_range_from + pontual.historical_average_range_to) / 2.0, 0) AS media_pagamento
-                    from postgres.exrp_prd_default.report r
-                            inner join postgres.exrp_prd_default.identification_report ir on ir.id = r.identification_report_id
+                    from postgres.exrp_{Variable.get('STAGE')}_default.report r
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.identification_report ir on ir.id = r.identification_report_id
                             inner join (select document_number, ir.id
-                                        from postgres.exrp_prd_default.identification_report ir
-                                        inner join postgres.exrp_prd_default.report r on ir.id = r.identification_report_id
+                                        from postgres.exrp_{Variable.get('STAGE')}_default.identification_report ir
+                                        inner join postgres.exrp_{Variable.get('STAGE')}_default.report r on ir.id = r.identification_report_id
                                         where r.report_name = 'RELATORIO_AVANCADO_PJ_ANALITICO'
                                         ) ir2 on ir2.id = r.identification_report_id
-                            inner join postgres.exrp_prd_default.advanced_commercial_payment_history acph on acph.id = r.advanced_commercial_payment_history_id
-                            inner join postgres.exrp_prd_default.payment_history ph on ph.id = acph.payment_history_id
-                            inner join postgres.exrp_prd_default.month_detail md on md.id = ph.month_detail_id
-                            inner join postgres.exrp_prd_default.total_summary ts on ts.id = md.summary_id
-                            inner join postgres.exrp_prd_default.period pontual on pontual.id = ts.punctual_id
-                            inner join postgres.exrp_prd_default.period total on total.id = ts.total_id ) as sub
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.advanced_commercial_payment_history acph on acph.id = r.advanced_commercial_payment_history_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.payment_history ph on ph.id = acph.payment_history_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.month_detail md on md.id = ph.month_detail_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.total_summary ts on ts.id = md.summary_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.period pontual on pontual.id = ts.punctual_id
+                            inner join postgres.exrp_{Variable.get('STAGE')}_default.period total on total.id = ts.total_id ) as sub
                         ON s.raiz_cnpj = sub.cnpj_raiz AND CAST(sub.data_consulta AS DATE) <= CAST(s.data_resolvido AS DATE)
         
         )
