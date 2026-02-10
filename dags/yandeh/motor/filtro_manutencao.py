@@ -76,7 +76,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         from 
             deltalaketrusted.yandeh.boletos_internos 
         where 
-            status_titulo = 'VENCIDO'
+            status_titulo = 'VENCIDO' 
         ),
         base_inadimplente_yandeh as (
         select 
@@ -85,7 +85,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             s3alpeyandeh.yandeh.rm_boleto 
         where 
             status_ <> 'BAIXADO'
-            and vencimento < current_date
+            and vencimento < current_date 
         ),
         base_grupo_economico as (
         select 
@@ -107,7 +107,8 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             deltalaketrusted.yandeh.boletos_internos 
         where 
             status_titulo = 'VENCIDO'
-            and data_vencimento >= current_date - INTERVAL '3' month
+            and data_vencimento >= current_date - INTERVAL '3' month 
+            and data_vencimento < current_date
         group by
             regexp_replace(cnpj_sacado, '[./-]', '')
         ),
@@ -118,7 +119,8 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             s3alpeyandeh.yandeh.rm_boleto 
         where 
             status_ <> 'BAIXADO'
-            and vencimento >= current_date - INTERVAL '3' month
+            and vencimento >= current_date - INTERVAL '3' month 
+            and vencimento < current_date
         group by
             regexp_replace(cnpj, '[./-]', '')
         ),
@@ -130,6 +132,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         where 
             status_titulo = 'VENCIDO'
             and data_vencimento >= current_date - INTERVAL '12' month
+            and data_vencimento < current_date
         group by
             regexp_replace(cnpj_sacado, '[./-]', '')
         ),
@@ -141,6 +144,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         where 
             status_ <> 'BAIXADO'
             and vencimento >= current_date - INTERVAL '12' month
+            and vencimento < current_date
         group by
             regexp_replace(cnpj, '[./-]', '')
         ),
@@ -213,8 +217,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         from 
             deltalaketrusted.yandeh.boletos_internos 
         where 
-            data_baixa is not null
-            and data_vencimento >= current_date - INTERVAL '3' month
+            data_vencimento >= current_date - INTERVAL '3' month
         group by
             regexp_replace(cnpj_sacado, '[./-]', '')
         ),
@@ -225,7 +228,6 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             s3alpeyandeh.yandeh.rm_boleto 
         where 
             vencimento >= current_date - INTERVAL '3' month
-            and status_ = 'BAIXADO'
         group by
             regexp_replace(cnpj, '[./-]', '')
         ),
@@ -235,8 +237,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         from 
             deltalaketrusted.yandeh.boletos_internos 
         where 
-            data_baixa is not null
-            and data_vencimento >= current_date - INTERVAL '12' month
+            data_vencimento >= current_date - INTERVAL '12' month
         group by
             regexp_replace(cnpj_sacado, '[./-]', '')
         ),
@@ -247,7 +248,6 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             s3alpeyandeh.yandeh.rm_boleto 
         where 
             vencimento >= current_date - INTERVAL '12' month
-            and status_ = 'BAIXADO'
         group by
             regexp_replace(cnpj, '[./-]', '')
         ),
