@@ -179,13 +179,22 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         qtde_titulos_vencidos_alpe as (
         select 
             regexp_replace(cnpj_sacado, '[./-]', '') as cnpj_sacado, 
-            sum(
-                case
-                    when data_baixa is null
-                    or data_baixa > data_vencimento
-                    then 1 else 0
-                end
-                ) as qtde_boletos_em_atraso_alpe
+            SUM(
+                CASE
+                    WHEN 
+                        (
+                            data_baixa IS NULL 
+                            AND data_vencimento + INTERVAL '5' DAY < CURRENT_DATE
+                        )
+                        OR
+                        (
+                            data_baixa IS NOT NULL 
+                            AND data_baixa > data_vencimento + INTERVAL '5' DAY
+                        )
+                    THEN 1 
+                    ELSE 0
+                END
+            ) AS qtde_boletos_em_atraso_alpe
         from 
             deltalaketrusted.yandeh.boletos_internos
         where
@@ -196,13 +205,22 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
         qtde_titulos_vencidos_yandeh as (
         select 
             regexp_replace(cnpj, '[./-]', '') as cnpj_sacado, 
-            sum(
-                case
-                    when data_alteracao is null
-                    or data_alteracao > vencimento
-                    then 1 else 0
-                end
-                ) as qtde_boletos_em_atraso_yandeh
+            SUM(
+                CASE
+                    WHEN 
+                        (
+                            data_alteracao IS NULL 
+                            AND vencimento + INTERVAL '5' DAY < CURRENT_DATE
+                        )
+                        OR
+                        (
+                            data_alteracao IS NOT NULL 
+                            AND data_alteracao > vencimento + INTERVAL '5' DAY
+                        )
+                    THEN 1 
+                    ELSE 0
+                END
+            ) AS qtde_boletos_em_atraso_yandeh
         from 
             s3alpeyandeh.yandeh.rm_boleto 
         where
@@ -308,6 +326,14 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
                     on s.cnpj_raiz = cmr.cnpj_raiz and try_cast(s.data_consulta as date) = cmr.consulta_mais_recente
                 where s.data_consulta >= current_date - INTERVAL '180' DAY
         ),
+        base_score_yandeh as (
+        select 
+            distinct lpad(trim(cnpj),14, '0') as cnpj_sacado, CAST(score AS INTEGER) AS score
+        from 
+            s3alpeyandeh.yandeh.serasa_output 
+        where 
+            data_criacao >= current_date - INTERVAL '180' DAY
+        ),
         base_adega as (
         select cnpj_loja as cnpj_sacado, 1 as adega  from s3alpeyandeh.yandeh.revisao_adegas_vw where (valor_bebida / valor_nao_bebida) > 0.7
         ),
@@ -318,7 +344,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             coalesce(biy3.inadimplente_yandeh_3_meses, 0) as inadimplente_yandeh_3_meses, coalesce(bia12.inadimplente_alpe_12_meses, 0) as inadimplente_alpe_12_meses, coalesce(biy12.inadimplente_yandeh_12_meses, 0) as inadimplente_yandeh_12_meses,
             coalesce(mda.mda_60_alpe, 0) as mda_60_alpe, coalesce(mday.mda_60_yandeh, 0) as mda_60_yandeh, coalesce(qtva.qtde_boletos_em_atraso_alpe, 0) as qtde_boletos_em_atraso_alpe, coalesce(qtvy.qtde_boletos_em_atraso_yandeh, 0) as qtde_boletos_em_atraso_yandeh, 
             coalesce(vp3a.valor_pago_alpe, 0) as valor_pago_3_meses_alpe, coalesce(vp3y.valor_pago_yandeh, 0) as valor_pago_3_meses_yandeh,  coalesce(vpa.valor_pago_alpe, 0) as valor_pago_1_ano_alpe, coalesce(vpy.valor_pago_yandeh, 0) as valor_pago_1_ano_yandeh, 
-            coalesce(adega.adega,0) as adega, scoralp.score_positivo_pj as score
+            coalesce(adega.adega,0) as adega, scoralp.score_positivo_pj as score_alpe, scorayan.score as score_yandeh
         from 
             base_clientes_ativos bc
             left join nome_grupo_clientes_ativos nge on bc.cnpj_sacado = nge.cnpj_sacado 
@@ -340,6 +366,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             left join base_valor_pago_1_ano_alpe vpa on bc.cnpj_sacado = vpa.cnpj_sacado
             left join base_valor_pago_1_ano_yandeh vpy on bc.cnpj_sacado = vpy.cnpj_sacado
             left join base_score_alpe scoralp on bc.cnpj_raiz = scoralp.cnpj_raiz
+            left join base_score_yandeh scorayan on bc.cnpj_sacado = scorayan.cnpj_sacado
             left join base_adega adega on bc.cnpj_sacado = adega.cnpj_sacado
         ),
         base_final as (
@@ -350,7 +377,7 @@ def def_filtro_manutencao_yandeh(access_params=None,  **kwargs):
             greatest(coalesce(mda_60_alpe,0), coalesce(mda_60_yandeh,0)) as mda_60, greatest(coalesce(qtde_boletos_em_atraso_alpe, 0), coalesce(qtde_boletos_em_atraso_yandeh, 0)) as qtde_boletos_atrasados,
             (limite_alpe + limite_yandeh) as limite, 
             ((limite_alpe + limite_yandeh) / (valor_pago_1_ano_alpe + valor_pago_1_ano_yandeh)) as pcto_limite_sobre_pgto,
-            score, adega as flag_adega
+            greatest(coalesce(score_alpe,0), coalesce(score_yandeh, 0)) as score, adega as flag_adega
         from
             base_consolidada
         )
