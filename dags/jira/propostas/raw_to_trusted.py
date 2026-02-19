@@ -165,7 +165,7 @@ def raw_to_trusted(access_params=None, **kwargs):
         ('ROSEMEIRE DIAS', 'ROSEMEIRE FERREIRA') : 'OUTROS',
         ('TALITA LIANDRA DA SILVA RODRIGUES', 'TALITA RODRIGUES', 'TALITA') : 'TALITA LIANDRA',
         'THAIS DAS NEVES' : 'OUTROS',
-        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR') : 'TIAGO CARVALHO',
+        ('TIAGO CARVALHO', 'TIAGO.CARVALHO@ALPE.COM.BR', 'ANTONIO TIAGO REBOUÇAS DE CARVALHO') : 'TIAGO CARVALHO',
         'VANESSA LINO': 'OUTROS',
         ('WILMA CARLA ROCHA SANTOS', 'WILMA SANTOS', 'WILMA'): 'WILMA SANTOS',
         'JOEL DONIZETTI APARECIDO': 'OUTROS',
@@ -181,7 +181,9 @@ def raw_to_trusted(access_params=None, **kwargs):
         ('CRISTIANE ALMEIDA', 'CRISTIANE ALVES DE ALMEIDA'): 'CRISTIANE ALMEIDA',
         ('FLAVIA SOUZA'): 'FLAVIA SOUZA',
         ('LUCIANO SILVA'): 'LUCIANO SILVA',
-        ('RAFAEL FREITAS', 'RAFAEL JESUS'): 'RAFAEL FREITAS'
+        ('RAFAEL FREITAS', 'RAFAEL JESUS'): 'RAFAEL FREITAS',
+        'GUSTAVO COLLARES FACCINI TREVISAN': 'OUTROS',
+        'CELIO TORRECILHA FILHO': 'OUTROS'
     }
 
     # Função para padronizar o nome
@@ -468,7 +470,7 @@ def raw_to_trusted(access_params=None, **kwargs):
                             'PF BLOQUEIO ALPE - COM POLITICA', 'PF REPROVA < 60 DIAS', 'PF - GE PEP', 'PF - GE FUNDACAO < 2 ANOS', 'PF - GE SEM INFO SERASA', 'PF - GE MEI',
                             'PF BLOQUEIO ALPE - SEM POLITICA', 'PF - UTILIZAÇÃO DE LIMITE MÍNIMA NÃO ATINGIDA', 'PF LIMITE SOLICITADO <= ATUAL', 'PF SA', 'PF - GE MESA',
                             'PF - GE CNPJ IRREGULAR', 'PF - GE BLOQUEIO ALPE', 'POLITICA4', 'AF - SEM HISTÓRICO DE PAGAMENTO SERASA', 'AF - SEM HISTÓRICO DE PAGAMENTO',
-                            'SERASA SCORE < 200', 'RC REDUÇÃO DE LIMITE', 'RC CANCELAMENTO DE LIMITE'
+                            'SERASA SCORE < 200', 'RC REDUÇÃO DE LIMITE', 'RC CANCELAMENTO DE LIMITE', 'PF - GE RJ'
                             ]
 
     lista_ramificacao_medio = ['MESA', 'B - 5', 'B - 7', 'B - 10', 'A - C1', 'A - B1', 'A - D1', 'A - B8', 'A - A5',
