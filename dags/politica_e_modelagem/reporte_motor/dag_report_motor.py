@@ -11,6 +11,7 @@ from datetime import timedelta
 
 ### Importando scripts necessários
 from politica_e_modelagem.reporte_motor import report_atualizado
+from politica_e_modelagem.reporte_motor import report_atualizado_gerente
 #from politica_e_modelagem.reporte_motor import report_desafiante
 
 ### Parâmetros de acesso
@@ -66,7 +67,7 @@ with DAG(
 ) as dag:
 
     # Definindo task
-    reporte = PythonOperator(
+    reporte_01 = PythonOperator(
         task_id='envia_mensagem_teams',
         python_callable=report_atualizado.report_motor_atualizado,
         op_kwargs={'access_params': access_params},
@@ -82,6 +83,12 @@ with DAG(
         provide_context=True  # Habilita o envio do contexto (incluindo conf)
     )'
     '''
-
-    reporte 
+    # Definindo task
+    reporte_02 = PythonOperator(
+        task_id='envia_mensagem_teams_gerentes',
+        python_callable= report_atualizado_gerente.report_motor_atualizado_gerente,
+        op_kwargs={'access_params': access_params},
+        provide_context=True  # Habilita o envio do contexto (incluindo conf)
+    )
+    reporte_01 >> reporte_02
     #>> reporte_desafiante
