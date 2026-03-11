@@ -181,7 +181,8 @@ def raw_to_trusted(access_params=None, **kwargs):
         ('CRISTIANE ALMEIDA', 'CRISTIANE ALVES DE ALMEIDA'): 'CRISTIANE ALMEIDA',
         ('FLAVIA SOUZA'): 'FLAVIA SOUZA',
         ('LUCIANO SILVA'): 'LUCIANO SILVA',
-        ('RAFAEL FREITAS', 'RAFAEL JESUS'): 'RAFAEL FREITAS'
+        ('RAFAEL FREITAS', 'RAFAEL JESUS'): 'RAFAEL FREITAS',
+        'NICOLAS SANTOS' : 'NICOLAS SANTOS'
     }
 
     # Função para padronizar o nome
