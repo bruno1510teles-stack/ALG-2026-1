@@ -225,7 +225,7 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
 
     cnpj_part_1 = cnpjs[:tamanho]
     cnpj_part_2 = cnpjs[tamanho:2*tamanho]
-    cnpj_part_3 = cnpjs[2*tamanho:]
+    cnpj_part_3 = cnpjs[2*tamanho:3*tamanho]
     cnpj_part_4 = cnpjs[3*tamanho:]
 
     # Convertendo a lista para uma string no formato adequado para o SQL
