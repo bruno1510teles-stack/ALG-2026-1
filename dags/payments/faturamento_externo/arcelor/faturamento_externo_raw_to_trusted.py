@@ -70,14 +70,14 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     # BASE1
     # Bucket and Folder_Destination
     BUCKET_SOURCE_RAW = "faturamento-externo"
-    FOLDER_DESTINATION_RAW = 'arcelor/year=2025/month=8/day=1'
-    file_name = 'Clientes base potencial AM - jul25.xlsx'
+    FOLDER_DESTINATION_RAW = 'arcelor/year=2026/month=03/day=19'
+    file_name = 'Faturamento Base Jan-Nov25.xlsx'
     file_path = f'{FOLDER_DESTINATION_RAW}/{file_name}'
 
     # Uploading Excel File
     response = minio_raw.get_object(BUCKET_SOURCE_RAW, file_path)
     file_data = BytesIO(response.read())
-    base1 = pd.read_excel(file_data, sheet_name="Histórico de faturamento", header=1)
+    base1 = pd.read_excel(file_data, sheet_name="Planilha1", header=1)
 
 
 
@@ -216,21 +216,23 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
     base_final_merge = cruzar_bases(df, base1)
 
 
-   # Inserindo Cidade, UF e Cnae Principal
+    # Inserindo Cidade, UF e Cnae Principal
 
     # Extraindo os CNPJs do DataFrame 'fat_pag' e convertendo-os para uma lista
     cnpjs = base_final_merge['raiz_cnpj'].unique().tolist()
 
-    tamanho = len(cnpjs) // 3
+    tamanho = len(cnpjs) // 4
 
     cnpj_part_1 = cnpjs[:tamanho]
     cnpj_part_2 = cnpjs[tamanho:2*tamanho]
     cnpj_part_3 = cnpjs[2*tamanho:]
+    cnpj_part_4 = cnpjs[3*tamanho:]
 
     # Convertendo a lista para uma string no formato adequado para o SQL
     cnpjs_str_1 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_1])
     cnpjs_str_2 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_2])
     cnpjs_str_3 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_3])
+    cnpjs_str_4 = ', '.join([f"'{cnpj}'" for cnpj in cnpj_part_4])
 
     print('Carregando dados de Cidade e Cnae....')
 
@@ -267,11 +269,23 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                         and cnpj_raiz in ({cnpjs_str_3})
                     """
 
+    query_receita_4 = f"""
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                municipio as cidade,
+                                uf,
+                                cast(cnae_principal_codigo as varchar) as cnae_principal
+                        from deltalakerefined.receita_federal.dados_cadastrais
+                        where flag_matriz = 'Sim'
+                        and cnpj_raiz in ({cnpjs_str_4})
+                    """
+
     receita_1 = execute_query(conn, query_receita_1)
     receita_2 = execute_query(conn, query_receita_2)
     receita_3 = execute_query(conn, query_receita_3)
+    receita_4 = execute_query(conn, query_receita_4)
 
-    receita = pd.concat([receita_1, receita_2, receita_3], ignore_index=True)
+    receita = pd.concat([receita_1, receita_2, receita_3, receita_4], ignore_index=True)
 
     print(receita)
 
@@ -316,11 +330,20 @@ def extracao_faturamento_externo(access_params=None, **kwargs):
                         where cnpj_raiz in ({cnpjs_str_3})
                     """
 
+    query_empresas_4 =  f""" 
+                        select  distinct
+                                cnpj_raiz as raiz_cnpj,
+                                razao_social
+                        from deltalaketrusted.receita_federal.empresas
+                        where cnpj_raiz in ({cnpjs_str_4})
+                    """
+
     empresas_1 = execute_query(conn, query_empresas_1)
     empresas_2 = execute_query(conn, query_empresas_2)
     empresas_3 = execute_query(conn, query_empresas_3)
+    empresas_4 = execute_query(conn, query_empresas_4)
 
-    empresas = pd.concat([empresas_1, empresas_2, empresas_3], ignore_index=True)
+    empresas = pd.concat([empresas_1, empresas_2, empresas_3, empresas_4], ignore_index=True)
 
     empresas['raiz_cnpj'] = '00000000' + empresas['raiz_cnpj'].astype(str)
     empresas['raiz_cnpj'] = empresas['raiz_cnpj'].str[-8:]
