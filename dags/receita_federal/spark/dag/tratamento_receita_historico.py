@@ -51,12 +51,11 @@ with DAG(
         execution_timeout=timedelta(minutes=120)
     )
 
-    # estabelecimentos = SparkKubernetesOperator(
+    # estabelecimentos = NoTemplateSparkKubernetesOperator(
     #     task_id='estabelecimentos',
-    #     application_file='estabelecimentos-spark-app.yaml',
+    #     application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/estabelecimentos-spark-app.yaml',
     #     namespace='spark',
     #     kubernetes_conn_id='kubernetes_default',
-    #     do_xcom_push=True,
     #     execution_timeout=timedelta(minutes=120)
     # )
 
