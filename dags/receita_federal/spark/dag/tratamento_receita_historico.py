@@ -6,6 +6,9 @@ from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKu
 import requests
 from datetime import timedelta
 
+class NoTemplateSparkKubernetesOperator(SparkKubernetesOperator):
+    template_fields = ()
+
 def notificar_falha_teams(context):
     task_id = context['task_instance'].task_id
     dag_id = context['task_instance'].dag_id
@@ -44,7 +47,7 @@ with DAG(
 ) as dag:
 
     empresas = NoTemplateSparkKubernetesOperator(
-        task_id='empresas',
+        task_id='empresas_historico',
         application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/empresas-historico-spark-app.yaml',
         namespace='spark',
         kubernetes_conn_id='kubernetes_default',
