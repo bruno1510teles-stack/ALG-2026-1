@@ -48,7 +48,7 @@ def empresas_to_trusted(spark):
 
     # Pastas MiniO
     BUCKET_SOURCE = "receita-federal"
-    PATH = "empresas/year=2025/month=03/"
+    PATH = "empresas/year=2025/month=10/"
     
     print("Lendo Pasta...")
     file_path = PATH
