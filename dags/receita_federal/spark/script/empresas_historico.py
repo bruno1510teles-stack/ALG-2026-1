@@ -169,13 +169,15 @@ def empresas_to_trusted(spark):
 
 
     print("Iniciando salvamento dos arquivos")
+    
+    target_path = f"s3a://bureaus/receita-federal/empresas_historico/year={ano}/month={mes}"
+    
     # Escrevendo os dados com o schema definido
     trusted_empresas_tratado.write \
-        .partitionBy("data_ref") \
         .format("delta") \
         .option("overwriteSchema", "true") \
         .mode("overwrite") \
-        .save("s3a://bureaus/receita-federal/empresas_historico")
+        .save(target_path)
 
 
     print("Arquivos Salvos")    
