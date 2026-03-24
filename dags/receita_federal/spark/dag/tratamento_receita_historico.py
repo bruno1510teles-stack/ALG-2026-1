@@ -46,7 +46,7 @@ with DAG(
     max_active_runs=1
 ) as dag:
 
-    empresas = NoTemplateSparkKubernetesOperator(
+    empresas_historico = NoTemplateSparkKubernetesOperator(
         task_id='empresas_historico',
         application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/empresas-historico-spark-app.yaml',
         namespace='spark',
@@ -54,12 +54,12 @@ with DAG(
         execution_timeout=timedelta(minutes=120)
     )
 
-    # estabelecimentos = NoTemplateSparkKubernetesOperator(
-    #     task_id='estabelecimentos',
-    #     application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/estabelecimentos-spark-app.yaml',
-    #     namespace='spark',
-    #     kubernetes_conn_id='kubernetes_default',
-    #     execution_timeout=timedelta(minutes=120)
-    # )
+    estabelecimentos_historico = NoTemplateSparkKubernetesOperator(
+        task_id='estabelecimentos_historico',
+        application_file='/opt/airflow/dags/repo/dags/receita_federal/spark/dag/estabelecimentos-historico-spark-app.yaml',
+        namespace='spark',
+        kubernetes_conn_id='kubernetes_default',
+        execution_timeout=timedelta(minutes=120)
+    )
 
-    empresas
+    empresas_historico >> estabelecimentos_historico
